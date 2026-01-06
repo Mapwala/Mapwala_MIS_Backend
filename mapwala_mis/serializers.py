@@ -47,3 +47,4 @@ class DistrictSerializer(serializers.ModelSerializer):
             "state_name",
             "status",
         ]
+

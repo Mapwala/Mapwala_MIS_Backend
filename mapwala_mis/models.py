@@ -13,7 +13,7 @@ class UserProfile(models.Model):
 class State(models.Model):
     STATUS_CHOICES = (
         ("active", "Active"),
-        ("inactive", "Inactive"),
+        ("inactive", "Inactive"), 
     )
 
     name = models.CharField(max_length=100, unique=True)
@@ -35,11 +35,7 @@ class District(models.Model):
 
     name = models.CharField(max_length=100)
     code = models.CharField(max_length=10)
-    state = models.ForeignKey(
-        State,
-        on_delete=models.CASCADE,
-        related_name="districts",
-    )
+    state = models.ForeignKey(State,on_delete=models.CASCADE,related_name="districts")
     status = models.CharField(max_length=10, choices=STATUS_CHOICES)
     created_at = models.DateTimeField(auto_now_add=True)
 

@@ -1,0 +1,605 @@
+{
+	"info": {
+		"_postman_id": "cf129c48-78ad-471f-a461-d13566f74b2b",
+		"name": "Mapwala_MIS_Backend",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "40770139"
+	},
+	"item": [
+		{
+			"name": "State APIs",
+			"item": [
+				{
+					"name": "Create State",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3NzAxNzM4LCJpYXQiOjE3Njc2MTUzMzgsImp0aSI6IjZhMDBmNjcxNGY3NjQ4ZGI4NTA4OWNjMzVkNTUwOTc4IiwidXNlcl9pZCI6IjIifQ.LOsCnAOnpFZsV9cnwWMyyzVl78ZfZM-vTfqi_btV6rA"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"name\": \"Kerla\",\r\n  \"status\": \"active\"\r\n} ",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/states/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"states",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/states/' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>' \\\r\n--header 'Content-Type: application/json' \\\r\n--data-raw '{\r\n  \"name\": \"Gujarat\",\r\n  \"status\": \"active\"\r\n}'\r\n"
+					},
+					"response": []
+				},
+				{
+					"name": "List all States",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3NzAxNzM4LCJpYXQiOjE3Njc2MTUzMzgsImp0aSI6IjZhMDBmNjcxNGY3NjQ4ZGI4NTA4OWNjMzVkNTUwOTc4IiwidXNlcl9pZCI6IjIifQ.LOsCnAOnpFZsV9cnwWMyyzVl78ZfZM-vTfqi_btV6rA"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/states/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"states",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/states/' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>'\r\n"
+					},
+					"response": []
+				},
+				{
+					"name": "Search State by Name",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3NzAxNzM4LCJpYXQiOjE3Njc2MTUzMzgsImp0aSI6IjZhMDBmNjcxNGY3NjQ4ZGI4NTA4OWNjMzVkNTUwOTc4IiwidXNlcl9pZCI6IjIifQ.LOsCnAOnpFZsV9cnwWMyyzVl78ZfZM-vTfqi_btV6rA"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/states/?search=Raj",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"states",
+								""
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "Raj"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/states/?search=New' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>'\r\n"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Active States (Dropdown API)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3NzAxNzM4LCJpYXQiOjE3Njc2MTUzMzgsImp0aSI6IjZhMDBmNjcxNGY3NjQ4ZGI4NTA4OWNjMzVkNTUwOTc4IiwidXNlcl9pZCI6IjIifQ.LOsCnAOnpFZsV9cnwWMyyzVl78ZfZM-vTfqi_btV6rA"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/states/inactive/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"states",
+								"inactive",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/states/active/' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>'\r\n"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete State (NO linked Districts → SHOULD PASS)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3NzAxNzM4LCJpYXQiOjE3Njc2MTUzMzgsImp0aSI6IjZhMDBmNjcxNGY3NjQ4ZGI4NTA4OWNjMzVkNTUwOTc4IiwidXNlcl9pZCI6IjIifQ.LOsCnAOnpFZsV9cnwWMyyzVl78ZfZM-vTfqi_btV6rA"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/states/3/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"states",
+								"3",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location --request DELETE 'http://127.0.0.1:8000/api/states/5/' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>'\r\n"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete State (WITH linked Districts → SHOULD FAIL)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3NzAxNzM4LCJpYXQiOjE3Njc2MTUzMzgsImp0aSI6IjZhMDBmNjcxNGY3NjQ4ZGI4NTA4OWNjMzVkNTUwOTc4IiwidXNlcl9pZCI6IjIifQ.LOsCnAOnpFZsV9cnwWMyyzVl78ZfZM-vTfqi_btV6rA"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/states/4/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"states",
+								"4",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location --request DELETE 'http://127.0.0.1:8000/api/states/1/' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>'\r\n"
+					},
+					"response": []
+				},
+				{
+					"name": "Update State",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3NzAxNzM4LCJpYXQiOjE3Njc2MTUzMzgsImp0aSI6IjZhMDBmNjcxNGY3NjQ4ZGI4NTA4OWNjMzVkNTUwOTc4IiwidXNlcl9pZCI6IjIifQ.LOsCnAOnpFZsV9cnwWMyyzVl78ZfZM-vTfqi_btV6rA"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"name\": \"New York\",\r\n  \"status\": \"inactive\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/states/1/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"states",
+								"1",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location --request PUT 'http://127.0.0.1:8000/api/states/1/' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>' \\\r\n--header 'Content-Type: application/json' \\\r\n--data-raw '{\r\n  \"name\": \"New York\",\r\n  \"status\": \"inactive\"\r\n}'\r\n"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete State",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer <ACCESS_TOKEN>"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/states/3/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"states",
+								"3",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location --request DELETE 'http://127.0.0.1:8000/api/states/3/' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>'\r\n"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "DISTRICT APIs",
+			"item": [
+				{
+					"name": "Create District",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3NzAxNzM4LCJpYXQiOjE3Njc2MTUzMzgsImp0aSI6IjZhMDBmNjcxNGY3NjQ4ZGI4NTA4OWNjMzVkNTUwOTc4IiwidXNlcl9pZCI6IjIifQ.LOsCnAOnpFZsV9cnwWMyyzVl78ZfZM-vTfqi_btV6rA"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"name\": \"Yamuna Nagar\",\r\n  \"code\": \"YNR\",\r\n  \"state\": 8,\r\n  \"status\": \"active\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/districts/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"districts",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/districts/' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>' \\\r\n--header 'Content-Type: application/json' \\\r\n--data-raw '{\r\n  \"name\": \"Ahmedabad\",\r\n  \"code\": \"AMD\",\r\n  \"state\": 1,\r\n  \"status\": \"active\"\r\n}'\r\n"
+					},
+					"response": []
+				},
+				{
+					"name": "List All Districts",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3NzAxNzM4LCJpYXQiOjE3Njc2MTUzMzgsImp0aSI6IjZhMDBmNjcxNGY3NjQ4ZGI4NTA4OWNjMzVkNTUwOTc4IiwidXNlcl9pZCI6IjIifQ.LOsCnAOnpFZsV9cnwWMyyzVl78ZfZM-vTfqi_btV6rA"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/districts/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"districts",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/districts/' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>'\r\n"
+					},
+					"response": []
+				},
+				{
+					"name": "Update District",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3NzAxNzM4LCJpYXQiOjE3Njc2MTUzMzgsImp0aSI6IjZhMDBmNjcxNGY3NjQ4ZGI4NTA4OWNjMzVkNTUwOTc4IiwidXNlcl9pZCI6IjIifQ.LOsCnAOnpFZsV9cnwWMyyzVl78ZfZM-vTfqi_btV6rA"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"name\": \"Ahmedabad\",\r\n  \"code\": \"AMD\",\r\n  \"state\": 4,\r\n  \"status\": \"inactive\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/districts/1/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"districts",
+								"1",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location --request PUT 'http://127.0.0.1:8000/api/districts/2/' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>' \\\r\n--header 'Content-Type: application/json' \\\r\n--data-raw '{\r\n  \"name\": \"Ahmedabad City\",\r\n  \"code\": \"AMD\",\r\n  \"state\": 1,\r\n  \"status\": \"inactive\"\r\n}'\r\n"
+					},
+					"response": []
+				},
+				{
+					"name": "Filter Districts by State",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3NzAxNzM4LCJpYXQiOjE3Njc2MTUzMzgsImp0aSI6IjZhMDBmNjcxNGY3NjQ4ZGI4NTA4OWNjMzVkNTUwOTc4IiwidXNlcl9pZCI6IjIifQ.LOsCnAOnpFZsV9cnwWMyyzVl78ZfZM-vTfqi_btV6rA"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/districts/?state=4",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"districts",
+								""
+							],
+							"query": [
+								{
+									"key": "state",
+									"value": "4"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/districts/?state=1' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>'\r\n"
+					},
+					"response": []
+				},
+				{
+					"name": "Search Districts",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3NzAxNzM4LCJpYXQiOjE3Njc2MTUzMzgsImp0aSI6IjZhMDBmNjcxNGY3NjQ4ZGI4NTA4OWNjMzVkNTUwOTc4IiwidXNlcl9pZCI6IjIifQ.LOsCnAOnpFZsV9cnwWMyyzVl78ZfZM-vTfqi_btV6rA"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/districts/?search=AMD",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"districts",
+								""
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "AMD"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/districts/?search=AMD' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>'\r\n"
+					},
+					"response": []
+				},
+				{
+					"name": "Create District (Linked to State)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3NzAxNzM4LCJpYXQiOjE3Njc2MTUzMzgsImp0aSI6IjZhMDBmNjcxNGY3NjQ4ZGI4NTA4OWNjMzVkNTUwOTc4IiwidXNlcl9pZCI6IjIifQ.LOsCnAOnpFZsV9cnwWMyyzVl78ZfZM-vTfqi_btV6rA"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"name\": \"Surat\",\r\n  \"code\": \"Sur\",\r\n  \"state\": 4,\r\n  \"status\": \"active\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/districts/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"districts",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/districts/' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>' \\\r\n--header 'Content-Type: application/json' \\\r\n--data-raw '{\r\n  \"name\": \"Ahmedabad\",\r\n  \"code\": \"AMD\",\r\n  \"state\": 1,\r\n  \"status\": \"active\"\r\n}'\r\n"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete District",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3NzAxNzM4LCJpYXQiOjE3Njc2MTUzMzgsImp0aSI6IjZhMDBmNjcxNGY3NjQ4ZGI4NTA4OWNjMzVkNTUwOTc4IiwidXNlcl9pZCI6IjIifQ.LOsCnAOnpFZsV9cnwWMyyzVl78ZfZM-vTfqi_btV6rA"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/districts/35/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"districts",
+								"35",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location --request DELETE 'http://127.0.0.1:8000/api/districts/2/' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>'\r\n"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Login API",
+			"item": [
+				{
+					"name": "login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"username\": \"test\",\r\n  \"password\": \"Test@1234\",\r\n  \"accepted_terms\": true\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/auth/login/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"auth",
+								"login",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

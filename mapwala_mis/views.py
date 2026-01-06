@@ -8,7 +8,8 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
-
+from rest_framework import status
+from rest_framework.response import Response
 
 from .serializers import (LoginSerializer, StateSerializer, DistrictSerializer)
 from .models import (UserProfile, State, District)
@@ -61,6 +62,19 @@ class StateViewSet(ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
+    def destroy(self, request, *args, **kwargs):
+        state = self.get_object()
+
+        if state.districts.exists():
+            return Response(
+                {
+                    "error": "State cannot be deleted because it has linked districts."
+                },
+                status=status.HTTP_409_CONFLICT
+            )
+
+        return super().destroy(request, *args, **kwargs)
+
 
 class DistrictViewSet(ModelViewSet):
     queryset = District.objects.select_related("state").all()
@@ -75,3 +89,4 @@ class DistrictViewSet(ModelViewSet):
         if state_id:
             queryset = queryset.filter(state_id=state_id)
         return queryset
+
