@@ -11,8 +11,14 @@ from rest_framework.filters import SearchFilter
 from rest_framework import status
 from rest_framework.response import Response
 
-from .serializers import (LoginSerializer, StateSerializer, DistrictSerializer)
-from .models import (UserProfile, State, District)
+from .serializers import (
+    LoginSerializer,
+    StateSerializer,
+    DistrictSerializer,
+    ParentCompanySerializer,
+    VendorSerializer,
+)
+from .models import UserProfile, State, District, ParentCompany, Vendor
 
 
 class LoginAPIView(APIView):
@@ -67,10 +73,8 @@ class StateViewSet(ModelViewSet):
 
         if state.districts.exists():
             return Response(
-                {
-                    "error": "State cannot be deleted because it has linked districts."
-                },
-                status=status.HTTP_409_CONFLICT
+                {"error": "State cannot be deleted because it has linked districts."},
+                status=status.HTTP_409_CONFLICT,
             )
 
         return super().destroy(request, *args, **kwargs)
@@ -90,3 +94,14 @@ class DistrictViewSet(ModelViewSet):
             queryset = queryset.filter(state_id=state_id)
         return queryset
 
+
+class ParentCompanyViewSet(ModelViewSet):
+    queryset = ParentCompany.objects.all()
+    serializer_class = ParentCompanySerializer
+    permission_classes = [IsAuthenticated]
+
+
+class VendorViewSet(ModelViewSet):
+    queryset = Vendor.objects.select_related("state", "district").all()
+    serializer_class = VendorSerializer
+    permission_classes = [IsAuthenticated]

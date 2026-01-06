@@ -1,6 +1,6 @@
 from django.contrib.auth import authenticate
 from rest_framework import serializers
-from .models import State, District, UserProfile
+from .models import State, District, UserProfile, ParentCompany, Vendor
 
 
 class LoginSerializer(serializers.Serializer):
@@ -48,3 +48,29 @@ class DistrictSerializer(serializers.ModelSerializer):
             "status",
         ]
 
+
+class ParentCompanySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ParentCompany
+        fields = "__all__"
+
+    def validate(self, data):
+        if data["district"].state_id != data["state"].id:
+            raise serializers.ValidationError(
+                "Selected district does not belong to selected state."
+            )
+        return data
+
+
+class VendorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Vendor
+        fields = "__all__"
+
+    def validate(self, data):
+        # Ensure district belongs to selected state
+        if data["district"].state_id != data["state"].id:
+            raise serializers.ValidationError(
+                "Selected district does not belong to the selected state."
+            )
+        return data
