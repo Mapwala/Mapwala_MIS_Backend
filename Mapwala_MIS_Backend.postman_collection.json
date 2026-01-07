@@ -600,6 +600,246 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Create Parent Companies",
+			"item": [
+				{
+					"name": "Create Parent Companies",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3NzAxNzM4LCJpYXQiOjE3Njc2MTUzMzgsImp0aSI6IjZhMDBmNjcxNGY3NjQ4ZGI4NTA4OWNjMzVkNTUwOTc4IiwidXNlcl9pZCI6IjIifQ.LOsCnAOnpFZsV9cnwWMyyzVl78ZfZM-vTfqi_btV6rA"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "name",
+									"value": "Mapwala Technologies",
+									"type": "text"
+								},
+								{
+									"key": "phone_number",
+									"value": "9876543210",
+									"type": "text"
+								},
+								{
+									"key": "email",
+									"value": "info@mapwala.com",
+									"type": "text"
+								},
+								{
+									"key": "address",
+									"value": "Guwahati, Assam",
+									"type": "text"
+								},
+								{
+									"key": "state",
+									"value": "4",
+									"type": "text"
+								},
+								{
+									"key": "district",
+									"value": "1",
+									"type": "text"
+								},
+								{
+									"key": "bank_name",
+									"value": "State Bank of India",
+									"type": "text"
+								},
+								{
+									"key": "account_holder_name",
+									"value": "Mapwala Technologies",
+									"type": "text"
+								},
+								{
+									"key": "account_number",
+									"value": "1234567890",
+									"type": "text"
+								},
+								{
+									"key": "ifsc_code",
+									"value": "SBIN0001234",
+									"type": "text"
+								},
+								{
+									"key": "gst_number",
+									"value": "22AAAAA0000A1Z5",
+									"type": "text"
+								},
+								{
+									"key": "gst_document",
+									"type": "file",
+									"src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+								},
+								{
+									"key": "tan_number",
+									"value": "BLRM12345A",
+									"type": "text"
+								},
+								{
+									"key": "tan_document",
+									"type": "file",
+									"src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+								},
+								{
+									"key": "pan_number",
+									"value": "AAAAA0000A",
+									"type": "text"
+								},
+								{
+									"key": "pan_document",
+									"type": "file",
+									"src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/parent-companies/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"parent-companies",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/parent-companies/' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>' \\\r\n--form 'name=Mapwala Technologies' \\\r\n--form 'phone_number=9876543210' \\\r\n--form 'email=info@mapwala.com' \\\r\n--form 'address=Guwahati, Assam' \\\r\n--form 'state=1' \\\r\n--form 'district=3' \\\r\n--form 'bank_name=State Bank of India' \\\r\n--form 'account_holder_name=Mapwala Technologies' \\\r\n--form 'account_number=1234567890' \\\r\n--form 'ifsc_code=SBIN0001234' \\\r\n--form 'gst_number=22AAAAA0000A1Z5' \\\r\n--form 'gst_document=@/path/gst.pdf' \\\r\n--form 'tan_number=BLRM12345A' \\\r\n--form 'tan_document=@/path/tan.pdf' \\\r\n--form 'pan_number=AAAAA0000A' \\\r\n--form 'pan_document=@/path/pan.pdf'\r\n"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Create Vendor Registration",
+			"item": [
+				{
+					"name": "Create Vendor Registration",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3Nzg4NzUwLCJpYXQiOjE3Njc3MDIzNTAsImp0aSI6ImFjNTAzNDM2NjIxMDQ2NjBhMjZkNGZmMzU0Y2IwZTRkIiwidXNlcl9pZCI6IjIifQ.KYpF8uyfytJ1jkRNN7XqSkKIIKz7IH0mbvji9Y5TTRg"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "name",
+									"value": "ABC Supplies",
+									"type": "text"
+								},
+								{
+									"key": "phone_number",
+									"value": "9123456789",
+									"type": "text"
+								},
+								{
+									"key": "email",
+									"value": "contact@abcsupplies.com",
+									"type": "text"
+								},
+								{
+									"key": "address",
+									"value": "Guwahati, Assam",
+									"type": "text"
+								},
+								{
+									"key": "state",
+									"value": "4",
+									"type": "text"
+								},
+								{
+									"key": "district",
+									"value": "1",
+									"type": "text"
+								},
+								{
+									"key": "bank_name",
+									"value": "HDFC Bank",
+									"type": "text"
+								},
+								{
+									"key": "account_holder_name",
+									"value": "ABC Supplies",
+									"type": "text"
+								},
+								{
+									"key": "account_number",
+									"value": "9876543210",
+									"type": "text"
+								},
+								{
+									"key": "ifsc_code",
+									"value": "HDFC0001234",
+									"type": "text"
+								},
+								{
+									"key": "gst_number",
+									"value": "22BBBBB1111B1Z6",
+									"type": "text"
+								},
+								{
+									"key": "gst_document",
+									"type": "file",
+									"src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+								},
+								{
+									"key": "tan_number",
+									"value": "GHYT12345B",
+									"type": "text"
+								},
+								{
+									"key": "tan_document",
+									"type": "file",
+									"src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+								},
+								{
+									"key": "pan_number",
+									"value": "BBBBB1111B",
+									"type": "text"
+								},
+								{
+									"key": "pan_document",
+									"type": "file",
+									"src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/vendors/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"vendors",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/vendors/' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>' \\\r\n--form 'name=ABC Supplies' \\\r\n--form 'phone_number=9123456789' \\\r\n--form 'email=contact@abcsupplies.com' \\\r\n--form 'address=Guwahati, Assam' \\\r\n--form 'state=4' \\\r\n--form 'district=1' \\\r\n--form 'bank_name=HDFC Bank' \\\r\n--form 'account_holder_name=ABC Supplies' \\\r\n--form 'account_number=9876543210' \\\r\n--form 'ifsc_code=HDFC0001234' \\\r\n--form 'gst_number=22BBBBB1111B1Z6' \\\r\n--form 'gst_document=@/path/to/gst.pdf' \\\r\n--form 'tan_number=GHYT12345B' \\\r\n--form 'tan_document=@/path/to/tan.pdf' \\\r\n--form 'pan_number=BBBBB1111B' \\\r\n--form 'pan_document=@/path/to/pan.pdf'\r\n"
+					},
+					"response": []
+				}
+			]
 		}
 	]
 }
