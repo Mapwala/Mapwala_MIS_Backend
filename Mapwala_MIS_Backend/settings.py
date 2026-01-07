@@ -10,12 +10,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = "django-insecure-$$r#&nv4_bt-^v2t)02-#o!yep^$i1c)m(k@59+mjhn^-aaog7"
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG") == "True"
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -145,7 +146,7 @@ JAZZMIN_SETTINGS = {
     # Side Menu
     ################
     "show_sidebar": True,
-    "navigation_expanded": True,
+    "navigation_expanded": False,
     "hide_apps": [],
     "hide_models": [],
     # Order side menu
@@ -176,4 +177,44 @@ JAZZMIN_SETTINGS = {
         "auth.group": "vertical_tabs",
     },
     "language_chooser": False,
+    
+    # "navigation_autocollapse": True,
+    
+    # "app_name": "Mapwala MIS",
+    
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "auth.user": "fas fa-user",
+        "auth.group": "fas fa-users",
+
+        "mapwala_mis": "fas fa-database",
+        "mapwala_mis.state": "fas fa-map",
+        "mapwala_mis.district": "fas fa-map-marked-alt",
+        "mapwala_mis.parentcompany": "fas fa-building",
+        "mapwala_mis.vendor": "fas fa-truck",
+        "mapwala_mis.b2ccustomer": "fas fa-user-tag",
+        "mapwala_mis.b2bpartner": "fas fa-handshake",
+        "mapwala_mis.userprofile": "fas fa-id-badge",
+    },
+    
+    "search_model": [
+        "auth.User",
+        "auth.Group",
+        "mapwala_mis.ParentCompany",
+        "mapwala_mis.Vendor",
+        "mapwala_mis.B2CCustomer",
+        "mapwala_mis.B2BPartner",
+    ],
+    
+    # "changeform_format_overrides": {
+    #     "auth.user": "collapsible",
+    #     "auth.group": "vertical_tabs",
+    #     "mapwala_mis.parentcompany": "horizontal_tabs",
+    #     "mapwala_mis.vendor": "horizontal_tabs",
+    #     "mapwala_mis.b2ccustomer": "horizontal_tabs",
+    #     "mapwala_mis.b2bpartner": "horizontal_tabs",
+    # },
+
+
 }
+

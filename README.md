@@ -210,3 +210,135 @@ Security Notes:
     Users are created via Django Admin
     State deletion is blocked if districts exist
 
+_______________________________________________________________________________________________________________________
+
+Docker Setup (Recommended for Local & Deployment)
+This project supports running the backend using Docker and Docker Compose, which simplifies environment setup and ensures consistency across systems.
+_______________________________________________________________________________________________________________________
+
+Prerequisites
+
+Make sure the following are installed on your system:
+
+    Docker
+    Docker Compose v2
+
+Verify installation:
+
+docker --version
+docker compose version
+_______________________________________________________________________________________________________________________
+
+Environment Configuration
+
+Create a .env file in the project root (same level as docker-compose.yml):
+
+DEBUG=True
+SECRET_KEY="your-secret-key"
+
+DATABASE_URL=postgresql://postgres:your_password@db:5432/mapwala_db
+
+Important notes:
+
+    db is the PostgreSQL service name from docker-compose.yml
+
+    Do not use localhost inside Docker
+
+    Do not add spaces around =
+
+_______________________________________________________________________________________________________________________
+
+Build and Run with Docker:
+
+1️ Stop and remove any existing containers (recommended first run)
+
+docker-compose down -v
+
+This ensures a clean database and volume state.
+
+_______________________________________________________________________________________________________________________
+
+2️ Build Docker images
+
+docker-compose build
+_______________________________________________________________________________________________________________________
+
+3️ Start containers
+
+docker-compose up
+
+Or run in background:
+
+docker-compose up -d
+
+This will start:
+  Django backend container
+  PostgreSQL database container
+
+_______________________________________________________________________________________________________________________
+
+Run Database Migrations (Required)
+
+After containers are running, apply migrations:
+
+docker-compose exec backend python manage.py makemigrations
+docker-compose exec backend python manage.py migrate
+_______________________________________________________________________________________________________________________
+
+Create Admin (Superuser)
+
+docker-compose exec backend python manage.py createsuperuser
+
+  Use this user to log in to the Django Admin panel.
+_______________________________________________________________________________________________________________________
+
+Access the Application
+
+Backend API:
+http://127.0.0.1:8000/
+
+Django Admin:
+
+http://127.0.0.1:8000/admin/
+_______________________________________________________________________________________________________________________
+
+File Uploads & Media
+Uploaded files (GST, PAN, TAN documents, etc.) are stored in a Docker volume:
+
+media/
+
+This ensures files persist even if containers restart.
+
+_______________________________________________________________________________________________________________________
+
+Common Docker Commands
+
+Stop containers:
+docker-compose down
+
+Stop and remove containers + volumes:
+docker-compose down -v
+
+View running containers:
+docker ps
+
+View logs:
+docker-compose logs -f
+
+_______________________________________________________________________________________________________________________
+
+Notes for Production
+
+This Docker setup is intended for development and staging.
+For production deployment, it is recommended to:
+    Use Gunicorn instead of runserver
+    Add Nginx as a reverse proxy
+    Set DEBUG=False
+    Restrict ALLOWED_HOSTS
+    Use environment-specific secrets
+
+Summary:
+    Docker provides a consistent and repeatable setup
+    No local PostgreSQL installation required
+    Easy onboarding for new developers
+    Suitable for deployment-ready environments

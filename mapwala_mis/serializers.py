@@ -1,6 +1,6 @@
 from django.contrib.auth import authenticate
 from rest_framework import serializers
-from .models import State, District, UserProfile, ParentCompany, Vendor
+from .models import State, District, UserProfile, ParentCompany, Vendor, B2CCustomer, B2BPartner
 
 
 class LoginSerializer(serializers.Serializer):
@@ -39,14 +39,7 @@ class DistrictSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = District
-        fields = [
-            "id",
-            "name",
-            "code",
-            "state",
-            "state_name",
-            "status",
-        ]
+        fields = ["id", "name", "code", "state", "state_name", "status"]
 
 
 class ParentCompanySerializer(serializers.ModelSerializer):
@@ -68,9 +61,45 @@ class VendorSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
     def validate(self, data):
-        # Ensure district belongs to selected state
         if data["district"].state_id != data["state"].id:
             raise serializers.ValidationError(
                 "Selected district does not belong to the selected state."
             )
         return data
+
+
+class B2CCustomerRegistrationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = B2CCustomer
+        fields = ["name","phone_number","email","address","state","district","bank_name","account_holder_name","account_number","ifsc_code","gst_number","gst_document","tan_number","tan_document","pan_number","pan_document",]
+
+    def validate(self, data):
+        state = data.get("state")
+        district = data.get("district")
+
+        if district.state_id != state.id:
+            raise serializers.ValidationError(
+                {"district": "Selected district does not belong to selected state."}
+            )
+
+        return data
+
+
+class B2BPartnerRegistrationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = B2BPartner
+        fields = ["partner_name","phone_number","email","address","state","district","bank_name","account_holder_name","account_number","ifsc_code","gst_number","gst_document","tan_number","tan_document","pan_number","pan_document",]
+
+    def validate(self, data):
+        state = data.get("state")
+        district = data.get("district")
+
+        if district.state_id != state.id:
+            raise serializers.ValidationError({
+                "district": "Selected district does not belong to selected state."
+            })
+
+        return data
+
+
+

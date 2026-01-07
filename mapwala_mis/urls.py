@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from .views import LoginAPIView, StateViewSet, DistrictViewSet, ParentCompanyViewSet, VendorViewSet
+from .views import (LoginAPIView,StateViewSet,DistrictViewSet,ParentCompanyViewSet,VendorViewSet,B2CCustomerRegistrationAPIView,B2BPartnerRegistrationAPIView,)
 
 router = DefaultRouter()
 router.register("states", StateViewSet, basename="states")
@@ -11,6 +11,8 @@ router.register("vendors", VendorViewSet, basename="vendors")
 
 urlpatterns = [
     path("auth/login/", LoginAPIView.as_view(), name="login"),
+    path("b2c/register/", B2CCustomerRegistrationAPIView.as_view(), name="b2c-register"),
+    path("b2b/register/", B2BPartnerRegistrationAPIView.as_view(), name="b2b-register"),
 ]
 
 urlpatterns += router.urls

@@ -10,15 +10,10 @@ from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
 from rest_framework import status
 from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, FormParser
 
-from .serializers import (
-    LoginSerializer,
-    StateSerializer,
-    DistrictSerializer,
-    ParentCompanySerializer,
-    VendorSerializer,
-)
-from .models import UserProfile, State, District, ParentCompany, Vendor
+from .serializers import (LoginSerializer,StateSerializer,DistrictSerializer,ParentCompanySerializer,VendorSerializer,B2CCustomerRegistrationSerializer, B2BPartnerRegistrationSerializer)
+from .models import (UserProfile, State, District, ParentCompany, Vendor, B2CCustomer, B2BPartner)
 
 
 class LoginAPIView(APIView):
@@ -70,14 +65,28 @@ class StateViewSet(ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         state = self.get_object()
+        state_name = state.name
 
+        # Prevent deletion if districts exist
         if state.districts.exists():
             return Response(
-                {"error": "State cannot be deleted because it has linked districts."},
+                {
+                    "success": False,
+                    "message": f"State '{state_name}' cannot be deleted because it has linked districts."
+                },
                 status=status.HTTP_409_CONFLICT,
             )
 
-        return super().destroy(request, *args, **kwargs)
+        self.perform_destroy(state)
+
+        return Response(
+            {
+                "success": True,
+                "message": f"State '{state_name}' deleted successfully."
+            },
+            status=status.HTTP_200_OK,
+        )
+
 
 
 class DistrictViewSet(ModelViewSet):
@@ -105,3 +114,47 @@ class VendorViewSet(ModelViewSet):
     queryset = Vendor.objects.select_related("state", "district").all()
     serializer_class = VendorSerializer
     permission_classes = [IsAuthenticated]
+
+
+class B2CCustomerRegistrationAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        serializer = B2CCustomerRegistrationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        customer = serializer.save()
+
+        return Response(
+            {
+                "message": "B2C Customer registered successfully",
+                "customer_id": customer.id,
+                "name": customer.name,
+                "email": customer.email,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class B2BPartnerRegistrationAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        serializer = B2BPartnerRegistrationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        partner = serializer.save()
+
+        return Response(
+            {
+                "message": "B2B Partner registered successfully",
+                "partner_id": partner.id,
+                "partner_name": partner.partner_name,
+                "email": partner.email,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+
+

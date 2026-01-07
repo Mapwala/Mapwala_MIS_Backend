@@ -16,7 +16,7 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3NzAxNzM4LCJpYXQiOjE3Njc2MTUzMzgsImp0aSI6IjZhMDBmNjcxNGY3NjQ4ZGI4NTA4OWNjMzVkNTUwOTc4IiwidXNlcl9pZCI6IjIifQ.LOsCnAOnpFZsV9cnwWMyyzVl78ZfZM-vTfqi_btV6rA"
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3ODY4ODkwLCJpYXQiOjE3Njc3ODI0OTAsImp0aSI6ImI4YTMxOGY5NDRmZDQxODk5N2Y2MjliMDNmNjdiODVlIiwidXNlcl9pZCI6IjIifQ.1Hil84Dd3v8N_uDEM1hbOs-3_2-wkeoD-V8S4BixoME"
 							},
 							{
 								"key": "Content-Type",
@@ -48,7 +48,7 @@
 								""
 							]
 						},
-						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/states/' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>' \\\r\n--header 'Content-Type: application/json' \\\r\n--data-raw '{\r\n  \"name\": \"Gujarat\",\r\n  \"status\": \"active\"\r\n}'\r\n"
+						"description": "## Create State\n\nCreate a new state record in the Mapwala MIS backend.\n\n### Purpose\nUse this endpoint to add a state with a name and status to the system.\n\n### Method & URL\n- **Method:** `POST`\n- **URL:** `http://127.0.0.1:8000/api/states/`\n\n### Authentication\n- **Type:** Bearer Token (JWT)\n- **Header:** `Authorization: Bearer <access_token>`\n- The request will fail with **401 Unauthorized** if a valid token is not provided.\n\n### Headers\n- `Content-Type: application/json`\n- `Authorization: Bearer <access_token>`\n\n### Request Body\nSend a JSON object with the following fields:\n\n```json\n{\n  \"name\": \"string\",\n  \"status\": \"string\"\n}\n```\n\n#### Field Details\n- `name` (string, required)\n  - Name of the state.\n  - Example values: `\"Kerla\"`, `\"Haryana\"`, `\"Delhi\"`, `\"Uttar Pradesh\"`.\n- `status` (string, required)\n  - Current status of the state.\n  - Example: `\"active\"`.\n\n#### Example Request Body\n```json\n{\n  \"name\": \"Kerla\",\n  \"status\": \"active\"\n}\n```\n\n### Responses\n\n#### 201 Created\nState created successfully.\n\n- **Condition:** Valid token and valid request body.\n- **Example (conceptual):**\n```json\n{\n  \"id\": 1,\n  \"name\": \"Kerla\",\n  \"status\": \"active\",\n  \"created_at\": \"2024-01-01T12:00:00Z\"\n}\n```\n\n#### 400 Bad Request (Validation Error)\nReturned when the request body fails validation (e.g., missing required fields, invalid values).\n\n- **Examples (conceptual):**\n```json\n{\n  \"name\": [\"This field is required.\"]\n}\n```\n```json\n{\n  \"status\": [\"Invalid value.\"]\n}\n```\n\n#### 401 Unauthorized\nReturned when:\n- No `Authorization` header is sent, or\n- The bearer token is missing, expired, or invalid.\n\n- **Example (conceptual):**\n```json\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n```\n\n### Notes\n- Ensure you obtain a valid JWT access token (e.g., via the login request in this collection) before calling this endpoint.\n- The exact response body shape may vary depending on the backend implementation, but the status codes above describe the expected behaviors.\n- Use this request in non-production environments with `http://127.0.0.1:8000`; in production, update the base URL accordingly."
 					},
 					"response": []
 				},
@@ -78,7 +78,7 @@
 								""
 							]
 						},
-						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/states/' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>'\r\n"
+						"description": "### List all States\n\nRetrieve a paginated list of all states available in the system, optionally filtered by a search term.\n\n---\n#### Endpoint\n- **Method:** `GET`\n- **URL:** `{{baseUrl}}/api/states/`\n\n> Replace `{{baseUrl}}` with your API base URL (for example: `http://127.0.0.1:8000`).\n\n---\n#### Authentication\n- **Type:** Bearer Token (JWT)\n- **Header:**\n  - `Authorization: Bearer <ACCESS_TOKEN>`\n\nA valid access token is required; otherwise the API will return `401 Unauthorized`.\n\n---\n#### Query Parameters\n- `search` *(optional, string)*  \n  Filters states by a search term. Typically matches against the state name (e.g. `Raj` to match *Rajasthan* or similar entries).\n\n**Examples:**\n- `GET /api/states/` – returns all states (subject to pagination).\n- `GET /api/states/?search=Raj` – returns only states whose name matches \"Raj\".\n\n---\n#### Successful Response\n- **Status:** `200 OK`\n- **Body:** JSON array or paginated JSON object containing state records.\n\nTypical fields in each state object may include (actual schema depends on your backend):\n```json\n{\n  \"id\": 1,\n  \"name\": \"Rajasthan\",\n  \"code\": \"RJ\"\n}\n```\n\nIf no states match the filter, the endpoint should still return `200 OK` with an **empty list** (or empty `results` array if paginated), for example:\n```json\n[]\n```\n or\n```json\n{\n  \"count\": 0,\n  \"next\": null,\n  \"previous\": null,\n  \"results\": []\n}\n```\n\n---\n#### Error Responses\n- `401 Unauthorized` – missing or invalid `Authorization` header.\n- `403 Forbidden` – authenticated but not allowed to access this resource (if enforced by backend).\n\n---\n#### Example Usage\n\n**cURL**\n```bash\ncurl --location \"{{baseUrl}}/api/states/\" \\\n  --header \"Authorization: Bearer <ACCESS_TOKEN>\"\n```\n\n**cURL with search filter**\n```bash\ncurl --location \"{{baseUrl}}/api/states/?search=Raj\" \\\n  --header \"Authorization: Bearer <ACCESS_TOKEN>\"\n```"
 					},
 					"response": []
 				},
@@ -114,22 +114,22 @@
 								}
 							]
 						},
-						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/states/?search=New' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>'\r\n"
+						"description": "Searches states by name using the `search` query parameter.\n\nAuthentication\n- Requires a valid Bearer access token in the `Authorization` header: `Authorization: Bearer <access_token>`\n\nQuery Parameters\n- `search` (string, optional): Partial or full state name to filter results.\n\nExample\n`GET {{baseUrl}}/api/states/?search=Raj`"
 					},
 					"response": []
 				},
 				{
-					"name": "Get Active States (Dropdown API)",
+					"name": "Get Active States",
 					"request": {
 						"method": "GET",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3NzAxNzM4LCJpYXQiOjE3Njc2MTUzMzgsImp0aSI6IjZhMDBmNjcxNGY3NjQ4ZGI4NTA4OWNjMzVkNTUwOTc4IiwidXNlcl9pZCI6IjIifQ.LOsCnAOnpFZsV9cnwWMyyzVl78ZfZM-vTfqi_btV6rA"
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3ODY4ODkwLCJpYXQiOjE3Njc3ODI0OTAsImp0aSI6ImI4YTMxOGY5NDRmZDQxODk5N2Y2MjliMDNmNjdiODVlIiwidXNlcl9pZCI6IjIifQ.1Hil84Dd3v8N_uDEM1hbOs-3_2-wkeoD-V8S4BixoME"
 							}
 						],
 						"url": {
-							"raw": "http://127.0.0.1:8000/api/states/inactive/",
+							"raw": "http://127.0.0.1:8000/api/states/active/",
 							"protocol": "http",
 							"host": [
 								"127",
@@ -141,11 +141,11 @@
 							"path": [
 								"api",
 								"states",
-								"inactive",
+								"active",
 								""
 							]
 						},
-						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/states/active/' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>'\r\n"
+						"description": "### GET /api/states/active/\n\nThis endpoint retrieves a list of active states from the server. It is useful for fetching the current status of various states that are marked as active.\n\n#### Request Parameters\n\nThis endpoint does not require any input parameters.\n\n#### Response Structure\n\nUpon a successful request, the server responds with a status code of `200` and returns a JSON array containing the active states. Each state object in the array includes the following fields:\n\n- **id**: A unique identifier for the state (integer).\n    \n- **name**: The name of the state (string).\n    \n- **status**: The current status of the state (string).\n    \n\n##### Example Response\n\n``` json\n[\n    {\n        \"id\": 0,\n        \"name\": \"\",\n        \"status\": \"\"\n    }\n]\n\n ```\n\nThis response structure allows clients to easily parse and utilize the active states data in their applications."
 					},
 					"response": []
 				},
@@ -176,7 +176,7 @@
 								""
 							]
 						},
-						"description": "Generated from cURL: curl --location --request DELETE 'http://127.0.0.1:8000/api/states/5/' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>'\r\n"
+						"description": "### Purpose\nAttempts to delete a specific **State** resource by its numeric ID.\n\nIn this particular request, the State has one or more linked **Districts**, so the delete operation is **expected to fail** (e.g., due to referential integrity constraints or business rules that prevent deleting a State that still has dependent records).\n\n### HTTP Request\n- **Method:** `DELETE`\n- **URL pattern:** `http://127.0.0.1:8000/api/states/{state_id}/`\n  - In this request: `state_id = 3`\n\n### Authentication\n- **Required:** Yes\n- **Type:** Bearer token (e.g., JWT)\n- **Header:** `Authorization: Bearer <access_token>`\n\n### Path Parameters\n- `state_id` (integer, required)\n  - The unique identifier of the State to delete.\n\n### Expected Behavior (Failure Case)\n- The server attempts to delete the State.\n- Because the State has linked Districts, the server is expected to return a **failure** response.\n- Common behaviors include:\n  - HTTP `400 Bad Request`, `409 Conflict`, or a similar 4xx error.\n  - A JSON payload describing why the deletion was rejected (e.g., foreign key constraint, existing related entities, or business rule violation).\n\n### Example Error Response (illustrative)\nA typical error response shape for this scenario may look like:\n```json\n{\n  \"detail\": \"Cannot delete state because it has linked districts.\",\n  \"code\": \"STATE_HAS_LINKED_DISTRICTS\",\n  \"state_id\": 3\n}\n```\n\n> Note: The exact status code and response body may vary depending on the backend implementation, but this request is intended to verify and document the **failure** behavior when deleting a State that still has related Districts."
 					},
 					"response": []
 				},
@@ -187,7 +187,7 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3NzAxNzM4LCJpYXQiOjE3Njc2MTUzMzgsImp0aSI6IjZhMDBmNjcxNGY3NjQ4ZGI4NTA4OWNjMzVkNTUwOTc4IiwidXNlcl9pZCI6IjIifQ.LOsCnAOnpFZsV9cnwWMyyzVl78ZfZM-vTfqi_btV6rA"
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3ODY4ODkwLCJpYXQiOjE3Njc3ODI0OTAsImp0aSI6ImI4YTMxOGY5NDRmZDQxODk5N2Y2MjliMDNmNjdiODVlIiwidXNlcl9pZCI6IjIifQ.1Hil84Dd3v8N_uDEM1hbOs-3_2-wkeoD-V8S4BixoME"
 							}
 						],
 						"url": {
@@ -206,8 +206,7 @@
 								"4",
 								""
 							]
-						},
-						"description": "Generated from cURL: curl --location --request DELETE 'http://127.0.0.1:8000/api/states/1/' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>'\r\n"
+						}
 					},
 					"response": []
 				},
@@ -251,7 +250,7 @@
 								""
 							]
 						},
-						"description": "Generated from cURL: curl --location --request PUT 'http://127.0.0.1:8000/api/states/1/' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>' \\\r\n--header 'Content-Type: application/json' \\\r\n--data-raw '{\r\n  \"name\": \"New York\",\r\n  \"status\": \"inactive\"\r\n}'\r\n"
+						"description": "Updates an existing state resource by ID.\n\n- **Method:** `PUT`\n    \n- **URL pattern:** `/api/states/:id/` (for example, `/api/states/1/`)\n    \n- **Authentication:**  \n    Requires a Bearer JWT in the `Authorization` header:  \n    `Authorization: Bearer`\n    \n- **Request body** (JSON):\n    \n    - `name` (string, required): The display name of the state (for example, `\"New York\"`).\n        \n    - `status` (string, required): The status of the state, e.g. `\"active\"` or `\"inactive\"`.\n        \n\n**Successful response**\n\n- Returns the updated state resource.\n    \n- Typical status code: `200 OK` (or `204 No Content`, depending on implementation)."
 					},
 					"response": []
 				},
@@ -330,7 +329,7 @@
 								""
 							]
 						},
-						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/districts/' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>' \\\r\n--header 'Content-Type: application/json' \\\r\n--data-raw '{\r\n  \"name\": \"Ahmedabad\",\r\n  \"code\": \"AMD\",\r\n  \"state\": 1,\r\n  \"status\": \"active\"\r\n}'\r\n"
+						"description": "Create a new district.\n\n**Method & URL**\n- `POST http://127.0.0.1:8000/api/districts/`\n\n**Authentication**\n- Type: Bearer Token (JWT)\n- Header:\n  - `Authorization: Bearer <ACCESS_TOKEN>`\n\n**Required Headers**\n- `Content-Type: application/json`\n- `Authorization: Bearer <ACCESS_TOKEN>`\n\n**Request Body (JSON)**\n```json\n{\n  \"name\": \"string\",   // District name (required, unique within a state)\n  \"code\": \"string\",   // Short district code (required, usually 2-4 chars, unique)\n  \"state\": 0,          // Integer ID of the parent state (required, must reference an existing state)\n  \"status\": \"string\"  // District status (required), e.g. \"active\" or \"inactive\"\n}\n```\n\n**Field Details**\n- `name` (string, required)\n  - Human-readable district name.\n  - Example: `\"Ahmedabad\"`, `\"Yamuna Nagar\"`.\n- `code` (string, required)\n  - Short, unique code for the district.\n  - Example: `\"AMD\"`, `\"YNR\"`.\n- `state` (integer, required)\n  - Numeric ID of the state this district belongs to.\n  - Must be a valid state ID that already exists in the system.\n- `status` (string, required)\n  - Current status of the district.\n  - Typical values: `\"active\"`, `\"inactive\"`.\n\n**Example Request Body**\n```json\n{\n  \"name\": \"Ahmedabad\",\n  \"code\": \"AMD\",\n  \"state\": 1,\n  \"status\": \"active\"\n}\n```\n\nAnother valid example:\n```json\n{\n  \"name\": \"Yamuna Nagar\",\n  \"code\": \"YNR\",\n  \"state\": 8,\n  \"status\": \"active\"\n}\n```\n\n**Successful Response**\n- **Status:** `201 Created`\n- **Body:** Returns the created district resource as JSON, typically including its generated ID and all submitted fields. Example shape:\n```json\n{\n  \"id\": 10,\n  \"name\": \"Ahmedabad\",\n  \"code\": \"AMD\",\n  \"state\": 1,\n  \"status\": \"active\",\n  \"created_at\": \"2024-01-01T12:00:00Z\",\n  \"updated_at\": \"2024-01-01T12:00:00Z\"\n}\n```\n\n**Common Error Responses**\n- `400 Bad Request`\n  - Validation errors (e.g., missing required fields, invalid `state` ID, duplicate `code` or `name`).\n  - Example body:\n```json\n{\n  \"name\": [\"This field is required.\"],\n  \"code\": [\"This code is already in use.\"],\n  \"state\": [\"Invalid state ID.\"]\n}\n```\n- `401 Unauthorized`\n  - Missing or invalid `Authorization` header / expired token.\n- `403 Forbidden`\n  - Authenticated user does not have permission to create districts.\n\n**Notes**\n- Ensure that the bearer token is obtained from the login/auth endpoint before calling this API.\n- Use this endpoint to create new districts that will be referenced by other resources (e.g., cities, addresses, etc.)."
 					},
 					"response": []
 				},
@@ -360,7 +359,7 @@
 								""
 							]
 						},
-						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/districts/' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>'\r\n"
+						"description": "Retrieves a list of districts.\n\nThis endpoint supports optional filtering via query parameters:\n- `state` (optional): Filter districts by state ID (for example, `1` or `4`).\n- `search` (optional): Filter districts by a search term applied to the district name or code (for example, `AMD`).\n\n### Request\n- **Method:** `GET`\n- **URL:** `http://127.0.0.1:8000/api/districts/`\n- **Auth:** Bearer token (include `Authorization: Bearer <ACCESS_TOKEN>` in the request header).\n\n### Example usage\n- Get all districts:\n  ```http\n  GET http://127.0.0.1:8000/api/districts/\n  ```\n- Filter by state ID:\n  ```http\n  GET http://127.0.0.1:8000/api/districts/?state=4\n  ```\n- Filter by search term:\n  ```http\n  GET http://127.0.0.1:8000/api/districts/?search=AMD\n  ```\n- Filter by state and search term together:\n  ```http\n  GET http://127.0.0.1:8000/api/districts/?state=1&search=AMD\n  ```"
 					},
 					"response": []
 				},
@@ -380,7 +379,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"name\": \"Ahmedabad\",\r\n  \"code\": \"AMD\",\r\n  \"state\": 4,\r\n  \"status\": \"inactive\"\r\n}",
+							"raw": "{\"name\":\"Ahmedabad\",\"code\":\"AMD\",\"state\":4,\"status\":\"inactive\"}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -404,7 +403,7 @@
 								""
 							]
 						},
-						"description": "Generated from cURL: curl --location --request PUT 'http://127.0.0.1:8000/api/districts/2/' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>' \\\r\n--header 'Content-Type: application/json' \\\r\n--data-raw '{\r\n  \"name\": \"Ahmedabad City\",\r\n  \"code\": \"AMD\",\r\n  \"state\": 1,\r\n  \"status\": \"inactive\"\r\n}'\r\n"
+						"description": "## Update District\n\nUpdate an existing district resource.\n\n- **Method:** `PUT`\n    \n- **URL:** `http://127.0.0.1:8000/api/districts/{id}/`\n    \n\n### Path Parameters\n\n- `id` (integer, required) — ID of the district to update.\n    \n\n### Headers\n\n- `Authorization`: `Bearer`  \n    JWT access token for an authenticated user.\n    \n- `Content-Type`: `application/json`\n    \n\n### Request Body\n\nSend a JSON object with the following fields:\n\n\\`\\`\\`json  \n{  \n\"name\": \"Ahmedabad\",  \n\"code\": \"AMD\",  \n\"state\": 4,  \n\"status\": \"inactive\"  \n}\n\nStartFragment\n\n#### Fields\n\n- `name` (string, required) — Name of the district.\n    \n- `code` (string, required) — Short code for the district (e.g., `\"AMD\"`).\n    \n- `state` (integer, required) — ID of the associated state.\n    \n- `status` (string, required) — Status of the district, e.g. `\"active\"` or `\"inactive\"`.\n    \n\n### Responses\n\n- `200 OK` — District updated successfully. Returns the updated district object.\n    \n- `400 Bad Request` — Validation error in the request body.\n    \n- `401 Unauthorized` — Missing or invalid `Authorization` header.\n    \n- `404 Not Found` — District with the given `id` does not exist.\n    \n\nEndFragment"
 					},
 					"response": []
 				},
@@ -595,7 +594,8 @@
 								"login",
 								""
 							]
-						}
+						},
+						"description": "### Login\n\nAuthenticate a user and obtain a JWT access token for subsequent authenticated requests.\n\n#### URL\n\n`POST http://127.0.0.1:8000/api/auth/login/`\n\n#### Method\n\n`POST`\n\n#### Headers\n\n- `Content-Type: application/json`\n    \n\n#### Request Body\n\nSend a JSON object with the following fields:\n\n``` json\n{\n  \"username\": \"test\",\n  \"password\": \"Test@1234\",\n  \"accepted_terms\": true\n}\n\n ```\n\n- `username` (string, required): The username of the user attempting to log in.\n    \n- `password` (string, required): The corresponding account password.\n    \n- `accepted_terms` (boolean, required): Indicates that the user has accepted the terms and conditions. Must be `true` for login to succeed.\n    \n\n#### Successful Response (200 OK)\n\nOn successful authentication, the API returns a JSON object similar to:\n\n``` json\n{\n  \"message\": \"Login successful\",\n  \"access_token\": \"<jwt-token>\",\n  \"expires_in_hours\": 24,\n  \"user\": {\n    \"id\": 2,\n    \"username\": \"test\",\n    \"is_staff\": false,\n    \"is_superuser\": false\n  }\n}\n\n ```\n\n- `message` (string): Human-readable confirmation of successful login.\n    \n- `access_token` (string): JWT token that should be used for authenticated requests, typically as `Authorization: Bearer` .\n    \n- `expires_in_hours` (number): Validity period of the issued token in hours.\n    \n- `user` (object): Basic profile information for the authenticated user.\n    - `id` (integer): Unique identifier of the user.\n        \n    - `username` (string): Username of the authenticated user.\n        \n    - `is_staff` (boolean): Indicates if the user has staff privileges.\n        \n    - `is_superuser` (boolean): Indicates if the user has superuser/admin privileges."
 					},
 					"response": []
 				}
@@ -611,7 +611,8 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3NzAxNzM4LCJpYXQiOjE3Njc2MTUzMzgsImp0aSI6IjZhMDBmNjcxNGY3NjQ4ZGI4NTA4OWNjMzVkNTUwOTc4IiwidXNlcl9pZCI6IjIifQ.LOsCnAOnpFZsV9cnwWMyyzVl78ZfZM-vTfqi_btV6rA"
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3ODY4ODkwLCJpYXQiOjE3Njc3ODI0OTAsImp0aSI6ImI4YTMxOGY5NDRmZDQxODk5N2Y2MjliMDNmNjdiODVlIiwidXNlcl9pZCI6IjIifQ.1Hil84Dd3v8N_uDEM1hbOs-3_2-wkeoD-V8S4BixoME",
+								"description": "Bearer JWT access token"
 							}
 						],
 						"body": {
@@ -619,17 +620,17 @@
 							"formdata": [
 								{
 									"key": "name",
-									"value": "Mapwala Technologies",
+									"value": "Mapwala Technologiess",
 									"type": "text"
 								},
 								{
 									"key": "phone_number",
-									"value": "9876543210",
+									"value": "9876543211",
 									"type": "text"
 								},
 								{
 									"key": "email",
-									"value": "info@mapwala.com",
+									"value": "info@mapala.com",
 									"type": "text"
 								},
 								{
@@ -639,12 +640,12 @@
 								},
 								{
 									"key": "state",
-									"value": "4",
+									"value": "6",
 									"type": "text"
 								},
 								{
 									"key": "district",
-									"value": "1",
+									"value": "36",
 									"type": "text"
 								},
 								{
@@ -715,7 +716,7 @@
 								""
 							]
 						},
-						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/parent-companies/' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>' \\\r\n--form 'name=Mapwala Technologies' \\\r\n--form 'phone_number=9876543210' \\\r\n--form 'email=info@mapwala.com' \\\r\n--form 'address=Guwahati, Assam' \\\r\n--form 'state=1' \\\r\n--form 'district=3' \\\r\n--form 'bank_name=State Bank of India' \\\r\n--form 'account_holder_name=Mapwala Technologies' \\\r\n--form 'account_number=1234567890' \\\r\n--form 'ifsc_code=SBIN0001234' \\\r\n--form 'gst_number=22AAAAA0000A1Z5' \\\r\n--form 'gst_document=@/path/gst.pdf' \\\r\n--form 'tan_number=BLRM12345A' \\\r\n--form 'tan_document=@/path/tan.pdf' \\\r\n--form 'pan_number=AAAAA0000A' \\\r\n--form 'pan_document=@/path/pan.pdf'\r\n"
+						"description": "### Create Parent Company\n\nCreate a new parent company record in the Mapwala MIS backend.\n\n**Method:** `POST`  \n**URL:** `http://127.0.0.1:8000/api/parent-companies/`\n\n#### Authentication\n\nThis endpoint requires Bearer JWT authentication:\n\n- Header: `Authorization: Bearer {{accessToken}}`\n    \n\nMake sure `{{accessToken}}` is set in the current environment or collection variables.\n\n---\n\n### Request Body (multipart/form-data)\n\nSend the data as `multipart/form-data` with the following fields:\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| `name` | string | yes | Legal/registered name of the parent company. |\n| `phone_number` | string | yes | Primary contact phone number (e.g., `9876543210`). |\n| `email` | string | yes | Contact email address (e.g., `info@mapwala.com`). |\n| `address` | string | yes | Full address of the parent company. |\n| `state` | integer | yes | State identifier (ID referencing the states master). |\n| `district` | integer | yes | District identifier (ID referencing the districts master). |\n| `bank_name` | string | yes | Name of the bank used by the company. |\n| `account_holder_name` | string | yes | Name of the account holder. |\n| `account_number` | string | yes | Bank account number. |\n| `ifsc_code` | string | yes | IFSC code for the bank branch. |\n| `gst_number` | string | no | GSTIN of the company (if applicable). |\n| `…` (5 more fields) | — | — | Additional fields as configured in the request body. |\n\n> Note: The last row is a placeholder for the remaining 5 fields currently configured in this request’s `form-data` body. Keep these aligned with your backend’s serializer/model. \n  \n\n---\n\n### Responses\n\n- **201 Created** – Parent company created successfully. Response body contains the created resource.\n    \n- **400 Bad Request** – Validation error in one or more fields.\n    \n- **401 Unauthorized** – Missing or invalid Bearer token.\n    \n- **500 Internal Server Error** – Unexpected server error.\n    \n\n---\n\n### Usage Notes\n\n- Ensure that `state` and `district` values correspond to valid IDs in your reference tables.\n    \n- Validate `gst_number`, `ifsc_code`, and `email` formats on the client side where possible to reduce failed requests."
 					},
 					"response": []
 				}
@@ -795,7 +796,7 @@
 								{
 									"key": "gst_document",
 									"type": "file",
-									"src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+									"src": []
 								},
 								{
 									"key": "tan_number",
@@ -805,7 +806,7 @@
 								{
 									"key": "tan_document",
 									"type": "file",
-									"src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+									"src": []
 								},
 								{
 									"key": "pan_number",
@@ -815,7 +816,7 @@
 								{
 									"key": "pan_document",
 									"type": "file",
-									"src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+									"src": []
 								}
 							]
 						},
@@ -835,7 +836,243 @@
 								""
 							]
 						},
-						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/vendors/' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>' \\\r\n--form 'name=ABC Supplies' \\\r\n--form 'phone_number=9123456789' \\\r\n--form 'email=contact@abcsupplies.com' \\\r\n--form 'address=Guwahati, Assam' \\\r\n--form 'state=4' \\\r\n--form 'district=1' \\\r\n--form 'bank_name=HDFC Bank' \\\r\n--form 'account_holder_name=ABC Supplies' \\\r\n--form 'account_number=9876543210' \\\r\n--form 'ifsc_code=HDFC0001234' \\\r\n--form 'gst_number=22BBBBB1111B1Z6' \\\r\n--form 'gst_document=@/path/to/gst.pdf' \\\r\n--form 'tan_number=GHYT12345B' \\\r\n--form 'tan_document=@/path/to/tan.pdf' \\\r\n--form 'pan_number=BBBBB1111B' \\\r\n--form 'pan_document=@/path/to/pan.pdf'\r\n"
+						"description": "## Create Vendor Registration\n\nCreate a new vendor with contact, address, banking, and tax details, including uploaded documents.\n\n- **Method:** POST\n    \n- **URL:** `http://127.0.0.1:8000/api/vendors/`\n    \n- **Content-Type:** `multipart/form-data`\n    \n\n### Authentication\n\nThis endpoint requires a valid Bearer token.\n\n- **Header**\n    \n    - `Authorization: Bearer`\n        \n\n### Request Body (multipart/form-data)\n\nAll fields are sent as form-data. File fields must be uploaded as files.\n\n#### Basic Details\n\n| Field | Type | Required | Description | Example |\n| --- | --- | --- | --- | --- |\n| `name` | text | yes | Legal / trade name of the vendor | `ABC Supplies` |\n| `phone_number` | text | yes | Primary contact phone number | `9123456789` |\n| `email` | text | yes | Contact email address | `contact@abcsupplies.com` |\n| `address` | text | yes | Full address | `Guwahati, Assam` |\n| `state` | text/int | yes | State ID or code (as required by API) | `4` |\n| `district` | text/int | yes | District ID or code | `1` |\n\n#### Bank Details\n\n| Field | Type | Required | Description | Example |\n| --- | --- | --- | --- | --- |\n| `bank_name` | text | yes | Name of the bank | `HDFC Bank` |\n| `account_holder_name` | text | yes | Name on the bank account | `ABC Supplies` |\n| `account_number` | text | yes | Bank account number | `9876543210` |\n| `ifsc_code` | text | yes | Bank IFSC code | `HDFC0001234` |\n\n#### GST Details\n\n| Field | Type | Required | Description | Example |\n| --- | --- | --- | --- | --- |\n| `gst_number` | text | yes | Vendor GSTIN | `22BBBBB1111B1Z6` |\n| `gst_document` | file | yes\\* | GST registration document (PDF/image) | `gst.pdf` |\n\n\\*Required if GST is applicable as per your business rules.\n\n#### TAN Details\n\n| Field | Type | Required | Description | Example |\n| --- | --- | --- | --- | --- |\n| `tan_number` | text | optional | Vendor TAN number | `GHYT12345B` |\n| `tan_document` | file | optional | TAN registration document | `tan.pdf` |\n\n#### PAN Details\n\n| Field | Type | Required | Description | Example |\n| --- | --- | --- | --- | --- |\n| `pan_number` | text | yes | Vendor PAN number | `BBBBB1111B` |\n| `pan_document` | file | yes | PAN card document (PDF/image) | `pan.pdf` |\n\n### Example (cURL)\n\n\\`\\`\\`bash  \ncurl --location '[http://127.0.0.1:8000/api/vendors/'](http://127.0.0.1:8000/api/vendors/')  \n\\--header 'Authorization: Bearer '  \n\\--form 'name=\"ABC Supplies\"'  \n\\--form 'phone_number=\"9123456789\"'  \n\\--form 'email=\"[contact@abcsupplies.com](https://mailto:contact@abcsupplies.com)\"'  \n\\--form 'address=\"Guwahati, Assam\"'  \n\\--form 'state=\"4\"'  \n\\--form 'district=\"1\"'  \n\\--form 'bank_name=\"HDFC Bank\"'  \n\\--form 'account_holder_name=\"ABC Supplies\"'  \n\\--form 'account_number=\"9876543210\"'  \n\\--form 'ifsc_code=\"HDFC0001234\"'  \n\\--form 'gst_number=\"22BBBBB1111B1Z6\"'  \n\\--form 'gst_document=@gst.pdf'  \n\\--form 'tan_number=\"GHYT12345B\"'  \n\\--form 'tan_document=@tan.pdf'  \n\\--form 'pan_number=\"BBBBB1111B\"'  \n\\--form 'pan_document=@pan.pdf'"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Create B2C Customer Registration",
+			"item": [
+				{
+					"name": "Create B2C Customer Registration",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3ODY4ODkwLCJpYXQiOjE3Njc3ODI0OTAsImp0aSI6ImI4YTMxOGY5NDRmZDQxODk5N2Y2MjliMDNmNjdiODVlIiwidXNlcl9pZCI6IjIifQ.1Hil84Dd3v8N_uDEM1hbOs-3_2-wkeoD-V8S4BixoME"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "name",
+									"value": "ABC Traders",
+									"type": "text"
+								},
+								{
+									"key": "phone_number",
+									"value": "9876543210",
+									"type": "text"
+								},
+								{
+									"key": "email",
+									"value": "abc@test.com",
+									"type": "text"
+								},
+								{
+									"key": "address",
+									"value": "Guwahati",
+									"type": "text"
+								},
+								{
+									"key": "state",
+									"value": "4",
+									"type": "text"
+								},
+								{
+									"key": "district",
+									"value": "34",
+									"type": "text"
+								},
+								{
+									"key": "bank_name",
+									"value": "SBI",
+									"type": "text"
+								},
+								{
+									"key": "account_holder_name",
+									"value": "ABC Traders",
+									"type": "text"
+								},
+								{
+									"key": "account_number",
+									"value": "1234567890",
+									"type": "text"
+								},
+								{
+									"key": "ifsc_code",
+									"value": "SBIN0001234",
+									"type": "text"
+								},
+								{
+									"key": "gst_number",
+									"value": "22AAAAA0000A1Z5",
+									"type": "text"
+								},
+								{
+									"key": "gst_document",
+									"type": "file",
+									"src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+								},
+								{
+									"key": "tan_number",
+									"value": "BLRA12345B",
+									"type": "text"
+								},
+								{
+									"key": "tan_document",
+									"type": "file",
+									"src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+								},
+								{
+									"key": "pan_number",
+									"value": "ABCDE1234F",
+									"type": "text"
+								},
+								{
+									"key": "pan_document",
+									"type": "file",
+									"src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:8000/api/b2c/register/",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"b2c",
+								"register",
+								""
+							]
+						},
+						"description": "## Create B2C Customer Registration\n\nThis endpoint creates a new B2C customer registration in the Mapwala MIS backend.\n\nIt accepts multipart/form-data and requires customer details, address/location data, banking details, tax identifiers, and supporting document uploads.\n\n### Request\n\n**Method:** `POST`  \n**URL:** `http://localhost:8000/api/b2c/register/`  \n**Auth:** `Bearer` token in the `Authorization` header.\n\n#### Headers\n- `Authorization`: `Bearer <access_token>`\n\n#### Body (form-data)\nAll fields are sent as `multipart/form-data`.\n\n**Customer details**\n- `name` (string) – Legal / trade name of the B2C customer (e.g., `ABC Traders`).\n- `phone_number` (string) – Contact phone number (e.g., `9876543210`).\n- `email` (string) – Contact email address (e.g., `abc@test.com`).\n- `address` (string) – Full address (e.g., `Guwahati`).\n\n**Location identifiers**\n- `state` (string / ID) – State identifier (e.g., `4`).\n- `district` (string / ID) – District identifier (e.g., `34`).\n\n**Bank details**\n- `bank_name` (string) – Name of the bank (e.g., `SBI`).\n- `account_holder_name` (string) – Name of the account holder (e.g., `ABC Traders`).\n- `account_number` (string) – Bank account number (e.g., `1234567890`).\n- `ifsc_code` (string) – Bank IFSC code (e.g., `SBIN0001234`).\n\n**Tax identifiers**\n- `gst_number` (string) – GSTIN for the customer (e.g., `22AAAAA0000A1Z5`).\n\n**Document uploads**\nThese fields are expected as file uploads in the same `multipart/form-data` request:\n- `gst_document` (file) – GST-related document file.\n- `tan_document` (file) – TAN-related document file.\n- `pan_document` (file) – PAN-related document file.\n\n> Note: A `400 Bad Request` response indicating `\"No file was submitted.\"` for any of these keys typically means the file fields were omitted or empty.\n\n### Responses\n\n- **201 Created** – B2C customer registration was created successfully. The response body usually contains the created customer record or a confirmation payload.\n\n- **400 Bad Request (Validation errors)** – The request body is invalid or missing required data.  \n  Examples:\n  - Missing or empty document uploads:\n    ```json\n    {\n      \"gst_document\": [\"No file was submitted.\"],\n      \"tan_document\": [\"No file was submitted.\"],\n      \"pan_document\": [\"No file was submitted.\"]\n    }\n    ```\n  - Other validation errors may be returned for incorrect or missing fields (e.g., invalid email, phone, IDs, or bank/tax information).\n\nMake sure all required form-data fields are present and that `gst_document`, `tan_document`, and `pan_document` are sent as actual files in the multipart request."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "B2B Partner Registration",
+			"item": [
+				{
+					"name": "Create B2B Partner Registration",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer <ACCESS_TOKEN>"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "partner_name",
+									"value": "XYZ Enterprises",
+									"type": "text"
+								},
+								{
+									"key": "phone_number",
+									"value": "9876543210",
+									"type": "text"
+								},
+								{
+									"key": "email",
+									"value": "xyz@test.com",
+									"type": "text"
+								},
+								{
+									"key": "address",
+									"value": "Guwahati",
+									"type": "text"
+								},
+								{
+									"key": "state",
+									"value": "4",
+									"type": "text"
+								},
+								{
+									"key": "district",
+									"value": "34",
+									"type": "text"
+								},
+								{
+									"key": "bank_name",
+									"value": "HDFC",
+									"type": "text"
+								},
+								{
+									"key": "account_holder_name",
+									"value": "XYZ Enterprises",
+									"type": "text"
+								},
+								{
+									"key": "account_number",
+									"value": "9876543210",
+									"type": "text"
+								},
+								{
+									"key": "ifsc_code",
+									"value": "HDFC0000123",
+									"type": "text"
+								},
+								{
+									"key": "gst_number",
+									"value": "22BBBBB0000B1Z6",
+									"type": "text"
+								},
+								{
+									"key": "gst_document",
+									"value": "gst.pdf",
+									"type": "text"
+								},
+								{
+									"key": "tan_number",
+									"value": "BLRA54321C",
+									"type": "text"
+								},
+								{
+									"key": "tan_document",
+									"value": "tan.pdf",
+									"type": "text"
+								},
+								{
+									"key": "pan_number",
+									"value": "ABCDE4321Z",
+									"type": "text"
+								},
+								{
+									"key": "pan_document",
+									"value": "pan.pdf",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:8000/api/b2b/register/",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"b2b",
+								"register",
+								""
+							]
+						},
+						"description": "StartFragment\n\n### Create B2B Partner Registration\n\n  \nEndFragment  \n  \n\nRegisters a new B2B partner in the system.\n\n- **Method:** `POST`\n    \n- **URL:** `http://localhost:8000/api/b2b/register/`\n    \n- **Content-Type:** `multipart/form-data`\n    \n\n---\n\n#### Authentication\n\nThis endpoint requires a valid bearer token.\n\n- **Header**\n    \n\n```\nAuthorization: Bearer <ACCESS_TOKEN>\n\n ```\n\nReplace with a valid access token for your API.\n\n---\n\n#### Request Body (multipart/form-data)\n\n| Field | Type | Required | Description | Example |\n| --- | --- | --- | --- | --- |\n| `partner_name` | string | Yes | Legal/registered name of the partner entity | `XYZ Enterprises` |\n| `phone_number` | string | Yes | Contact phone number | `9876543210` |\n| `email` | string (email) | Yes | Primary contact email | `xyz@test.com` |\n| `address` | string | Yes | Business address | `Guwahati` |\n| `state` | integer / ID | Yes | State identifier | `4` |\n| `district` | integer / ID | Yes | District identifier | `34` |\n| `bank_name` | string | Yes | Name of the bank | `HDFC` |\n| `account_holder_name` | string | Yes | Name of the account holder | `XYZ Enterprises` |\n| `account_number` | string | Yes | Bank account number | `9876543210` |\n| `ifsc_code` | string | Yes | Bank IFSC code | `HDFC0000123` |\n| `gst_number` | string | Yes | GST registration number | `22BBBBB0000B1Z6` |\n| `gst_document` | file | Yes\\* | GST certificate document (PDF or image) | `gst.pdf` |\n| `tan_number` | string | Yes | TAN (Tax Deduction & Collection Account Number) | `BLRA54321C` |\n| `tan_document` | file | Yes\\* | TAN document (PDF or image) | `tan.pdf` |\n| `pan_number` | string | Yes | PAN (Permanent Account Number) | `ABCDE4321Z` |\n| `pan_document` | file | Yes\\* | PAN document (PDF or image) | `pan.pdf` |\n\n\\*Exact required/optional status for document uploads depends on server-side validation; treat them as required unless your API says otherwise.\n\n---\n\n#### Example cURL\n\n```\ncurl -X POST http://localhost:8000/api/b2b/    register/ \\  -H \"Authorization: Bearer <ACCESS_TOKEN>\" \\  -F \"partner_name=XYZ Enterprises\" \\  -F \"phone_number=9876543210\" \\  -F \"email=xyz@test.com\" \\  -F \"address=Guwahati\" \\  -F \"state=4\" \\  -F \"district=34\" \\  -F \"bank_name=HDFC\" \\  -F \"account_holder_name=XYZ Enterprises\" \\  -F \"account_number=9876543210\" \\  -F \"ifsc_code=HDFC0000123\" \\  -F \"gst_number=22BBBBB0000B1Z6\" \\  -F \"gst_document=@gst.pdf\" \\  -F \"tan_number=BLRA54321C\" \\  -F \"tan_document=@tan.pdf\" \\  -F \"pan_number=ABCDE4321Z\" \\  -F \"pan_document=@pan.pdf\"\n\n ```\n\n---\n\n#### Success Response (201 Created)\n\nOn successful registration, the API returns:\n\n- **Status:** `201 Created`\n    \n- **Body:**\n    \n\n```\n{    \"message\": \"B2B Partner registered         successfully\",    \"partner_id\": 1,    \"partner_name\": \"XYZ Enterprises\",    \"email\": \"xyz@test.com\"}\n\n ```\n\n---\n\n#### Notes\n\n- `partner_id` is generated by the system and uniquely identifies the partner.\n    \n- Make sure the `email` is unique if your API enforces uniqueness on partner email.\n    \n- File fields should be sent as actual files in `multipart/form-data` (not base64 strings).\n    \n\n---\n\nNext, I can also add tests to this request (e.g., assert status 201, check `partner_id` is present, validate response schema) if you’d like.\n\nEndFragment"
 					},
 					"response": []
 				}
