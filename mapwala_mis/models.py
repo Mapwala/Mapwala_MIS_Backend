@@ -313,3 +313,147 @@ class ProformaInvoice(models.Model):
     def __str__(self):
         return f"PI-{self.id}"
 
+
+class Device(models.Model):
+    STATUS_CHOICES = (
+        ("draft", "Draft"),
+        ("completed", "Completed"),
+    )
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Device-{self.id}"
+
+
+class DeviceInformation(models.Model):
+    device = models.OneToOneField(Device, on_delete=models.CASCADE, related_name="info")
+
+    make = models.CharField(max_length=255)
+    model = models.CharField(max_length=255)
+    mrp = models.DecimalField(max_digits=10, decimal_places=2)
+
+    unit_of_measure = models.CharField(max_length=50)
+    version = models.CharField(max_length=50)
+    variant = models.CharField(max_length=50)
+    state_of_supply = models.CharField(max_length=100)
+
+
+class BOM(models.Model):
+    UPLOAD_TYPE_CHOICES = (
+        ("individual", "Individual Entry"),
+        ("bulk", "Bulk Upload"),
+    )
+
+    device = models.OneToOneField(Device, on_delete=models.CASCADE, related_name="bom")
+
+    upload_type = models.CharField(max_length=20, choices=UPLOAD_TYPE_CHOICES)
+
+    bom_file = models.FileField(
+        upload_to="bom/excel/",
+        null=True,
+        blank=True
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class BOMComponent(models.Model):
+    bom = models.ForeignKey(BOM, on_delete=models.CASCADE, related_name="components")
+
+    identification_mark = models.CharField(max_length=100)
+    description = models.CharField(max_length=255)
+    designator = models.CharField(max_length=255)
+    footprint = models.CharField(max_length=50)
+    volt = models.CharField(max_length=50)
+    part_no = models.CharField(max_length=100)
+    part_make = models.CharField(max_length=100)
+    per_device_quantity = models.PositiveIntegerField()
+    remarks = models.CharField(max_length=255, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class Enclosure(models.Model):
+    device = models.OneToOneField(Device, on_delete=models.CASCADE)
+
+    length = models.DecimalField(max_digits=8, decimal_places=2)
+    breadth = models.DecimalField(max_digits=8, decimal_places=2)
+    height = models.DecimalField(max_digits=8, decimal_places=2)
+
+    color = models.CharField(max_length=100)
+    material = models.CharField(max_length=100)
+    quantity = models.PositiveIntegerField()
+    make = models.CharField(max_length=100)
+    part_number = models.CharField(max_length=100)
+
+
+class WireHarness(models.Model):
+    device = models.OneToOneField(Device, on_delete=models.CASCADE)
+
+    number_of_wires = models.PositiveIntegerField()
+    specification = models.CharField(max_length=255)
+    make = models.CharField(max_length=100)
+    part_number = models.CharField(max_length=100)
+
+
+class WireConnector(models.Model):
+    wire_harness = models.ForeignKey(
+        WireHarness,
+        on_delete=models.CASCADE,
+        related_name="connectors"
+    )
+
+    connector_name = models.CharField(max_length=100)
+    number_of_pins = models.PositiveIntegerField()
+    wire_colors = models.CharField(max_length=255)
+
+
+class Battery(models.Model):
+    device = models.OneToOneField(Device, on_delete=models.CASCADE)
+
+    capacity = models.CharField(max_length=100)
+    length = models.DecimalField(max_digits=8, decimal_places=2)
+    breadth = models.DecimalField(max_digits=8, decimal_places=2)
+    height = models.DecimalField(max_digits=8, decimal_places=2)
+    make = models.CharField(max_length=100)
+    part_number = models.CharField(max_length=100)
+
+
+class SOSButton(models.Model):
+    device = models.OneToOneField(Device, on_delete=models.CASCADE)
+
+    total_length = models.DecimalField(max_digits=8, decimal_places=2)
+    quantity_per_set = models.PositiveIntegerField()
+    make = models.CharField(max_length=100)
+    part_number = models.CharField(max_length=100)
+
+
+class Sticker(models.Model):
+    device = models.ForeignKey(Device, on_delete=models.CASCADE)
+
+    name = models.CharField(max_length=255)
+    length = models.DecimalField(max_digits=8, decimal_places=2)
+    breadth = models.DecimalField(max_digits=8, decimal_places=2)
+    quantity = models.PositiveIntegerField()
+    file = models.FileField(upload_to="documents/device/stickers/")
+    make = models.CharField(max_length=100)
+    part_number = models.CharField(max_length=100)
+
+
+class UserManual(models.Model):
+    device = models.OneToOneField(Device, on_delete=models.CASCADE)
+    file = models.FileField(upload_to="documents/device/manuals/")
+
+
+class Accessory(models.Model):
+    device = models.ForeignKey(Device, on_delete=models.CASCADE, related_name="accessories")
+
+    name = models.CharField(max_length=255)
+    quantity = models.PositiveIntegerField()
+    specifications = models.CharField(max_length=255)
+    description = models.TextField()
+
+

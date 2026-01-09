@@ -1,7 +1,6 @@
 from django.contrib.auth import authenticate
 from rest_framework import serializers
-from .models import (State, District, UserProfile, ParentCompany, Vendor, B2CCustomer, B2BPartner, Distributor, Dealer, ProformaInvoice
-)
+from .models import *
 
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
@@ -245,3 +244,114 @@ class ProformaInvoiceCreateSerializer(serializers.ModelSerializer):
                 })
 
         return data
+
+
+# ---------------- STEP 1 ----------------
+
+class DeviceInformationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DeviceInformation
+        exclude = ["device"]
+
+
+# ---------------- STEP 2 ----------------
+
+class BOMSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BOM
+        exclude = ["device", "created_at"]
+
+    def validate(self, data):
+        upload_type = data["upload_type"]
+        bom_file = data.get("bom_file")
+
+        if upload_type == "bulk" and not bom_file:
+            raise serializers.ValidationError({
+                "bom_file": "Excel file required for bulk upload"
+            })
+
+        if upload_type == "individual" and bom_file:
+            raise serializers.ValidationError({
+                "bom_file": "Do not upload Excel file for individual entry"
+            })
+
+        return data
+
+
+# ---------------- STEP 3 ----------------
+
+class BOMComponentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BOMComponent
+        exclude = ["bom", "created_at"]
+
+
+# ---------------- STEP 4 ----------------
+
+class EnclosureSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Enclosure
+        exclude = ["device"]
+
+
+# ---------------- STEP 5 ----------------
+
+class WireConnectorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WireConnector
+        exclude = ["wire_harness"]
+
+
+class WireHarnessSerializer(serializers.ModelSerializer):
+    connectors = WireConnectorSerializer(many=True)
+
+    class Meta:
+        model = WireHarness
+        exclude = ["device"]
+
+    def create(self, validated_data):
+        connectors = validated_data.pop("connectors")
+        harness = WireHarness.objects.create(**validated_data)
+        for c in connectors:
+            WireConnector.objects.create(wire_harness=harness, **c)
+        return harness
+
+
+# ---------------- STEP 6 ----------------
+
+class BatterySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Battery
+        exclude = ["device"]
+
+
+# ---------------- STEP 7 ----------------
+
+class SOSButtonSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SOSButton
+        exclude = ["device"]
+
+
+# ---------------- STEP 8 ----------------
+
+class StickerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Sticker
+        exclude = ["device"]
+
+
+# ---------------- STEP 9 ----------------
+
+class UserManualSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserManual
+        exclude = ["device"]
+
+
+# ---------------- STEP 10 ----------------
+
+class AccessorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Accessory
+        exclude = ["device"]

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import (UserProfile, State, District, ParentCompany, Vendor, B2CCustomer, B2BPartner,Manufacturer, Distributor, Dealer, Product, ProformaInvoice)
+from .models import *
 
 
 # ------------------ User Profile ------------------
@@ -381,3 +381,173 @@ class ProformaInvoiceAdmin(admin.ModelAdmin):
     )
 
 
+
+# ------------------ Device ------------------
+
+@admin.register(Device)
+class DeviceAdmin(admin.ModelAdmin):
+    list_display = ("id", "status", "created_by", "created_at")
+    list_filter = ("status", "created_at")
+    search_fields = ("id", "created_by__username")
+    readonly_fields = ("created_at",)
+
+    fieldsets = (
+        ("Device Status", {"fields": ("status",)}),
+        ("Created Info", {"fields": ("created_by", "created_at")}),
+    )
+
+
+@admin.register(DeviceInformation)
+class DeviceInformationAdmin(admin.ModelAdmin):
+    list_display = ("device", "make", "model", "mrp", "state_of_supply")
+    search_fields = ("make", "model", "device__id")
+
+    fieldsets = (
+        ("Device Reference", {"fields": ("device",)}),
+        ("Basic Info", {"fields": ("make", "model", "version", "variant")}),
+        ("Pricing", {"fields": ("mrp",)}),
+        ("Supply Info", {"fields": ("unit_of_measure", "state_of_supply")}),
+    )
+
+
+# ------------------ BOM ------------------
+
+class BOMComponentInline(admin.TabularInline):
+    model = BOMComponent
+    extra = 0
+
+
+@admin.register(BOM)
+class BOMAdmin(admin.ModelAdmin):
+    list_display = ("device", "upload_type", "created_at")
+    list_filter = ("upload_type", "created_at")
+    readonly_fields = ("created_at",)
+    inlines = [BOMComponentInline]
+
+    fieldsets = (
+        ("Device", {"fields": ("device",)}),
+        ("Upload Info", {"fields": ("upload_type", "bom_file")}),
+        ("System", {"fields": ("created_at",)}),
+    )
+
+
+@admin.register(BOMComponent)
+class BOMComponentAdmin(admin.ModelAdmin):
+    list_display = ("bom", "identification_mark", "part_no", "part_make", "per_device_quantity")
+    search_fields = ("identification_mark", "part_no", "part_make")
+    list_filter = ("part_make",)
+
+    fieldsets = (
+        ("BOM Reference", {"fields": ("bom",)}),
+        ("Component Details", {"fields": (
+            "identification_mark", "description", "designator", "footprint", "volt"
+        )}),
+        ("Part Info", {"fields": ("part_no", "part_make", "per_device_quantity", "remarks")}),
+    )
+
+
+# ------------------ Enclosure ------------------
+
+@admin.register(Enclosure)
+class EnclosureAdmin(admin.ModelAdmin):
+    list_display = ("device", "length", "breadth", "height", "material", "color", "quantity")
+
+    fieldsets = (
+        ("Device", {"fields": ("device",)}),
+        ("Dimensions", {"fields": ("length", "breadth", "height")}),
+        ("Material Info", {"fields": ("material", "color", "make", "part_number")}),
+        ("Quantity", {"fields": ("quantity",)}),
+    )
+
+
+# ------------------ Wire Harness ------------------
+
+class WireConnectorInline(admin.TabularInline):
+    model = WireConnector
+    extra = 0
+
+
+@admin.register(WireHarness)
+class WireHarnessAdmin(admin.ModelAdmin):
+    list_display = ("device", "number_of_wires", "specification", "make", "part_number")
+    inlines = [WireConnectorInline]
+
+    fieldsets = (
+        ("Device", {"fields": ("device",)}),
+        ("Harness Details", {"fields": ("number_of_wires", "specification")}),
+        ("Part Info", {"fields": ("make", "part_number")}),
+    )
+
+
+@admin.register(WireConnector)
+class WireConnectorAdmin(admin.ModelAdmin):
+    list_display = ("wire_harness", "connector_name", "number_of_pins", "wire_colors")
+
+    fieldsets = (
+        ("Wire Harness", {"fields": ("wire_harness",)}),
+        ("Connector Info", {"fields": ("connector_name", "number_of_pins", "wire_colors")}),
+    )
+
+
+# ------------------ Battery ------------------
+
+@admin.register(Battery)
+class BatteryAdmin(admin.ModelAdmin):
+    list_display = ("device", "capacity", "make", "part_number")
+
+    fieldsets = (
+        ("Device", {"fields": ("device",)}),
+        ("Battery Specs", {"fields": ("capacity", "length", "breadth", "height")}),
+        ("Part Info", {"fields": ("make", "part_number")}),
+    )
+
+
+# ------------------ SOS Button ------------------
+
+@admin.register(SOSButton)
+class SOSButtonAdmin(admin.ModelAdmin):
+    list_display = ("device", "total_length", "quantity_per_set", "make", "part_number")
+
+    fieldsets = (
+        ("Device", {"fields": ("device",)}),
+        ("Button Specs", {"fields": ("total_length", "quantity_per_set")}),
+        ("Part Info", {"fields": ("make", "part_number")}),
+    )
+
+
+# ------------------ Sticker ------------------
+
+@admin.register(Sticker)
+class StickerAdmin(admin.ModelAdmin):
+    list_display = ("device", "name", "length", "breadth", "quantity", "make")
+
+    fieldsets = (
+        ("Device", {"fields": ("device",)}),
+        ("Sticker Details", {"fields": ("name", "length", "breadth", "quantity")}),
+        ("File", {"fields": ("file",)}),
+        ("Part Info", {"fields": ("make", "part_number")}),
+    )
+
+
+# ------------------ User Manual ------------------
+
+@admin.register(UserManual)
+class UserManualAdmin(admin.ModelAdmin):
+    list_display = ("device", "file")
+
+    fieldsets = (
+        ("Device", {"fields": ("device",)}),
+        ("Manual File", {"fields": ("file",)}),
+    )
+
+
+# ------------------ Accessories ------------------
+
+@admin.register(Accessory)
+class AccessoryAdmin(admin.ModelAdmin):
+    list_display = ("device", "name", "quantity", "specifications")
+
+    fieldsets = (
+        ("Device", {"fields": ("device",)}),
+        ("Accessory Info", {"fields": ("name", "quantity", "specifications", "description")}),
+    )

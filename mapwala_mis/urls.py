@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from .views import (LoginAPIView,StateViewSet,DistrictViewSet,ParentCompanyViewSet,VendorViewSet,B2CCustomerRegistrationAPIView,B2BPartnerRegistrationAPIView,DistributorRegistrationAPIView,DealerRegistrationAPIView, ProformaInvoiceCreateAPIView)
+from .views import *
 
 router = DefaultRouter()
 router.register("states", StateViewSet, basename="states")
@@ -15,6 +15,18 @@ urlpatterns = [
     path("b2b/register/", B2BPartnerRegistrationAPIView.as_view(), name="b2b-register"),
     path("distributor/register/", DistributorRegistrationAPIView.as_view(), name="distributor-register"),
     path("dealer/register/",DealerRegistrationAPIView.as_view(),name="dealer-register"),
+    
+    path("devices/step-1/", DeviceStep1APIView.as_view()),
+    path("devices/step-2/", DeviceStep2APIView.as_view()),
+    path("devices/step-3/", DeviceStep3APIView.as_view()),
+    path("devices/step-4/", DeviceStep4APIView.as_view()),
+    path("devices/step-5/", DeviceStep5APIView.as_view()),
+    path("devices/step-6/", DeviceStep6APIView.as_view()),
+    path("devices/step-7/", DeviceStep7APIView.as_view()),
+    path("devices/step-8/", DeviceStep8APIView.as_view()),
+    path("devices/step-9/", DeviceStep9APIView.as_view()),
+    path("devices/step-10/", DeviceAccessoryAPIView.as_view()),
+    
     path("pi/create/", ProformaInvoiceCreateAPIView.as_view(), name="create-pi"),
 ]
 

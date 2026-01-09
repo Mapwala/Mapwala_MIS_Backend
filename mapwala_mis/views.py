@@ -11,9 +11,10 @@ from rest_framework.filters import SearchFilter
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
+from django.shortcuts import get_object_or_404
 
-from .serializers import (LoginSerializer,StateSerializer,DistrictSerializer,ParentCompanySerializer,VendorSerializer,B2CCustomerRegistrationSerializer, B2BPartnerRegistrationSerializer, DistributorRegistrationSerializer, DealerRegistrationSerializer, ProformaInvoiceCreateSerializer)
-from .models import (UserProfile, State, District, ParentCompany, Vendor, Distributor, Dealer, ProformaInvoice)
+from .serializers import *
+from .models import *
 
 
 class LoginAPIView(APIView):
@@ -225,3 +226,172 @@ class ProformaInvoiceCreateAPIView(APIView):
             status=status.HTTP_201_CREATED,
         )
 
+
+# ---------------- STEP 1 ----------------
+
+class DeviceStep1APIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        device = Device.objects.create(created_by=request.user)
+        serializer = DeviceInformationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(device=device)
+
+        return Response({
+            "device_id": device.id,
+            "message": "Step 1 completed"
+        }, status=201)
+
+
+# ---------------- STEP 2 ----------------
+
+class DeviceStep2APIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        device = get_object_or_404(Device, id=request.data["device_id"])
+        serializer = BOMSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(device=device)
+
+        return Response({"message": "Step 2 completed"})
+
+
+# ---------------- STEP 3 ----------------
+
+class DeviceStep3APIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        bom = get_object_or_404(BOM, device_id=request.data["device_id"])
+        serializer = BOMComponentSerializer(
+            data=request.data["components"],
+            many=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save(bom=bom)
+
+        return Response({"message": "Step 3 completed"})
+
+
+# ---------------- STEP 4 ----------------
+
+class DeviceStep4APIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        device = get_object_or_404(Device, id=request.data["device_id"])
+        serializer = EnclosureSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(device=device)
+
+        return Response({"message": "Step 4 completed"})
+
+
+# ---------------- STEP 5 ----------------
+
+class DeviceStep5APIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        device = get_object_or_404(Device, id=request.data["device_id"])
+        serializer = WireHarnessSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(device=device)
+
+        return Response({"message": "Step 5 completed"})
+
+
+# ---------------- STEP 6 ----------------
+
+class DeviceStep6APIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        device = get_object_or_404(Device, id=request.data["device_id"])
+        serializer = BatterySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(device=device)
+
+        return Response({"message": "Step 6 completed"})
+
+
+# ---------------- STEP 7 ----------------
+
+class DeviceStep7APIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        device = get_object_or_404(Device, id=request.data["device_id"])
+        serializer = SOSButtonSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(device=device)
+
+        return Response({"message": "Step 7 completed"})
+
+
+# ---------------- STEP 8 ----------------
+
+from rest_framework.parsers import MultiPartParser, FormParser
+from collections import defaultdict
+
+class DeviceStep8APIView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        device = Device.objects.get(id=request.data["device_id"])
+
+        # 🔹 Rebuild stickers array from multipart keys
+        stickers_map = defaultdict(dict)
+
+        for key, value in request.data.items():
+            if key.startswith("stickers["):
+                # Example key: stickers[0][name]
+                index = key.split("[")[1].split("]")[0]
+                field = key.split("[")[2].replace("]", "")
+                stickers_map[index][field] = value
+
+        stickers_list = list(stickers_map.values())
+
+        serializer = StickerSerializer(data=stickers_list, many=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(device=device)
+
+        return Response({"message": "Step 8 completed"})
+
+
+
+# ---------------- STEP 9 ----------------
+
+class DeviceStep9APIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        device = get_object_or_404(Device, id=request.data["device_id"])
+        serializer = UserManualSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(device=device)
+
+        return Response({"message": "Step 9 completed"})
+
+
+# ---------------- STEP 10 ----------------
+
+class DeviceAccessoryAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        device = get_object_or_404(Device, id=request.data["device_id"])
+        serializer = AccessorySerializer(
+            data=request.data["accessories"],
+            many=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save(device=device)
+
+        device.status = "completed"
+        device.save()
+
+        return Response({"message": "Device creation completed"})
