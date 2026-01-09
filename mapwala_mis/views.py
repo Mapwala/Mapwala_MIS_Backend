@@ -12,8 +12,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 
-from .serializers import (LoginSerializer,StateSerializer,DistrictSerializer,ParentCompanySerializer,VendorSerializer,B2CCustomerRegistrationSerializer, B2BPartnerRegistrationSerializer)
-from .models import (UserProfile, State, District, ParentCompany, Vendor, B2CCustomer, B2BPartner)
+from .serializers import (LoginSerializer,StateSerializer,DistrictSerializer,ParentCompanySerializer,VendorSerializer,B2CCustomerRegistrationSerializer, B2BPartnerRegistrationSerializer, DistributorRegistrationSerializer, DealerRegistrationSerializer, ProformaInvoiceCreateSerializer)
+from .models import (UserProfile, State, District, ParentCompany, Vendor, Distributor, Dealer, ProformaInvoice)
 
 
 class LoginAPIView(APIView):
@@ -156,5 +156,72 @@ class B2BPartnerRegistrationAPIView(APIView):
         )
 
 
+class DistributorRegistrationAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
+    def post(self, request):
+        serializer = DistributorRegistrationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        authorised_states = serializer.validated_data.pop("authorised_states")
+        authorised_districts = serializer.validated_data.pop("authorised_districts")
+
+        distributor = Distributor.objects.create(**serializer.validated_data)
+
+        distributor.authorised_states.set(authorised_states)
+        distributor.authorised_districts.set(authorised_districts)
+
+        return Response(
+            {
+                "message": "Distributor registered successfully",
+                "distributor_id": distributor.id,
+                "name": distributor.name,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class DealerRegistrationAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        serializer = DealerRegistrationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        authorised_states = serializer.validated_data.pop("authorised_states")
+        authorised_districts = serializer.validated_data.pop("authorised_districts")
+
+        dealer = Dealer.objects.create(**serializer.validated_data)
+
+        dealer.authorised_states.set(authorised_states)
+        dealer.authorised_districts.set(authorised_districts)
+
+        return Response(
+            {
+                "message": "Dealer registered successfully",
+                "dealer_id": dealer.id,
+                "name": dealer.name,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class ProformaInvoiceCreateAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = ProformaInvoiceCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        pi = serializer.save()
+
+        return Response(
+            {
+                "message": "Proforma Invoice created successfully",
+                "pi_id": pi.id,
+                "grand_total": pi.grand_total,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
