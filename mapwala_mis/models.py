@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
-
+from decimal import Decimal
 
 
 class UserProfile(models.Model):
@@ -269,51 +269,6 @@ class Product(models.Model):
         return f"Product {self.product_id}"
 
 
-class ProformaInvoice(models.Model):
-    PARTY_TYPE_CHOICES = (
-        ("b2b", "B2B Partner"),
-        ("b2c", "B2C Customer"),
-        ("dealer", "Dealer"),
-        ("distributor", "Distributor"),
-    )
-
-    PAYMENT_TERMS_CHOICES = (
-        ("advance", "Advance"),
-        ("on_delivery", "On Delivery"),
-        ("full", "Full Payment"),
-        ("partial", "Partial Payment"),
-    )
-
-    # Party selection
-    party_type = models.CharField(max_length=20, choices=PARTY_TYPE_CHOICES)
-    b2b_partner = models.ForeignKey("B2BPartner",on_delete=models.PROTECT,null=True,blank=True)
-    b2c_customer = models.ForeignKey("B2CCustomer",on_delete=models.PROTECT,null=True,blank=True)
-    dealer = models.ForeignKey("Dealer",on_delete=models.PROTECT,null=True,blank=True)
-    distributor = models.ForeignKey("Distributor",on_delete=models.PROTECT,null=True,blank=True)
-    # Product
-    product = models.ForeignKey("Product",on_delete=models.PROTECT)
-    selling_price = models.DecimalField(max_digits=10,decimal_places=2)
-    discount_percent = models.DecimalField(max_digits=5,decimal_places=2,validators=[MinValueValidator(0), MaxValueValidator(100)],default=0)
-    quantity = models.PositiveIntegerField()
-    shipping_charges = models.DecimalField(max_digits=10,decimal_places=2,default=0)
-    grand_total = models.DecimalField(max_digits=12,decimal_places=2)
-    # Delivery & payment
-    payment_terms = models.CharField(max_length=20,choices=PAYMENT_TERMS_CHOICES)
-    delivery_date = models.DateField()
-    delivery_address = models.TextField()
-    state = models.ForeignKey(State, on_delete=models.PROTECT)
-    # Contact
-    contact_person_name = models.CharField(max_length=255)
-    mobile_no = models.CharField(max_length=15)
-    gstn = models.CharField(max_length=20, blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    class Meta:
-        ordering = ["-id"]
-
-    def __str__(self):
-        return f"PI-{self.id}"
-
-
 class Device(models.Model):
     STATUS_CHOICES = (
         ("draft", "Draft"),
@@ -455,5 +410,167 @@ class Accessory(models.Model):
     quantity = models.PositiveIntegerField()
     specifications = models.CharField(max_length=255)
     description = models.TextField()
+
+
+class ProformaInvoice(models.Model):
+    PARTY_TYPE_CHOICES = (
+        ("b2b", "B2B Partner"),
+        ("b2c", "B2C Customer"),
+        ("dealer", "Dealer"),
+        ("distributor", "Distributor"),
+    )
+
+    PAYMENT_TERMS_CHOICES = (
+        ("advance", "Advance"),
+        ("on_delivery", "On Delivery"),
+        ("full", "Full Payment"),
+        ("partial", "Partial Payment"),
+    )
+
+    # Party selection
+    party_type = models.CharField(max_length=20, choices=PARTY_TYPE_CHOICES)
+    b2b_partner = models.ForeignKey("B2BPartner",on_delete=models.PROTECT,null=True,blank=True)
+    b2c_customer = models.ForeignKey("B2CCustomer",on_delete=models.PROTECT,null=True,blank=True)
+    dealer = models.ForeignKey("Dealer",on_delete=models.PROTECT,null=True,blank=True)
+    distributor = models.ForeignKey("Distributor",on_delete=models.PROTECT,null=True,blank=True)
+    # Product
+    product = models.ForeignKey("Product",on_delete=models.PROTECT)
+    selling_price = models.DecimalField(max_digits=10,decimal_places=2)
+    discount_percent = models.DecimalField(max_digits=5,decimal_places=2,validators=[MinValueValidator(0), MaxValueValidator(100)],default=0)
+    quantity = models.PositiveIntegerField()
+    shipping_charges = models.DecimalField(max_digits=10,decimal_places=2,default=0)
+    grand_total = models.DecimalField(max_digits=12,decimal_places=2)
+    # Delivery & payment
+    payment_terms = models.CharField(max_length=20,choices=PAYMENT_TERMS_CHOICES)
+    delivery_date = models.DateField()
+    delivery_address = models.TextField()
+    state = models.ForeignKey(State, on_delete=models.PROTECT)
+    # Contact
+    contact_person_name = models.CharField(max_length=255)
+    mobile_no = models.CharField(max_length=15)
+    gstn = models.CharField(max_length=20, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        ordering = ["-id"]
+
+    def __str__(self):
+        return f"PI-{self.id}"
+
+
+class OrderProduct(models.Model):
+    """
+    Product / Device Model shown in UI
+    Example: GPS Tracker Pro, GPS Tracker Standard
+    """
+    name = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name="Product / Device Model"
+    )
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name = "Order Product"
+        verbose_name_plural = "Order Products"
+
+    def __str__(self):
+        return self.name
+
+
+class OrderBatch(models.Model):
+    """
+    Each product can have MULTIPLE batches.
+    Each batch maintains ITS OWN stock.
+    """
+    product = models.ForeignKey(
+        OrderProduct,
+        on_delete=models.PROTECT,
+        related_name="batches"
+    )
+    batch_number = models.CharField(max_length=50)
+    available_stock = models.PositiveIntegerField()
+
+    class Meta:
+        unique_together = ("product", "batch_number")
+        ordering = ["batch_number"]
+        verbose_name = "Order Batch"
+        verbose_name_plural = "Order Batches"
+
+    def __str__(self):
+        return f"{self.product.name} | {self.batch_number}"
+
+
+class SalesOrder(models.Model):
+    CUSTOMER_TYPE_CHOICES = (
+        ("b2c", "B2C Customer"),
+        ("distributor", "Distributor"),
+        ("dealer", "Dealer"),
+    )
+
+    PAYMENT_MODE_CHOICES = (
+        ("cash", "Cash"),
+        ("bank_transfer", "Bank Transfer"),
+        ("cheque", "Cheque"),
+        ("credit_card", "Credit Card"),
+        ("upi", "UPI"),
+        ("credit_terms", "Credit Terms"),
+    )
+
+    PAYMENT_STATUS_CHOICES = (
+        ("paid", "Paid"),
+        ("partially_paid", "Partially Paid"),
+        ("pending", "Pending"),
+        ("on_credit", "On Credit"),
+    )
+
+    # Customer
+    customer_name = models.CharField(max_length=255)
+    customer_type = models.CharField(max_length=20, choices=CUSTOMER_TYPE_CHOICES)
+    contact_person = models.CharField(max_length=255)
+    mobile_no = models.CharField(max_length=15)
+
+    # Product + Batch (IMPORTANT)
+    product = models.ForeignKey(OrderProduct, on_delete=models.PROTECT)
+    batch = models.ForeignKey(OrderBatch, on_delete=models.PROTECT)
+
+    quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+
+    discount_percent = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        default=0
+    )
+
+    gst_percent = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        validators=[MinValueValidator(0), MaxValueValidator(100)]
+    )
+
+    shipping_charges = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    grand_total = models.DecimalField(max_digits=12, decimal_places=2)
+
+    delivery_date = models.DateField()
+    delivery_address = models.TextField()
+
+    payment_mode = models.CharField(max_length=20, choices=PAYMENT_MODE_CHOICES)
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES)
+
+    invoice_number = models.CharField(max_length=100, blank=True)
+    remarks = models.TextField(blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def calculate_grand_total(self):
+        base = Decimal(self.quantity) * self.unit_price
+        discount = (base * self.discount_percent) / Decimal("100")
+        taxable = base - discount
+        gst = (taxable * self.gst_percent) / Decimal("100")
+        return taxable + gst + self.shipping_charges
+
+    def __str__(self):
+        return f"SalesOrder-{self.id}"
 
 

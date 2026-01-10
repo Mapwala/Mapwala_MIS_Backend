@@ -28,6 +28,10 @@ urlpatterns = [
     path("devices/step-10/", DeviceAccessoryAPIView.as_view()),
     
     path("pi/create/", ProformaInvoiceCreateAPIView.as_view(), name="create-pi"),
+    
+    path("order-products/", OrderProductListAPIView.as_view()),
+    path("order-batches/", OrderBatchListAPIView.as_view()),
+    path("sales-orders/create/", SalesOrderCreateAPIView.as_view()),
 ]
 
 urlpatterns += router.urls

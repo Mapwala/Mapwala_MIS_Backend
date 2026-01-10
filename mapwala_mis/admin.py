@@ -1,5 +1,9 @@
 from django.contrib import admin
 from .models import *
+from django.utils.safestring import mark_safe
+from django.contrib import messages
+from django.urls import reverse
+from django.utils.html import format_html
 
 
 # ------------------ User Profile ------------------
@@ -8,86 +12,462 @@ class UserProfileAdmin(admin.ModelAdmin):
     list_display = ("user", "accepted_terms", "accepted_at")
     search_fields = ("user__username",)
     list_filter = ("accepted_terms",)
+    ordering = ("user__username",)
+    readonly_fields = ("accepted_at",)
 
 
 # ------------------ State ------------------
 @admin.register(State)
 class StateAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "status", "created_at")
+    list_display = ("id", "name", "status_badge", "created_at_formatted")
+    list_display_links = ("name",)
     search_fields = ("name",)
-    list_filter = ("status",)
+    list_filter = ("status", "created_at")
     ordering = ("id",)
-    readonly_fields = ("created_at",)
+    readonly_fields = ("created_at", "id_display")
+    
+    # Organize form fields
+    fieldsets = (
+        ("State Details", {
+            "fields": ("id_display", "name", "status"),
+            "description": "Enter the official name of the state/region."
+        }),
+        ("Metadata", {
+            "fields": ("created_at",),
+            "classes": ("collapse",),
+        }),
+    )
+    
+    # Bulk actions
+    actions = ["make_active", "make_inactive"]
+
+    # Custom display methods
+
+    def status_badge(self, obj):
+        """Color-coded status badge using mark_safe."""
+        colors = {
+            "active": "#28a745",   # Green
+            "inactive": "#6c757d", # Gray
+        }
+        bg_color = colors.get(obj.status, "#000")
+        display_text = obj.get_status_display().title()
+        
+        # Manually construct safe HTML string
+        html = f'<span style="background-color: {bg_color}; color: white; padding: 4px 8px; ' \
+            f'border-radius: 4px; font-weight: bold;">{display_text}</span>'
+        
+        return mark_safe(html)
+    status_badge.short_description = "Status"
+    status_badge.admin_order_field = "status"
+
+    def created_at_formatted(self, obj):
+        """Format creation date for readability."""
+        return obj.created_at.strftime("%b %d, %Y at %I:%M %p") if obj.created_at else "—"
+    created_at_formatted.short_description = "Created At"
+
+    def id_display(self, obj):
+        """Show ID in form (read-only)."""
+        return obj.id if obj.id else "—"
+    id_display.short_description = "ID"
+
+    # Bulk action: Activate selected states
+    def make_active(self, request, queryset):
+        updated = queryset.update(status="active")
+        self.message_user(
+            request,
+            f"{updated} state(s) successfully marked as active.",
+            messages.SUCCESS
+        )
+    make_active.short_description = "Mark selected states as Active"
+
+    # Bulk action: Deactivate selected states
+    def make_inactive(self, request, queryset):
+        updated = queryset.update(status="inactive")
+        self.message_user(
+            request,
+            f"{updated} state(s) successfully marked as inactive.",
+            messages.WARNING
+        )
+    make_inactive.short_description = "Mark selected states as Inactive"
+
+    # Optional: Prevent saving invalid data (extra safety)
+    def save_model(self, request, obj, form, change):
+        # Ensure name is title-cased (optional consistency)
+        obj.name = obj.name.strip().title()
+        super().save_model(request, obj, form, change)
 
 
 # ------------------ District ------------------
 @admin.register(District)
 class DistrictAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "code", "state", "status", "created_at")
+    list_display = ("id", "name", "code", "state_link", "status_badge", "created_at_formatted")
+    list_display_links = ("name",)
     search_fields = ("name", "code", "state__name")
-    list_filter = ("status", "state")
+    list_filter = ("status", "state", "created_at")
     ordering = ("id",)
-    readonly_fields = ("created_at",)
+    readonly_fields = ("created_at", "id_display")
+    
+    # Organize form into logical sections
+    fieldsets = (
+        ("District Details", {
+            "fields": ("id_display", "name", "code", "state", "status"),
+            "description": "Ensure the district code is unique within the selected state."
+        }),
+        ("Metadata", {
+            "fields": ("created_at",),
+            "classes": ("collapse",),
+        }),
+    )
+    
+    # Enable bulk actions
+    actions = ["make_active", "make_inactive"]
+
+    # --- Custom Display Methods ---
+
+    def state_link(self, obj):
+        """Link to the related State's admin change page."""
+        if obj.state:
+            url = reverse("admin:mapwala_mis_state_change", args=[obj.state.id])
+            return mark_safe(f'<a href="{url}"><strong>{obj.state.name}</strong></a>')
+        return "—"
+    state_link.short_description = "State"
+    state_link.admin_order_field = "state__name"
+
+    def status_badge(self, obj):
+        """Color-coded status using mark_safe."""
+        colors = {
+            "active": "#28a745",   # Green
+            "inactive": "#6c757d", # Gray
+        }
+        bg_color = colors.get(obj.status, "#000")
+        display_text = obj.get_status_display().title()
+        html = (
+            f'<span style="background-color: {bg_color}; color: white; '
+            f'padding: 4px 8px; border-radius: 4px; font-weight: bold;">'
+            f'{display_text}</span>'
+        )
+        return mark_safe(html)
+    status_badge.short_description = "Status"
+    status_badge.admin_order_field = "status"
+
+    def created_at_formatted(self, obj):
+        """Human-readable creation timestamp."""
+        if obj.created_at:
+            return obj.created_at.strftime("%b %d, %Y at %I:%M %p")
+        return "—"
+    created_at_formatted.short_description = "Created At"
+
+    def id_display(self, obj):
+        return obj.id if obj.id else "—"
+    id_display.short_description = "ID"
+
+    # --- Bulk Actions ---
+
+    def make_active(self, request, queryset):
+        updated = queryset.update(status="active")
+        self.message_user(
+            request,
+            f"{updated} district(s) successfully marked as active.",
+            messages.SUCCESS
+        )
+    make_active.short_description = "Mark selected districts as Active"
+
+    def make_inactive(self, request, queryset):
+        updated = queryset.update(status="inactive")
+        self.message_user(
+            request,
+            f"{updated} district(s) successfully marked as inactive.",
+            messages.WARNING
+        )
+    make_inactive.short_description = "Mark selected districts as Inactive"
+
+    # --- Optional: Auto-format name on save ---
+    def save_model(self, request, obj, form, change):
+        obj.name = obj.name.strip().title()
+        obj.code = obj.code.strip().upper()
+        super().save_model(request, obj, form, change)
 
 
 # ------------------ Parent Company ------------------
 @admin.register(ParentCompany)
 class ParentCompanyAdmin(admin.ModelAdmin):
-    list_display = ("id","name","phone_number","email","state","district","gst_number","pan_number","created_at",)
+    list_display = ("id", "name", "email", "phone_number_formatted", "state_link", "district_link", "gst_number", "pan_number", "created_at_formatted", "has_all_documents")
+    list_display_links = ("name",)
     search_fields = ("name", "phone_number", "email", "gst_number", "pan_number")
     list_filter = ("state", "district", "created_at")
     ordering = ("-id",)
-    readonly_fields = ("created_at",)
+    
+    # Make critical identifiers read-only after creation
+    readonly_fields = ("created_at", "id_display", "gst_document_link", "tan_document_link", "pan_document_link", "account_number_masked")
 
     fieldsets = (
-        ("Company Details", {"fields": ("name", "phone_number", "email", "address")}),
-        ("Location", {"fields": ("state", "district")}),
-        (
-            "Bank Details",
-            {
-                "fields": (
-                    "bank_name",
-                    "account_holder_name",
-                    "account_number",
-                    "ifsc_code",
-                )
-            },
-        ),
-        ("GST Details", {"fields": ("gst_number", "gst_document")}),
-        ("TAN Details", {"fields": ("tan_number", "tan_document")}),
-        ("PAN Details", {"fields": ("pan_number", "pan_document")}),
-        ("System Info", {"fields": ("created_at",)}),
+        ("Company Details", {
+            "fields": ("id_display", "name", "phone_number", "email", "address"),
+            "description": "Primary contact and address information."
+        }),
+        ("Location", {
+            "fields": ("state", "district"),
+            "description": "Administrative region of the company."
+        }),
+        ("Bank Details", {
+            "fields": (
+                "bank_name",
+                "account_holder_name",
+                "account_number_masked",  # Show masked version
+                "account_number",         # Editable but hidden by default
+                "ifsc_code",
+            ),
+            "classes": ("collapse",),
+        }),
+        ("GST Details", {
+            "fields": ("gst_number", "gst_document", "gst_document_link"),
+            "description": "Mandatory for B2B invoicing in India."
+        }),
+        ("TAN Details", {
+            "fields": ("tan_number", "tan_document", "tan_document_link"),
+        }),
+        ("PAN Details", {
+            "fields": ("pan_number", "pan_document", "pan_document_link"),
+            "description": "Permanent Account Number – must match GST records."
+        }),
+        ("System Info", {
+            "fields": ("created_at",),
+            "classes": ("collapse",),
+        }),
     )
+
+    # Custom display methods
+
+    def id_display(self, obj):
+        return obj.id
+    id_display.short_description = "ID"
+
+    def created_at_formatted(self, obj):
+        return obj.created_at.strftime("%b %d, %Y") if obj.created_at else "—"
+    created_at_formatted.short_description = "Created On"
+
+    def phone_number_formatted(self, obj):
+        # Simple formatting: e.g., +91 98765 43210
+        num = obj.phone_number
+        if len(num) == 10:
+            return f"+91 {num[:5]} {num[5:]}"
+        elif len(num) == 12 and num.startswith("91"):
+            return f"+{num[:2]} {num[2:7]} {num[7:]}"
+        return num
+    phone_number_formatted.short_description = "Phone"
+
+    def state_link(self, obj):
+        url = reverse("admin:mapwala_mis_state_change", args=[obj.state.id])
+        return mark_safe(f'<a href="{url}" target="_blank">{obj.state.name}</a>')
+    state_link.short_description = "State"
+
+    def district_link(self, obj):
+        url = reverse("admin:mapwala_mis_district_change", args=[obj.district.id])
+        return mark_safe(f'<a href="{url}" target="_blank">{obj.district.name}</a>')
+    district_link.short_description = "District"
+
+    def _document_link(self, doc_field, label):
+        if doc_field:
+            url = doc_field.url
+            return mark_safe(
+                f'<a href="{url}" target="_blank" style="color:#17a2b8;">📄 View {label}</a>'
+            )
+        return mark_safe('<span style="color:#dc3545;">⚠️ Missing</span>')
+
+    def gst_document_link(self, obj):
+        return self._document_link(obj.gst_document, "GST Doc")
+    gst_document_link.short_description = "GST Document"
+
+    def tan_document_link(self, obj):
+        return self._document_link(obj.tan_document, "TAN Doc")
+    tan_document_link.short_description = "TAN Document"
+
+    def pan_document_link(self, obj):
+        return self._document_link(obj.pan_document, "PAN Doc")
+    pan_document_link.short_description = "PAN Document"
+
+    def account_number_masked(self, obj):
+        """Show only last 4 digits for security."""
+        if obj.account_number:
+            return "•" * (len(obj.account_number) - 4) + obj.account_number[-4:]
+        return "—"
+    account_number_masked.short_description = "Account Number (Masked)"
+
+    def has_all_documents(self, obj):
+        """Quick visual check if all compliance docs are uploaded."""
+        missing = []
+        if not obj.gst_document:
+            missing.append("GST")
+        if not obj.tan_document:
+            missing.append("TAN")
+        if not obj.pan_document:
+            missing.append("PAN")
+        
+        if not missing:
+            return mark_safe('<span style="color:green;">✓ Complete</span>')
+        else:
+            return mark_safe(f'<span style="color:orange;">⚠️ Missing: {", ".join(missing)}</span>')
+    has_all_documents.short_description = "Compliance Docs"
+    has_all_documents.admin_order_field = None  # Not sortable
+
+    # Prevent editing of key identifiers after creation (optional but recommended)
+    def get_readonly_fields(self, request, obj=None):
+        if obj:  # Editing an existing object
+            return self.readonly_fields + ("gst_number", "pan_number", "tan_number")
+        return self.readonly_fields
 
 
 # ------------------ Vendor ------------------
 @admin.register(Vendor)
 class VendorAdmin(admin.ModelAdmin):
-    list_display = ("id","name","phone_number","email","state","district","gst_number","pan_number","created_at",)
+    list_display = (
+        "id",
+        "name",
+        "email",
+        "phone_number_formatted",
+        "state_link",
+        "district_link",
+        "gst_number",
+        "pan_number",
+        "created_at_formatted",
+        "has_all_documents",
+    )
+    list_display_links = ("name",)
     search_fields = ("name", "phone_number", "email", "gst_number", "pan_number")
     list_filter = ("state", "district", "created_at")
     ordering = ("-id",)
-    readonly_fields = ("created_at",)
+    
+    readonly_fields = (
+        "created_at",
+        "id_display",
+        "gst_document_link",
+        "tan_document_link",
+        "pan_document_link",
+        "account_number_masked",
+    )
 
     fieldsets = (
-        ("Vendor Details", {"fields": ("name", "phone_number", "email", "address")}),
-        ("Location", {"fields": ("state", "district")}),
-        (
-            "Bank Details",
-            {
-                "fields": (
-                    "bank_name",
-                    "account_holder_name",
-                    "account_number",
-                    "ifsc_code",
-                )
-            },
-        ),
-        ("GST Details", {"fields": ("gst_number", "gst_document")}),
-        ("TAN Details", {"fields": ("tan_number", "tan_document")}),
-        ("PAN Details", {"fields": ("pan_number", "pan_document")}),
-        ("System Info", {"fields": ("created_at",)}),
+        ("Vendor Details", {
+            "fields": ("id_display", "name", "phone_number", "email", "address"),
+            "description": "Primary contact and business address."
+        }),
+        ("Location", {
+            "fields": ("state", "district"),
+            "description": "Administrative region of the vendor."
+        }),
+        ("Bank Details", {
+            "fields": (
+                "bank_name",
+                "account_holder_name",
+                "account_number_masked",
+                "ifsc_code",
+            ),
+            "classes": ("collapse",),
+        }),
+        ("🔒 Sensitive Data (Edit with caution)", {
+            "fields": ("account_number",),
+            "classes": ("collapse",),
+            "description": "Full account number. Edit only if absolutely necessary."
+        }),
+        ("GST Details", {
+            "fields": ("gst_number", "gst_document", "gst_document_link"),
+            "description": "Mandatory for B2B transactions in India."
+        }),
+        ("TAN Details", {
+            "fields": ("tan_number", "tan_document", "tan_document_link"),
+        }),
+        ("PAN Details", {
+            "fields": ("pan_number", "pan_document", "pan_document_link"),
+            "description": "Must match GST registration records."
+        }),
+        ("System Info", {
+            "fields": ("created_at",),
+            "classes": ("collapse",),
+        }),
     )
+
+    # === Custom Display Methods ===
+
+    def id_display(self, obj):
+        return obj.id
+    id_display.short_description = "ID"
+
+    def created_at_formatted(self, obj):
+        return obj.created_at.strftime("%b %d, %Y") if obj.created_at else "—"
+    created_at_formatted.short_description = "Created On"
+
+    def phone_number_formatted(self, obj):
+        num = obj.phone_number
+        if len(num) == 10:
+            return f"+91 {num[:5]} {num[5:]}"
+        elif len(num) == 12 and num.startswith("91"):
+            return f"+{num[:2]} {num[2:7]} {num[7:]}"
+        return num
+    phone_number_formatted.short_description = "Phone"
+
+    def state_link(self, obj):
+        url = reverse(
+            f"admin:{obj.state._meta.app_label}_{obj.state._meta.model_name}_change",
+            args=[obj.state.pk]
+        )
+        return mark_safe(f'<a href="{url}" target="_blank">{obj.state.name}</a>')
+    state_link.short_description = "State"
+
+    def district_link(self, obj):
+        url = reverse(
+            f"admin:{obj.district._meta.app_label}_{obj.district._meta.model_name}_change",
+            args=[obj.district.pk]
+        )
+        return mark_safe(f'<a href="{url}" target="_blank">{obj.district.name}</a>')
+    district_link.short_description = "District"
+
+    def _document_link(self, doc_field, label):
+        if doc_field:
+            url = doc_field.url
+            return mark_safe(
+                f'<a href="{url}" target="_blank" style="color:#17a2b8;">📄 View {label}</a>'
+            )
+        return mark_safe('<span style="color:#dc3545;">⚠️ Missing</span>')
+
+    def gst_document_link(self, obj):
+        return self._document_link(obj.gst_document, "GST Doc")
+    gst_document_link.short_description = "GST Document"
+
+    def tan_document_link(self, obj):
+        return self._document_link(obj.tan_document, "TAN Doc")
+    tan_document_link.short_description = "TAN Document"
+
+    def pan_document_link(self, obj):
+        return self._document_link(obj.pan_document, "PAN Doc")
+    pan_document_link.short_description = "PAN Document"
+
+    def account_number_masked(self, obj):
+        if obj.account_number:
+            return "•" * (len(obj.account_number) - 4) + obj.account_number[-4:]
+        return "—"
+    account_number_masked.short_description = "Account Number (Masked)"
+
+    def has_all_documents(self, obj):
+        missing = []
+        if not obj.gst_document:
+            missing.append("GST")
+        if not obj.tan_document:
+            missing.append("TAN")
+        if not obj.pan_document:
+            missing.append("PAN")
+        
+        if not missing:
+            return mark_safe('<span style="color:green;">✓ Complete</span>')
+        else:
+            return mark_safe(f'<span style="color:orange;">⚠️ Missing: {", ".join(missing)}</span>')
+    has_all_documents.short_description = "Compliance Docs"
+    has_all_documents.admin_order_field = None
+
+    # Prevent editing of key identifiers after creation
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            return self.readonly_fields + ("gst_number", "pan_number", "tan_number")
+        return self.readonly_fields
 
 
 # ------------------ B2C Customer ------------------
@@ -218,35 +598,10 @@ class DistributorAdmin(admin.ModelAdmin):
 # ------------------ Dealer ------------------
 @admin.register(Dealer)
 class DealerAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "name",
-        "phone_number",
-        "email",
-        "linked_to",
-        "manufacturer",
-        "distributor",
-        "state",
-        "district",
-        "created_at",
-    )
+    list_display = ("id","name","phone_number","email","linked_to","manufacturer","distributor","state","district","created_at")
+    search_fields = ( "name", "phone_number", "email", "gst_number", "pan_number")
 
-    search_fields = (
-        "name",
-        "phone_number",
-        "email",
-        "gst_number",
-        "pan_number",
-    )
-
-    list_filter = (
-        "linked_to",
-        "state",
-        "district",
-        "manufacturer",
-        "distributor",
-        "created_at",
-    )
+    list_filter = ( "linked_to", "state", "district", "manufacturer", "distributor", "created_at",)
 
     ordering = ("-id",)
     readonly_fields = ("created_at",)
@@ -303,104 +658,59 @@ class ProductAdmin(admin.ModelAdmin):
     readonly_fields = ("created_at",)
 
 
-# ------------------ Proforma Invoice ------------------
-
-@admin.register(ProformaInvoice)
-class ProformaInvoiceAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "party_type",
-        "product",
-        "quantity",
-        "selling_price",
-        "discount_percent",
-        "grand_total",
-        "payment_terms",
-        "delivery_date",
-        "state",
-        "created_at",
-    )
-
-    search_fields = (
-        "id",
-        "product__product_id",
-        "contact_person_name",
-        "mobile_no",
-        "gstn",
-    )
-
-    list_filter = (
-        "party_type",
-        "payment_terms",
-        "state",
-        "delivery_date",
-        "created_at",
-    )
-
-    ordering = ("-id",)
-    readonly_fields = ("created_at",)
-
-    fieldsets = (
-        ("Party Information", {
-            "fields": (
-                "party_type",
-                "b2b_partner",
-                "b2c_customer",
-                "dealer",
-                "distributor",
-            )
-        }),
-        ("Product & Pricing", {
-            "fields": (
-                "product",
-                "selling_price",
-                "discount_percent",
-                "quantity",
-                "shipping_charges",
-                "grand_total",
-            )
-        }),
-        ("Payment & Delivery", {
-            "fields": (
-                "payment_terms",
-                "delivery_date",
-                "delivery_address",
-                "state",
-            )
-        }),
-        ("Contact Information", {
-            "fields": (
-                "contact_person_name",
-                "mobile_no",
-                "gstn",
-            )
-        }),
-        ("System Info", {
-            "fields": ("created_at",)
-        }),
-    )
-
-
-
 # ------------------ Device ------------------
 
 @admin.register(Device)
 class DeviceAdmin(admin.ModelAdmin):
-    list_display = ("id", "status", "created_by", "created_at")
-    list_filter = ("status", "created_at")
-    search_fields = ("id", "created_by__username")
-    readonly_fields = ("created_at",)
+    list_display = ("id_link", "status_badge", "created_by", "created_at_formatted")
+    list_filter = ("status", "created_at", "created_by")
+    search_fields = ("id", "created_by__username", "created_by__email")
+    readonly_fields = ("created_at", "id_display")
+    ordering = ("-id",)
 
     fieldsets = (
-        ("Device Status", {"fields": ("status",)}),
-        ("Created Info", {"fields": ("created_by", "created_at")}),
+        ("Device Status", {
+            "fields": ("status",),
+            "description": "Draft: Incomplete configuration. Completed: Ready for production."
+        }),
+        ("Created Info", {
+            "fields": ("id_display", "created_by", "created_at"),
+        }),
     )
 
+    def id_link(self, obj):
+        url = reverse(f"admin:{obj._meta.app_label}_{obj._meta.model_name}_change", args=[obj.pk])
+        return mark_safe(f'<a href="{url}"><strong>Device-{obj.id}</strong></a>')
+    id_link.short_description = "Device ID"
+    id_link.admin_order_field = "id"
+
+    def id_display(self, obj):
+        return f"Device-{obj.id}"
+    id_display.short_description = "Full ID"
+
+    def status_badge(self, obj):
+        colors = {"draft": "#ffc107", "completed": "#28a745"}
+        return mark_safe(
+            f'<span style="background-color:{colors.get(obj.status, "#6c757d")}; '
+            f'color:white; padding:4px 8px; border-radius:4px; font-weight:bold;">'
+            f'{obj.get_status_display()}</span>'
+        )
+    status_badge.short_description = "Status"
+
+    def created_at_formatted(self, obj):
+        return obj.created_at.strftime("%b %d, %Y at %I:%M %p") if obj.created_at else "—"
+    created_at_formatted.short_description = "Created At"
+
+
+# ------------------ Device Information ------------------
 
 @admin.register(DeviceInformation)
 class DeviceInformationAdmin(admin.ModelAdmin):
     list_display = ("device", "make", "model", "mrp", "state_of_supply")
     search_fields = ("make", "model", "device__id")
+    list_filter = ("state_of_supply",)
+    ordering = ("device__id",)
+    
 
     fieldsets = (
         ("Device Reference", {"fields": ("device",)}),
@@ -550,4 +860,245 @@ class AccessoryAdmin(admin.ModelAdmin):
     fieldsets = (
         ("Device", {"fields": ("device",)}),
         ("Accessory Info", {"fields": ("name", "quantity", "specifications", "description")}),
+    )
+
+
+# ------------------ Proforma Invoice ------------------
+
+@admin.register(ProformaInvoice)
+class ProformaInvoiceAdmin(admin.ModelAdmin):
+    list_display = ("id","party_type","product","quantity","selling_price","discount_percent","grand_total","payment_terms","delivery_date","state","created_at",)
+
+    search_fields = ("id","product__product_id","contact_person_name","mobile_no","gstn",)
+
+    list_filter = ("party_type","payment_terms","state","delivery_date","created_at",)
+
+    ordering = ("-id",)
+    readonly_fields = ("created_at",)
+
+    fieldsets = (
+        ("Party Information", {
+            "fields": ("party_type","b2b_partner","b2c_customer","dealer","distributor")
+        }),
+        ("Product & Pricing", {
+            "fields": ("product","selling_price","discount_percent","quantity","shipping_charges","grand_total")
+        }),
+        ("Payment & Delivery", {
+            "fields": ("payment_terms","delivery_date","delivery_address","state")
+        }),
+        ("Contact Information", {
+            "fields": ("contact_person_name","mobile_no","gstn")
+        }),
+        ("System Info", {
+            "fields": ("created_at",)
+        }),
+    )
+
+
+from django.contrib import admin
+
+from .models import (
+    OrderProduct,
+    OrderBatch,
+    SalesOrder,
+)
+
+# ======================================================
+# Order Batch Inline (CRITICAL FIX)
+# ======================================================
+
+class OrderBatchInline(admin.TabularInline):
+    """
+    Inline batches under a product.
+    IMPORTANT:
+    - product FK is implicitly set by parent
+    - fk_name explicitly tells Django which FK to use
+    """
+    model = OrderBatch
+    fk_name = "product"          # 🔒 VERY IMPORTANT
+    extra = 1
+    fields = ("batch_number", "available_stock")
+    can_delete = True
+    show_change_link = True
+    ordering = ("batch_number",)
+
+
+# ======================================================
+# Order Product Admin
+# ======================================================
+
+@admin.register(OrderProduct)
+class OrderProductAdmin(admin.ModelAdmin):
+    list_display = ("name",)
+    search_fields = ("name",)
+    ordering = ("name",)
+
+    inlines = [OrderBatchInline]
+
+    fieldsets = (
+        (
+            "Product / Device Model",
+            {
+                "fields": ("name",),
+            },
+        ),
+    )
+
+
+# ======================================================
+# Order Batch Admin (Standalone)
+# ======================================================
+
+@admin.register(OrderBatch)
+class OrderBatchAdmin(admin.ModelAdmin):
+    list_display = (
+        "product",
+        "batch_number",
+        "available_stock",
+    )
+
+    list_filter = ("product",)
+    search_fields = (
+        "product__name",
+        "batch_number",
+    )
+
+    ordering = (
+        "product__name",
+        "batch_number",
+    )
+
+    fieldsets = (
+        (
+            "Product Reference",
+            {
+                "fields": ("product",),
+            },
+        ),
+        (
+            "Batch Details",
+            {
+                "fields": (
+                    "batch_number",
+                    "available_stock",
+                ),
+            },
+        ),
+    )
+
+    def get_readonly_fields(self, request, obj=None):
+        """
+        Prevent changing product on existing batches.
+        This avoids duplicate validation bugs.
+        """
+        if obj:
+            return ("product",)
+        return ()
+
+
+# ======================================================
+# Sales Order Admin
+# ======================================================
+
+@admin.register(SalesOrder)
+class SalesOrderAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "customer_name",
+        "customer_type",
+        "product",
+        "batch",
+        "quantity",
+        "grand_total",
+        "payment_status",
+        "delivery_date",
+        "created_at",
+    )
+
+    list_filter = (
+        "customer_type",
+        "payment_mode",
+        "payment_status",
+        "delivery_date",
+        "created_at",
+    )
+
+    search_fields = (
+        "id",
+        "customer_name",
+        "contact_person",
+        "mobile_no",
+        "invoice_number",
+        "product__name",
+        "batch__batch_number",
+    )
+
+    ordering = ("-created_at",)
+    readonly_fields = ("created_at",)
+
+    fieldsets = (
+        (
+            "Customer Information",
+            {
+                "fields": (
+                    "customer_name",
+                    "customer_type",
+                    "contact_person",
+                    "mobile_no",
+                ),
+            },
+        ),
+        (
+            "Product & Batch",
+            {
+                "fields": (
+                    "product",
+                    "batch",
+                    "quantity",
+                    "unit_price",
+                ),
+            },
+        ),
+        (
+            "Pricing & Taxes",
+            {
+                "fields": (
+                    "discount_percent",
+                    "gst_percent",
+                    "shipping_charges",
+                    "grand_total",
+                ),
+            },
+        ),
+        (
+            "Delivery Information",
+            {
+                "fields": (
+                    "delivery_date",
+                    "delivery_address",
+                ),
+            },
+        ),
+        (
+            "Payment Information",
+            {
+                "fields": (
+                    "payment_mode",
+                    "payment_status",
+                    "invoice_number",
+                ),
+            },
+        ),
+        (
+            "Additional Notes",
+            {
+                "fields": ("remarks",),
+            },
+        ),
+        (
+            "System Information",
+            {
+                "fields": ("created_at",),
+            },
+        ),
     )

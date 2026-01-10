@@ -414,11 +414,11 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3NzAxNzM4LCJpYXQiOjE3Njc2MTUzMzgsImp0aSI6IjZhMDBmNjcxNGY3NjQ4ZGI4NTA4OWNjMzVkNTUwOTc4IiwidXNlcl9pZCI6IjIifQ.LOsCnAOnpFZsV9cnwWMyyzVl78ZfZM-vTfqi_btV6rA"
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3OTQwMTc5LCJpYXQiOjE3Njc4NTM3NzksImp0aSI6ImVkYWNkY2ZmZmZiODRkZDM4MWQxMDAzODdkOGYxOGUxIiwidXNlcl9pZCI6IjIifQ.jPj_tVb3d4u6NIF7HjKKBFaCaTmwr6ZBXetVJYQN3nE"
 							}
 						],
 						"url": {
-							"raw": "http://127.0.0.1:8000/api/districts/?state=4",
+							"raw": "http://127.0.0.1:8000/api/districts/?state=6",
 							"protocol": "http",
 							"host": [
 								"127",
@@ -435,7 +435,7 @@
 							"query": [
 								{
 									"key": "state",
-									"value": "4"
+									"value": "6"
 								}
 							]
 						},
@@ -450,11 +450,11 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3NzAxNzM4LCJpYXQiOjE3Njc2MTUzMzgsImp0aSI6IjZhMDBmNjcxNGY3NjQ4ZGI4NTA4OWNjMzVkNTUwOTc4IiwidXNlcl9pZCI6IjIifQ.LOsCnAOnpFZsV9cnwWMyyzVl78ZfZM-vTfqi_btV6rA"
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3OTQwMTc5LCJpYXQiOjE3Njc4NTM3NzksImp0aSI6ImVkYWNkY2ZmZmZiODRkZDM4MWQxMDAzODdkOGYxOGUxIiwidXNlcl9pZCI6IjIifQ.jPj_tVb3d4u6NIF7HjKKBFaCaTmwr6ZBXetVJYQN3nE"
 							}
 						],
 						"url": {
-							"raw": "http://127.0.0.1:8000/api/districts/?search=AMD",
+							"raw": "http://127.0.0.1:8000/api/districts/?search=AGRA",
 							"protocol": "http",
 							"host": [
 								"127",
@@ -471,7 +471,7 @@
 							"query": [
 								{
 									"key": "search",
-									"value": "AMD"
+									"value": "AGRA"
 								}
 							]
 						},
@@ -486,7 +486,7 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3NzAxNzM4LCJpYXQiOjE3Njc2MTUzMzgsImp0aSI6IjZhMDBmNjcxNGY3NjQ4ZGI4NTA4OWNjMzVkNTUwOTc4IiwidXNlcl9pZCI6IjIifQ.LOsCnAOnpFZsV9cnwWMyyzVl78ZfZM-vTfqi_btV6rA"
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3OTQwMTc5LCJpYXQiOjE3Njc4NTM3NzksImp0aSI6ImVkYWNkY2ZmZmZiODRkZDM4MWQxMDAzODdkOGYxOGUxIiwidXNlcl9pZCI6IjIifQ.jPj_tVb3d4u6NIF7HjKKBFaCaTmwr6ZBXetVJYQN3nE"
 							},
 							{
 								"key": "Content-Type",
@@ -495,7 +495,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"name\": \"Surat\",\r\n  \"code\": \"Sur\",\r\n  \"state\": 4,\r\n  \"status\": \"active\"\r\n}",
+							"raw": "{\r\n  \"name\": \"Agra\",\r\n  \"code\": \"AGRA\",\r\n  \"state\": 6,\r\n  \"status\": \"active\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -686,7 +686,7 @@
 								{
 									"key": "tan_document",
 									"type": "file",
-									"src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+									"src": "/C:/Users/desk6/Downloads/screencapture-127-0-0-1-8000-admin-mapwala-mis-dealer-1-change-2026-01-08-15_18_05.png"
 								},
 								{
 									"key": "pan_number",
@@ -732,7 +732,7 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3Nzg4NzUwLCJpYXQiOjE3Njc3MDIzNTAsImp0aSI6ImFjNTAzNDM2NjIxMDQ2NjBhMjZkNGZmMzU0Y2IwZTRkIiwidXNlcl9pZCI6IjIifQ.KYpF8uyfytJ1jkRNN7XqSkKIIKz7IH0mbvji9Y5TTRg"
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3OTQwMTc5LCJpYXQiOjE3Njc4NTM3NzksImp0aSI6ImVkYWNkY2ZmZmZiODRkZDM4MWQxMDAzODdkOGYxOGUxIiwidXNlcl9pZCI6IjIifQ.jPj_tVb3d4u6NIF7HjKKBFaCaTmwr6ZBXetVJYQN3nE"
 							}
 						],
 						"body": {
@@ -796,7 +796,7 @@
 								{
 									"key": "gst_document",
 									"type": "file",
-									"src": []
+									"src": "/C:/Users/desk6/Downloads/screencapture-127-0-0-1-8000-admin-mapwala-mis-dealer-1-change-2026-01-08-15_18_05.png"
 								},
 								{
 									"key": "tan_number",
@@ -806,7 +806,7 @@
 								{
 									"key": "tan_document",
 									"type": "file",
-									"src": []
+									"src": "/C:/Users/desk6/Downloads/screencapture-127-0-0-1-8000-admin-mapwala-mis-dealer-1-change-2026-01-08-15_18_05.png"
 								},
 								{
 									"key": "pan_number",
@@ -816,7 +816,7 @@
 								{
 									"key": "pan_document",
 									"type": "file",
-									"src": []
+									"src": "/C:/Users/desk6/Downloads/screencapture-127-0-0-1-8000-admin-mapwala-mis-dealer-1-change-2026-01-08-15_18_05.png"
 								}
 							]
 						},
@@ -916,7 +916,7 @@
 								{
 									"key": "gst_document",
 									"type": "file",
-									"src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+									"src": "/C:/Users/desk6/Downloads/screencapture-127-0-0-1-8000-admin-mapwala-mis-dealer-1-change-2026-01-08-15_18_05.png"
 								},
 								{
 									"key": "tan_number",
@@ -926,7 +926,7 @@
 								{
 									"key": "tan_document",
 									"type": "file",
-									"src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+									"src": "/C:/Users/desk6/Downloads/screencapture-127-0-0-1-8000-admin-mapwala-mis-dealer-1-change-2026-01-08-15_18_05.png"
 								},
 								{
 									"key": "pan_number",
@@ -936,7 +936,7 @@
 								{
 									"key": "pan_document",
 									"type": "file",
-									"src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+									"src": "/C:/Users/desk6/Downloads/screencapture-127-0-0-1-8000-admin-mapwala-mis-dealer-1-change-2026-01-08-15_18_05.png"
 								}
 							]
 						},
@@ -970,7 +970,7 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer <ACCESS_TOKEN>"
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3OTQwMTc5LCJpYXQiOjE3Njc4NTM3NzksImp0aSI6ImVkYWNkY2ZmZmZiODRkZDM4MWQxMDAzODdkOGYxOGUxIiwidXNlcl9pZCI6IjIifQ.jPj_tVb3d4u6NIF7HjKKBFaCaTmwr6ZBXetVJYQN3nE"
 							}
 						],
 						"body": {
@@ -1033,8 +1033,8 @@
 								},
 								{
 									"key": "gst_document",
-									"value": "gst.pdf",
-									"type": "text"
+									"type": "file",
+									"src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
 								},
 								{
 									"key": "tan_number",
@@ -1043,8 +1043,8 @@
 								},
 								{
 									"key": "tan_document",
-									"value": "tan.pdf",
-									"type": "text"
+									"type": "file",
+									"src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
 								},
 								{
 									"key": "pan_number",
@@ -1053,8 +1053,8 @@
 								},
 								{
 									"key": "pan_document",
-									"value": "pan.pdf",
-									"type": "text"
+									"type": "file",
+									"src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
 								}
 							]
 						},
@@ -1073,6 +1073,1007 @@
 							]
 						},
 						"description": "StartFragment\n\n### Create B2B Partner Registration\n\n  \nEndFragment  \n  \n\nRegisters a new B2B partner in the system.\n\n- **Method:** `POST`\n    \n- **URL:** `http://localhost:8000/api/b2b/register/`\n    \n- **Content-Type:** `multipart/form-data`\n    \n\n---\n\n#### Authentication\n\nThis endpoint requires a valid bearer token.\n\n- **Header**\n    \n\n```\nAuthorization: Bearer <ACCESS_TOKEN>\n\n ```\n\nReplace with a valid access token for your API.\n\n---\n\n#### Request Body (multipart/form-data)\n\n| Field | Type | Required | Description | Example |\n| --- | --- | --- | --- | --- |\n| `partner_name` | string | Yes | Legal/registered name of the partner entity | `XYZ Enterprises` |\n| `phone_number` | string | Yes | Contact phone number | `9876543210` |\n| `email` | string (email) | Yes | Primary contact email | `xyz@test.com` |\n| `address` | string | Yes | Business address | `Guwahati` |\n| `state` | integer / ID | Yes | State identifier | `4` |\n| `district` | integer / ID | Yes | District identifier | `34` |\n| `bank_name` | string | Yes | Name of the bank | `HDFC` |\n| `account_holder_name` | string | Yes | Name of the account holder | `XYZ Enterprises` |\n| `account_number` | string | Yes | Bank account number | `9876543210` |\n| `ifsc_code` | string | Yes | Bank IFSC code | `HDFC0000123` |\n| `gst_number` | string | Yes | GST registration number | `22BBBBB0000B1Z6` |\n| `gst_document` | file | Yes\\* | GST certificate document (PDF or image) | `gst.pdf` |\n| `tan_number` | string | Yes | TAN (Tax Deduction & Collection Account Number) | `BLRA54321C` |\n| `tan_document` | file | Yes\\* | TAN document (PDF or image) | `tan.pdf` |\n| `pan_number` | string | Yes | PAN (Permanent Account Number) | `ABCDE4321Z` |\n| `pan_document` | file | Yes\\* | PAN document (PDF or image) | `pan.pdf` |\n\n\\*Exact required/optional status for document uploads depends on server-side validation; treat them as required unless your API says otherwise.\n\n---\n\n#### Example cURL\n\n```\ncurl -X POST http://localhost:8000/api/b2b/    register/ \\  -H \"Authorization: Bearer <ACCESS_TOKEN>\" \\  -F \"partner_name=XYZ Enterprises\" \\  -F \"phone_number=9876543210\" \\  -F \"email=xyz@test.com\" \\  -F \"address=Guwahati\" \\  -F \"state=4\" \\  -F \"district=34\" \\  -F \"bank_name=HDFC\" \\  -F \"account_holder_name=XYZ Enterprises\" \\  -F \"account_number=9876543210\" \\  -F \"ifsc_code=HDFC0000123\" \\  -F \"gst_number=22BBBBB0000B1Z6\" \\  -F \"gst_document=@gst.pdf\" \\  -F \"tan_number=BLRA54321C\" \\  -F \"tan_document=@tan.pdf\" \\  -F \"pan_number=ABCDE4321Z\" \\  -F \"pan_document=@pan.pdf\"\n\n ```\n\n---\n\n#### Success Response (201 Created)\n\nOn successful registration, the API returns:\n\n- **Status:** `201 Created`\n    \n- **Body:**\n    \n\n```\n{    \"message\": \"B2B Partner registered         successfully\",    \"partner_id\": 1,    \"partner_name\": \"XYZ Enterprises\",    \"email\": \"xyz@test.com\"}\n\n ```\n\n---\n\n#### Notes\n\n- `partner_id` is generated by the system and uniquely identifies the partner.\n    \n- Make sure the `email` is unique if your API enforces uniqueness on partner email.\n    \n- File fields should be sent as actual files in `multipart/form-data` (not base64 strings).\n    \n\n---\n\nNext, I can also add tests to this request (e.g., assert status 201, check `partner_id` is present, validate response schema) if you’d like.\n\nEndFragment"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Distributor Registration",
+			"item": [
+				{
+					"name": "Create Distributor Registration",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3OTQwMTc5LCJpYXQiOjE3Njc4NTM3NzksImp0aSI6ImVkYWNkY2ZmZmZiODRkZDM4MWQxMDAzODdkOGYxOGUxIiwidXNlcl9pZCI6IjIifQ.jPj_tVb3d4u6NIF7HjKKBFaCaTmwr6ZBXetVJYQN3nE"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "name",
+									"value": "ABC Distributor",
+									"type": "text"
+								},
+								{
+									"key": "phone_number",
+									"value": "9876543210",
+									"type": "text"
+								},
+								{
+									"key": "email",
+									"value": "abc@test.com",
+									"type": "text"
+								},
+								{
+									"key": "address",
+									"value": "Guwahati",
+									"type": "text"
+								},
+								{
+									"key": "state",
+									"value": "4",
+									"type": "text"
+								},
+								{
+									"key": "district",
+									"value": "34",
+									"type": "text"
+								},
+								{
+									"key": "bank_name",
+									"value": "SBI",
+									"type": "text"
+								},
+								{
+									"key": "account_holder_name",
+									"value": "ABC Distributor",
+									"type": "text"
+								},
+								{
+									"key": "account_number",
+									"value": "1234567890",
+									"type": "text"
+								},
+								{
+									"key": "ifsc_code",
+									"value": "SBIN0001234",
+									"type": "text"
+								},
+								{
+									"key": "gst_number",
+									"value": "22AAAAA0000A1Z5",
+									"type": "text"
+								},
+								{
+									"key": "gst_document",
+									"type": "file",
+									"src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+								},
+								{
+									"key": "tan_number",
+									"value": "BLRA12345B",
+									"type": "text"
+								},
+								{
+									"key": "tan_document",
+									"type": "file",
+									"src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+								},
+								{
+									"key": "pan_number",
+									"value": "ABCDE1234F",
+									"type": "text"
+								},
+								{
+									"key": "pan_document",
+									"type": "file",
+									"src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+								},
+								{
+									"key": "linked_to",
+									"value": "manufacturer",
+									"type": "text"
+								},
+								{
+									"key": "manufacturer",
+									"value": "1",
+									"type": "text"
+								},
+								{
+									"key": "authorised_states",
+									"value": "4",
+									"type": "text"
+								},
+								{
+									"key": "authorised_states",
+									"value": "4",
+									"type": "text"
+								},
+								{
+									"key": "authorised_states",
+									"value": "6",
+									"type": "text"
+								},
+								{
+									"key": "authorised_districts",
+									"value": "34",
+									"type": "text"
+								},
+								{
+									"key": "authorised_districts",
+									"value": "1",
+									"type": "text"
+								},
+								{
+									"key": "authorised_districts",
+									"value": "36",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/distributor/register/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"distributor",
+								"register",
+								""
+							]
+						},
+						"description": "StartFragment\n\n# 📘 Distributor Registration API — Postman Docs\n\n## Endpoint\n\n```\nPOST /api/distributor/register/\n\n ```\n\n**Base URL**\n\n```\nhttp://127.0.0.1:8000\n\n ```\n\n**Full URL**\n\n```\nhttp://127.0.0.1:8000/api/distributor/register/\n\n ```\n\n---\n\n## 🔐 Authentication\n\n**Type:** Bearer Token  \n**Header:**\n\n| Key | Value |\n| --- | --- |\n| Authorization | Bearer |\n\n---\n\n## 📨 Request\n\n### Content Type\n\n```\nmultipart/form-data\n\n ```\n\n(Required because documents are uploaded)\n\n---\n\n### Body (form-data)\n\n| Key | Type | Required | Description | Example |\n| --- | --- | --- | --- | --- |\n| name | Text | ✅ | Distributor name | ABC Distributor |\n| phone_number | Text | ✅ | Contact number | 9876543210 |\n| email | Text | ✅ | Email address | [abc@test.com](https://null) |\n| address | Text | ✅ | Address | Guwahati |\n| state | Text | ✅ | State ID | 4 |\n| district | Text | ✅ | District ID | 34 |\n| bank_name | Text | ✅ | Bank name | SBI |\n| account_holder_name | Text | ✅ | Account holder name | ABC Distributor |\n| account_number | Text | ✅ | Account number | 1234567890 |\n| ifsc_code | Text | ✅ | IFSC code | SBIN0001234 |\n| gst_number | Text | ✅ | GST number | 22AAAAA0000A1Z5 |\n| gst_document | File | ✅ | GST PDF/Image | gst.pdf |\n| tan_number | Text | ✅ | TAN number | BLRA12345B |\n| tan_document | File | ✅ | TAN PDF/Image | tan.pdf |\n| pan_number | Text | ✅ | PAN number | ABCDE1234F |\n| pan_document | File | ✅ | PAN PDF/Image | pan.pdf |\n| linked_to | Text | ✅ | Who distributor is linked to | manufacturer |\n| manufacturer | Text | ⚠️ Required if linked_to=manufacturer | Manufacturer ID | 1 |\n| authorised_states | Text (repeatable) | ❌ | Authorised state IDs | 4, 6 |\n| authorised_districts | Text (repeatable) | ❌ | Authorised district IDs | 34, 36 |\n\n> \n\n🔹 For multiple values (`authorised_states` / `authorised_districts`) add the same key multiple times.\n\n \n  \n\n---\n\n## 🧪 Example in Postman\n\n### Headers\n\n| Key | Value |\n| --- | --- |\n| Authorization | Bearer eyJhbGciOi... |\n\n---\n\n### Body → form-data\n\n```\nname = ABC Distributor\nphone_number = 9876543210\nemail = abc@test.com\naddress = Guwahati\nstate = 4\ndistrict = 34\nbank_name = SBI\naccount_holder_name = ABC Distributor\naccount_number = 1234567890\nifsc_code = SBIN0001234\ngst_number = 22AAAAA0000A1Z5\ngst_document = (file)\ntan_number = BLRA12345B\ntan_document = (file)\npan_number = ABCDE1234F\npan_document = (file)\nlinked_to = manufacturer\nmanufacturer = 1\nauthorised_states = 4\nauthorised_states = 6\nauthorised_districts = 34\nauthorised_districts = 36\n\n ```\n\n---\n\n## 📤 Sample Response (Success)\n\n```\n{\n  \"message\": \"Distributor registered successfully\",\n  \"distributor_id\": 3,\n  \"name\": \"ABC Distributor\"\n}\n\n ```\n\n---\n\n## ❌ Possible Errors\n\n| Status | Message | Reason |\n| --- | --- | --- |\n| 400 | Validation error | Missing/invalid field |\n| 401 | Unauthorized | Invalid or missing token |\n| 403 | Forbidden | Permission denied |\n| 500 | Server error | Unexpected issue |\n\n---\n\n## 🟢 Notes\n\n- `linked_to` currently supports: `manufacturer`\n    \n- `manufacturer` field is required only when `linked_to=manufacturer`\n    \n- Documents must be PDF or image (as per backend validation)\n    \n- IDs (`state`, `district`, etc.) must exist in the database\n    \n\nEndFragment"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Create Distributor Registration",
+			"item": [
+				{
+					"name": "Create Distributor Registration",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3OTQwMTc5LCJpYXQiOjE3Njc4NTM3NzksImp0aSI6ImVkYWNkY2ZmZmZiODRkZDM4MWQxMDAzODdkOGYxOGUxIiwidXNlcl9pZCI6IjIifQ.jPj_tVb3d4u6NIF7HjKKBFaCaTmwr6ZBXetVJYQN3nE"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "name",
+									"value": "ABC Dealer",
+									"type": "text"
+								},
+								{
+									"key": "phone_number",
+									"value": "9876543210",
+									"type": "text"
+								},
+								{
+									"key": "email",
+									"value": "abc@dealer.com",
+									"type": "text"
+								},
+								{
+									"key": "address",
+									"value": "Guwahati",
+									"type": "text"
+								},
+								{
+									"key": "state",
+									"value": "4",
+									"type": "text"
+								},
+								{
+									"key": "district",
+									"value": "34",
+									"type": "text"
+								},
+								{
+									"key": "bank_name",
+									"value": "SBI",
+									"type": "text"
+								},
+								{
+									"key": "account_holder_name",
+									"value": "ABC Dealer",
+									"type": "text"
+								},
+								{
+									"key": "account_number",
+									"value": "1234567890",
+									"type": "text"
+								},
+								{
+									"key": "ifsc_code",
+									"value": "SBIN0001234",
+									"type": "text"
+								},
+								{
+									"key": "gst_number",
+									"value": "22AAAAA0000A1Z5",
+									"type": "text"
+								},
+								{
+									"key": "gst_document",
+									"type": "file",
+									"src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+								},
+								{
+									"key": "tan_number",
+									"value": "BLRA12345B",
+									"type": "text"
+								},
+								{
+									"key": "tan_document",
+									"type": "file",
+									"src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+								},
+								{
+									"key": "pan_number",
+									"value": "ABCDE1234F",
+									"type": "text"
+								},
+								{
+									"key": "pan_document",
+									"type": "file",
+									"src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+								},
+								{
+									"key": "linked_to",
+									"value": "distributor",
+									"type": "text"
+								},
+								{
+									"key": "distributor",
+									"value": "4",
+									"type": "text"
+								},
+								{
+									"key": "authorised_states",
+									"value": "4",
+									"type": "text"
+								},
+								{
+									"key": "authorised_states",
+									"value": "6",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "authorised_districts",
+									"value": "34",
+									"type": "text"
+								},
+								{
+									"key": "authorised_districts",
+									"value": "36",
+									"type": "text",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/dealer/register/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"dealer",
+								"register",
+								""
+							]
+						},
+						"description": "StartFragment\n\n# 🧾 Dealer Registration API\n\nRegisters a **Dealer** in the system.  \n  \nA Dealer can be linked to either a **Manufacturer** or a **Distributor** and can operate in **multiple authorised states and districts**.\n\n---\n\n## 🔗 Endpoint\n\n```\nPOST /api/dealer/register/\n\n ```\n\n**Base URL**\n\n```\nhttp://127.0.0.1:8000\n\n ```\n\n---\n\n## 🔐 Authentication\n\n**Required**  \n  \nThis API is protected using **JWT Authentication**.\n\n**Header**\n\n```\nAuthorization: Bearer <ACCESS_TOKEN>\n\n ```\n\n---\n\n## 📦 Content Type\n\n```\nmultipart/form-data\n\n ```\n\n> \n\nRequired because this API accepts **file uploads** (GST, TAN, PAN documents).\n\n \n  \n\n---\n\n## 🧍 Dealer Registration Fields\n\n### 1️⃣ Basic Information\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| `name` | string | ✅ | Dealer name |\n| `phone_number` | string | ✅ | Dealer phone number |\n| `email` | string | ✅ | Dealer email address |\n| `address` | string | ✅ | Dealer address |\n\n---\n\n### 2️⃣ Location (Single Select)\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| `state` | integer | ✅ | State ID |\n| `district` | integer | ✅ | District ID (must belong to state) |\n\n---\n\n### 3️⃣ Bank Details\n\n| Field | Type | Required |\n| --- | --- | --- |\n| `bank_name` | string | ✅ |\n| `account_holder_name` | string | ✅ |\n| `account_number` | string | ✅ |\n| `ifsc_code` | string | ✅ |\n\n---\n\n### 4️⃣ Tax Details & Documents\n\n| Field | Type | Required |\n| --- | --- | --- |\n| `gst_number` | string | ✅ |\n| `gst_document` | file | ✅ |\n| `tan_number` | string | ✅ |\n| `tan_document` | file | ✅ |\n| `pan_number` | string | ✅ |\n| `pan_document` | file | ✅ |\n\n---\n\n### 5️⃣ Linking Logic (IMPORTANT)\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| `linked_to` | string | ✅ | Either `manufacturer` or `distributor` |\n| `manufacturer` | integer | ❌ | Required only if `linked_to = manufacturer` |\n| `distributor` | integer | ❌ | Required only if `linked_to = distributor` |\n\n⚠️ **Rules**\n\n- If `linked_to = distributor` → `distributor` **must be provided**\n    \n- If `linked_to = manufacturer` → `manufacturer` **must be provided**\n    \n- Both **cannot** be provided together\n    \n\n---\n\n### 6️⃣ Authorised Area (MULTI-SELECT)\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| `authorised_states` | array\\[int\\] | ✅ | Multiple State IDs |\n| `authorised_districts` | array\\[int\\] | ✅ | Multiple District IDs |\n\n⚠️ **Validation Rule**\n\n- Each authorised district **must belong to one of the selected authorised states**\n    \n\n---\n\n## 🧪 Example cURL (Same as Postman)\n\n```\ncurl --location 'http://127.0.0.1:8000/api/dealer/register/' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27; \\\n--form 'name=ABC Dealer' \\\n--form 'phone_number=9876543210' \\\n--form 'email=abc@dealer.com' \\\n--form 'address=Guwahati' \\\n--form 'state=4' \\\n--form 'district=34' \\\n--form 'bank_name=SBI' \\\n--form 'account_holder_name=ABC Dealer' \\\n--form 'account_number=1234567890' \\\n--form 'ifsc_code=SBIN0001234' \\\n--form 'gst_number=22AAAAA0000A1Z5' \\\n--form 'gst_document=@gst.pdf' \\\n--form 'tan_number=BLRA12345B' \\\n--form 'tan_document=@tan.pdf' \\\n--form 'pan_number=ABCDE1234F' \\\n--form 'pan_document=@pan.pdf' \\\n--form 'linked_to=distributor' \\\n--form 'distributor=4' \\\n--form 'authorised_states=4' \\\n--form 'authorised_states=6' \\\n--form 'authorised_districts=34' \\\n--form 'authorised_districts=36'\n\n ```\n\n---\n\n## ✅ Success Response (201 Created)\n\n```\n{\n  \"message\": \"Dealer registered successfully\",\n  \"dealer_id\": 12,\n  \"name\": \"ABC Dealer\"\n}\n\n ```\n\n---\n\n## ❌ Validation Error Examples\n\n### ❌ Missing Distributor when linked_to = distributor\n\n```\n{\n  \"distributor\": [\n    \"Distributor is required when Linked To is Distributor.\"\n  ]\n}\n\n ```\n\n### ❌ Authorised district not matching authorised states\n\n```\n{\n  \"authorised_districts\": [\n    \"District 'Jorhat' does not belong to selected authorised states.\"\n  ]\n}\n\n ```\n\n---\n\n## 📌 Notes for Frontend / Postman Users\n\n- authorised_states: 4authorised_states: 6\n    \n- Files must be uploaded as **File** type in Postman\n    \n- IDs must exist in the database (state, district, distributor, manufacturer)\n    \n\nEndFragment"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Create PI",
+			"item": [
+				{
+					"name": "Create PI",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MDI0MjMyLCJpYXQiOjE3Njc5Mzc4MzIsImp0aSI6IjdmMjA1OWI1OTE1ZDRmZWRhMDEyYWMwNjhmNDY2NDE0IiwidXNlcl9pZCI6IjIifQ.7Dyh7Lmai7OGVtlMF_NBD7bXj4bhm1riw8gEC42g1WE"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n\t\"party_type\": \"b2b\",\r\n\t\"b2b_partner\": 1,\r\n\t\"product\": 1,\r\n\t\"selling_price\": 100,\r\n\t\"discount_percent\": 10,\r\n\t\"quantity\": 3,\r\n\t\"shipping_charges\": 200,\r\n\t\"grand_total\": 123,\r\n\t\"payment_terms\": \"on_delivery\",\r\n\t\"delivery_date\": \"2026-01-10\",\r\n\t\"delivery_address\": \"Saluja CAD Consultancy, Gurugram\",\r\n\t\"state\": 5,\r\n\t\"gstn\": \"435426165427653868\",\r\n\t\"contact_person_name\": \"Ravi Sharma\",\r\n\t\"mobile_no\": \"9876543210\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/pi/create/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"pi",
+								"create",
+								""
+							]
+						},
+						"description": "StartFragment\n\n# 📄 Proforma Invoice (PI) – Create API Documentation\n\n## 🔗 Endpoint\n\n```\nPOST /api/pi/create/\n\n ```\n\n**Base URL (Local):**\n\n```\nhttp://127.0.0.1:8000\n\n ```\n\n---\n\n## 🔐 Authentication\n\nThis API is **JWT protected**.\n\n### Header\n\n| Key | Value |\n| --- | --- |\n| Authorization | Bearer |\n| Content-Type | application/json |\n\n---\n\n## 🧾 Purpose\n\nThis API is used to **create a Proforma Invoice (PI)** for:\n\n- B2B Partner\n    \n- B2C Customer\n    \n- Dealer\n    \n- Distributor\n    \n\n> \n\n⚠️ Only **one party type** is allowed per PI.\n\n \n  \n\n---\n\n## 📥 Request Body (JSON)\n\n### ✅ Example: B2B Partner PI\n\n```\n{\n  \"party_type\": \"b2b\",\n  \"b2b_partner\": 1,\n  \"product\": 1,\n  \"selling_price\": 100,\n  \"discount_percent\": 10,\n  \"quantity\": 3,\n  \"shipping_charges\": 200,\n  \"grand_total\": 123,\n  \"payment_terms\": \"on_delivery\",\n  \"delivery_date\": \"2026-01-10\",\n  \"delivery_address\": \"Saluja CAD Consultancy, Gurugram\",\n  \"state\": 5,\n  \"gstn\": \"435426165427653868\",\n  \"contact_person_name\": \"Ravi Sharma\",\n  \"mobile_no\": \"9876543210\"\n}\n\n ```\n\n---\n\n## 📌 Request Fields Explanation\n\n### 🔹 Party Selection\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| party_type | string | ✅ | `b2b`, `b2c`, `dealer`, `distributor` |\n| b2b_partner | integer | ✅ (if b2b) | B2B Partner ID |\n| b2c_customer | integer | ❌ | B2C Customer ID |\n| dealer | integer | ❌ | Dealer ID |\n| distributor | integer | ❌ | Distributor ID |\n\n> \n\n✅ Only **one** of the above party IDs should be sent based on `party_type`.\n\n \n  \n\n---\n\n### 🔹 Product & Pricing\n\n| Field | Type | Required |\n| --- | --- | --- |\n| product | integer | ✅ |\n| selling_price | number | ✅ |\n| discount_percent | number | ❌ |\n| quantity | integer | ✅ |\n| shipping_charges | number | ❌ |\n| grand_total | number | ✅ |\n\n> \n\nℹ️ **No calculation is done by backend**.  \n`grand_total` must be sent from frontend.\n\n \n  \n\n---\n\n### 🔹 Delivery & Payment\n\n| Field | Type | Required |\n| --- | --- | --- |\n| payment_terms | string | ✅ (`advance`, `on_delivery`, `full`, `partial`) |\n| delivery_date | date | ✅ (`YYYY-MM-DD`) |\n| delivery_address | string | ✅ |\n| state | integer | ✅ |\n\n---\n\n### 🔹 Contact Info\n\n| Field | Type | Required |\n| --- | --- | --- |\n| contact_person_name | string | ✅ |\n| mobile_no | string | ✅ |\n| gstn | string | ❌ |\n\n---\n\n## 📤 Success Response (201)\n\n```\n{\n  \"message\": \"Proforma Invoice created successfully\",\n  \"pi_id\": 2,\n  \"grand_total\": 123.0\n}\n\n ```\n\n---\n\n## ❌ Common Validation Errors\n\n### Missing Party\n\n```\n{\n  \"party\": \"B2B must be selected\"\n}\n\n ```\n\n### Multiple Parties Sent\n\n```\n{\n  \"dealer\": \"This field must be empty\"\n}\n\n ```\n\n### Missing Required Field\n\n```\n{\n  \"grand_total\": [\"This field is required.\"]\n}\n\n ```\n\n---\n\n## 🧪 Postman Setup Steps\n\n1. Open **Postman**\n    \n2. Create new request → **POST**\n    \n3. http://127.0.0.1:8000/api/pi/create/\n    \n4. Add **Headers**\n    \n    - Authorization → Bearer\n        \n    - Content-Type → application/json\n        \n5. Select **Body → raw → JSON**\n    \n6. Paste request body\n    \n7. Click **Send**\n    \n\nEndFragment"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Create Device",
+			"item": [
+				{
+					"name": "STEP 1 – Device Information",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MDQyNTQwLCJpYXQiOjE3Njc5NTYxNDAsImp0aSI6ImJmYjVlMjM2YzczODRkMDhiNjhlZTE4ODI2YzkxMzY5IiwidXNlcl9pZCI6IjIifQ.hnIbH5w2p4EQYkdprPQF0yUUHcRBU1C8Gnfy4yrm9uc"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"make\": \"ABC\",\r\n  \"model\": \"XYZ-100\",\r\n  \"mrp\": 200,\r\n  \"unit_of_measure\": \"Kilograms (KG)\",\r\n  \"version\": \"v1\",\r\n  \"variant\": \"standard\",\r\n  \"state_of_supply\": \"Raw Material\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/devices/step-1/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"devices",
+								"step-1",
+								""
+							]
+						},
+						"description": "StartFragment\n\n# 📘 Devices API — Step 1 (Basic Device Details)\n\n### **Create Device — Step 1**\n\nInitial step of the multi-step device creation process.  \n  \nThis endpoint stores the **basic identification and classification details** of a device.\n\n---\n\n## 🔹 **Endpoint**\n\n| Field | Value |\n| --- | --- |\n| **Method** | `POST` |\n| **URL** | `/api/devices/step-1/` |\n| **Auth** | Bearer Token (JWT) |\n| **Content-Type** | `application/json` |\n\n---\n\n## 🔹 **Headers**\n\n| Key | Value |\n| --- | --- |\n| Authorization | `Bearer` |\n| Content-Type | `application/json` |\n\n---\n\n## 🔹 **Request Body**\n\n```\n{\n  \"make\": \"ABC\",\n  \"model\": \"XYZ-100\",\n  \"mrp\": 200,\n  \"unit_of_measure\": \"Kilograms (KG)\",\n  \"version\": \"v1\",\n  \"variant\": \"standard\",\n  \"state_of_supply\": \"Raw Material\"\n}\n\n ```\n\n### **Field Descriptions**\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| make | string | ✅ | Manufacturer or brand name |\n| model | string | ✅ | Model number or code |\n| mrp | number | ✅ | Maximum Retail Price |\n| unit_of_measure | string | ✅ | Measurement unit (e.g., Kilograms, Liters, Pieces) |\n| version | string | ❌ | Version identifier |\n| variant | string | ❌ | Variant or configuration type |\n| state_of_supply | string | ✅ | Classification/state of supply |\n\n---\n\n## 🔹 **Success Response**\n\n**Status:** `200 OK` or `201 Created`\n\n```\n{\n  \"device_id\": 1,\n  \"message\": \"Step 1 completed\"\n}\n\n ```\n\n### **Response Fields**\n\n| Field | Type | Description |\n| --- | --- | --- |\n| device_id | integer | Unique ID of the newly created device |\n| message | string | Confirmation message |\n\n---\n\n## 🔹 **Usage Notes**\n\n- This is the **first step** in a multi-step device onboarding workflow.\n    \n- The returned `device_id` must be passed in subsequent steps (`step-2`, `step-3`, etc.).\n    \n- Authorization token must be valid and unexpired.\n    \n- All required fields must be present, otherwise validation errors will occur.\n    \n\n---\n\n## 🔹 **Common Error Responses**\n\n| Status | Reason | Example |\n| --- | --- | --- |\n| 400 | Validation error | Missing or invalid field |\n| 401 | Unauthorized | Token missing or expired |\n| 403 | Forbidden | Insufficient permissions |\n\n---\n\n### ✅ **Example Flow**\n\n1. Call `/step-1/` → receive `device_id`\n    \n2. Use `device_id` in `/step-2/`, `/step-3/`…\n    \n3. Complete all steps to fully register a device\n    \n\nEndFragment"
+					},
+					"response": []
+				},
+				{
+					"name": "STEP 2 – BOM Entry (Individual)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MDQyNTQwLCJpYXQiOjE3Njc5NTYxNDAsImp0aSI6ImJmYjVlMjM2YzczODRkMDhiNjhlZTE4ODI2YzkxMzY5IiwidXNlcl9pZCI6IjIifQ.hnIbH5w2p4EQYkdprPQF0yUUHcRBU1C8Gnfy4yrm9uc"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"device_id\": 1,\r\n  \"upload_type\": \"individual\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/devices/step-2/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"devices",
+								"step-2",
+								""
+							]
+						},
+						"description": "StartFragment\n\n# 📘 Devices API — Step 2 (Upload Mode Selection)\n\n### **Configure Upload Type — Step 2**\n\nThis step defines **how device-related documents or data will be uploaded** (individually or in bulk).\n\n---\n\n## 🔹 **Endpoint**\n\n| Field | Value |\n| --- | --- |\n| **Method** | `POST` |\n| **URL** | `/api/devices/step-2/` |\n| **Auth** | Bearer Token (JWT) |\n| **Content-Type** | `application/json` |\n\n---\n\n## 🔹 **Headers**\n\n| Key | Value |\n| --- | --- |\n| Authorization | `Bearer` |\n| Content-Type | `application/json` |\n\n---\n\n## 🔹 **Request Body**\n\n```\n{\n  \"device_id\": 1,\n  \"upload_type\": \"individual\"\n}\n\n ```\n\n### **Field Descriptions**\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| device_id | integer | ✅ | ID returned from Step-1 |\n| upload_type | string | ✅ | Upload mode: `individual` or `bulk` |\n\n---\n\n## 🔹 **Success Response**\n\n**Status:** `200 OK`\n\n```\n{\n  \"message\": \"Step 2 completed\"\n}\n\n ```\n\n---\n\n## 🔹 **Usage Notes**\n\n- Must be called **after Step-1**.\n    \n- `device_id` must reference a valid device created in Step-1.\n    \n- `upload_type` controls how documents/files will be submitted in later steps.\n    \n    - `individual` → files uploaded one by one\n        \n    - `bulk` → files uploaded as a batch (e.g., CSV/ZIP)\n        \n\n---\n\n## 🔹 **Common Error Responses**\n\n| Status | Reason | Example |\n| --- | --- | --- |\n| 400 | Validation error | Invalid `upload_type` |\n| 404 | Not found | Invalid `device_id` |\n| 401 | Unauthorized | Token missing or expired |\n\n---\n\n## 🔹 **Flow Continuation**\n\n1. Step-1 → Create device → get `device_id`\n    \n2. Step-2 → Choose upload mode\n    \n3. Step-3 → Upload files / metadata based on mode\n    \n\n---\n\nEndFragment"
+					},
+					"response": []
+				},
+				{
+					"name": "STEP 3 – BOM Components",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MDQyNTQwLCJpYXQiOjE3Njc5NTYxNDAsImp0aSI6ImJmYjVlMjM2YzczODRkMDhiNjhlZTE4ODI2YzkxMzY5IiwidXNlcl9pZCI6IjIifQ.hnIbH5w2p4EQYkdprPQF0yUUHcRBU1C8Gnfy4yrm9uc"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"device_id\": 1,\r\n  \"components\": [\r\n    {\r\n      \"identification_mark\": \"1\",\r\n      \"description\": \"ORANGE LED\",\r\n      \"designator\": \"BLE1\",\r\n      \"footprint\": \"0805\",\r\n      \"volt\": \"30\",\r\n      \"part_no\": \"0805\",\r\n      \"part_make\": \"ABC\",\r\n      \"per_device_quantity\": 1,\r\n      \"remarks\": \"NA\"\r\n    },\r\n    {\r\n      \"identification_mark\": \"2\",\r\n      \"description\": \"RED LED\",\r\n      \"designator\": \"PWR1\",\r\n      \"footprint\": \"0805\",\r\n      \"volt\": \"25\",\r\n      \"part_no\": \"0805\",\r\n      \"part_make\": \"XYZ\",\r\n      \"per_device_quantity\": 1,\r\n      \"remarks\": \"\"\r\n    }\r\n  ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/devices/step-3/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"devices",
+								"step-3",
+								""
+							]
+						},
+						"description": "StartFragment\n\n# 📘 Devices API — Step 3 (Component / BOM Details)\n\n### **Add Device Components (Bill of Materials) — Step 3**\n\nThis step stores the **list of electronic/mechanical components** used in the device (Bill of Materials — BOM).\n\n---\n\n## 🔹 **Endpoint**\n\n| Field | Value |\n| --- | --- |\n| **Method** | `POST` |\n| **URL** | `/api/devices/step-3/` |\n| **Auth** | Bearer Token (JWT) |\n| **Content-Type** | `application/json` |\n\n---\n\n## 🔹 **Headers**\n\n| Key | Value |\n| --- | --- |\n| Authorization | `Bearer` |\n| Content-Type | `application/json` |\n\n---\n\n## 🔹 **Request Body**\n\n```\n{\n  \"device_id\": 1,\n  \"components\": [\n    {\n      \"identification_mark\": \"1\",\n      \"description\": \"ORANGE LED\",\n      \"designator\": \"BLE1\",\n      \"footprint\": \"0805\",\n      \"volt\": \"30\",\n      \"part_no\": \"0805\",\n      \"part_make\": \"ABC\",\n      \"per_device_quantity\": 1,\n      \"remarks\": \"NA\"\n    }\n  ]\n}\n\n ```\n\n---\n\n## 🔹 **Component Object Fields**\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| identification_mark | string | ✅ | Serial or reference number |\n| description | string | ✅ | Component description |\n| designator | string | ✅ | PCB designator (e.g., R1, C2, LED1) |\n| footprint | string | ❌ | Package / footprint type |\n| volt | string | ❌ | Voltage rating |\n| part_no | string | ❌ | Manufacturer part number |\n| part_make | string | ❌ | Manufacturer name |\n| per_device_quantity | integer | ✅ | Quantity used per device |\n| remarks | string | ❌ | Additional notes |\n\n---\n\n## 🔹 **Success Response**\n\n**Status:** `200 OK`\n\n```\n{\n  \"message\": \"Step 3 completed\"\n}\n\n ```\n\n---\n\n## 🔹 **Usage Notes**\n\n- Must be called **after Step-2**.\n    \n- `components` is an array — you can send **one or many components** in a single request.\n    \n- Each component represents a line item in the device’s BOM.\n    \n- `designator` should be unique per device to avoid duplication conflicts.\n    \n\n---\n\n## 🔹 **Common Error Responses**\n\n| Status | Reason | Example |\n| --- | --- | --- |\n| 400 | Validation error | Missing `components` or invalid fields |\n| 404 | Not found | Invalid `device_id` |\n| 401 | Unauthorized | Token missing or expired |\n\n---\n\n## 🔹 **Flow So Far**\n\n1. Step-1 → Create device\n    \n2. Step-2 → Select upload type\n    \n3. Step-3 → Add components / BOM\n    \n4. Step-4 → (Next step…)\n    \n\nEndFragment"
+					},
+					"response": []
+				},
+				{
+					"name": "STEP 4 – Enclosure",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MDQyNTQwLCJpYXQiOjE3Njc5NTYxNDAsImp0aSI6ImJmYjVlMjM2YzczODRkMDhiNjhlZTE4ODI2YzkxMzY5IiwidXNlcl9pZCI6IjIifQ.hnIbH5w2p4EQYkdprPQF0yUUHcRBU1C8Gnfy4yrm9uc"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"device_id\": 1,\r\n  \"length\": 12,\r\n  \"breadth\": 12,\r\n  \"height\": 12,\r\n  \"color\": \"Black\",\r\n  \"material\": \"Plastic\",\r\n  \"quantity\": 1,\r\n  \"make\": \"Local\",\r\n  \"part_number\": \"ENC-001\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/devices/step-4/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"devices",
+								"step-4",
+								""
+							]
+						},
+						"description": "StartFragment\n\n# 📘 Devices API — Step 4 (Physical & Enclosure Details)\n\n### **Add Device Physical Specifications — Step 4**\n\nThis step stores the **physical, mechanical, and enclosure-related details** of the device.\n\n---\n\n## 🔹 **Endpoint**\n\n| Field | Value |\n| --- | --- |\n| **Method** | `POST` |\n| **URL** | `/api/devices/step-4/` |\n| **Auth** | Bearer Token (JWT) |\n| **Content-Type** | `application/json` |\n\n---\n\n## 🔹 **Headers**\n\n| Key | Value |\n| --- | --- |\n| Authorization | `Bearer` |\n| Content-Type | `application/json` |\n\n---\n\n## 🔹 **Request Body**\n\n```\n{\n  \"device_id\": 1,\n  \"length\": 12,\n  \"breadth\": 12,\n  \"height\": 12,\n  \"color\": \"Black\",\n  \"material\": \"Plastic\",\n  \"quantity\": 1,\n  \"make\": \"Local\",\n  \"part_number\": \"ENC-001\"\n}\n\n ```\n\n---\n\n## 🔹 **Field Descriptions**\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| device_id | integer | ✅ | Device ID from Step-1 |\n| length | number | ✅ | Length of enclosure (units assumed standard) |\n| breadth | number | ✅ | Breadth/width |\n| height | number | ✅ | Height |\n| color | string | ❌ | Enclosure color |\n| material | string | ❌ | Enclosure material |\n| quantity | integer | ✅ | Number of enclosures per device |\n| make | string | ❌ | Manufacturer / supplier |\n| part_number | string | ❌ | Enclosure part number |\n\n---\n\n## 🔹 **Success Response**\n\n**Status:** `200 OK`\n\n```\n{\n  \"message\": \"Step 4 completed\"\n}\n\n ```\n\n---\n\n## 🔹 **Usage Notes**\n\n- Must be called **after Step-3**.\n    \n- Dimensions should use a consistent unit (e.g., cm or mm — as defined by backend).\n    \n- Quantity is usually `1` unless multiple enclosures are used per device.\n    \n\n---\n\n## 🔹 **Common Error Responses**\n\n| Status | Reason | Example |\n| --- | --- | --- |\n| 400 | Validation error | Missing or invalid dimension |\n| 404 | Not found | Invalid `device_id` |\n| 401 | Unauthorized | Token missing or expired |\n\n---\n\n## 🔹 **Flow So Far**\n\n1. Step-1 → Create device\n    \n2. Step-2 → Upload type\n    \n3. Step-3 → Components/BOM\n    \n4. Step-4 → Physical details\n    \n5. Step-5 → (Next step…)\n    \n\nEndFragment"
+					},
+					"response": []
+				},
+				{
+					"name": "STEP 5 – Wire Harness + Connectors",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MDQyNTQwLCJpYXQiOjE3Njc5NTYxNDAsImp0aSI6ImJmYjVlMjM2YzczODRkMDhiNjhlZTE4ODI2YzkxMzY5IiwidXNlcl9pZCI6IjIifQ.hnIbH5w2p4EQYkdprPQF0yUUHcRBU1C8Gnfy4yrm9uc"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"device_id\": 1,\r\n  \"number_of_wires\": 12,\r\n  \"specification\": \"Standard wiring\",\r\n  \"make\": \"Local\",\r\n  \"part_number\": \"WH-01\",\r\n  \"connectors\": [\r\n    {\r\n      \"connector_name\": \"Connector A\",\r\n      \"number_of_pins\": 2,\r\n      \"wire_colors\": \"Red,Black\"\r\n    },\r\n    {\r\n      \"connector_name\": \"Connector B\",\r\n      \"number_of_pins\": 4,\r\n      \"wire_colors\": \"Blue,Green\"\r\n    }\r\n  ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/devices/step-5/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"devices",
+								"step-5",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/devices/step-5/' \\\r\n-H \"Authorization: Bearer <TOKEN>\" \\\r\n-H \"Content-Type: application/json\" \\\r\n--data '{\r\n  \"device_id\": 1,\r\n  \"number_of_wires\": 12,\r\n  \"specification\": \"Standard wiring\",\r\n  \"make\": \"Local\",\r\n  \"part_number\": \"WH-01\",\r\n  \"connectors\": [\r\n    {\r\n      \"connector_name\": \"Connector A\",\r\n      \"number_of_pins\": 2,\r\n      \"wire_colors\": \"Red,Black\"\r\n    },\r\n    {\r\n      \"connector_name\": \"Connector B\",\r\n      \"number_of_pins\": 4,\r\n      \"wire_colors\": \"Blue,Green\"\r\n    }\r\n  ]\r\n}'\r\n"
+					},
+					"response": []
+				},
+				{
+					"name": "STEP 6 – Battery",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MDQyNTQwLCJpYXQiOjE3Njc5NTYxNDAsImp0aSI6ImJmYjVlMjM2YzczODRkMDhiNjhlZTE4ODI2YzkxMzY5IiwidXNlcl9pZCI6IjIifQ.hnIbH5w2p4EQYkdprPQF0yUUHcRBU1C8Gnfy4yrm9uc"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"device_id\": 1,\r\n  \"capacity\": \"850 mAh\",\r\n  \"length\": 132,\r\n  \"breadth\": 123,\r\n  \"height\": 123,\r\n  \"make\": \"Panasonic\",\r\n  \"part_number\": \"BAT-850\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/devices/step-6/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"devices",
+								"step-6",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/devices/step-6/' \\\r\n-H \"Authorization: Bearer <TOKEN>\" \\\r\n-H \"Content-Type: application/json\" \\\r\n--data '{\r\n  \"device_id\": 1,\r\n  \"capacity\": \"850 mAh\",\r\n  \"length\": 132,\r\n  \"breadth\": 123,\r\n  \"height\": 123,\r\n  \"make\": \"Panasonic\",\r\n  \"part_number\": \"BAT-850\"\r\n}'"
+					},
+					"response": []
+				},
+				{
+					"name": "STEP 7 – SOS Button",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MDQyNTQwLCJpYXQiOjE3Njc5NTYxNDAsImp0aSI6ImJmYjVlMjM2YzczODRkMDhiNjhlZTE4ODI2YzkxMzY5IiwidXNlcl9pZCI6IjIifQ.hnIbH5w2p4EQYkdprPQF0yUUHcRBU1C8Gnfy4yrm9uc"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"device_id\": 1,\r\n  \"total_length\": 1243,\r\n  \"quantity_per_set\": 1,\r\n  \"make\": \"Local\",\r\n  \"part_number\": \"SOS-01\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/devices/step-7/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"devices",
+								"step-7",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/devices/step-7/' \\\r\n-H \"Authorization: Bearer <TOKEN>\" \\\r\n-H \"Content-Type: application/json\" \\\r\n--data '{\r\n  \"device_id\": 1,\r\n  \"total_length\": 1243,\r\n  \"quantity_per_set\": 1,\r\n  \"make\": \"Local\",\r\n  \"part_number\": \"SOS-01\"\r\n}'\r\n"
+					},
+					"response": []
+				},
+				{
+					"name": "STEP 8 – Stickers (Multiple)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MDQyNTQwLCJpYXQiOjE3Njc5NTYxNDAsImp0aSI6ImJmYjVlMjM2YzczODRkMDhiNjhlZTE4ODI2YzkxMzY5IiwidXNlcl9pZCI6IjIifQ.hnIbH5w2p4EQYkdprPQF0yUUHcRBU1C8Gnfy4yrm9uc"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "device_id",
+									"value": "1",
+									"type": "text"
+								},
+								{
+									"key": "stickers[0][name]",
+									"value": "Main Label",
+									"type": "text"
+								},
+								{
+									"key": "stickers[0][length]",
+									"value": "123",
+									"type": "text"
+								},
+								{
+									"key": "stickers[0][breadth]",
+									"value": "45",
+									"type": "text"
+								},
+								{
+									"key": "stickers[0][quantity]",
+									"value": "1",
+									"type": "text"
+								},
+								{
+									"key": "stickers[0][file]",
+									"type": "file",
+									"src": "/C:/Users/desk6/Pictures/Screenshots/Screenshot 2026-01-05 113820.png"
+								},
+								{
+									"key": "stickers[0][make]",
+									"value": "StickerCo",
+									"type": "text"
+								},
+								{
+									"key": "stickers[0][part_number]",
+									"value": "ST-01",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/devices/step-8/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"devices",
+								"step-8",
+								""
+							]
+						},
+						"description": "StartFragment\n\n# 📘 Devices API — Step 8 (Sticker / Label Upload)\n\n### **Upload Stickers / Labels — Step 8**\n\nThis step uploads **stickers, labels, or printed markings** associated with the device, including their dimensions, quantity, and image/file.\n\n---\n\n## 🔹 **Endpoint**\n\n| Field | Value |\n| --- | --- |\n| **Method** | `POST` |\n| **URL** | `/api/devices/step-8/` |\n| **Auth** | Bearer Token (JWT) |\n| **Content-Type** | `multipart/form-data` |\n\n---\n\n## 🔹 **Headers**\n\n| Key | Value |\n| --- | --- |\n| Authorization | `Bearer` |\n| Content-Type | `multipart/form-data` |\n\n> \n\n⚠️ **Note:** In Postman, do **not manually set** `Content-Type`. Let Postman generate it when you select `form-data`.\n\n \n  \n\n---\n\n## 🔹 **Request Body (form-data)**\n\n| Key | Type | Value Example |\n| --- | --- | --- |\n| device_id | Text | `1` |\n| stickers\\[0\\]\\[name\\] | Text | `Main Label` |\n| stickers\\[0\\]\\[length\\] | Text | `123` |\n| stickers\\[0\\]\\[breadth\\] | Text | `45` |\n| stickers\\[0\\]\\[quantity\\] | Text | `1` |\n| stickers\\[0\\]\\[file\\] | File | `label.png` |\n| stickers\\[0\\]\\[make\\] | Text | `StickerCo` |\n| stickers\\[0\\]\\[part_number\\] | Text | `ST-01` |\n\n> \n\nYou can upload multiple stickers by incrementing the index:  \n`stickers[1][...]`, `stickers[2][...]`, etc.\n\n \n  \n\n---\n\n## 🔹 **Sticker Object Fields**\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| name | string | ✅ | Sticker / label name |\n| length | number | ❌ | Sticker length |\n| breadth | number | ❌ | Sticker width |\n| quantity | integer | ✅ | Quantity per device |\n| file | file | ✅ | Image or PDF of the sticker |\n| make | string | ❌ | Manufacturer |\n| part_number | string | ❌ | Part number |\n\n---\n\n## 🔹 **Success Response**\n\n**Status:** `200 OK`\n\n```\n{\n  \"message\": \"Step 8 completed\"\n}\n\n ```\n\n---\n\n## 🔹 **Usage Notes**\n\n- Must be called **after Step-7**.\n    \n- Supports multiple stickers per device.\n    \n- Only multipart requests are accepted — JSON will fail.\n    \n- Allowed file types typically: PNG, JPG, PDF (as per backend validation).\n    \n\n---\n\n## 🔹 **Common Error Responses**\n\n| Status | Reason | Example |\n| --- | --- | --- |\n| 400 | Validation error | Missing file or name |\n| 415 | Unsupported Media Type | Sent JSON instead of form-data |\n| 404 | Not found | Invalid `device_id` |\n| 401 | Unauthorized | Token missing or expired |\n\n---\n\n## 🔹 **Flow So Far**\n\n1. Step-1 → Device\n    \n2. Step-2 → Upload type\n    \n3. Step-3 → Components\n    \n4. Step-4 → Enclosure\n    \n5. Step-5 → Wiring\n    \n6. Step-6 → Battery\n    \n7. Step-7 → Additional parts\n    \n8. Step-8 → Stickers / labels\n    \n9. Step-9 → (Next step…)\n    \n\nEndFragment"
+					},
+					"response": []
+				},
+				{
+					"name": "STEP 9 – User Manual",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MDQyNTQwLCJpYXQiOjE3Njc5NTYxNDAsImp0aSI6ImJmYjVlMjM2YzczODRkMDhiNjhlZTE4ODI2YzkxMzY5IiwidXNlcl9pZCI6IjIifQ.hnIbH5w2p4EQYkdprPQF0yUUHcRBU1C8Gnfy4yrm9uc"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "device_id",
+									"value": "1",
+									"type": "text"
+								},
+								{
+									"key": "file",
+									"type": "file",
+									"src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/devices/step-9/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"devices",
+								"step-9",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/devices/step-9/' \\\r\n--header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MDQyNTQwLCJpYXQiOjE3Njc5NTYxNDAsImp0aSI6ImJmYjVlMjM2YzczODRkMDhiNjhlZTE4ODI2YzkxMzY5IiwidXNlcl9pZCI6IjIifQ.hnIbH5w2p4EQYkdprPQF0yUUHcRBU1C8Gnfy4yrm9uc' \\\r\n--form 'device_id=1' \\\r\n--form 'file=@\"/absolute/path/to/manual.pdf\"'\r\n"
+					},
+					"response": []
+				},
+				{
+					"name": "STEP 10 – Accessories (FINAL)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MDQyNTQwLCJpYXQiOjE3Njc5NTYxNDAsImp0aSI6ImJmYjVlMjM2YzczODRkMDhiNjhlZTE4ODI2YzkxMzY5IiwidXNlcl9pZCI6IjIifQ.hnIbH5w2p4EQYkdprPQF0yUUHcRBU1C8Gnfy4yrm9uc"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"device_id\": 1,\r\n  \"accessories\": [\r\n    {\r\n      \"name\": \"Charging Cable\",\r\n      \"quantity\": 1,\r\n      \"specifications\": \"USB Type-C\",\r\n      \"description\": \"Fast charging cable\"\r\n    }\r\n  ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/devices/step-10/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"devices",
+								"step-10",
+								""
+							]
+						},
+						"description": "StartFragment\n\n# 📘 Devices API — Step 10 (Accessories & Finalization)\n\n### **Add Accessories and Finalize Device — Step 10**\n\nThis final step stores **accessories included with the device** and marks the device onboarding process as complete.\n\n---\n\n## 🔹 **Endpoint**\n\n| Field | Value |\n| --- | --- |\n| **Method** | `POST` |\n| **URL** | `/api/devices/step-10/` |\n| **Auth** | Bearer Token (JWT) |\n| **Content-Type** | `application/json` |\n\n---\n\n## 🔹 **Headers**\n\n| Key | Value |\n| --- | --- |\n| Authorization | `Bearer` |\n| Content-Type | `application/json` |\n\n---\n\n## 🔹 **Request Body**\n\n```\n{\n  \"device_id\": 1,\n  \"accessories\": [\n    {\n      \"name\": \"Charging Cable\",\n      \"quantity\": 1,\n      \"specifications\": \"USB Type-C\",\n      \"description\": \"Fast charging cable\"\n    }\n  ]\n}\n\n ```\n\n---\n\n## 🔹 **Accessory Object Fields**\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| name | string | ✅ | Accessory name |\n| quantity | integer | ✅ | Quantity per device |\n| specifications | string | ❌ | Technical specification |\n| description | string | ❌ | Description / notes |\n\n---\n\n## 🔹 **Success Response**\n\n**Status:** `200 OK`\n\n```\n{\n  \"message\": \"Device creation completed\"\n}\n\n ```\n\n---\n\n## 🔹 **Usage Notes**\n\n- Must be called **after Step-9**.\n    \n- This step **finalizes the device** and marks it as fully configured.\n    \n- After this step, the device is ready for production, listing, or further workflows.\n    \n\n---\n\n## 🔹 **Common Error Responses**\n\n| Status | Reason | Example |\n| --- | --- | --- |\n| 400 | Validation error | Missing accessory name |\n| 404 | Not found | Invalid `device_id` |\n| 401 | Unauthorized | Token missing or expired |\n\n---\n\n## 🧭 **Final Workflow Summary**\n\n| Step | Purpose |\n| --- | --- |\n| Step-1 | Basic info |\n| Step-2 | Upload mode |\n| Step-3 | Components |\n| Step-4 | Enclosure |\n| Step-5 | Wiring |\n| Step-6 | Battery |\n| Step-7 | Additional parts |\n| Step-8 | Stickers |\n| Step-9 | Documents |\n| Step-10 | Accessories & finalize |\n\nEndFragment"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "ORDER ENTRY",
+			"item": [
+				{
+					"name": "ERROR CASE",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MTI5MjQ5LCJpYXQiOjE3NjgwNDI4NDksImp0aSI6ImVjYzkwMzE1ODhkNjQzMTI4ZjhhOTJiYmY1NGE4YmJmIiwidXNlcl9pZCI6IjIifQ.OyMAxniFnAajDtmhROIBCdeWG0UjmycQr_wBrxLCakc"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"customer_name\": \"ABC Logistics\",\r\n  \"customer_type\": \"dealer\",\r\n  \"contact_person\": \"Rohit Sharma\",\r\n  \"mobile_no\": \"9876543210\",\r\n\r\n  \"batch\": 7,\r\n\r\n  \"quantity\": 50,\r\n  \"unit_price\": 2500,\r\n\r\n  \"discount_percent\": 0,\r\n  \"gst_percent\": 18,\r\n  \"shipping_charges\": 0,\r\n  \"grand_total\": 14,\r\n\r\n  \"delivery_date\": \"2026-01-15\",\r\n  \"delivery_address\": \"Mumbai\",\r\n\r\n  \"payment_mode\": \"upi\",\r\n  \"payment_status\": \"paid\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/sales-orders/create/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"sales-orders",
+								"create",
+								""
+							]
+						},
+						"description": "StartFragment\n\n## 4️⃣ Error – Grand Total Mismatch\n\n### Scenario\n\nFrontend sends incorrect `grand_total`.\n\n### Request Example\n\n```\n{\n  \"batch\": 7,\n  \"quantity\": 50,\n  \"unit_price\": 2500,\n  \"discount_percent\": 0,\n  \"gst_percent\": 18,\n  \"shipping_charges\": 0,\n  \"grand_total\": 14\n}\n\n ```\n\n### Error Response (400)\n\n```\n{\n  \"grand_total\": [\n    \"Grand total mismatch.\"\n  ]\n}\n\n ```\n\n### Explanation\n\n- Backend recalculates total\n    \n- If mismatch → request is rejected\n    \n- Prevents billing errors or tampering\n    \n\n---\n\n## 5️⃣ Error – Quantity Exceeds Stock\n\n### Error Response\n\n```\n{\n  \"quantity\": \"Quantity exceeds available stock.\"\n}\n\n ```\n\nEndFragment"
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE SALES ORDER (SUCCESS CASE)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MTI5MjQ5LCJpYXQiOjE3NjgwNDI4NDksImp0aSI6ImVjYzkwMzE1ODhkNjQzMTI4ZjhhOTJiYmY1NGE4YmJmIiwidXNlcl9pZCI6IjIifQ.OyMAxniFnAajDtmhROIBCdeWG0UjmycQr_wBrxLCakc"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"customer_name\": \"DEF Logistics\",\r\n  \"customer_type\": \"distributor\",\r\n  \"contact_person\": \"Rohit Sharma\",\r\n  \"mobile_no\": \"9876543210\",\r\n\r\n  \"batch\": 7,\r\n\r\n  \"quantity\": 3,\r\n  \"unit_price\": 2500,\r\n\r\n  \"discount_percent\": 5,\r\n  \"gst_percent\": 18,\r\n  \"shipping_charges\": 500,\r\n  \"grand_total\": 8907.50,\r\n\r\n  \"delivery_date\": \"2026-01-15\",\r\n  \"delivery_address\": \"Mumbai, Maharashtra\",\r\n\r\n  \"payment_mode\": \"upi\",\r\n  \"payment_status\": \"paid\",\r\n\r\n  \"invoice_number\": \"INV-2001\",\r\n  \"remarks\": \"Urgent delivery\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/sales-orders/create/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"sales-orders",
+								"create",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/sales-orders/create/' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>' \\\r\n--header 'Content-Type: application/json' \\\r\n--data '{\r\n  \"customer_name\": \"ABC Logistics\",\r\n  \"customer_type\": \"dealer\",\r\n  \"contact_person\": \"Rohit Sharma\",\r\n  \"mobile_no\": \"9876543210\",\r\n\r\n  \"batch\": 7,\r\n\r\n  \"quantity\": 3,\r\n  \"unit_price\": 2500,\r\n\r\n  \"discount_percent\": 5,\r\n  \"gst_percent\": 18,\r\n  \"shipping_charges\": 500,\r\n  \"grand_total\": 8907.50,\r\n\r\n  \"delivery_date\": \"2026-01-15\",\r\n  \"delivery_address\": \"Mumbai, Maharashtra\",\r\n\r\n  \"payment_mode\": \"upi\",\r\n  \"payment_status\": \"paid\",\r\n\r\n  \"invoice_number\": \"INV-2001\",\r\n  \"remarks\": \"Urgent delivery\"\r\n}'\r\n"
+					},
+					"response": []
+				},
+				{
+					"name": "GET BATCHES FOR A PRODUCT",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MTI5MjQ5LCJpYXQiOjE3NjgwNDI4NDksImp0aSI6ImVjYzkwMzE1ODhkNjQzMTI4ZjhhOTJiYmY1NGE4YmJmIiwidXNlcl9pZCI6IjIifQ.OyMAxniFnAajDtmhROIBCdeWG0UjmycQr_wBrxLCakc"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/order-batches/?product_id=1",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"order-batches",
+								""
+							],
+							"query": [
+								{
+									"key": "product_id",
+									"value": "1"
+								}
+							]
+						},
+						"description": "StartFragment\n\n## 2️⃣ Get Batches for Selected Product\n\n### (Batch dropdown – Step 2 in UI)\n\n### Endpoint\n\n```\nGET /order-batches/?product_id={product_id}\n\n ```\n\n### Description\n\nReturns **all batches belonging to a specific product**, along with their **available stock**.\n\nUsed to populate:\n\n> \n\n**Batch Number dropdown + Available Stock field**\n\n \n  \n\n### Headers\n\n| Key | Value |\n| --- | --- |\n| Authorization | Bearer |\n\n### Query Params\n\n| Param | Required | Description |\n| --- | --- | --- |\n| product_id | ✅ Yes | ID from `/order-products/` |\n\n### Request (cURL)\n\n```\ncurl --location 'http://127.0.0.1:8000/api/order-batches/?product_id=1' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27;\n\n ```\n\n### Success Response (200)\n\n```\n[\n  {\n    \"id\": 1,\n    \"batch_number\": \"BATCH-2024-001\",\n    \"available_stock\": 94\n  },\n  {\n    \"id\": 7,\n    \"batch_number\": \"BATCH-2024-002\",\n    \"available_stock\": 197\n  },\n  {\n    \"id\": 8,\n    \"batch_number\": \"BATCH-2024-003\",\n    \"available_stock\": 500\n  },\n  {\n    \"id\": 9,\n    \"batch_number\": \"BATCH-2024-004\",\n    \"available_stock\": 1010\n  }\n]\n\n ```\n\n### Notes\n\n- **Use** **`id`** **of the batch** in order creation\n    \n- `available_stock` is **read-only**\n    \n- Each batch has its own stock\n    \n\nEndFragment"
+					},
+					"response": []
+				},
+				{
+					"name": "GET PRODUCT / DEVICE MODELS",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MTI5MjQ5LCJpYXQiOjE3NjgwNDI4NDksImp0aSI6ImVjYzkwMzE1ODhkNjQzMTI4ZjhhOTJiYmY1NGE4YmJmIiwidXNlcl9pZCI6IjIifQ.OyMAxniFnAajDtmhROIBCdeWG0UjmycQr_wBrxLCakc"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/order-products/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"order-products",
+								""
+							]
+						},
+						"description": "StartFragment\n\n.\n\n---\n\n# 📘 Mapwala MIS – Sales Order APIs\n\n**Postman Documentation**\n\nBase URL:\n\n```\nhttp://127.0.0.1:8000/api\n\n ```\n\nAuthentication:\n\n- All APIs require **JWT Bearer Token**\n    \n- Add Header in Postman:\n    \n\n```\nAuthorization: Bearer <ACCESS_TOKEN>\n\n ```\n\n---\n\n## 1️⃣ Get Product / Device Models\n\n### (Product dropdown – Step 1 in UI)\n\n### Endpoint\n\n```\nGET /order-products/\n\n ```\n\n### Description\n\nFetches all available **Product / Device Models** that can be ordered.\n\nUsed to populate:\n\n> \n\n**Product / Device Model dropdown**\n\n \n  \n\n### Headers\n\n| Key | Value |\n| --- | --- |\n| Authorization | Bearer |\n\n### Request (cURL)\n\n```\ncurl --location 'http://127.0.0.1:8000/api/order-products/' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27;\n\n ```\n\n### Success Response (200)\n\n```\n[\n  { \"id\": 4, \"name\": \"Asset Tracker\" },\n  { \"id\": 1, \"name\": \"GPS Tracker Pro\" },\n  { \"id\": 2, \"name\": \"GPS Tracker Standard\" },\n  { \"id\": 5, \"name\": \"IoT Sensor\" },\n  { \"id\": 3, \"name\": \"Vehicle Tracker\" }\n]\n\n ```\n\n### Notes\n\n- `id` is required for the next API\n    \n- Products are sorted alphabetically\n    \n\nEndFragment"
 					},
 					"response": []
 				}

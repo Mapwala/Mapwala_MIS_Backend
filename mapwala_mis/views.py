@@ -12,6 +12,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.shortcuts import get_object_or_404
+from django.db import transaction
 
 from .serializers import *
 from .models import *
@@ -395,3 +396,70 @@ class DeviceAccessoryAPIView(APIView):
         device.save()
 
         return Response({"message": "Device creation completed"})
+
+
+# ---------------- Order Products, Batches, Sales Order ----------------
+
+
+class OrderProductListAPIView(APIView):
+    """
+    UI: Product / Device Model dropdown
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        products = OrderProduct.objects.all()
+        return Response(OrderProductSerializer(products, many=True).data)
+
+
+class OrderBatchListAPIView(APIView):
+    """
+    UI: Batch dropdown depends on selected product
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        product_id = request.query_params.get("product_id")
+
+        if not product_id:
+            return Response(
+                {"product_id": "product_id query param is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        batches = OrderBatch.objects.filter(product_id=product_id)
+        return Response(OrderBatchSerializer(batches, many=True).data)
+
+
+class SalesOrderCreateAPIView(APIView):
+    """
+    Final submit: Create sales order + reduce batch stock
+    """
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request):
+        serializer = SalesOrderCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Lock batch row to avoid race conditions
+        batch = OrderBatch.objects.select_for_update().get(
+            id=serializer.validated_data["batch"].id
+        )
+
+        order = serializer.save()
+
+        batch.available_stock -= order.quantity
+        batch.save(update_fields=["available_stock"])
+
+        return Response(
+            {
+                "message": "Sales order created successfully",
+                "order_id": order.id,
+                "product": order.product.name,
+                "batch": order.batch.batch_number,
+                "remaining_stock": batch.available_stock,
+                "grand_total": order.grand_total,
+            },
+            status=status.HTTP_201_CREATED,
+        )

@@ -355,3 +355,40 @@ class AccessorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Accessory
         exclude = ["device"]
+
+
+class OrderProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderProduct
+        fields = ["id", "name"]
+
+
+class OrderBatchSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderBatch
+        fields = ["id", "batch_number", "available_stock"]
+
+
+class SalesOrderCreateSerializer(serializers.ModelSerializer):
+    product = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = SalesOrder
+        fields = "__all__"
+
+    def validate(self, data):
+        batch = data["batch"]
+        data["product"] = batch.product
+
+        if data["quantity"] > batch.available_stock:
+            raise serializers.ValidationError({
+                "quantity": "Quantity exceeds available stock."
+            })
+
+        calculated = SalesOrder(**data).calculate_grand_total()
+        if calculated != data["grand_total"]:
+            raise serializers.ValidationError({
+                "grand_total": "Grand total mismatch."
+            })
+
+        return data
