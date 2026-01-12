@@ -29,9 +29,16 @@ urlpatterns = [
     
     path("pi/create/", ProformaInvoiceCreateAPIView.as_view(), name="create-pi"),
     
+    path("order-entry/step-1/", OrderEntryStep1APIView.as_view()),
+    
     path("order-products/", OrderProductListAPIView.as_view()),
     path("order-batches/", OrderBatchListAPIView.as_view()),
     path("sales-orders/create/", SalesOrderCreateAPIView.as_view()),
+    
+    path("production-orders/add-to-stock/", ProductionOrderCreateAPIView.as_view()),
+    path("dropdowns/products/", ProductDropdownAPIView.as_view()),
+    path("dropdowns/suppliers/", SupplierVendorDropdownAPIView.as_view()),
+    path("dropdowns/product-categories/", ProductCategoryDropdownAPIView.as_view()),
 ]
 
 urlpatterns += router.urls

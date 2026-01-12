@@ -4,6 +4,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from decimal import Decimal
 
 
+# ---------------- User Profile ----------------
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
     accepted_terms = models.BooleanField(default=False)
@@ -13,6 +14,7 @@ class UserProfile(models.Model):
         return self.user.username
 
 
+# ---------------- State ----------------
 class State(models.Model):
     STATUS_CHOICES = (
         ("active", "Active"),
@@ -28,6 +30,7 @@ class State(models.Model):
         return self.name
 
 
+# ---------------- District ----------------
 class District(models.Model):
     STATUS_CHOICES = (
         ("active", "Active"),
@@ -48,6 +51,7 @@ class District(models.Model):
         return self.name
 
 
+# ---------------- Parent Company ----------------
 class ParentCompany(models.Model):
     name = models.CharField(max_length=255)
     phone_number = models.CharField(max_length=15)
@@ -76,6 +80,7 @@ class ParentCompany(models.Model):
         return self.name
 
 
+# ---------------- Vendor ----------------
 class Vendor(models.Model):
     name = models.CharField(max_length=255)
     phone_number = models.CharField(max_length=15)
@@ -101,6 +106,7 @@ class Vendor(models.Model):
         return self.name
 
 
+# ---------------- B2C Customer ----------------
 class B2CCustomer(models.Model):
     name = models.CharField(max_length=255)
     phone_number = models.CharField(max_length=15)
@@ -131,6 +137,7 @@ class B2CCustomer(models.Model):
         return f"{self.name} ({self.phone_number})"
 
 
+# ---------------- B2B Partner ----------------
 class B2BPartner(models.Model):
     partner_name = models.CharField(max_length=255)
     phone_number = models.CharField(max_length=15)
@@ -161,6 +168,7 @@ class B2BPartner(models.Model):
         return f"{self.partner_name} ({self.phone_number})"
 
 
+# ---------------- Manufacturer ----------------
 class Manufacturer(models.Model):
     name = models.CharField(max_length=255, unique=True)
 
@@ -168,6 +176,7 @@ class Manufacturer(models.Model):
         return self.name
 
 
+# ---------------- Distributor ----------------
 class Distributor(models.Model):
     LINKED_TO_CHOICES = (
         ("manufacturer", "Manufacturer"),
@@ -208,6 +217,7 @@ class Distributor(models.Model):
         return self.name
 
 
+# ---------------- Dealer ----------------
 class Dealer(models.Model):
     LINKED_TO_CHOICES = (
         ("manufacturer", "Manufacturer"),
@@ -255,6 +265,7 @@ class Dealer(models.Model):
         return self.name
 
 
+# ---------------- Product ----------------
 class Product(models.Model):
     # product_id = models.PositiveIntegerField(unique=True,verbose_name="Product ID",help_text="Numeric Product ID shown in PI screen (e.g. 101, 102)")
     product_id = models.CharField(max_length=20,unique=True,verbose_name="Product ID",help_text="Numeric Product ID shown in PI screen (e.g. 101, 102)")
@@ -269,6 +280,7 @@ class Product(models.Model):
         return f"Product {self.product_id}"
 
 
+# ---------------- Device ----------------
 class Device(models.Model):
     STATUS_CHOICES = (
         ("draft", "Draft"),
@@ -283,6 +295,7 @@ class Device(models.Model):
         return f"Device-{self.id}"
 
 
+# ---------------- Device Information ----------------
 class DeviceInformation(models.Model):
     device = models.OneToOneField(Device, on_delete=models.CASCADE, related_name="info")
 
@@ -296,6 +309,7 @@ class DeviceInformation(models.Model):
     state_of_supply = models.CharField(max_length=100)
 
 
+# ---------------- BOM ----------------
 class BOM(models.Model):
     UPLOAD_TYPE_CHOICES = (
         ("individual", "Individual Entry"),
@@ -315,6 +329,7 @@ class BOM(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 
+# ---------------- BOM Component ----------------
 class BOMComponent(models.Model):
     bom = models.ForeignKey(BOM, on_delete=models.CASCADE, related_name="components")
 
@@ -331,6 +346,7 @@ class BOMComponent(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 
+# ---------------- Enclosure ----------------
 class Enclosure(models.Model):
     device = models.OneToOneField(Device, on_delete=models.CASCADE)
 
@@ -345,6 +361,7 @@ class Enclosure(models.Model):
     part_number = models.CharField(max_length=100)
 
 
+# ---------------- Wire Harness ----------------
 class WireHarness(models.Model):
     device = models.OneToOneField(Device, on_delete=models.CASCADE)
 
@@ -354,6 +371,7 @@ class WireHarness(models.Model):
     part_number = models.CharField(max_length=100)
 
 
+# ---------------- Wire Connector ----------------
 class WireConnector(models.Model):
     wire_harness = models.ForeignKey(
         WireHarness,
@@ -366,6 +384,7 @@ class WireConnector(models.Model):
     wire_colors = models.CharField(max_length=255)
 
 
+# ------------------ Battery ----------------
 class Battery(models.Model):
     device = models.OneToOneField(Device, on_delete=models.CASCADE)
 
@@ -376,7 +395,7 @@ class Battery(models.Model):
     make = models.CharField(max_length=100)
     part_number = models.CharField(max_length=100)
 
-
+# ---------------- SOS Button ----------------
 class SOSButton(models.Model):
     device = models.OneToOneField(Device, on_delete=models.CASCADE)
 
@@ -386,6 +405,7 @@ class SOSButton(models.Model):
     part_number = models.CharField(max_length=100)
 
 
+# ---------------- Sticker ----------------
 class Sticker(models.Model):
     device = models.ForeignKey(Device, on_delete=models.CASCADE)
 
@@ -398,11 +418,13 @@ class Sticker(models.Model):
     part_number = models.CharField(max_length=100)
 
 
+# ---------------- User Manual ----------------
 class UserManual(models.Model):
     device = models.OneToOneField(Device, on_delete=models.CASCADE)
     file = models.FileField(upload_to="documents/device/manuals/")
 
 
+# ---------------- Accessories ----------------
 class Accessory(models.Model):
     device = models.ForeignKey(Device, on_delete=models.CASCADE, related_name="accessories")
 
@@ -412,6 +434,7 @@ class Accessory(models.Model):
     description = models.TextField()
 
 
+# ---------------- Proforma Invoice ----------------
 class ProformaInvoice(models.Model):
     PARTY_TYPE_CHOICES = (
         ("b2b", "B2B Partner"),
@@ -458,6 +481,35 @@ class ProformaInvoice(models.Model):
 
 
 # ---------------- Order Entry ----------------
+class OrderEntry(models.Model):
+    ORDER_TYPE_CHOICES = (
+        ("production", "Production Order"),
+        ("sales", "Sales Order"),
+    )
+
+    PRODUCTION_TYPE_CHOICES = (
+        ("add_to_stock", "Add to Stock"),
+        ("make_to_order", "Make to Order"),
+    )
+
+    ASSEMBLY_TYPE_CHOICES = (
+        ("fully_outsourced", "Fully Outsourced"),
+        ("pcb_device", "PCB + Device"),
+        ("pcb_outside_device_inside", "PCB Outside, Device Inside"),
+    )
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    order_type = models.CharField(max_length=20, choices=ORDER_TYPE_CHOICES)
+    production_type = models.CharField(max_length=20, choices=PRODUCTION_TYPE_CHOICES, null=True, blank=True)
+    assembly_type = models.CharField(max_length=30, choices=ASSEMBLY_TYPE_CHOICES, null=True, blank=True)
+
+    is_step1_complete = models.BooleanField(default=False)
+    is_step2_complete = models.BooleanField(default=False)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+# ---------------- Order Product ----------------
 class OrderProduct(models.Model):
     """
     Product / Device Model shown in UI
@@ -478,6 +530,7 @@ class OrderProduct(models.Model):
         return self.name
 
 
+# ---------------- Order Batch ----------------
 class OrderBatch(models.Model):
     """
     Each product can have MULTIPLE batches.
@@ -501,6 +554,7 @@ class OrderBatch(models.Model):
         return f"{self.product.name} | {self.batch_number}"
 
 
+# ---------------- Sales Order ----------------
 class SalesOrder(models.Model):
     CUSTOMER_TYPE_CHOICES = (
         ("b2c", "B2C Customer"),
@@ -574,4 +628,73 @@ class SalesOrder(models.Model):
     def __str__(self):
         return f"SalesOrder-{self.id}"
 
+
+# --------------------------------Supplier / Vendor------------------------------
+class SupplierVendor(models.Model):
+    """
+    Supplier / Vendor dropdown
+    """
+    name = models.CharField(max_length=255, unique=True)
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name = "Supplier / Vendor"
+        verbose_name_plural = "Suppliers / Vendors"
+
+    def __str__(self):
+        return self.name
+
+
+# -----------------------------Production Order------------------------------
+class ProductionOrder(models.Model):
+    PRODUCTION_TYPE_CHOICES = (
+        ("add_to_stock", "Add to Stock"),
+    )
+
+    PRODUCT_CATEGORY_CHOICES = (
+        ("gps_devices", "GPS Devices"),
+        ("tracking_devices", "Tracking Devices"),
+        ("iot_devices", "IoT Devices"),
+        ("accessories", "Accessories"),
+        ("components", "Components"),
+    )
+
+    production_type = models.CharField(
+        max_length=20,
+        choices=PRODUCTION_TYPE_CHOICES
+    )
+
+    product = models.ForeignKey(OrderProduct, on_delete=models.PROTECT)
+
+    product_category = models.CharField(
+        max_length=30,
+        choices=PRODUCT_CATEGORY_CHOICES
+    )
+
+    quantity_added = models.PositiveIntegerField(
+        validators=[MinValueValidator(1)]
+    )
+
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    total_value = models.DecimalField(max_digits=12, decimal_places=2)
+
+    supplier_vendor = models.ForeignKey(
+        SupplierVendor,
+        on_delete=models.PROTECT
+    )
+
+    purchase_date = models.DateField()
+    manufacturing_date = models.DateField()
+
+    batch = models.ForeignKey(OrderBatch, on_delete=models.PROTECT)
+
+    remarks = models.TextField(blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def calculate_total_value(self):
+        return Decimal(self.quantity_added) * self.unit_price
+
+    def __str__(self):
+        return f"ProductionOrder-{self.id}"
 

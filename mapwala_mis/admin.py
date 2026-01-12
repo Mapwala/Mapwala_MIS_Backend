@@ -649,7 +649,6 @@ class DealerAdmin(admin.ModelAdmin):
 
 
 # ------------------ Product ------------------
-
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = ("product_id", "created_at")
@@ -659,7 +658,6 @@ class ProductAdmin(admin.ModelAdmin):
 
 
 # ------------------ Device ------------------
-
 @admin.register(Device)
 class DeviceAdmin(admin.ModelAdmin):
     list_display = ("id_link", "status_badge", "created_by", "created_at_formatted")
@@ -703,7 +701,6 @@ class DeviceAdmin(admin.ModelAdmin):
 
 
 # ------------------ Device Information ------------------
-
 @admin.register(DeviceInformation)
 class DeviceInformationAdmin(admin.ModelAdmin):
     list_display = ("device", "make", "model", "mrp", "state_of_supply")
@@ -721,12 +718,12 @@ class DeviceInformationAdmin(admin.ModelAdmin):
 
 
 # ------------------ BOM ------------------
-
 class BOMComponentInline(admin.TabularInline):
     model = BOMComponent
     extra = 0
 
 
+# ------------------ BOM ------------------
 @admin.register(BOM)
 class BOMAdmin(admin.ModelAdmin):
     list_display = ("device", "upload_type", "created_at")
@@ -741,6 +738,7 @@ class BOMAdmin(admin.ModelAdmin):
     )
 
 
+# ------------------ BOM Component ------------------
 @admin.register(BOMComponent)
 class BOMComponentAdmin(admin.ModelAdmin):
     list_display = ("bom", "identification_mark", "part_no", "part_make", "per_device_quantity")
@@ -757,7 +755,6 @@ class BOMComponentAdmin(admin.ModelAdmin):
 
 
 # ------------------ Enclosure ------------------
-
 @admin.register(Enclosure)
 class EnclosureAdmin(admin.ModelAdmin):
     list_display = ("device", "length", "breadth", "height", "material", "color", "quantity")
@@ -771,12 +768,12 @@ class EnclosureAdmin(admin.ModelAdmin):
 
 
 # ------------------ Wire Harness ------------------
-
 class WireConnectorInline(admin.TabularInline):
     model = WireConnector
     extra = 0
 
 
+# --------------------------- Wire Harness ------------------
 @admin.register(WireHarness)
 class WireHarnessAdmin(admin.ModelAdmin):
     list_display = ("device", "number_of_wires", "specification", "make", "part_number")
@@ -789,6 +786,7 @@ class WireHarnessAdmin(admin.ModelAdmin):
     )
 
 
+# ------------------ Wire Connector ------------------
 @admin.register(WireConnector)
 class WireConnectorAdmin(admin.ModelAdmin):
     list_display = ("wire_harness", "connector_name", "number_of_pins", "wire_colors")
@@ -800,7 +798,6 @@ class WireConnectorAdmin(admin.ModelAdmin):
 
 
 # ------------------ Battery ------------------
-
 @admin.register(Battery)
 class BatteryAdmin(admin.ModelAdmin):
     list_display = ("device", "capacity", "make", "part_number")
@@ -813,7 +810,6 @@ class BatteryAdmin(admin.ModelAdmin):
 
 
 # ------------------ SOS Button ------------------
-
 @admin.register(SOSButton)
 class SOSButtonAdmin(admin.ModelAdmin):
     list_display = ("device", "total_length", "quantity_per_set", "make", "part_number")
@@ -826,7 +822,6 @@ class SOSButtonAdmin(admin.ModelAdmin):
 
 
 # ------------------ Sticker ------------------
-
 @admin.register(Sticker)
 class StickerAdmin(admin.ModelAdmin):
     list_display = ("device", "name", "length", "breadth", "quantity", "make")
@@ -840,7 +835,6 @@ class StickerAdmin(admin.ModelAdmin):
 
 
 # ------------------ User Manual ------------------
-
 @admin.register(UserManual)
 class UserManualAdmin(admin.ModelAdmin):
     list_display = ("device", "file")
@@ -852,7 +846,6 @@ class UserManualAdmin(admin.ModelAdmin):
 
 
 # ------------------ Accessories ------------------
-
 @admin.register(Accessory)
 class AccessoryAdmin(admin.ModelAdmin):
     list_display = ("device", "name", "quantity", "specifications")
@@ -864,7 +857,6 @@ class AccessoryAdmin(admin.ModelAdmin):
 
 
 # ------------------ Proforma Invoice ------------------
-
 @admin.register(ProformaInvoice)
 class ProformaInvoiceAdmin(admin.ModelAdmin):
     list_display = ("id","party_type","product","quantity","selling_price","discount_percent","grand_total","payment_terms","delivery_date","state","created_at",)
@@ -895,18 +887,7 @@ class ProformaInvoiceAdmin(admin.ModelAdmin):
     )
 
 
-from django.contrib import admin
-
-from .models import (
-    OrderProduct,
-    OrderBatch,
-    SalesOrder,
-)
-
-# ======================================================
-# Order Batch Inline (CRITICAL FIX)
-# ======================================================
-
+# -----------------------Order Batch Inline--------------------------
 class OrderBatchInline(admin.TabularInline):
     """
     Inline batches under a product.
@@ -915,7 +896,7 @@ class OrderBatchInline(admin.TabularInline):
     - fk_name explicitly tells Django which FK to use
     """
     model = OrderBatch
-    fk_name = "product"          # 🔒 VERY IMPORTANT
+    fk_name = "product"
     extra = 1
     fields = ("batch_number", "available_stock")
     can_delete = True
@@ -923,10 +904,7 @@ class OrderBatchInline(admin.TabularInline):
     ordering = ("batch_number",)
 
 
-# ======================================================
-# Order Product Admin
-# ======================================================
-
+# # -----------------------Order Product Admin--------------------------
 @admin.register(OrderProduct)
 class OrderProductAdmin(admin.ModelAdmin):
     list_display = ("name",)
@@ -938,35 +916,20 @@ class OrderProductAdmin(admin.ModelAdmin):
     fieldsets = (
         (
             "Product / Device Model",
-            {
-                "fields": ("name",),
-            },
+            {"fields": ("name",)},
         ),
     )
 
 
-# ======================================================
-# Order Batch Admin (Standalone)
-# ======================================================
-
+# -----------------------Order Batch Admin--------------------------
 @admin.register(OrderBatch)
 class OrderBatchAdmin(admin.ModelAdmin):
-    list_display = (
-        "product",
-        "batch_number",
-        "available_stock",
-    )
+    list_display = ("product","batch_number","available_stock")
 
     list_filter = ("product",)
-    search_fields = (
-        "product__name",
-        "batch_number",
-    )
+    search_fields = ("product__name","batch_number")
 
-    ordering = (
-        "product__name",
-        "batch_number",
-    )
+    ordering = ("product__name", "batch_number")
 
     fieldsets = (
         (
@@ -978,10 +941,7 @@ class OrderBatchAdmin(admin.ModelAdmin):
         (
             "Batch Details",
             {
-                "fields": (
-                    "batch_number",
-                    "available_stock",
-                ),
+                "fields": ("batch_number","available_stock"),
             },
         ),
     )
@@ -996,42 +956,14 @@ class OrderBatchAdmin(admin.ModelAdmin):
         return ()
 
 
-# ======================================================
-# Sales Order Admin
-# ======================================================
-
+# ----------------------------Sales Order Admin-------------------------------
 @admin.register(SalesOrder)
 class SalesOrderAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "customer_name",
-        "customer_type",
-        "product",
-        "batch",
-        "quantity",
-        "grand_total",
-        "payment_status",
-        "delivery_date",
-        "created_at",
-    )
+    list_display = ("id","customer_name","customer_type","product","batch","quantity","grand_total","payment_status","delivery_date","created_at",)
 
-    list_filter = (
-        "customer_type",
-        "payment_mode",
-        "payment_status",
-        "delivery_date",
-        "created_at",
-    )
+    list_filter = ("customer_type","payment_mode","payment_status","delivery_date","created_at",)
 
-    search_fields = (
-        "id",
-        "customer_name",
-        "contact_person",
-        "mobile_no",
-        "invoice_number",
-        "product__name",
-        "batch__batch_number",
-    )
+    search_fields = ("id","customer_name","contact_person","mobile_no","invoice_number","product__name","batch__batch_number")
 
     ordering = ("-created_at",)
     readonly_fields = ("created_at",)
@@ -1040,53 +972,31 @@ class SalesOrderAdmin(admin.ModelAdmin):
         (
             "Customer Information",
             {
-                "fields": (
-                    "customer_name",
-                    "customer_type",
-                    "contact_person",
-                    "mobile_no",
-                ),
+                "fields": ("customer_name","customer_type","contact_person","mobile_no"),
             },
         ),
         (
             "Product & Batch",
             {
-                "fields": (
-                    "product",
-                    "batch",
-                    "quantity",
-                    "unit_price",
-                ),
+                "fields": ("product","batch","quantity","unit_price",),
             },
         ),
         (
             "Pricing & Taxes",
             {
-                "fields": (
-                    "discount_percent",
-                    "gst_percent",
-                    "shipping_charges",
-                    "grand_total",
-                ),
+                "fields": ("discount_percent","gst_percent","shipping_charges","grand_total"),
             },
         ),
         (
             "Delivery Information",
             {
-                "fields": (
-                    "delivery_date",
-                    "delivery_address",
-                ),
+                "fields": ("delivery_date","delivery_address",),
             },
         ),
         (
             "Payment Information",
             {
-                "fields": (
-                    "payment_mode",
-                    "payment_status",
-                    "invoice_number",
-                ),
+                "fields": ("payment_mode","payment_status","invoice_number"),
             },
         ),
         (
@@ -1102,3 +1012,53 @@ class SalesOrderAdmin(admin.ModelAdmin):
             },
         ),
     )
+
+
+# -----------------------Supplier / Vendor Admin--------------------------
+@admin.register(SupplierVendor)
+class SupplierVendorAdmin(admin.ModelAdmin):
+    list_display = ("name",)
+    search_fields = ("name",)
+    ordering = ("name",)
+
+    fieldsets = (
+        ("Supplier / Vendor", {"fields": ("name",)}),
+    )
+
+
+# -----------------------Production Order Admin--------------------------
+@admin.register(ProductionOrder)
+class ProductionOrderAdmin(admin.ModelAdmin):
+    list_display = ("id","production_type","product","product_category","quantity_added","total_value","supplier_vendor","purchase_date","manufacturing_date","batch","created_at",)
+
+    list_filter = ("production_type","product_category","purchase_date","manufacturing_date","supplier_vendor","created_at",)
+
+    search_fields = ("id","product__name","supplier_vendor__name","batch__batch_number",)
+
+    ordering = ("-created_at",)
+    readonly_fields = ("created_at",)
+
+    fieldsets = (
+        ("Production Type", {
+            "fields": ("production_type",)
+        }),
+        ("Product Information", {
+            "fields": ("product", "product_category", "batch")
+        }),
+        ("Quantity & Pricing", {
+            "fields": ("quantity_added", "unit_price", "total_value")
+        }),
+        ("Supplier", {
+            "fields": ("supplier_vendor",)
+        }),
+        ("Dates", {
+            "fields": ("purchase_date", "manufacturing_date")
+        }),
+        ("Additional Notes", {
+            "fields": ("remarks",)
+        }),
+        ("System Information", {
+            "fields": ("created_at",)
+        }),
+    )
+

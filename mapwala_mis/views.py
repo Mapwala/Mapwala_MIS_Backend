@@ -13,11 +13,14 @@ from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.shortcuts import get_object_or_404
 from django.db import transaction
+from collections import defaultdict
 
 from .serializers import *
 from .models import *
 
 
+
+# ---------------- Login API ----------------
 class LoginAPIView(APIView):
     permission_classes = [AllowAny]
 
@@ -52,6 +55,7 @@ class LoginAPIView(APIView):
         )
 
 
+# ---------------- State ViewSet ----------------
 class StateViewSet(ModelViewSet):
     queryset = State.objects.all()
     serializer_class = StateSerializer
@@ -90,7 +94,7 @@ class StateViewSet(ModelViewSet):
         )
 
 
-
+#   ---------------- District ViewSet ----------------
 class DistrictViewSet(ModelViewSet):
     queryset = District.objects.select_related("state").all()
     serializer_class = DistrictSerializer
@@ -106,18 +110,20 @@ class DistrictViewSet(ModelViewSet):
         return queryset
 
 
+# ---------------- Parent Company ViewSet ----------------
 class ParentCompanyViewSet(ModelViewSet):
     queryset = ParentCompany.objects.all()
     serializer_class = ParentCompanySerializer
     permission_classes = [IsAuthenticated]
 
 
+# ---------------- Vendor ViewSet ----------------
 class VendorViewSet(ModelViewSet):
     queryset = Vendor.objects.select_related("state", "district").all()
     serializer_class = VendorSerializer
     permission_classes = [IsAuthenticated]
 
-
+# ---------------- Registrations ----------------
 class B2CCustomerRegistrationAPIView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
@@ -138,6 +144,7 @@ class B2CCustomerRegistrationAPIView(APIView):
         )
 
 
+# ---------------- B2B Partner Registration ----------------
 class B2BPartnerRegistrationAPIView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
@@ -158,6 +165,7 @@ class B2BPartnerRegistrationAPIView(APIView):
         )
 
 
+# ---------------- Distributor Registration ----------------
 class DistributorRegistrationAPIView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
@@ -184,6 +192,7 @@ class DistributorRegistrationAPIView(APIView):
         )
 
 
+# ---------------- Distributor Registration ----------------
 class DealerRegistrationAPIView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
@@ -210,6 +219,7 @@ class DealerRegistrationAPIView(APIView):
         )
 
 
+# ---------------- Proforma Invoice Create ----------------
 class ProformaInvoiceCreateAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -229,7 +239,6 @@ class ProformaInvoiceCreateAPIView(APIView):
 
 
 # ---------------- STEP 1 ----------------
-
 class DeviceStep1APIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -246,7 +255,6 @@ class DeviceStep1APIView(APIView):
 
 
 # ---------------- STEP 2 ----------------
-
 class DeviceStep2APIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -260,7 +268,6 @@ class DeviceStep2APIView(APIView):
 
 
 # ---------------- STEP 3 ----------------
-
 class DeviceStep3APIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -305,7 +312,6 @@ class DeviceStep5APIView(APIView):
 
 
 # ---------------- STEP 6 ----------------
-
 class DeviceStep6APIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -319,7 +325,6 @@ class DeviceStep6APIView(APIView):
 
 
 # ---------------- STEP 7 ----------------
-
 class DeviceStep7APIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -333,10 +338,6 @@ class DeviceStep7APIView(APIView):
 
 
 # ---------------- STEP 8 ----------------
-
-from rest_framework.parsers import MultiPartParser, FormParser
-from collections import defaultdict
-
 class DeviceStep8APIView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
@@ -365,7 +366,6 @@ class DeviceStep8APIView(APIView):
 
 
 # ---------------- STEP 9 ----------------
-
 class DeviceStep9APIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -379,7 +379,6 @@ class DeviceStep9APIView(APIView):
 
 
 # ---------------- STEP 10 ----------------
-
 class DeviceAccessoryAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -398,6 +397,27 @@ class DeviceAccessoryAPIView(APIView):
         return Response({"message": "Device creation completed"})
 
 
+# ---------------- Order Entry Step 1 ----------------
+class OrderEntryStep1APIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        entry, _ = OrderEntry.objects.get_or_create(
+            user=request.user,
+            is_step2_complete=False
+        )
+
+
+        serializer = OrderEntryStep1Serializer(entry, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(is_step1_complete=True)
+
+        return Response(
+            {"entry_id": entry.id},
+            status=status.HTTP_200_OK
+        )
+
+
 # ---------------- Order Products, Batches, Sales Order ----------------
 class OrderProductListAPIView(APIView):
     """
@@ -410,6 +430,7 @@ class OrderProductListAPIView(APIView):
         return Response(OrderProductSerializer(products, many=True).data)
 
 
+# ---------------- Order Batches ----------------
 class OrderBatchListAPIView(APIView):
     """
     UI: Batch dropdown depends on selected product
@@ -429,6 +450,7 @@ class OrderBatchListAPIView(APIView):
         return Response(OrderBatchSerializer(batches, many=True).data)
 
 
+# ---------------- Sales Order Create ----------------
 class SalesOrderCreateAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -437,11 +459,9 @@ class SalesOrderCreateAPIView(APIView):
         serializer = SalesOrderCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        batch = OrderBatch.objects.select_for_update().get(
-            id=serializer.validated_data["batch"].id
-        )
-
         order = serializer.save()
+        batch = OrderBatch.objects.select_for_update().get(id=order.batch.id)
+
 
         batch.available_stock -= order.quantity
         batch.save(update_fields=["available_stock"])
@@ -451,12 +471,93 @@ class SalesOrderCreateAPIView(APIView):
                 "message": "Sales order created successfully",
                 "order_id": order.id,
 
-                # RETURN IDS EXPLICITLY
-                "product_id": order.product.id,
-                "batch_id": order.batch.id,
+                "product": {
+                    "id": order.product.id,
+                    "name": order.product.name,
+                },
+
+                "batch": {
+                    "id": order.batch.id,
+                    "batch_number": order.batch.batch_number,
+                },
 
                 "remaining_stock": batch.available_stock,
                 "grand_total": float(order.grand_total),
             },
             status=status.HTTP_201_CREATED,
         )
+
+
+# ---------------- Production Order - Add to Stock ----------------
+class ProductionOrderCreateAPIView(APIView):
+    """
+    Production Order – Add to Stock
+    """
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request):
+        serializer = ProductionOrderCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        order = serializer.save()
+
+        # Increase stock safely
+        batch = OrderBatch.objects.select_for_update().get(
+            id=order.batch.id
+        )
+        batch.available_stock += order.quantity_added
+        batch.save(update_fields=["available_stock"])
+
+        return Response(
+            {
+                "message": "Production order created and stock added successfully",
+                "production_order_id": order.id,
+                "product": {
+                    "id": order.product.id,
+                    "name": order.product.name,
+                },
+                "batch": {
+                    "id": batch.id,
+                    "batch_number": batch.batch_number,
+                },
+                "added_quantity": order.quantity_added,
+                "current_stock": batch.available_stock,
+                "total_value": float(order.total_value),
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class ProductDropdownAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response([
+            {"id": p.id, "name": p.name}
+            for p in OrderProduct.objects.all()
+        ])
+
+
+class SupplierVendorDropdownAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response([
+            {"id": v.id, "name": v.name}
+            for v in SupplierVendor.objects.all()
+        ])
+
+
+class ProductCategoryDropdownAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response([
+            {"key": "gps_devices", "label": "GPS Devices"},
+            {"key": "tracking_devices", "label": "Tracking Devices"},
+            {"key": "iot_devices", "label": "IoT Devices"},
+            {"key": "accessories", "label": "Accessories"},
+            {"key": "components", "label": "Components"},
+        ])
+

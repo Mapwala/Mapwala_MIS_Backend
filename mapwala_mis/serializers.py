@@ -2,6 +2,8 @@ from django.contrib.auth import authenticate
 from rest_framework import serializers
 from .models import *
 
+
+# ---------------- Login ----------------
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField(write_only=True)
@@ -27,12 +29,14 @@ class LoginSerializer(serializers.Serializer):
         return data
 
 
+# ---------------- Location Models ----------------
 class StateSerializer(serializers.ModelSerializer):
     class Meta:
         model = State
         fields = ["id", "name", "status"]
 
 
+# ---------------- Location Models ----------------
 class DistrictSerializer(serializers.ModelSerializer):
     state_name = serializers.CharField(source="state.name", read_only=True)
 
@@ -41,6 +45,7 @@ class DistrictSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "code", "state", "state_name", "status"]
 
 
+# ---------------- Company Models ----------------
 class ParentCompanySerializer(serializers.ModelSerializer):
     class Meta:
         model = ParentCompany
@@ -54,6 +59,7 @@ class ParentCompanySerializer(serializers.ModelSerializer):
         return data
 
 
+# ---------------- Vendor ----------------
 class VendorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vendor
@@ -67,6 +73,7 @@ class VendorSerializer(serializers.ModelSerializer):
         return data
 
 
+# ---------------- Registrations ----------------
 class B2CCustomerRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = B2CCustomer
@@ -84,6 +91,7 @@ class B2CCustomerRegistrationSerializer(serializers.ModelSerializer):
         return data
 
 
+# ---------------- B2B Partner Registration ----------------
 class B2BPartnerRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = B2BPartner
@@ -101,6 +109,7 @@ class B2BPartnerRegistrationSerializer(serializers.ModelSerializer):
         return data
 
 
+# ---------------- Distributor Registration ----------------
 class DistributorRegistrationSerializer(serializers.ModelSerializer):
     authorised_states = serializers.PrimaryKeyRelatedField(
         queryset=State.objects.all(),
@@ -150,6 +159,7 @@ class DistributorRegistrationSerializer(serializers.ModelSerializer):
         return data
 
 
+# ---------------- Dealer Registration ----------------
 class DealerRegistrationSerializer(serializers.ModelSerializer):
     authorised_states = serializers.PrimaryKeyRelatedField(
         queryset=State.objects.all(),
@@ -215,6 +225,7 @@ class DealerRegistrationSerializer(serializers.ModelSerializer):
         return data
 
 
+# ---------------- Proforma Invoice ----------------
 class ProformaInvoiceCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProformaInvoice
@@ -247,7 +258,6 @@ class ProformaInvoiceCreateSerializer(serializers.ModelSerializer):
 
 
 # ---------------- STEP 1 ----------------
-
 class DeviceInformationSerializer(serializers.ModelSerializer):
     class Meta:
         model = DeviceInformation
@@ -255,7 +265,6 @@ class DeviceInformationSerializer(serializers.ModelSerializer):
 
 
 # ---------------- STEP 2 ----------------
-
 class BOMSerializer(serializers.ModelSerializer):
     class Meta:
         model = BOM
@@ -279,7 +288,6 @@ class BOMSerializer(serializers.ModelSerializer):
 
 
 # ---------------- STEP 3 ----------------
-
 class BOMComponentSerializer(serializers.ModelSerializer):
     class Meta:
         model = BOMComponent
@@ -287,7 +295,6 @@ class BOMComponentSerializer(serializers.ModelSerializer):
 
 
 # ---------------- STEP 4 ----------------
-
 class EnclosureSerializer(serializers.ModelSerializer):
     class Meta:
         model = Enclosure
@@ -295,13 +302,13 @@ class EnclosureSerializer(serializers.ModelSerializer):
 
 
 # ---------------- STEP 5 ----------------
-
 class WireConnectorSerializer(serializers.ModelSerializer):
     class Meta:
         model = WireConnector
         exclude = ["wire_harness"]
 
 
+# ---------------- STEP 5 ----------------
 class WireHarnessSerializer(serializers.ModelSerializer):
     connectors = WireConnectorSerializer(many=True)
 
@@ -318,7 +325,6 @@ class WireHarnessSerializer(serializers.ModelSerializer):
 
 
 # ---------------- STEP 6 ----------------
-
 class BatterySerializer(serializers.ModelSerializer):
     class Meta:
         model = Battery
@@ -326,7 +332,6 @@ class BatterySerializer(serializers.ModelSerializer):
 
 
 # ---------------- STEP 7 ----------------
-
 class SOSButtonSerializer(serializers.ModelSerializer):
     class Meta:
         model = SOSButton
@@ -334,7 +339,6 @@ class SOSButtonSerializer(serializers.ModelSerializer):
 
 
 # ---------------- STEP 8 ----------------
-
 class StickerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Sticker
@@ -342,7 +346,6 @@ class StickerSerializer(serializers.ModelSerializer):
 
 
 # ---------------- STEP 9 ----------------
-
 class UserManualSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserManual
@@ -350,7 +353,6 @@ class UserManualSerializer(serializers.ModelSerializer):
 
 
 # ---------------- STEP 10 ----------------
-
 class AccessorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Accessory
@@ -358,18 +360,32 @@ class AccessorySerializer(serializers.ModelSerializer):
 
 
 # ---------------- Order Entry ----------------
+class OrderEntryStep1Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderEntry
+        fields = ["order_type", "production_type", "assembly_type"]
+
+    def validate(self, data):
+        if data["order_type"] == "production" and not data.get("production_type"):
+            raise serializers.ValidationError({"production_type": "Required for production order"})
+        return data
+
+
+# ---------------- Order Product ----------------
 class OrderProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderProduct
         fields = ["id", "name"]
 
 
+# ---------------- Order Batch ----------------
 class OrderBatchSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderBatch
         fields = ["id", "batch_number", "available_stock"]
 
 
+# ---------------- Sales Order ----------------
 class SalesOrderCreateSerializer(serializers.ModelSerializer):
     """
     Accepts:
@@ -388,7 +404,8 @@ class SalesOrderCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SalesOrder
-        exclude = ("product",)  # product is derived, not sent
+        exclude = ("product", "batch")
+
 
     def validate(self, data):
         product_name = data.pop("product_device_model")
@@ -430,3 +447,60 @@ class SalesOrderCreateSerializer(serializers.ModelSerializer):
             })
 
         return data
+
+
+# ---------------- Production Order ----------------
+class ProductionOrderCreateSerializer(serializers.ModelSerializer):
+    product_device_model = serializers.CharField(write_only=True)
+    batch_number = serializers.CharField(write_only=True)
+    supplier_vendor_id = serializers.IntegerField(write_only=True)
+
+    class Meta:
+        model = ProductionOrder
+        exclude = ("product", "batch", "supplier_vendor")
+
+    def validate(self, data):
+        # Resolve product
+        try:
+            product = OrderProduct.objects.get(
+                name=data.pop("product_device_model")
+            )
+        except OrderProduct.DoesNotExist:
+            raise serializers.ValidationError({
+                "product_device_model": "Invalid product/device model."
+            })
+
+        # Resolve supplier
+        try:
+            supplier = SupplierVendor.objects.get(
+                id=data.pop("supplier_vendor_id")
+            )
+        except SupplierVendor.DoesNotExist:
+            raise serializers.ValidationError({
+                "supplier_vendor": "Invalid supplier/vendor."
+            })
+
+        # Resolve or create batch per product
+        batch, _ = OrderBatch.objects.get_or_create(
+            product=product,
+            batch_number=data.pop("batch_number"),
+            defaults={"available_stock": 0},
+        )
+
+        data["product"] = product
+        data["supplier_vendor"] = supplier
+        data["batch"] = batch
+
+        # Validate total value
+        calculated = (
+            data["quantity_added"] * data["unit_price"]
+        )
+        if calculated != data["total_value"]:
+            raise serializers.ValidationError({
+                "total_value": "Total value mismatch with backend calculation."
+            })
+
+        return data
+
+
+   
