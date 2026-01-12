@@ -1921,7 +1921,7 @@
 			]
 		},
 		{
-			"name": "ORDER ENTRY",
+			"name": "ORDER ENTRY Sales Order (From Stock) Details",
 			"item": [
 				{
 					"name": "ERROR CASE",
@@ -1963,18 +1963,18 @@
 								""
 							]
 						},
-						"description": "StartFragment\n\n## 4️⃣ Error – Grand Total Mismatch\n\n### Scenario\n\nFrontend sends incorrect `grand_total`.\n\n### Request Example\n\n```\n{\n  \"batch\": 7,\n  \"quantity\": 50,\n  \"unit_price\": 2500,\n  \"discount_percent\": 0,\n  \"gst_percent\": 18,\n  \"shipping_charges\": 0,\n  \"grand_total\": 14\n}\n\n ```\n\n### Error Response (400)\n\n```\n{\n  \"grand_total\": [\n    \"Grand total mismatch.\"\n  ]\n}\n\n ```\n\n### Explanation\n\n- Backend recalculates total\n    \n- If mismatch → request is rejected\n    \n- Prevents billing errors or tampering\n    \n\n---\n\n## 5️⃣ Error – Quantity Exceeds Stock\n\n### Error Response\n\n```\n{\n  \"quantity\": \"Quantity exceeds available stock.\"\n}\n\n ```\n\nEndFragment"
+						"description": "StartFragment\n\n## 4 Error – Grand Total Mismatch\n\n### Scenario\n\nFrontend sends incorrect `grand_total`.\n\n### Request Example\n\n```\n{\n  \"batch\": 7,\n  \"quantity\": 50,\n  \"unit_price\": 2500,\n  \"discount_percent\": 0,\n  \"gst_percent\": 18,\n  \"shipping_charges\": 0,\n  \"grand_total\": 14\n}\n\n ```\n\n### Error Response (400)\n\n```\n{\n  \"grand_total\": [\n    \"Grand total mismatch.\"\n  ]\n}\n\n ```\n\n### Explanation\n\n- Backend recalculates total\n    \n- If mismatch → request is rejected\n    \n- Prevents billing errors or tampering\n    \n\n---\n\n## 5️⃣ Error – Quantity Exceeds Stock\n\n### Error Response\n\n```\n{\n  \"quantity\": \"Quantity exceeds available stock.\"\n}\n\n ```\n\nEndFragment"
 					},
 					"response": []
 				},
 				{
-					"name": "CREATE SALES ORDER (SUCCESS CASE)",
+					"name": "Sales Order – Create (MAIN API)",
 					"request": {
 						"method": "POST",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MTI5MjQ5LCJpYXQiOjE3NjgwNDI4NDksImp0aSI6ImVjYzkwMzE1ODhkNjQzMTI4ZjhhOTJiYmY1NGE4YmJmIiwidXNlcl9pZCI6IjIifQ.OyMAxniFnAajDtmhROIBCdeWG0UjmycQr_wBrxLCakc"
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4Mjc4NzMxLCJpYXQiOjE3NjgxOTIzMzEsImp0aSI6IjE1N2QwMzRmNGRjNzRhYTY5ZDUwNTQ3NWJmOWI5Zjk5IiwidXNlcl9pZCI6IjIifQ.TSVKyio1SCH0vyyext5fVn6UDX6CP3b6BQWlUIplzeQ"
 							},
 							{
 								"key": "Content-Type",
@@ -1983,7 +1983,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"customer_name\": \"DEF Logistics\",\r\n  \"customer_type\": \"distributor\",\r\n  \"contact_person\": \"Rohit Sharma\",\r\n  \"mobile_no\": \"9876543210\",\r\n\r\n  \"batch\": 7,\r\n\r\n  \"quantity\": 3,\r\n  \"unit_price\": 2500,\r\n\r\n  \"discount_percent\": 5,\r\n  \"gst_percent\": 18,\r\n  \"shipping_charges\": 500,\r\n  \"grand_total\": 8907.50,\r\n\r\n  \"delivery_date\": \"2026-01-15\",\r\n  \"delivery_address\": \"Mumbai, Maharashtra\",\r\n\r\n  \"payment_mode\": \"upi\",\r\n  \"payment_status\": \"paid\",\r\n\r\n  \"invoice_number\": \"INV-2001\",\r\n  \"remarks\": \"Urgent delivery\"\r\n}",
+							"raw": "{\r\n  \"customer_name\": \"DEF Logistics\",\r\n  \"customer_type\": \"distributor\",\r\n  \"contact_person\": \"Rohit Sharma\",\r\n  \"mobile_no\": \"9876543210\",\r\n\r\n  \"product_device_model\": \"GPS Tracker Standard\",\r\n  \"batch\": \"BATCH-2024-003\",\r\n\r\n  \"quantity\": 3,\r\n  \"unit_price\": 2500,\r\n  \"discount_percent\": 5,\r\n  \"gst_percent\": 18,\r\n  \"shipping_charges\": 500,\r\n  \"grand_total\": 8907.5,\r\n\r\n  \"delivery_date\": \"2026-01-15\",\r\n  \"delivery_address\": \"Mumbai, Maharashtra\",\r\n\r\n  \"payment_mode\": \"upi\",\r\n  \"payment_status\": \"paid\",\r\n  \"invoice_number\": \"INV-2001\",\r\n  \"remarks\": \"Urgent delivery\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -2007,7 +2007,7 @@
 								""
 							]
 						},
-						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/sales-orders/create/' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>' \\\r\n--header 'Content-Type: application/json' \\\r\n--data '{\r\n  \"customer_name\": \"ABC Logistics\",\r\n  \"customer_type\": \"dealer\",\r\n  \"contact_person\": \"Rohit Sharma\",\r\n  \"mobile_no\": \"9876543210\",\r\n\r\n  \"batch\": 7,\r\n\r\n  \"quantity\": 3,\r\n  \"unit_price\": 2500,\r\n\r\n  \"discount_percent\": 5,\r\n  \"gst_percent\": 18,\r\n  \"shipping_charges\": 500,\r\n  \"grand_total\": 8907.50,\r\n\r\n  \"delivery_date\": \"2026-01-15\",\r\n  \"delivery_address\": \"Mumbai, Maharashtra\",\r\n\r\n  \"payment_mode\": \"upi\",\r\n  \"payment_status\": \"paid\",\r\n\r\n  \"invoice_number\": \"INV-2001\",\r\n  \"remarks\": \"Urgent delivery\"\r\n}'\r\n"
+						"description": "StartFragment\n\n# 📘 Mapwala MIS – Sales & Production Order APIs (Postman Docs)\n\nBase URL\n\n```\nhttp://127.0.0.1:8000/api\n\n ```\n\nAuthentication\n\n```\nAuthorization: Bearer <JWT_ACCESS_TOKEN>\nContent-Type: application/json\n\n ```\n\nAll endpoints **require authentication**.\n\n---\n\n## 🔹 1. Product / Device Model Dropdown\n\n### GET `/order-products/`\n\nUsed to populate **Product / Device Model** dropdown.\n\n### Request\n\n```\nGET /api/order-products/\nAuthorization: Bearer <token>\n\n ```\n\n### ✅ Success Response (200)\n\n```\n[\n  {\n    \"id\": 1,\n    \"name\": \"GPS Tracker Pro\"\n  },\n  {\n    \"id\": 2,\n    \"name\": \"GPS Tracker Standard\"\n  },\n  {\n    \"id\": 3,\n    \"name\": \"Vehicle Tracker\"\n  }\n]\n\n ```\n\n### ❌ Error Responses\n\n| Status | Message |\n| --- | --- |\n| 401 | `\"Authentication credentials were not provided.\"` |\n| 403 | `\"You do not have permission to perform this action.\"` |\n\n---\n\n## 🔹 2. Batch Dropdown (Depends on Product)\n\n### GET `/order-batches/?product_id=`\n\nUsed to populate **Batch dropdown** after selecting product.\n\n### Request\n\n```\nGET /api/order-batches/?product_id=2\nAuthorization: Bearer <token>\n\n ```\n\n### ✅ Success Response (200)\n\n```\n[\n  {\n    \"id\": 13,\n    \"batch_number\": \"BATCH-2024-003\",\n    \"available_stock\": 4214226\n  }\n]\n\n ```\n\n### ❌ Error Responses\n\n#### Missing product_id\n\n```\n{\n  \"product_id\": \"product_id query param is required\"\n}\n\n ```\n\nStatus: `400`\n\n#### Invalid product_id\n\n```\n[]\n\n ```\n\nStatus: `200` (no batches found)\n\n---\n\n## 🔹 3. Sales Order – Create (Main Order API)\n\n### POST `/sales-orders/create/`\n\nCreates a **Sales Order** and **reduces batch stock** atomically.\n\n---\n\n### Request Body (Exact Working Example)\n\n```\n{\n  \"customer_name\": \"DEF Logistics\",\n  \"customer_type\": \"distributor\",\n  \"contact_person\": \"Rohit Sharma\",\n  \"mobile_no\": \"9876543210\",\n  \"product_device_model\": \"GPS Tracker Standard\",\n  \"batch\": \"BATCH-2024-003\",\n  \"quantity\": 3,\n  \"unit_price\": 2500,\n  \"discount_percent\": 5,\n  \"gst_percent\": 18,\n  \"shipping_charges\": 500,\n  \"grand_total\": 8907.5,\n  \"delivery_date\": \"2026-01-15\",\n  \"delivery_address\": \"Mumbai, Maharashtra\",\n  \"payment_mode\": \"upi\",\n  \"payment_status\": \"paid\",\n  \"invoice_number\": \"INV-2001\",\n  \"remarks\": \"Urgent delivery\"\n}\n\n ```\n\n---\n\n### ✅ Success Response (201)\n\n```\n{\n  \"message\": \"Sales order created successfully\",\n  \"order_id\": 13,\n  \"product\": {\n    \"id\": 2,\n    \"name\": \"GPS Tracker Standard\"\n  },\n  \"batch\": {\n    \"id\": 13,\n    \"batch_number\": \"BATCH-2024-003\"\n  },\n  \"remaining_stock\": 4214223,\n  \"grand_total\": 8907.5\n}\n\n ```\n\n---\n\n### ❌ Error Cases (VERY IMPORTANT)\n\n#### 1️⃣ Invalid Product Name\n\n```\n{\n  \"product-device_model\": \"Invalid product / device model.\"\n}\n\n ```\n\nStatus: `400`\n\n---\n\n#### 2️⃣ Batch Does Not Belong to Product\n\n```\n{\n  \"batch\": \"Invalid batch for selected product.\"\n}\n\n ```\n\nStatus: `400`\n\n---\n\n#### 3️⃣ Quantity Exceeds Available Stock\n\n```\n{\n  \"quantity\": \"Only 2 units available.\"\n}\n\n ```\n\nStatus: `400`\n\n---\n\n#### 4️⃣ Grand Total Mismatch (Backend Validation)\n\n```\n{\n  \"grand_total\": \"Grand total mismatch with backend calculation.\"\n}\n\n ```\n\nStatus: `400`\n\n---\n\n#### 5️⃣ Missing Required Fields\n\n```\n{\n  \"customer_name\": [\"This field is required.\"],\n  \"batch\": [\"This field is required.\"]\n}\n\n ```\n\nStatus: `400`\n\n---\n\n#### 6️⃣ Authentication Missing\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\nStatus: `401`\n\n---\n\n## 🔹 4. Production Order – Add to Stock\n\n### POST `/production-orders/add-to-stock/`\n\nCreates a **Production Order** and **adds stock to batch**.\n\n---\n\n### Request Body\n\n```\n{\n  \"production_type\": \"add_to_stock\",\n  \"product_device_model\": \"GPS Tracker Standard\",\n  \"product_category\": \"gps_devices\",\n  \"quantity_added\": 10,\n  \"unit_price\": 100,\n  \"total_value\": 1000,\n  \"supplier_vendor_id\": 1,\n  \"purchase_date\": \"2026-01-12\",\n  \"manufacturing_date\": \"2026-01-12\",\n  \"batch_number\": \"BATCH-2024-003\",\n  \"remarks\": \"New stock\"\n}\n\n ```\n\n---\n\n### ✅ Success Response (201)\n\n```\n{\n  \"message\": \"Production order created and stock added successfully\",\n  \"production_order_id\": 5,\n  \"product\": {\n    \"id\": 2,\n    \"name\": \"GPS Tracker Standard\"\n  },\n  \"batch\": {\n    \"id\": 13,\n    \"batch_number\": \"BATCH-2024-003\"\n  },\n  \"added_quantity\": 10,\n  \"current_stock\": 4214233,\n  \"total_value\": 1000\n}\n\n ```\n\n---\n\n### ❌ Error Cases\n\n#### Invalid Supplier\n\n```\n{\n  \"supplier_vendor\": \"Invalid supplier/vendor.\"\n}\n\n ```\n\n#### Invalid Product\n\n```\n{\n  \"product_device_model\": \"Invalid product/device model.\"\n}\n\n ```\n\n#### Total Value Mismatch\n\n```\n{\n  \"total_value\": \"Total value mismatch with backend calculation.\"\n}\n\n ```\n\n---\n\n## 🔹 5. Supplier / Vendor Dropdown\n\n### GET `/dropdowns/suppliers/`\n\n```\nGET /api/dropdowns/suppliers/\nAuthorization: Bearer <token>\n\n ```\n\n### Response\n\n```\n[\n  { \"id\": 1, \"name\": \"Tech Components Ltd\" },\n  { \"id\": 2, \"name\": \"Electronics Wholesale\" }\n]\n\n ```\n\n---\n\n## 🔹 6. Product Category Dropdown\n\n### GET `/dropdowns/product-categories/`\n\n```\n[\n  { \"key\": \"gps_devices\", \"label\": \"GPS Devices\" },\n  { \"key\": \"tracking_devices\", \"label\": \"Tracking Devices\" },\n  { \"key\": \"iot_devices\", \"label\": \"IoT Devices\" },\n  { \"key\": \"accessories\", \"label\": \"Accessories\" },\n  { \"key\": \"components\", \"label\": \"Components\" }\n]\n\n ```\n\n---\n\n## ✅ Summary (Why This Is Production-Ready)\n\n✔ Atomic stock updates (`select_for_update`)  \n  \n✔ Backend-calculated totals enforced  \n  \n✔ Product–Batch integrity guaranteed  \n  \n✔ Dropdown APIs clean & read-only  \n  \n✔ Errors are **predictable & UI-friendly**\n\nEndFragment"
 					},
 					"response": []
 				},
@@ -2018,11 +2018,11 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MTI5MjQ5LCJpYXQiOjE3NjgwNDI4NDksImp0aSI6ImVjYzkwMzE1ODhkNjQzMTI4ZjhhOTJiYmY1NGE4YmJmIiwidXNlcl9pZCI6IjIifQ.OyMAxniFnAajDtmhROIBCdeWG0UjmycQr_wBrxLCakc"
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4Mjc4NzMxLCJpYXQiOjE3NjgxOTIzMzEsImp0aSI6IjE1N2QwMzRmNGRjNzRhYTY5ZDUwNTQ3NWJmOWI5Zjk5IiwidXNlcl9pZCI6IjIifQ.TSVKyio1SCH0vyyext5fVn6UDX6CP3b6BQWlUIplzeQ"
 							}
 						],
 						"url": {
-							"raw": "http://127.0.0.1:8000/api/order-batches/?product_id=1",
+							"raw": "http://127.0.0.1:8000/api/order-batches/?product_id=2",
 							"protocol": "http",
 							"host": [
 								"127",
@@ -2039,7 +2039,7 @@
 							"query": [
 								{
 									"key": "product_id",
-									"value": "1"
+									"value": "2"
 								}
 							]
 						},
@@ -2054,7 +2054,7 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MTI5MjQ5LCJpYXQiOjE3NjgwNDI4NDksImp0aSI6ImVjYzkwMzE1ODhkNjQzMTI4ZjhhOTJiYmY1NGE4YmJmIiwidXNlcl9pZCI6IjIifQ.OyMAxniFnAajDtmhROIBCdeWG0UjmycQr_wBrxLCakc"
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4Mjc4NzMxLCJpYXQiOjE3NjgxOTIzMzEsImp0aSI6IjE1N2QwMzRmNGRjNzRhYTY5ZDUwNTQ3NWJmOWI5Zjk5IiwidXNlcl9pZCI6IjIifQ.TSVKyio1SCH0vyyext5fVn6UDX6CP3b6BQWlUIplzeQ"
 							}
 						],
 						"url": {
@@ -2073,11 +2073,343 @@
 								""
 							]
 						},
-						"description": "StartFragment\n\n.\n\n---\n\n# 📘 Mapwala MIS – Sales Order APIs\n\n**Postman Documentation**\n\nBase URL:\n\n```\nhttp://127.0.0.1:8000/api\n\n ```\n\nAuthentication:\n\n- All APIs require **JWT Bearer Token**\n    \n- Add Header in Postman:\n    \n\n```\nAuthorization: Bearer <ACCESS_TOKEN>\n\n ```\n\n---\n\n## 1️⃣ Get Product / Device Models\n\n### (Product dropdown – Step 1 in UI)\n\n### Endpoint\n\n```\nGET /order-products/\n\n ```\n\n### Description\n\nFetches all available **Product / Device Models** that can be ordered.\n\nUsed to populate:\n\n> \n\n**Product / Device Model dropdown**\n\n \n  \n\n### Headers\n\n| Key | Value |\n| --- | --- |\n| Authorization | Bearer |\n\n### Request (cURL)\n\n```\ncurl --location 'http://127.0.0.1:8000/api/order-products/' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27;\n\n ```\n\n### Success Response (200)\n\n```\n[\n  { \"id\": 4, \"name\": \"Asset Tracker\" },\n  { \"id\": 1, \"name\": \"GPS Tracker Pro\" },\n  { \"id\": 2, \"name\": \"GPS Tracker Standard\" },\n  { \"id\": 5, \"name\": \"IoT Sensor\" },\n  { \"id\": 3, \"name\": \"Vehicle Tracker\" }\n]\n\n ```\n\n### Notes\n\n- `id` is required for the next API\n    \n- Products are sorted alphabetically\n    \n\nEndFragment"
+						"description": "StartFragment\n\n.\n\n---\n\n# 📘 Mapwala MIS – Sales Order APIs\n\n**Postman Documentation**\n\nBase URL:\n\n```\nhttp://127.0.0.1:8000/api\n\n ```\n\nAuthentication:\n\n- All APIs require **JWT Bearer Token**\n    \n- Add Header in Postman:\n    \n\n```\nAuthorization: Bearer <ACCESS_TOKEN>\n\n ```\n\n---\n\n## Get Product / Device Models\n\n### (Product dropdown – Step 1 in UI)\n\n### Endpoint\n\n```\nGET /order-products/\n\n ```\n\n### Description\n\nFetches all available **Product / Device Models** that can be ordered.\n\nUsed to populate:\n\n**Product / Device Model dropdown**\n\n### Headers\n\n| Key | Value |\n| --- | --- |\n| Authorization | Bearer |\n\n### Request (cURL)\n\n```\ncurl --location 'http://127.0.0.1:8000/api/order-products/' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27;\n\n ```\n\n### Success Response (200)\n\n```\n[\n  { \"id\": 4, \"name\": \"Asset Tracker\" },\n  { \"id\": 1, \"name\": \"GPS Tracker Pro\" },\n  { \"id\": 2, \"name\": \"GPS Tracker Standard\" },\n  { \"id\": 5, \"name\": \"IoT Sensor\" },\n  { \"id\": 3, \"name\": \"Vehicle Tracker\" }\n]\n\n ```\n\n### Notes\n\n- `id` is required for the next API\n    \n- Products are sorted alphabetically\n    \n\nEndFragment"
 					},
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "ORDER ENTRY Production Order - Add to Stock Details",
+			"item": [
+				{
+					"name": "http://127.0.0.1:8000/api/production-orders/add-to-stock/",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4Mjc4NzMxLCJpYXQiOjE3NjgxOTIzMzEsImp0aSI6IjE1N2QwMzRmNGRjNzRhYTY5ZDUwNTQ3NWJmOWI5Zjk5IiwidXNlcl9pZCI6IjIifQ.TSVKyio1SCH0vyyext5fVn6UDX6CP3b6BQWlUIplzeQ"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n\t\"production_type\": \"add_to_stock\",\r\n\t\"product_device_model\": \"GPS Tracker Standard\",\r\n\t\"product_category\": \"gps_devices\",\r\n\t\"quantity_added\": 10,\r\n\t\"unit_price\": 100,\r\n\t\"total_value\": 1000,\r\n\t\"supplier_vendor_id\": 1,\r\n\t\"purchase_date\": \"2026-01-12\",\r\n\t\"manufacturing_date\": \"2026-01-12\", \r\n\t\"batch_number\": \"BATCH-2024-003\",\r\n\t\"remarks\": \"New stock added\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/production-orders/add-to-stock/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"production-orders",
+								"add-to-stock",
+								""
+							]
+						},
+						"description": "StartFragment\n\n# 📘 Mapwala MIS – Production Order (Add to Stock) API\n\n**Environment:** Local  \n**Base URL:** `http://127.0.0.1:8000/api`  \n**Auth:** JWT Bearer Token (Required)\n\n---\n\n## 🔐 Authentication\n\nAll requests must include:\n\n```\nAuthorization: Bearer <JWT_ACCESS_TOKEN>\nContent-Type: application/json\n\n ```\n\n---\n\n## 🔹 Production Order – Add to Stock\n\n### Endpoint\n\n```\nPOST /production-orders/add-to-stock/\n\n ```\n\n### Purpose\n\n- Create a **Production Order**\n    \n- **Add stock** to a product batch\n    \n- Automatically **creates batch if not existing**\n    \n- Updates stock **atomically** (safe for concurrency)\n    \n\n---\n\n## ✅ Successful Request Example\n\n### Request Body\n\n```\n{\n  \"production_type\": \"add_to_stock\",\n  \"product_device_model\": \"GPS Tracker Standard\",\n  \"product_category\": \"gps_devices\",\n  \"quantity_added\": 10,\n  \"unit_price\": 100,\n  \"total_value\": 1000,\n  \"supplier_vendor_id\": 1,\n  \"purchase_date\": \"2026-01-12\",\n  \"manufacturing_date\": \"2026-01-12\",\n  \"batch_number\": \"BATCH-2024-003\",\n  \"remarks\": \"New stock added\"\n}\n\n ```\n\n---\n\n## ✅ Success Response (201 Created)\n\n```\n{\n  \"message\": \"Production order created and stock added successfully\",\n  \"production_order_id\": 1,\n  \"product\": {\n    \"id\": 2,\n    \"name\": \"GPS Tracker Standard\"\n  },\n  \"batch\": {\n    \"id\": 13,\n    \"batch_number\": \"BATCH-2024-003\"\n  },\n  \"added_quantity\": 10,\n  \"current_stock\": 4214226,\n  \"total_value\": 1000.0\n}\n\n ```\n\n---\n\n## ❌ Error Responses (All Possible Cases)\n\n### 1️⃣ Authentication Missing\n\n**Status:** `401 Unauthorized`\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n---\n\n### 2️⃣ Invalid / Expired Token\n\n**Status:** `401 Unauthorized`\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n---\n\n### 3️⃣ Invalid Product / Device Model\n\n**Status:** `400 Bad Request`\n\n```\n{\n  \"product_device_model\": \"Invalid product/device model.\"\n}\n\n ```\n\n---\n\n### 4️⃣ Invalid Supplier / Vendor ID\n\n**Status:** `400 Bad Request`\n\n```\n{\n  \"supplier_vendor\": \"Invalid supplier/vendor.\"\n}\n\n ```\n\n---\n\n### 5️⃣ Total Value Mismatch (Backend Validation)\n\n**Status:** `400 Bad Request`\n\n```\n{\n  \"total_value\": \"Total value mismatch with backend calculation.\"\n}\n\n ```\n\n**Cause:**\n\n```\nquantity_added × unit_price ≠ total_value\n\n ```\n\n---\n\n### 6️⃣ Missing Required Fields\n\n**Status:** `400 Bad Request`\n\n```\n{\n  \"product_device_model\": [\"This field is required.\"],\n  \"batch_number\": [\"This field is required.\"]\n}\n\n ```\n\n---\n\n### 7️⃣ Invalid Product Category\n\n**Status:** `400 Bad Request`\n\n```\n{\n  \"product_category\": \"\\\"invalid_category\\\" is not a valid choice.\"\n}\n\n ```\n\n---\n\n### 8️⃣ Invalid Production Type\n\n**Status:** `400 Bad Request`\n\n```\n{\n  \"production_type\": \"\\\"invalid_type\\\" is not a valid choice.\"\n}\n\n ```\n\n---\n\n### 9️⃣ Invalid Date Format\n\n**Status:** `400 Bad Request`\n\n```\n{\n  \"purchase_date\": [\"Date has wrong format. Use one of these formats instead: YYYY-MM-DD.\"]\n}\n\n ```\n\n---\n\n## 🧪 Notes for QA / Frontend\n\n✔ Batch is **resolved by product + batch_number**  \n  \n✔ Stock is **incremented**, not replaced  \n  \n✔ Backend enforces **financial correctness**  \n  \n✔ Safe for **parallel requests** (row locking)\n\n---\n\n## 📌 Recommended Postman Tests (Optional)\n\nAdd these assertions in Postman:\n\n```\npm.response.to.have.status(201);\npm.expect(pm.response.json().current_stock).to.be.a(\"number\");\npm.expect(pm.response.json().added_quantity).to.be.above(0);\n\n ```\n\n---\n\n## ✅ API Contract Summary\n\n| Field | Source | Notes |\n| --- | --- | --- |\n| product_device_model | String | Must exist |\n| batch_number | String | Auto-created if missing |\n| supplier_vendor_id | Integer | FK validated |\n| total_value | Client + Server | Must match backend |\n| current_stock | Server | Always accurate |\n\nEndFragment"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "http://127.0.0.1:8000/api/order-entry/step-1/",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4Mjc4NzMxLCJpYXQiOjE3NjgxOTIzMzEsImp0aSI6IjE1N2QwMzRmNGRjNzRhYTY5ZDUwNTQ3NWJmOWI5Zjk5IiwidXNlcl9pZCI6IjIifQ.TSVKyio1SCH0vyyext5fVn6UDX6CP3b6BQWlUIplzeQ"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"order_type\": \"production\",\r\n    \"production_type\": \"add_to_stock\",\r\n    \"assembly_type\": \"fully_outsourced\"\r\n  }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/order-entry/step-1/",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"order-entry",
+						"step-1",
+						""
+					]
+				},
+				"description": "Generated from cURL: curl -X POST http://127.0.0.1:8000/api/order-entry/step-1/ \\\r\n  -H \"Authorization: Bearer YOUR_ACCESS_TOKEN\" \\\r\n  -H \"Content-Type: application/json\" \\\r\n  -d '{\r\n    \"order_type\": \"production\",\r\n    \"production_type\": \"add_to_stock\",\r\n    \"assembly_type\": \"fully_outsourced\"\r\n  }'\r\n"
+			},
+			"response": []
+		},
+		{
+			"name": "Get Supplier Vendor Dropdown",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4Mjc4NzMxLCJpYXQiOjE3NjgxOTIzMzEsImp0aSI6IjE1N2QwMzRmNGRjNzRhYTY5ZDUwNTQ3NWJmOWI5Zjk5IiwidXNlcl9pZCI6IjIifQ.TSVKyio1SCH0vyyext5fVn6UDX6CP3b6BQWlUIplzeQ"
+					}
+				],
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/dropdowns/suppliers/",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"dropdowns",
+						"suppliers",
+						""
+					]
+				},
+				"description": "Generated from cURL: curl --location \"http://127.0.0.1:8000/api/dropdowns/suppliers/\" \\\r\n--header \"Authorization: Bearer YOUR_ACCESS_TOKEN\"\r\n"
+			},
+			"response": []
+		},
+		{
+			"name": "Get Product Category Dropdown",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4Mjc4NzMxLCJpYXQiOjE3NjgxOTIzMzEsImp0aSI6IjE1N2QwMzRmNGRjNzRhYTY5ZDUwNTQ3NWJmOWI5Zjk5IiwidXNlcl9pZCI6IjIifQ.TSVKyio1SCH0vyyext5fVn6UDX6CP3b6BQWlUIplzeQ"
+					}
+				],
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/dropdowns/product-categories/",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"dropdowns",
+						"product-categories",
+						""
+					]
+				},
+				"description": "Generated from cURL: curl --location \"http://127.0.0.1:8000/api/dropdowns/product-categories/\" \\\r\n--header \"Authorization: Bearer YOUR_ACCESS_TOKEN\"\r\n"
+			},
+			"response": []
+		},
+		{
+			"name": "4️⃣ Validation Test — Insufficient Stock (Sales Order)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4Mjc4NzMxLCJpYXQiOjE3NjgxOTIzMzEsImp0aSI6IjE1N2QwMzRmNGRjNzRhYTY5ZDUwNTQ3NWJmOWI5Zjk5IiwidXNlcl9pZCI6IjIifQ.TSVKyio1SCH0vyyext5fVn6UDX6CP3b6BQWlUIplzeQ"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"customer_name\": \"Test Customer\",\r\n  \"customer_type\": \"b2c\",\r\n  \"contact_person\": \"Test\",\r\n  \"mobile_no\": \"9999999999\",\r\n\r\n  \"product_device_model\": \"GPS Tracker Standard\",\r\n  \"batch\": \"BATCH-2024-003\",\r\n\r\n  \"quantity\": 999999,\r\n  \"unit_price\": 100,\r\n  \"discount_percent\": 0,\r\n  \"gst_percent\": 18,\r\n  \"shipping_charges\": 0,\r\n  \"grand_total\": 11800000,\r\n\r\n  \"delivery_date\": \"2026-01-20\",\r\n  \"delivery_address\": \"Test\",\r\n\r\n  \"payment_mode\": \"cash\",\r\n  \"payment_status\": \"paid\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/sales-orders/create/",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"sales-orders",
+						"create",
+						""
+					]
+				},
+				"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/sales-orders/create/' \\\r\n--header 'Authorization: Bearer YOUR_ACCESS_TOKEN' \\\r\n--header 'Content-Type: application/json' \\\r\n--data '{\r\n  \"customer_name\": \"Test Customer\",\r\n  \"customer_type\": \"b2c\",\r\n  \"contact_person\": \"Test\",\r\n  \"mobile_no\": \"9999999999\",\r\n\r\n  \"product_device_model\": \"GPS Tracker Standard\",\r\n  \"batch\": \"BATCH-2024-003\",\r\n\r\n  \"quantity\": 999999,\r\n  \"unit_price\": 100,\r\n  \"discount_percent\": 0,\r\n  \"gst_percent\": 18,\r\n  \"shipping_charges\": 0,\r\n  \"grand_total\": 11800000,\r\n\r\n  \"delivery_date\": \"2026-01-20\",\r\n  \"delivery_address\": \"Test\",\r\n\r\n  \"payment_mode\": \"cash\",\r\n  \"payment_status\": \"paid\"\r\n}'\r\n"
+			},
+			"response": []
+		},
+		{
+			"name": "Validation Test — Invalid Batch",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4Mjc4NzMxLCJpYXQiOjE3NjgxOTIzMzEsImp0aSI6IjE1N2QwMzRmNGRjNzRhYTY5ZDUwNTQ3NWJmOWI5Zjk5IiwidXNlcl9pZCI6IjIifQ.TSVKyio1SCH0vyyext5fVn6UDX6CP3b6BQWlUIplzeQ"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"customer_name\": \"Test\",\r\n  \"customer_type\": \"b2c\",\r\n  \"contact_person\": \"Test\",\r\n  \"mobile_no\": \"9999999999\",\r\n\r\n  \"product_device_model\": \"GPS Tracker Standard\",\r\n  \"batch\": \"INVALID-BATCH\",\r\n\r\n  \"quantity\": 1,\r\n  \"unit_price\": 100,\r\n  \"discount_percent\": 0,\r\n  \"gst_percent\": 18,\r\n  \"shipping_charges\": 0,\r\n  \"grand_total\": 118,\r\n\r\n  \"delivery_date\": \"2026-01-20\",\r\n  \"delivery_address\": \"Test\",\r\n\r\n  \"payment_mode\": \"cash\",\r\n  \"payment_status\": \"paid\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/sales-orders/create/",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"sales-orders",
+						"create",
+						""
+					]
+				},
+				"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/sales-orders/create/' \\\r\n--header 'Authorization: Bearer YOUR_ACCESS_TOKEN' \\\r\n--header 'Content-Type: application/json' \\\r\n--data '{\r\n  \"customer_name\": \"Test\",\r\n  \"customer_type\": \"b2c\",\r\n  \"contact_person\": \"Test\",\r\n  \"mobile_no\": \"9999999999\",\r\n\r\n  \"product_device_model\": \"GPS Tracker Standard\",\r\n  \"batch\": \"INVALID-BATCH\",\r\n\r\n  \"quantity\": 1,\r\n  \"unit_price\": 100,\r\n  \"discount_percent\": 0,\r\n  \"gst_percent\": 18,\r\n  \"shipping_charges\": 0,\r\n  \"grand_total\": 118,\r\n\r\n  \"delivery_date\": \"2026-01-20\",\r\n  \"delivery_address\": \"Test\",\r\n\r\n  \"payment_mode\": \"cash\",\r\n  \"payment_status\": \"paid\"\r\n}'\r\n"
+			},
+			"response": []
+		},
+		{
+			"name": "Validation Test — Total Value Mismatch (Production)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4Mjc4NzMxLCJpYXQiOjE3NjgxOTIzMzEsImp0aSI6IjE1N2QwMzRmNGRjNzRhYTY5ZDUwNTQ3NWJmOWI5Zjk5IiwidXNlcl9pZCI6IjIifQ.TSVKyio1SCH0vyyext5fVn6UDX6CP3b6BQWlUIplzeQ"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"production_type\": \"add_to_stock\",\r\n  \"product_device_model\": \"GPS Tracker Standard\",\r\n  \"product_category\": \"gps_devices\",\r\n  \"quantity_added\": 10,\r\n  \"unit_price\": 100,\r\n  \"total_value\": 999, \r\n  \"supplier_vendor_id\": 1,\r\n  \"purchase_date\": \"2026-01-12\",\r\n  \"manufacturing_date\": \"2026-01-12\",\r\n  \"batch_number\": \"BATCH-TEST-FAIL\",\r\n  \"remarks\": \"Should fail\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/production-orders/add-to-stock/",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"production-orders",
+						"add-to-stock",
+						""
+					]
+				},
+				"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/production-orders/add-to-stock/' \\\r\n--header 'Authorization: Bearer YOUR_ACCESS_TOKEN' \\\r\n--header 'Content-Type: application/json' \\\r\n--data '{\r\n  \"production_type\": \"add_to_stock\",\r\n  \"product_device_model\": \"GPS Tracker Standard\",\r\n  \"product_category\": \"gps_devices\",\r\n  \"quantity_added\": 10,\r\n  \"unit_price\": 100,\r\n  \"total_value\": 999, \r\n  \"supplier_vendor_id\": 1,\r\n  \"purchase_date\": \"2026-01-12\",\r\n  \"manufacturing_date\": \"2026-01-12\",\r\n  \"batch_number\": \"BATCH-TEST-FAIL\",\r\n  \"remarks\": \"Should fail\"\r\n}'\r\n"
+			},
+			"response": []
+		},
+		{
+			"name": "7️⃣ Step-2 Without Step-1 (Authorization flow check)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4Mjc4NzMxLCJpYXQiOjE3NjgxOTIzMzEsImp0aSI6IjE1N2QwMzRmNGRjNzRhYTY5ZDUwNTQ3NWJmOWI5Zjk5IiwidXNlcl9pZCI6IjIifQ.TSVKyio1SCH0vyyext5fVn6UDX6CP3b6BQWlUIplzeQ"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"production_type\": \"add_to_stock\",\r\n  \"product_device_model\": \"GPS Tracker Standard\",\r\n  \"product_category\": \"gps_devices\",\r\n  \"quantity_added\": 1,\r\n  \"unit_price\": 100,\r\n  \"total_value\": 100,\r\n  \"supplier_vendor_id\": 1,\r\n  \"purchase_date\": \"2026-01-12\",\r\n  \"manufacturing_date\": \"2026-01-12\",\r\n  \"batch_number\": \"BATCH-FAIL\",\r\n  \"remarks\": \"Should 404\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/order-entry/step-2/9999/",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"order-entry",
+						"step-2",
+						"9999",
+						""
+					]
+				},
+				"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/order-entry/step-2/9999/' \\\r\n--header 'Authorization: Bearer YOUR_ACCESS_TOKEN' \\\r\n--header 'Content-Type: application/json' \\\r\n--data '{\r\n  \"production_type\": \"add_to_stock\",\r\n  \"product_device_model\": \"GPS Tracker Standard\",\r\n  \"product_category\": \"gps_devices\",\r\n  \"quantity_added\": 1,\r\n  \"unit_price\": 100,\r\n  \"total_value\": 100,\r\n  \"supplier_vendor_id\": 1,\r\n  \"purchase_date\": \"2026-01-12\",\r\n  \"manufacturing_date\": \"2026-01-12\",\r\n  \"batch_number\": \"BATCH-FAIL\",\r\n  \"remarks\": \"Should 404\"\r\n}'\r\n"
+			},
+			"response": []
 		}
 	]
 }
