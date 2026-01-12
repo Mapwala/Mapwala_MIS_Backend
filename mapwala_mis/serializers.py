@@ -357,6 +357,7 @@ class AccessorySerializer(serializers.ModelSerializer):
         exclude = ["device"]
 
 
+# ---------------- Order Entry ----------------
 class OrderProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderProduct
@@ -370,25 +371,62 @@ class OrderBatchSerializer(serializers.ModelSerializer):
 
 
 class SalesOrderCreateSerializer(serializers.ModelSerializer):
-    product = serializers.PrimaryKeyRelatedField(read_only=True)
+    """
+    Accepts:
+    - product-device_model (string)
+    - batch (string: batch_number)
+    """
+
+    product_device_model = serializers.CharField(
+        write_only=True,
+        required=True
+    )
+    batch = serializers.CharField(
+        write_only=True,
+        required=True
+    )
 
     class Meta:
         model = SalesOrder
-        fields = "__all__"
+        exclude = ("product",)  # product is derived, not sent
 
     def validate(self, data):
-        batch = data["batch"]
-        data["product"] = batch.product
+        product_name = data.pop("product_device_model")
+        batch_number = data.pop("batch")
 
-        if data["quantity"] > batch.available_stock:
+        # 1️ Resolve product
+        try:
+            product = OrderProduct.objects.get(name=product_name)
+        except OrderProduct.DoesNotExist:
             raise serializers.ValidationError({
-                "quantity": "Quantity exceeds available stock."
+                "product-device_model": "Invalid product / device model."
             })
 
+        # 2️ Resolve batch (must belong to product)
+        try:
+            batch = OrderBatch.objects.get(
+                product=product,
+                batch_number=batch_number
+            )
+        except OrderBatch.DoesNotExist:
+            raise serializers.ValidationError({
+                "batch": "Invalid batch for selected product."
+            })
+
+        data["product"] = product
+        data["batch"] = batch
+
+        # 3️ Stock validation
+        if data["quantity"] > batch.available_stock:
+            raise serializers.ValidationError({
+                "quantity": f"Only {batch.available_stock} units available."
+            })
+
+        # 4️ Grand total validation
         calculated = SalesOrder(**data).calculate_grand_total()
         if calculated != data["grand_total"]:
             raise serializers.ValidationError({
-                "grand_total": "Grand total mismatch."
+                "grand_total": "Grand total mismatch with backend calculation."
             })
 
         return data

@@ -399,8 +399,6 @@ class DeviceAccessoryAPIView(APIView):
 
 
 # ---------------- Order Products, Batches, Sales Order ----------------
-
-
 class OrderProductListAPIView(APIView):
     """
     UI: Product / Device Model dropdown
@@ -432,9 +430,6 @@ class OrderBatchListAPIView(APIView):
 
 
 class SalesOrderCreateAPIView(APIView):
-    """
-    Final submit: Create sales order + reduce batch stock
-    """
     permission_classes = [IsAuthenticated]
 
     @transaction.atomic
@@ -442,7 +437,6 @@ class SalesOrderCreateAPIView(APIView):
         serializer = SalesOrderCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # Lock batch row to avoid race conditions
         batch = OrderBatch.objects.select_for_update().get(
             id=serializer.validated_data["batch"].id
         )
@@ -456,10 +450,13 @@ class SalesOrderCreateAPIView(APIView):
             {
                 "message": "Sales order created successfully",
                 "order_id": order.id,
-                "product": order.product.name,
-                "batch": order.batch.batch_number,
+
+                # RETURN IDS EXPLICITLY
+                "product_id": order.product.id,
+                "batch_id": order.batch.id,
+
                 "remaining_stock": batch.available_stock,
-                "grand_total": order.grand_total,
+                "grand_total": float(order.grand_total),
             },
             status=status.HTTP_201_CREATED,
         )

@@ -457,6 +457,7 @@ class ProformaInvoice(models.Model):
         return f"PI-{self.id}"
 
 
+# ---------------- Order Entry ----------------
 class OrderProduct(models.Model):
     """
     Product / Device Model shown in UI
