@@ -545,3 +545,48 @@ class OrderEntryStep2MakeToOrderSerializer(serializers.ModelSerializer):
         return data
 
 
+# _______________________ Request For Quote (RFQ) Step 1 __________________________
+# Step-1 Serializer
+class RFQStep1Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = RequestForQuote
+        fields = [
+            "order_reference",
+            "device_name",
+            "assembly_type",
+            "quantity",
+        ]
+
+# Step-2 Serializer
+class RFQStep2Serializer(serializers.Serializer):
+    bom_parts = serializers.ListField(
+        child=serializers.CharField(),
+        required=False
+    )
+    components = serializers.ListField(
+        child=serializers.CharField(),
+        required=False
+    )
+    services = serializers.ListField(
+        child=serializers.CharField(),
+        required=False
+    )
+
+# Step-3 Serializer
+class RFQStep3Serializer(serializers.Serializer):
+    vendor_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        min_length=1
+    )
+    srn_no = serializers.ChoiceField(
+        choices=RequestForQuote.SRN_CHOICES
+    )
+    delivery_date = serializers.DateField()
+    delivery_address = serializers.CharField()
+    additional_requirements = serializers.CharField(
+        required=False, allow_blank=True
+    )
+
+
+# _____________________________________________________________________________
+

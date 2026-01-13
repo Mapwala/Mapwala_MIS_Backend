@@ -14,6 +14,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from collections import defaultdict
+from rest_framework.throttling import ScopedRateThrottle
 
 from .serializers import *
 from .models import *
@@ -23,6 +24,8 @@ from .models import *
 # ---------------- Login API ----------------
 class LoginAPIView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]  # ← ADD THIS
+    throttle_scope = "login" 
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
@@ -676,4 +679,130 @@ class OrderPriorityDropdownAPIView(APIView):
         ])
 
 
+# ---------------- RFQ Step 1 ----------------
+class RFQStep1APIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = RFQStep1Serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        rfq = serializer.save(created_by=request.user)
+
+        return Response(
+            {"rfq_id": rfq.id, "message": "Step 1 completed"},
+            status=201
+        )
+
+# ---------------- RFQ Step 2 ----------------
+class RFQStep2APIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request):
+        rfq = get_object_or_404(
+            RequestForQuote,
+            id=request.data.get("rfq_id"),
+            status="draft"
+        )
+
+        serializer = RFQStep2Serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        rfq.selections.all().delete()
+
+        for ref in serializer.validated_data.get("bom_parts", []):
+            RFQSelection.objects.create(
+                rfq=rfq,
+                item_type="bom",
+                reference=ref
+            )
+
+        for ref in serializer.validated_data.get("components", []):
+            RFQSelection.objects.create(
+                rfq=rfq,
+                item_type="component",
+                reference=ref
+            )
+
+        for ref in serializer.validated_data.get("services", []):
+            RFQSelection.objects.create(
+                rfq=rfq,
+                item_type="service",
+                reference=ref
+            )
+
+        return Response({"message": "Step 2 completed"})
+
+
+# ---------------- RFQ STEP-3 API (FINAL SUBMIT) ----------------
+class RFQStep3APIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request):
+        rfq = get_object_or_404(
+            RequestForQuote,
+            id=request.data.get("rfq_id"),
+            status="draft"
+        )
+
+        serializer = RFQStep3Serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        rfq.srn_no = serializer.validated_data["srn_no"]
+        rfq.delivery_date = serializer.validated_data["delivery_date"]
+        rfq.delivery_address = serializer.validated_data["delivery_address"]
+        rfq.additional_requirements = serializer.validated_data.get(
+            "additional_requirements", ""
+        )
+        rfq.status = "submitted"
+        rfq.save()
+
+        return Response(
+            {"message": "RFQ submitted successfully"},
+            status=201
+        )
+
+class QuoteTypeDropdownAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response([
+            {"key": "components", "label": "Components"},
+            {"key": "bom", "label": "Items (BOM Parts)"},
+            {"key": "services", "label": "Services"},
+        ])
+
+class AssemblyTypeDropdownAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response([
+            {"key": "pcb_assembly", "label": "PCB Assembly"},
+            {"key": "device_assembly", "label": "Device Assembly"},
+        ])
+
+class SRNDropdownAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response([
+            {"key": k, "label": v}
+            for k, v in RequestForQuote.SRN_CHOICES
+        ])
+
+class VendorDropdownAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response([
+            {
+                "id": v.id,
+                "label": f"{v.name} ({v.city})" if hasattr(v, "city") else v.name
+            }
+            for v in Vendor.objects.all()
+        ])
+
+# _____________________________________________________________________________
 

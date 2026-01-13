@@ -462,6 +462,49 @@ Mapwala_MIS_Backend/
 
 ## 🔧 CONFIGURATION
 
+### 🔐 Django Secret Key Setup
+
+Django requires a secure `SECRET_KEY` for cryptographic signing.  
+This project does **not** store the secret key in the codebase — it must be generated and stored in a `.env` file.
+
+---
+
+#### 1️⃣ Generate a secure secret key
+
+From the project root, run:
+
+```bash
+python - << 'EOF'
+from django.core.management.utils import get_random_secret_key
+print(get_random_secret_key())
+EOF
+
+Or, if you are already inside the Django shell:
+
+from django.core.management.utils import get_random_secret_key
+print(get_random_secret_key())
+
+This will output a long random string — copy it.
+
+
+2️⃣ Create a .env file
+
+In the project root, create a file named .env and add:
+
+SECRET_KEY=your_generated_secret_key_here
+DEBUG=True
+
+⚠️ Do not commit this file — make sure .env is in .gitignore.
+
+3️⃣ Django will automatically load it
+The project loads environment variables using python-dotenv inside settings.py.
+Django will fail to start if SECRET_KEY is missing.
+
+🔒 Security Notes
+  Never commit or share your SECRET_KEY.
+  Use a different key for each environment (local, staging, production).
+  Rotate the key immediately if it is exposed.
+
 ### **Django Settings**
 - **DEBUG**: Controlled via .env (DEBUG=True/False)
 - **ALLOWED_HOSTS**: * (all hosts allowed)

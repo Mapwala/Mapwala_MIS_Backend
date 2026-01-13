@@ -1062,3 +1062,141 @@ class ProductionOrderAdmin(admin.ModelAdmin):
         }),
     )
 
+
+# ----------------------- Make To Order Admin --------------------------
+@admin.register(OrderEntryMakeToOrder)
+class OrderEntryMakeToOrderAdmin(admin.ModelAdmin):
+    list_display = ("id","order_entry","customer_name","customer_type","product","quantity","grand_total","payment_terms","order_priority","expected_delivery_date","created_at")
+
+    list_filter = ("customer_type","payment_terms","order_priority","expected_delivery_date","created_at")
+
+    search_fields = ("id","order_entry__id","customer_name","contact_person","mobile_no","product__name")
+
+    ordering = ("-created_at",)
+    readonly_fields = ("created_at",)
+
+    fieldsets = (
+        ("Order Reference", {
+            "fields": ("order_entry",)
+        }),
+        ("Customer Information", {
+            "fields": ("customer_name", "customer_type", "contact_person", "mobile_no")
+        }),
+        ("Product & Customization", {
+            "fields": ("product", "product_specifications", "customization_details")
+        }),
+        ("Quantity & Delivery", {
+            "fields": ("quantity", "expected_delivery_date")
+        }),
+        ("Pricing", {
+            "fields": ("unit_price", "discount_percent", "gst_percent", "shipping_charges", "grand_total", "advance_payment")
+        }),
+        ("Payment & Priority", {
+            "fields": ("payment_terms", "order_priority")
+        }),
+        ("Special Instructions", {
+            "fields": ("special_instructions",)
+        }),
+        ("System Information", {
+            "fields": ("created_at",)
+        }),
+    )
+
+
+# ===================== RFQ SELECTION INLINE =====================
+class RFQSelectionInline(admin.TabularInline):
+    model = RFQSelection
+    extra = 0
+    fields = ("item_type", "reference")
+    autocomplete_fields = ()
+    show_change_link = True
+
+
+# ===================== REQUEST FOR QUOTE ADMIN =====================
+@admin.register(RequestForQuote)
+class RequestForQuoteAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "order_reference",
+        "device_name",
+        "assembly_type",
+        "quantity",
+        "srn_no",
+        "delivery_date",
+        "status",
+        "created_by",
+        "created_at",
+    )
+
+    list_filter = (
+        "assembly_type",
+        "srn_no",
+        "status",
+        "delivery_date",
+        "created_by",
+    )
+
+    search_fields = (
+        "order_reference",
+        "device_name",
+        "created_by__username",
+    )
+
+    ordering = ("-created_at",)
+
+    readonly_fields = ("created_by", "created_at")
+
+    inlines = [RFQSelectionInline]
+
+    fieldsets = (
+        ("STEP 1 — Order Selection (UI Driven)", {
+            "fields": (
+                "order_reference",
+                "device_name",
+                "assembly_type",
+                "quantity",
+            )
+        }),
+        ("STEP 3 — Quote Details (UI Driven)", {
+            "fields": (
+                "srn_no",
+                "delivery_date",
+                "delivery_address",
+                "additional_requirements",
+            )
+        }),
+        ("System Status", {
+            "fields": ("status",)
+        }),
+        ("Audit Fields", {
+            "fields": ("created_by", "created_at")
+        }),
+    )
+
+    def save_model(self, request, obj, form, change):
+        """
+        Automatically assign logged-in admin user
+        """
+        if not obj.pk:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+# ===================== RFQ SELECTION ADMIN =====================
+@admin.register(RFQSelection)
+class RFQSelectionAdmin(admin.ModelAdmin):
+    list_display = ("rfq", "item_type", "reference")
+    list_filter = ("item_type",)
+    search_fields = (
+        "rfq__order_reference",
+        "reference",
+    )
+
+    fieldsets = (
+        ("RFQ", {
+            "fields": ("rfq",)
+        }),
+        ("Selection Value", {
+            "fields": ("item_type", "reference")
+        }),
+    )

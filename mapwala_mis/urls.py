@@ -45,6 +45,15 @@ urlpatterns = [
     path("dropdowns/customer-types/", CustomerTypeDropdownAPIView.as_view()),
     path("dropdowns/payment-terms/", PaymentTermsDropdownAPIView.as_view()),
     path("dropdowns/order-priority/", OrderPriorityDropdownAPIView.as_view()),
+    
+    path("rfq/step-1/", RFQStep1APIView.as_view()),
+    path("rfq/step-2/", RFQStep2APIView.as_view()),
+    path("rfq/step-3/", RFQStep3APIView.as_view()),
+
+    path("dropdowns/quote-types/", QuoteTypeDropdownAPIView.as_view()),
+    path("dropdowns/assembly-types/", AssemblyTypeDropdownAPIView.as_view()),
+    path("dropdowns/srn/", SRNDropdownAPIView.as_view()),
+    path("dropdowns/vendors/", VendorDropdownAPIView.as_view()),
 
 ]
 

@@ -1,5 +1,40 @@
+# .env example file
+# Copy this file to `.env` and fill in the actual values
+
+# ----------------------------
+# Django settings
+# ----------------------------
+SECRET_KEY=your_secret_key_here
 DEBUG=True
+
+# ----------------------------
 # Database configuration
-DATABASE_URL=postgres://postgres:Skytrack976531@localhost:5432/mapwala_db
-#For Docker Compose, use the below line
-# DATABASE_URL=postgres://postgres:Skytrack976531@db:5432/mapwala_db
+# ----------------------------
+DB_ENGINE=postgresql
+DB_NAME=your_db_name
+DB_USER=your_db_user
+DB_PASSWORD=your_db_password
+DB_HOST=localhost
+DB_PORT=5432
+
+# ----------------------------
+# Docker Compose override
+# (uncomment when running via docker-compose)
+# ----------------------------
+# DATABASE_URL=postgresql://your_db_user:your_db_password@db:5432/your_db_name
+
+# ----------------------------
+# Hosts configuration
+# ----------------------------
+ALLOWED_HOSTS=api.example.com,admin.example.com,localhost,127.0.0.1
+
+# ----------------------------
+# CORS configuration
+# ----------------------------
+
+# For development
+CORS_ALLOWED_ORIGINS=http://localhost:3000
+
+# For production
+# (uncomment and replace with real domains)
+# CORS_ALLOWED_ORIGINS=https://example.com,https://admin.example.com

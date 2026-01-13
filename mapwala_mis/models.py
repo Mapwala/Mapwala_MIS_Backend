@@ -743,3 +743,64 @@ class OrderEntryMakeToOrder(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 
+# _____________________ Request For Quote (RFQ) ____________________________
+class RequestForQuote(models.Model):
+    STATUS_CHOICES = (
+        ("draft", "Draft"),
+        ("submitted", "Submitted"),
+    )
+
+    ASSEMBLY_TYPE_CHOICES = (
+        ("pcb_assembly", "PCB Assembly"),
+        ("device_assembly", "Device Assembly"),
+    )
+
+    SRN_CHOICES = (
+        ("SRN001", "Standard Requirement - Basic GPS"),
+        ("SRN002", "Advanced Requirement - GPS + IoT"),
+        ("SRN003", "Premium Requirement - Full Suite"),
+        ("SRN004", "Custom Requirement - Specialized"),
+    )
+
+    # STEP 1
+    order_reference = models.CharField(max_length=100)
+    device_name = models.CharField(max_length=255)
+    assembly_type = models.CharField(max_length=30, choices=ASSEMBLY_TYPE_CHOICES)
+    quantity = models.PositiveIntegerField()
+
+    # STEP 3
+    srn_no = models.CharField(max_length=20, choices=SRN_CHOICES, null=True, blank=True)
+    delivery_date = models.DateField(null=True, blank=True)
+    delivery_address = models.TextField(null=True, blank=True)
+    additional_requirements = models.TextField(blank=True)
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
+
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"RFQ-{self.id} | {self.order_reference}"
+
+
+class RFQSelection(models.Model):
+    ITEM_TYPE_CHOICES = (
+        ("bom", "BOM Part"),
+        ("component", "Component"),
+        ("service", "Service"),
+    )
+
+    rfq = models.ForeignKey(
+        RequestForQuote,
+        on_delete=models.CASCADE,
+        related_name="selections"
+    )
+    item_type = models.CharField(max_length=20, choices=ITEM_TYPE_CHOICES)
+    reference = models.CharField(
+        max_length=255,
+        help_text="Selected BOM ID / Component name / Service name"
+    )
+
+
+# _____________________________________________________________________
+
