@@ -488,7 +488,7 @@ class SalesOrderCreateAPIView(APIView):
         )
 
 
-# ---------------- Production Order - Add to Stock ----------------
+# ---------------- Production Order - Add to Stock  Step 2 of Order Entry ----------------
 class ProductionOrderCreateAPIView(APIView):
     """
     Production Order – Add to Stock
@@ -529,6 +529,7 @@ class ProductionOrderCreateAPIView(APIView):
         )
 
 
+# ---------------- ProductDropdown APIView ----------------
 class ProductDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -539,6 +540,7 @@ class ProductDropdownAPIView(APIView):
         ])
 
 
+# ---------------- SupplierVendor Dropdown APIView ----------------
 class SupplierVendorDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -548,7 +550,7 @@ class SupplierVendorDropdownAPIView(APIView):
             for v in SupplierVendor.objects.all()
         ])
 
-
+# ---------------- ProductCategory Dropdown APIView ----------------
 class ProductCategoryDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -560,4 +562,118 @@ class ProductCategoryDropdownAPIView(APIView):
             {"key": "accessories", "label": "Accessories"},
             {"key": "components", "label": "Components"},
         ])
+
+
+# ---------------- Order Entry Step 2 (Make To Order) ----------------
+class OrderEntryStep2APIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request):
+        order_entry = get_object_or_404(
+            OrderEntry,
+            id=request.data.get("entry_id"),
+            user=request.user,
+            is_step1_complete=True,
+            production_type="make_to_order"
+        )
+
+        if hasattr(order_entry, "make_to_order"):
+            return Response(
+                {"detail": "Step 2 already completed"},
+                status=status.HTTP_409_CONFLICT
+            )
+
+        serializer = OrderEntryStep2MakeToOrderSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        make_to_order = serializer.save(order_entry=order_entry)
+
+        order_entry.is_step2_complete = True
+        order_entry.save(update_fields=["is_step2_complete"])
+
+        return Response(
+            {
+                "message": "Order Entry completed successfully",
+
+                "order_entry": {
+                    "id": order_entry.id,
+                    "order_type": order_entry.order_type,
+                    "production_type": order_entry.production_type,
+                    "assembly_type": order_entry.assembly_type,
+                    "is_step1_complete": order_entry.is_step1_complete,
+                    "is_step2_complete": order_entry.is_step2_complete,
+                    "created_at": order_entry.created_at,
+                },
+
+                "customer": {
+                    "name": make_to_order.customer_name,
+                    "type": make_to_order.customer_type,
+                    "contact_person": make_to_order.contact_person,
+                    "mobile_no": make_to_order.mobile_no,
+                },
+
+                "product": {
+                    "id": make_to_order.product.id,
+                    "name": make_to_order.product.name,
+                },
+
+                "order_summary": {
+                    "quantity": make_to_order.quantity,
+                    "unit_price": float(make_to_order.unit_price),
+                    "discount_percent": float(make_to_order.discount_percent),
+                    "gst_percent": float(make_to_order.gst_percent),
+                    "shipping_charges": float(make_to_order.shipping_charges),
+                    "grand_total": float(make_to_order.grand_total),
+                    "advance_payment": float(make_to_order.advance_payment),
+                },
+
+                "delivery": {
+                    "expected_delivery_date": make_to_order.expected_delivery_date,
+                    "priority": make_to_order.order_priority,
+                }
+            },
+            status=status.HTTP_201_CREATED
+        )
+
+
+# ---------------- CustomerType Dropdown APIView ----------------
+class CustomerTypeDropdownAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response([
+            {"key": "b2b", "label": "B2B Partner"},
+            {"key": "b2c", "label": "B2C Customer"},
+            {"key": "distributor", "label": "Distributor"},
+            {"key": "dealer", "label": "Dealer"},
+        ])
+
+
+# ---------------- Payment Terms Dropdown APIView ----------------
+class PaymentTermsDropdownAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response([
+            {"key": "100_advance", "label": "100% Advance"},
+            {"key": "50_50", "label": "50% Advance, 50% on Delivery"},
+            {"key": "30_70", "label": "30% Advance, 70% on Delivery"},
+            {"key": "net_30", "label": "Net 30 Days"},
+            {"key": "net_60", "label": "Net 60 Days"},
+            {"key": "custom", "label": "Custom Terms"},
+        ])
+
+# ---------------- Order Priority Dropdown APIView ----------------
+class OrderPriorityDropdownAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response([
+            {"key": "low", "label": "Low"},
+            {"key": "medium", "label": "Medium"},
+            {"key": "high", "label": "High"},
+            {"key": "urgent", "label": "Urgent"},
+        ])
+
+
 

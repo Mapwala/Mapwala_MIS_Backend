@@ -1,3 +1,5 @@
-SECRET_KEY = django-insecure-$$r#&nv4_bt-^v2t)02-#o!yep^$i1c)m(k@59+mjhn^-aaog7
-DATABASE_URL=postgres://postgres:Skytrack976531@localhost:5432/mapwala_db
 DEBUG=True
+# Database configuration
+DATABASE_URL=postgres://postgres:Skytrack976531@localhost:5432/mapwala_db
+#For Docker Compose, use the below line
+# DATABASE_URL=postgres://postgres:Skytrack976531@db:5432/mapwala_db

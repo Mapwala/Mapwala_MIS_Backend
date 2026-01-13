@@ -698,3 +698,48 @@ class ProductionOrder(models.Model):
     def __str__(self):
         return f"ProductionOrder-{self.id}"
 
+
+# ---------------- Order Entry - Make To Order ----------------
+class OrderEntryMakeToOrder(models.Model):
+    CUSTOMER_TYPE_CHOICES = (
+        ("b2b", "B2B Partner"),
+        ("b2c", "B2C Customer"),
+        ("distributor", "Distributor"),
+        ("dealer", "Dealer"),
+    )
+    PAYMENT_TERMS_CHOICES = (
+        ("100_advance", "100% Advance"),
+        ("50_50", "50% Advance, 50% on Delivery"),
+        ("30_70", "30% Advance, 70% on Delivery"),
+        ("net_30", "Net 30 Days"),
+        ("net_60", "Net 60 Days"),
+        ("custom", "Custom Terms"),
+    )
+    PRIORITY_CHOICES = (
+        ("low", "Low"),
+        ("medium", "Medium"),
+        ("high", "High"),
+        ("urgent", "Urgent"),
+    )
+    order_entry = models.OneToOneField(OrderEntry, on_delete=models.CASCADE, related_name="make_to_order")
+    customer_name = models.CharField(max_length=255)
+    customer_type = models.CharField(max_length=20, choices=CUSTOMER_TYPE_CHOICES)
+    contact_person = models.CharField(max_length=255)
+    mobile_no = models.CharField(max_length=15)
+    product = models.ForeignKey(OrderProduct, on_delete=models.PROTECT)
+    product_specifications = models.TextField(blank=True)
+    customization_details = models.TextField(blank=True)
+    quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+    expected_delivery_date = models.DateField()
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    discount_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    gst_percent = models.DecimalField(max_digits=5, decimal_places=2)
+    shipping_charges = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    grand_total = models.DecimalField(max_digits=12, decimal_places=2)
+    advance_payment = models.DecimalField(max_digits=12, decimal_places=2)
+    payment_terms = models.CharField(max_length=20, choices=PAYMENT_TERMS_CHOICES)
+    order_priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES)
+    special_instructions = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+

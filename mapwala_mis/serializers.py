@@ -503,4 +503,45 @@ class ProductionOrderCreateSerializer(serializers.ModelSerializer):
         return data
 
 
-   
+# ---------------- Step-2 (Make To Order) ----------------
+class OrderEntryStep2MakeToOrderSerializer(serializers.ModelSerializer):
+    product_device_model = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = OrderEntryMakeToOrder
+        exclude = ("order_entry", "product")
+
+    def validate(self, data):
+        # 1. Resolve product from UI value
+        try:
+            product = OrderProduct.objects.get(
+                name=data.pop("product_device_model")
+            )
+        except OrderProduct.DoesNotExist:
+            raise serializers.ValidationError({
+                "product_device_model": "Invalid Product / Device Model"
+            })
+
+        data["product"] = product
+
+        # 2. Backend grand total calculation
+        base = data["quantity"] * data["unit_price"]
+        discount = (base * data["discount_percent"]) / Decimal("100")
+        taxable = base - discount
+        gst = (taxable * data["gst_percent"]) / Decimal("100")
+        calculated_total = taxable + gst + data["shipping_charges"]
+
+        if calculated_total != data["grand_total"]:
+            raise serializers.ValidationError({
+                "grand_total": "Grand total mismatch with backend calculation"
+            })
+            
+        # 3. Advance payment check
+        if data["advance_payment"] > data["grand_total"]:
+            raise serializers.ValidationError({
+                "advance_payment": "Advance payment cannot exceed grand total"
+            })
+
+        return data
+
+

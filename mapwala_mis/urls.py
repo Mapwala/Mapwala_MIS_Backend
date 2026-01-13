@@ -39,6 +39,13 @@ urlpatterns = [
     path("dropdowns/products/", ProductDropdownAPIView.as_view()),
     path("dropdowns/suppliers/", SupplierVendorDropdownAPIView.as_view()),
     path("dropdowns/product-categories/", ProductCategoryDropdownAPIView.as_view()),
+
+    path("order-entry/step-2/", OrderEntryStep2APIView.as_view()),
+
+    path("dropdowns/customer-types/", CustomerTypeDropdownAPIView.as_view()),
+    path("dropdowns/payment-terms/", PaymentTermsDropdownAPIView.as_view()),
+    path("dropdowns/order-priority/", OrderPriorityDropdownAPIView.as_view()),
+
 ]
 
 urlpatterns += router.urls
