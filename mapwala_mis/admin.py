@@ -115,14 +115,7 @@ class StateAdmin(admin.ModelAdmin):
 # ------------------ District ------------------
 @admin.register(District)
 class DistrictAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "name",
-        "code",
-        "state_link",
-        "status_badge",
-        "created_at_formatted",
-    )
+    list_display = ("id","name","code","state_link","status_badge","created_at_formatted")
     list_display_links = ("name",)
     search_fields = ("name", "code", "state__name")
     list_filter = ("status", "state", "created_at")
@@ -225,32 +218,14 @@ class DistrictAdmin(admin.ModelAdmin):
 # ------------------ Parent Company ------------------
 @admin.register(ParentCompany)
 class ParentCompanyAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "name",
-        "email",
-        "phone_number_formatted",
-        "state_link",
-        "district_link",
-        "gst_number",
-        "pan_number",
-        "created_at_formatted",
-        "has_all_documents",
-    )
+    list_display = ("id","name","email","phone_number_formatted","state_link","district_link","gst_number","pan_number","created_at_formatted","has_all_documents")
     list_display_links = ("name",)
     search_fields = ("name", "phone_number", "email", "gst_number", "pan_number")
     list_filter = ("state", "district", "created_at")
     ordering = ("-id",)
 
     # Make critical identifiers read-only after creation
-    readonly_fields = (
-        "created_at",
-        "id_display",
-        "gst_document_link",
-        "tan_document_link",
-        "pan_document_link",
-        "account_number_masked",
-    )
+    readonly_fields = ("created_at","id_display","gst_document_link","tan_document_link","pan_document_link","account_number_masked")
 
     fieldsets = (
         (
@@ -1284,33 +1259,9 @@ class SupplierVendorAdmin(admin.ModelAdmin):
 # -----------------------Production Order Admin--------------------------
 @admin.register(ProductionOrder)
 class ProductionOrderAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "production_type",
-        "product",
-        "product_category",
-        "quantity_added",
-        "total_value",
-        "supplier_vendor",
-        "purchase_date",
-        "manufacturing_date",
-        "batch",
-        "created_at",
-    )
-    list_filter = (
-        "production_type",
-        "product_category",
-        "purchase_date",
-        "manufacturing_date",
-        "supplier_vendor",
-        "created_at",
-    )
-    search_fields = (
-        "id",
-        "product__name",
-        "supplier_vendor__name",
-        "batch__batch_number",
-    )
+    list_display = ("id","production_type","product","product_category","quantity_added","total_value","supplier_vendor","purchase_date","manufacturing_date","batch","created_at")
+    list_filter = ("production_type","product_category","purchase_date","manufacturing_date","supplier_vendor","created_at")
+    search_fields = ("id","product__name","supplier_vendor__name","batch__batch_number")
     ordering = ("-created_at",)
     readonly_fields = ("created_at",)
     fieldsets = (
@@ -1330,34 +1281,9 @@ class ProductionOrderAdmin(admin.ModelAdmin):
 # ----------------------- Make To Order Admin --------------------------
 @admin.register(OrderEntryMakeToOrder)
 class OrderEntryMakeToOrderAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "order_entry",
-        "customer_name",
-        "customer_type",
-        "product",
-        "quantity",
-        "grand_total",
-        "payment_terms",
-        "order_priority",
-        "expected_delivery_date",
-        "created_at",
-    )
-    list_filter = (
-        "customer_type",
-        "payment_terms",
-        "order_priority",
-        "expected_delivery_date",
-        "created_at",
-    )
-    search_fields = (
-        "id",
-        "order_entry__id",
-        "customer_name",
-        "contact_person",
-        "mobile_no",
-        "product__name",
-    )
+    list_display = ("id","order_entry","customer_name","customer_type","product","quantity","grand_total","payment_terms","order_priority","expected_delivery_date","created_at")
+    list_filter = ("customer_type","payment_terms","order_priority","expected_delivery_date","created_at")
+    search_fields = ("id","order_entry__id","customer_name","contact_person","mobile_no","product__name")
     ordering = ("-created_at",)
     readonly_fields = ("created_at",)
     fieldsets = (
@@ -1463,7 +1389,6 @@ class RequestForQuoteAdmin(admin.ModelAdmin):
 
 
 # -------------------- Inlines --------------------
-
 class PurchaseOrderTypeInline(admin.TabularInline):
     model = PurchaseOrderType
     extra = 1
@@ -1491,37 +1416,12 @@ class PurchaseOrderItemInline(admin.TabularInline):
 
 @admin.register(PurchaseOrder)
 class PurchaseOrderAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "order_id",
-        "buyer_name",
-        "rfq_id",
-        "assembly_type",
-        "delivery_date",
-        "payment_terms",
-        "created_by",
-        "created_at",
-    )
-
-    list_filter = (
-        "assembly_type",
-        "payment_terms",
-        "delivery_date",
-        "created_at",
-    )
-
-    search_fields = (
-        "order_id",
-        "rfq_id",
-        "buyer_name",
-        "created_by__username",
-    )
-
+    list_display = ("id","order_id","buyer_name","rfq_id","assembly_type","delivery_date","payment_terms","created_by","created_at")
+    list_filter = ("assembly_type","payment_terms","delivery_date","created_at")
+    search_fields = ("order_id","rfq_id","buyer_name","created_by__username",)
     ordering = ("-created_at",)
     readonly_fields = ("created_at",)
-
     inlines = [PurchaseOrderTypeInline, PurchaseOrderItemInline]
-
     fieldsets = (
         ("Step 1 — Order Details", {
             "fields": (
@@ -1546,7 +1446,6 @@ class PurchaseOrderAdmin(admin.ModelAdmin):
 
 
 # -------------------- Purchase Order Type Admin --------------------
-
 @admin.register(PurchaseOrderType)
 class PurchaseOrderTypeAdmin(admin.ModelAdmin):
     list_display = ("purchase_order", "order_type")
@@ -1567,22 +1466,10 @@ class PurchaseOrderTypeAdmin(admin.ModelAdmin):
 
 @admin.register(PurchaseOrderItem)
 class PurchaseOrderItemAdmin(admin.ModelAdmin):
-    list_display = (
-        "purchase_order",
-        "item_code",
-        "item_type",
-        "vendor_name",
-        "unit_price",
-        "total_price",
-        "delivery_days",
-    )
+    list_display = ("purchase_order","item_code","item_type","quantity","vendor_name","unit_price","total_price","delivery_days")
 
     list_filter = ("item_type",)
-    search_fields = (
-        "item_code",
-        "vendor_name",
-        "purchase_order__order_id",
-    )
+    search_fields = ("item_code","vendor_name","purchase_order__order_id")
 
     fieldsets = (
         ("Purchase Order", {
@@ -1592,6 +1479,7 @@ class PurchaseOrderItemAdmin(admin.ModelAdmin):
             "fields": (
                 "item_code",
                 "item_type",
+                "quantity",
                 "delivery_days",
             )
         }),
@@ -1600,6 +1488,42 @@ class PurchaseOrderItemAdmin(admin.ModelAdmin):
         }),
         ("Pricing", {
             "fields": ("unit_price", "gst_amount", "total_price")
+        }),
+    )
+
+
+class MaterialReceiptItemInline(admin.TabularInline):
+    model = MaterialReceiptItem
+    extra = 1
+    fields = ("purchase_order_item", "received_qty", "serial_numbers", "balance_qty")
+    readonly_fields = ("balance_qty",)
+    autocomplete_fields = ("purchase_order_item",)
+    show_change_link = True
+
+
+@admin.register(MaterialReceiptNote)
+class MaterialReceiptNoteAdmin(admin.ModelAdmin):
+    list_display = ("id","purchase_order","vendor","inward_type","receipt_date","batch_number","created_at")
+    list_filter = ("inward_type", "receipt_date", "vendor")
+    search_fields = ("batch_number", "invoice_number", "purchase_order__order_id", "vendor__name")
+    autocomplete_fields = ("purchase_order", "vendor")
+    readonly_fields = ("created_at",)
+    inlines = [MaterialReceiptItemInline]
+    fieldsets = (
+        ("Order & Vendor", {
+            "fields": ("purchase_order", "po_date", "vendor", "inward_type")
+        }),
+        ("Receipt", {
+            "fields": ("receipt_date", "batch_number")
+        }),
+        ("Documents", {
+            "fields": ("invoice_number", "invoice_file", "delivery_challan_number", "challan_file", "eway_bill_number", "eway_bill_file")
+        }),
+        ("Additional Info", {
+            "fields": ("remarks",)
+        }),
+        ("System", {
+            "fields": ("created_by", "created_at")
         }),
     )
 

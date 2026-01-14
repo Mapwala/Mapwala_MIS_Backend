@@ -571,7 +571,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"username\": \"test\",\r\n  \"password\": \"Test@1234\",\r\n  \"accepted_terms\": true\r\n}\r\n",
+							"raw": "{\r\n  \"username\": \"Vaibhav\",\r\n  \"password\": \"qwerty@12345\",\r\n  \"accepted_terms\": true\r\n}\r\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -2083,13 +2083,57 @@
 			"name": "ORDER ENTRY Production Order - Add to Stock Details",
 			"item": [
 				{
-					"name": "http://127.0.0.1:8000/api/production-orders/add-to-stock/",
+					"name": "Step 2 Order Entry",
 					"request": {
 						"method": "POST",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4Mjc4NzMxLCJpYXQiOjE3NjgxOTIzMzEsImp0aSI6IjE1N2QwMzRmNGRjNzRhYTY5ZDUwNTQ3NWJmOWI5Zjk5IiwidXNlcl9pZCI6IjIifQ.TSVKyio1SCH0vyyext5fVn6UDX6CP3b6BQWlUIplzeQ"
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MzcxNzIzLCJpYXQiOjE3NjgyODUzMjMsImp0aSI6ImIxN2RlYmY5YzBhMjQxNmY4MGZmMDg5N2QyZDg1YjUyIiwidXNlcl9pZCI6IjIifQ.lL3zTTKFWnsfzreJ6kk10B9P-zKLpily3fK7_OBv6yE"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"order_type\": \"production\",\r\n    \"production_type\": \"add_to_stock\",\r\n    \"assembly_type\": \"fully_outsourced\"\r\n  }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/order-entry/step-1/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"order-entry",
+								"step-1",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl -X POST http://127.0.0.1:8000/api/order-entry/step-1/ \\\r\n  -H \"Authorization: Bearer YOUR_ACCESS_TOKEN\" \\\r\n  -H \"Content-Type: application/json\" \\\r\n  -d '{\r\n    \"order_type\": \"production\",\r\n    \"production_type\": \"add_to_stock\",\r\n    \"assembly_type\": \"fully_outsourced\"\r\n  }'\r\n"
+					},
+					"response": []
+				},
+				{
+					"name": "Step 2 Production Order Added  to Stock",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MzcxNzIzLCJpYXQiOjE3NjgyODUzMjMsImp0aSI6ImIxN2RlYmY5YzBhMjQxNmY4MGZmMDg5N2QyZDg1YjUyIiwidXNlcl9pZCI6IjIifQ.lL3zTTKFWnsfzreJ6kk10B9P-zKLpily3fK7_OBv6yE"
 							},
 							{
 								"key": "Content-Type",
@@ -2125,291 +2169,1074 @@
 						"description": "StartFragment\n\n# 📘 Mapwala MIS – Production Order (Add to Stock) API\n\n**Environment:** Local  \n**Base URL:** `http://127.0.0.1:8000/api`  \n**Auth:** JWT Bearer Token (Required)\n\n---\n\n## 🔐 Authentication\n\nAll requests must include:\n\n```\nAuthorization: Bearer <JWT_ACCESS_TOKEN>\nContent-Type: application/json\n\n ```\n\n---\n\n## 🔹 Production Order – Add to Stock\n\n### Endpoint\n\n```\nPOST /production-orders/add-to-stock/\n\n ```\n\n### Purpose\n\n- Create a **Production Order**\n    \n- **Add stock** to a product batch\n    \n- Automatically **creates batch if not existing**\n    \n- Updates stock **atomically** (safe for concurrency)\n    \n\n---\n\n## ✅ Successful Request Example\n\n### Request Body\n\n```\n{\n  \"production_type\": \"add_to_stock\",\n  \"product_device_model\": \"GPS Tracker Standard\",\n  \"product_category\": \"gps_devices\",\n  \"quantity_added\": 10,\n  \"unit_price\": 100,\n  \"total_value\": 1000,\n  \"supplier_vendor_id\": 1,\n  \"purchase_date\": \"2026-01-12\",\n  \"manufacturing_date\": \"2026-01-12\",\n  \"batch_number\": \"BATCH-2024-003\",\n  \"remarks\": \"New stock added\"\n}\n\n ```\n\n---\n\n## ✅ Success Response (201 Created)\n\n```\n{\n  \"message\": \"Production order created and stock added successfully\",\n  \"production_order_id\": 1,\n  \"product\": {\n    \"id\": 2,\n    \"name\": \"GPS Tracker Standard\"\n  },\n  \"batch\": {\n    \"id\": 13,\n    \"batch_number\": \"BATCH-2024-003\"\n  },\n  \"added_quantity\": 10,\n  \"current_stock\": 4214226,\n  \"total_value\": 1000.0\n}\n\n ```\n\n---\n\n## ❌ Error Responses (All Possible Cases)\n\n### 1️⃣ Authentication Missing\n\n**Status:** `401 Unauthorized`\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n---\n\n### 2️⃣ Invalid / Expired Token\n\n**Status:** `401 Unauthorized`\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n---\n\n### 3️⃣ Invalid Product / Device Model\n\n**Status:** `400 Bad Request`\n\n```\n{\n  \"product_device_model\": \"Invalid product/device model.\"\n}\n\n ```\n\n---\n\n### 4️⃣ Invalid Supplier / Vendor ID\n\n**Status:** `400 Bad Request`\n\n```\n{\n  \"supplier_vendor\": \"Invalid supplier/vendor.\"\n}\n\n ```\n\n---\n\n### 5️⃣ Total Value Mismatch (Backend Validation)\n\n**Status:** `400 Bad Request`\n\n```\n{\n  \"total_value\": \"Total value mismatch with backend calculation.\"\n}\n\n ```\n\n**Cause:**\n\n```\nquantity_added × unit_price ≠ total_value\n\n ```\n\n---\n\n### 6️⃣ Missing Required Fields\n\n**Status:** `400 Bad Request`\n\n```\n{\n  \"product_device_model\": [\"This field is required.\"],\n  \"batch_number\": [\"This field is required.\"]\n}\n\n ```\n\n---\n\n### 7️⃣ Invalid Product Category\n\n**Status:** `400 Bad Request`\n\n```\n{\n  \"product_category\": \"\\\"invalid_category\\\" is not a valid choice.\"\n}\n\n ```\n\n---\n\n### 8️⃣ Invalid Production Type\n\n**Status:** `400 Bad Request`\n\n```\n{\n  \"production_type\": \"\\\"invalid_type\\\" is not a valid choice.\"\n}\n\n ```\n\n---\n\n### 9️⃣ Invalid Date Format\n\n**Status:** `400 Bad Request`\n\n```\n{\n  \"purchase_date\": [\"Date has wrong format. Use one of these formats instead: YYYY-MM-DD.\"]\n}\n\n ```\n\n---\n\n## 🧪 Notes for QA / Frontend\n\n✔ Batch is **resolved by product + batch_number**  \n  \n✔ Stock is **incremented**, not replaced  \n  \n✔ Backend enforces **financial correctness**  \n  \n✔ Safe for **parallel requests** (row locking)\n\n---\n\n## 📌 Recommended Postman Tests (Optional)\n\nAdd these assertions in Postman:\n\n```\npm.response.to.have.status(201);\npm.expect(pm.response.json().current_stock).to.be.a(\"number\");\npm.expect(pm.response.json().added_quantity).to.be.above(0);\n\n ```\n\n---\n\n## ✅ API Contract Summary\n\n| Field | Source | Notes |\n| --- | --- | --- |\n| product_device_model | String | Must exist |\n| batch_number | String | Auto-created if missing |\n| supplier_vendor_id | Integer | FK validated |\n| total_value | Client + Server | Must match backend |\n| current_stock | Server | Always accurate |\n\nEndFragment"
 					},
 					"response": []
+				},
+				{
+					"name": "7️⃣ Step-2 Without Step-1 (Authorization flow check)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MzcxNzIzLCJpYXQiOjE3NjgyODUzMjMsImp0aSI6ImIxN2RlYmY5YzBhMjQxNmY4MGZmMDg5N2QyZDg1YjUyIiwidXNlcl9pZCI6IjIifQ.lL3zTTKFWnsfzreJ6kk10B9P-zKLpily3fK7_OBv6yE"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"production_type\": \"add_to_stock\",\r\n  \"product_device_model\": \"GPS Tracker Standard\",\r\n  \"product_category\": \"gps_devices\",\r\n  \"quantity_added\": 1,\r\n  \"unit_price\": 100,\r\n  \"total_value\": 100,\r\n  \"supplier_vendor_id\": 1,\r\n  \"purchase_date\": \"2026-01-12\",\r\n  \"manufacturing_date\": \"2026-01-12\",\r\n  \"batch_number\": \"BATCH-FAIL\",\r\n  \"remarks\": \"Should 404\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/order-entry/step-2/9999/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"order-entry",
+								"step-2",
+								"9999",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/order-entry/step-2/9999/' \\\r\n--header 'Authorization: Bearer YOUR_ACCESS_TOKEN' \\\r\n--header 'Content-Type: application/json' \\\r\n--data '{\r\n  \"production_type\": \"add_to_stock\",\r\n  \"product_device_model\": \"GPS Tracker Standard\",\r\n  \"product_category\": \"gps_devices\",\r\n  \"quantity_added\": 1,\r\n  \"unit_price\": 100,\r\n  \"total_value\": 100,\r\n  \"supplier_vendor_id\": 1,\r\n  \"purchase_date\": \"2026-01-12\",\r\n  \"manufacturing_date\": \"2026-01-12\",\r\n  \"batch_number\": \"BATCH-FAIL\",\r\n  \"remarks\": \"Should 404\"\r\n}'\r\n"
+					},
+					"response": []
+				},
+				{
+					"name": "4️⃣ Validation Test — Insufficient Stock (Sales Order)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4Mjc4NzMxLCJpYXQiOjE3NjgxOTIzMzEsImp0aSI6IjE1N2QwMzRmNGRjNzRhYTY5ZDUwNTQ3NWJmOWI5Zjk5IiwidXNlcl9pZCI6IjIifQ.TSVKyio1SCH0vyyext5fVn6UDX6CP3b6BQWlUIplzeQ"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"customer_name\": \"Test Customer\",\r\n  \"customer_type\": \"b2c\",\r\n  \"contact_person\": \"Test\",\r\n  \"mobile_no\": \"9999999999\",\r\n\r\n  \"product_device_model\": \"GPS Tracker Standard\",\r\n  \"batch\": \"BATCH-2024-003\",\r\n\r\n  \"quantity\": 999999,\r\n  \"unit_price\": 100,\r\n  \"discount_percent\": 0,\r\n  \"gst_percent\": 18,\r\n  \"shipping_charges\": 0,\r\n  \"grand_total\": 11800000,\r\n\r\n  \"delivery_date\": \"2026-01-20\",\r\n  \"delivery_address\": \"Test\",\r\n\r\n  \"payment_mode\": \"cash\",\r\n  \"payment_status\": \"paid\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/sales-orders/create/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"sales-orders",
+								"create",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/sales-orders/create/' \\\r\n--header 'Authorization: Bearer YOUR_ACCESS_TOKEN' \\\r\n--header 'Content-Type: application/json' \\\r\n--data '{\r\n  \"customer_name\": \"Test Customer\",\r\n  \"customer_type\": \"b2c\",\r\n  \"contact_person\": \"Test\",\r\n  \"mobile_no\": \"9999999999\",\r\n\r\n  \"product_device_model\": \"GPS Tracker Standard\",\r\n  \"batch\": \"BATCH-2024-003\",\r\n\r\n  \"quantity\": 999999,\r\n  \"unit_price\": 100,\r\n  \"discount_percent\": 0,\r\n  \"gst_percent\": 18,\r\n  \"shipping_charges\": 0,\r\n  \"grand_total\": 11800000,\r\n\r\n  \"delivery_date\": \"2026-01-20\",\r\n  \"delivery_address\": \"Test\",\r\n\r\n  \"payment_mode\": \"cash\",\r\n  \"payment_status\": \"paid\"\r\n}'\r\n"
+					},
+					"response": []
 				}
 			]
 		},
 		{
-			"name": "http://127.0.0.1:8000/api/order-entry/step-1/",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Authorization",
-						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4Mjc4NzMxLCJpYXQiOjE3NjgxOTIzMzEsImp0aSI6IjE1N2QwMzRmNGRjNzRhYTY5ZDUwNTQ3NWJmOWI5Zjk5IiwidXNlcl9pZCI6IjIifQ.TSVKyio1SCH0vyyext5fVn6UDX6CP3b6BQWlUIplzeQ"
+			"name": "Production Order - Make To Order Details",
+			"item": [
+				{
+					"name": "🟢 STEP 1 — Order Entry (Step-1 API)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NDUwNDc0LCJpYXQiOjE3NjgzNjQwNzQsImp0aSI6Ijc4MjU4MzNmNzAzNDQ3ODJiNmY4ODk3NjIyNmE1NzcwIiwidXNlcl9pZCI6IjMifQ.lmCkI3BEgbNCL-cU2I4mpEFBzq5xe5Tlk9YMw8Jiilk"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"order_type\": \"production\",\r\n  \"production_type\": \"make_to_order\",\r\n  \"assembly_type\": \"fully_outsourced\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/order-entry/step-1/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"order-entry",
+								"step-1",
+								""
+							]
+						},
+						"description": "StartFragment\n\n### Order Entry – Step 1 (Order Type & Production Setup)\n\n**Method:**  \n`POST`\n\n**URL:**  \n`/api/order-entry/step-1/`\n\n**Auth:**  \n  \n✅ Required (JWT Bearer Token)\n\n**Description:**  \n  \nCreates the **initial Order Entry record** by capturing the **order type**, **production type**, and **assembly type**.  \n  \nThis is the **first step** of the Order Entry multi-step workflow and determines which subsequent steps and forms will be shown to the user.\n\n📌 Notes:\n\n- Order is created in **draft / in-progress** state\n    \n- Response typically returns an `order_entry_id` used in later steps\n    \n- Frontend must strictly follow allowed enum values\n    \n\n---\n\n**Headers:**\n\n- `Authorization: Bearer`\n    \n- `Content-Type: application/json`\n    \n\n---\n\n**Query Params:**\n\n| Name | Type | Required | Description |\n| --- | --- | --- | --- |\n| — | — | — | No query parameters |\n\n---\n\n**Request Body:**\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| order_type | string | ✅ Yes | Type of order (`sales` or `production`) |\n| production_type | string | ❌ Conditional | Required when `order_type = production` |\n| assembly_type | string | ✅ Yes | Assembly strategy for the order |\n\n---\n\n### Allowed Values (IMPORTANT)\n\n#### `order_type`\n\n| Value | Meaning |\n| --- | --- |\n| sales | Sales Order |\n| production | Production Order |\n\n#### `production_type` (required if order_type = production)\n\n| Value | Meaning |\n| --- | --- |\n| make_to_order | Make to Order |\n| make_to_stock | Make to Stock |\n\n#### `assembly_type`\n\n| Value | Meaning |\n| --- | --- |\n| fully_outsourced | Fully Outsourced |\n| in_house | In-House |\n| partial_outsourced | Partial Outsourced |\n\n---\n\n**Example Request (JSON):**\n\n```\n{\n  \"order_type\": \"production\",\n  \"production_type\": \"make_to_order\",\n  \"assembly_type\": \"fully_outsourced\"\n}\n\n ```\n\n---\n\n**Success Response:**\n\n### ✅ HTTP 201 – Created\n\n```\n{\n  \"order_entry_id\": 12,\n  \"message\": \"Step 1 completed successfully\"\n}\n\n ```\n\n---\n\n### Response Field Description\n\n| Field | Type | Description |\n| --- | --- | --- |\n| order_entry_id | number | Unique ID for the order entry (used in next steps) |\n| message | string | Human-readable success message |\n\n---\n\n**Frontend Usage Notes:**\n\n- Store `order_entry_id` securely (state / local storage)\n    \n- Do not allow Step-2 without Step-1 completion\n    \n- Drive conditional UI based on `order_type` and `production_type`\n    \n\n---\n\n## ❌ Error Responses (ALL REALISTIC SCENARIOS)\n\n---\n\n### 🚫 1. Unauthorized – Missing Token\n\n**HTTP Status:** `401 Unauthorized`\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n**Frontend Handling:**\n\n- Redirect user to login\n    \n- Block order creation flow\n    \n\n---\n\n### 🚫 2. Unauthorized – Invalid / Expired Token\n\n**HTTP Status:** `401 Unauthorized`\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n**Frontend Handling:**\n\n- Attempt token refresh\n    \n- Redirect to login if refresh fails\n    \n\n---\n\n### 🚫 3. Missing Required Fields\n\n**HTTP Status:** `400 Bad Request`\n\nExample (missing `order_type`):\n\n```\n{\n  \"order_type\": [\n    \"This field is required.\"\n  ]\n}\n\n ```\n\n**Frontend Handling:**\n\n- Highlight missing fields\n    \n- Prevent submission until resolved\n    \n\n---\n\n### 🚫 4. Invalid `order_type`\n\n**HTTP Status:** `400 Bad Request`\n\n```\n{\n  \"order_type\": [\n    \"\\\"invalid\\\" is not a valid choice.\"\n  ]\n}\n\n ```\n\n**Frontend Handling:**\n\n- Ensure dropdown values match backend enums\n    \n- Never hardcode values\n    \n\n---\n\n### 🚫 5. Missing `production_type` for Production Order\n\n**HTTP Status:** `400 Bad Request`\n\n```\n{\n  \"production_type\": [\n    \"This field is required when order_type is production.\"\n  ]\n}\n\n ```\n\n**Frontend Handling:**\n\n- Conditionally require `production_type` in UI\n    \n- Block submission if missing\n    \n\n---\n\n### 🚫 6. Invalid `production_type`\n\n**HTTP Status:** `400 Bad Request`\n\n```\n{\n  \"production_type\": [\n    \"\\\"invalid_value\\\" is not a valid choice.\"\n  ]\n}\n\n ```\n\n**Frontend Handling:**\n\n- Restrict values to backend-provided dropdowns\n    \n\n---\n\n### 🚫 7. Invalid `assembly_type`\n\n**HTTP Status:** `400 Bad Request`\n\n```\n{\n  \"assembly_type\": [\n    \"\\\"invalid_value\\\" is not a valid choice.\"\n  ]\n}\n\n ```\n\n**Frontend Handling:**\n\n- Use only backend-supported options\n    \n- Do not allow free-text input\n    \n\n---\n\n### 🚫 8. Logical Validation Error\n\nExample: `production_type` sent when `order_type = sales`\n\n**HTTP Status:** `400 Bad Request`\n\n```\n{\n  \"production_type\": [\n    \"This field is not applicable for sales orders.\"\n  ]\n}\n\n ```\n\n**Frontend Handling:**\n\n- Hide production fields when order_type = sales\n    \n- Clean payload before submission\n    \n\n---\n\n### 🚫 9. Wrong HTTP Method\n\n**HTTP Status:** `405 Method Not Allowed`\n\n```\n{\n  \"detail\": \"Method \\\"GET\\\" not allowed.\"\n}\n\n ```\n\n**Frontend Handling:**\n\n- Ensure POST method is used\n    \n\n---\n\n### 🚫 10. Server Error (Unexpected)\n\n**HTTP Status:** `500 Internal Server Error`\n\n```\n{\n  \"detail\": \"Internal Server Error\"\n}\n\n ```\n\n**Frontend Handling:**\n\n- Show generic error message\n    \n- Allow retry\n    \n- Log error for monitoring\n    \n\n---\n\n## 🔄 API Behavior Summary\n\n| Aspect | Behavior |\n| --- | --- |\n| Authentication | Required |\n| Transactional | ✅ Yes |\n| Draft Created | ✅ Yes |\n| Editable | ✅ Until final submit |\n| Used In | Order Entry Step-1 |\n| Breaking Change Risk | Medium |\n\n---\n\n## 🧪 Postman Testing Checklist\n\n✔ Method = POST  \n  \n✔ Authorization header present  \n  \n✔ Status = 201  \n  \n✔ `order_entry_id` returned  \n  \n✔ Correct enum values used\n\n---\n\n## 📌 Frontend Best Practices\n\n- Drive UI strictly from backend enums\n    \n- Validate conditionally required fields\n    \n- Disable “Next” button until success\n    \n- Store `order_entry_id` safely\n    \n- Handle 400 errors field-by-field\n    \n\nEndFragment"
 					},
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n    \"order_type\": \"production\",\r\n    \"production_type\": \"add_to_stock\",\r\n    \"assembly_type\": \"fully_outsourced\"\r\n  }",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
+					"response": []
 				},
-				"url": {
-					"raw": "http://127.0.0.1:8000/api/order-entry/step-1/",
-					"protocol": "http",
-					"host": [
-						"127",
-						"0",
-						"0",
-						"1"
-					],
-					"port": "8000",
-					"path": [
-						"api",
-						"order-entry",
-						"step-1",
-						""
-					]
-				},
-				"description": "Generated from cURL: curl -X POST http://127.0.0.1:8000/api/order-entry/step-1/ \\\r\n  -H \"Authorization: Bearer YOUR_ACCESS_TOKEN\" \\\r\n  -H \"Content-Type: application/json\" \\\r\n  -d '{\r\n    \"order_type\": \"production\",\r\n    \"production_type\": \"add_to_stock\",\r\n    \"assembly_type\": \"fully_outsourced\"\r\n  }'\r\n"
-			},
-			"response": []
-		},
-		{
-			"name": "Get Supplier Vendor Dropdown",
-			"request": {
-				"method": "GET",
-				"header": [
-					{
-						"key": "Authorization",
-						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4Mjc4NzMxLCJpYXQiOjE3NjgxOTIzMzEsImp0aSI6IjE1N2QwMzRmNGRjNzRhYTY5ZDUwNTQ3NWJmOWI5Zjk5IiwidXNlcl9pZCI6IjIifQ.TSVKyio1SCH0vyyext5fVn6UDX6CP3b6BQWlUIplzeQ"
-					}
-				],
-				"url": {
-					"raw": "http://127.0.0.1:8000/api/dropdowns/suppliers/",
-					"protocol": "http",
-					"host": [
-						"127",
-						"0",
-						"0",
-						"1"
-					],
-					"port": "8000",
-					"path": [
-						"api",
-						"dropdowns",
-						"suppliers",
-						""
-					]
-				},
-				"description": "Generated from cURL: curl --location \"http://127.0.0.1:8000/api/dropdowns/suppliers/\" \\\r\n--header \"Authorization: Bearer YOUR_ACCESS_TOKEN\"\r\n"
-			},
-			"response": []
-		},
-		{
-			"name": "Get Product Category Dropdown",
-			"request": {
-				"method": "GET",
-				"header": [
-					{
-						"key": "Authorization",
-						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4Mjc4NzMxLCJpYXQiOjE3NjgxOTIzMzEsImp0aSI6IjE1N2QwMzRmNGRjNzRhYTY5ZDUwNTQ3NWJmOWI5Zjk5IiwidXNlcl9pZCI6IjIifQ.TSVKyio1SCH0vyyext5fVn6UDX6CP3b6BQWlUIplzeQ"
-					}
-				],
-				"url": {
-					"raw": "http://127.0.0.1:8000/api/dropdowns/product-categories/",
-					"protocol": "http",
-					"host": [
-						"127",
-						"0",
-						"0",
-						"1"
-					],
-					"port": "8000",
-					"path": [
-						"api",
-						"dropdowns",
-						"product-categories",
-						""
-					]
-				},
-				"description": "Generated from cURL: curl --location \"http://127.0.0.1:8000/api/dropdowns/product-categories/\" \\\r\n--header \"Authorization: Bearer YOUR_ACCESS_TOKEN\"\r\n"
-			},
-			"response": []
-		},
-		{
-			"name": "4️⃣ Validation Test — Insufficient Stock (Sales Order)",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Authorization",
-						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4Mjc4NzMxLCJpYXQiOjE3NjgxOTIzMzEsImp0aSI6IjE1N2QwMzRmNGRjNzRhYTY5ZDUwNTQ3NWJmOWI5Zjk5IiwidXNlcl9pZCI6IjIifQ.TSVKyio1SCH0vyyext5fVn6UDX6CP3b6BQWlUIplzeQ"
+				{
+					"name": "🟢 STEP 2 — Order Entry (Make To Order)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NDUwNDc0LCJpYXQiOjE3NjgzNjQwNzQsImp0aSI6Ijc4MjU4MzNmNzAzNDQ3ODJiNmY4ODk3NjIyNmE1NzcwIiwidXNlcl9pZCI6IjMifQ.lmCkI3BEgbNCL-cU2I4mpEFBzq5xe5Tlk9YMw8Jiilk"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"entry_id\": 5,\r\n  \"customer_name\": \"ABC Technologies Pvt Ltd\",\r\n  \"customer_type\": \"b2b\",\r\n  \"contact_person\": \"Ravi Kumar\",\r\n  \"mobile_no\": \"9876543210\",\r\n  \"product_device_model\": \"GPS Tracker Pro\",\r\n  \"product_specifications\": \"4G LTE, Waterproof\",\r\n  \"customization_details\": \"Custom logo on casing\",\r\n  \"quantity\": 100,\r\n  \"expected_delivery_date\": \"2026-02-10\",\r\n  \"unit_price\": 1200,\r\n  \"discount_percent\": 10,\r\n  \"gst_percent\": 18,\r\n  \"shipping_charges\": 500,\r\n  \"grand_total\": 127460,\r\n  \"advance_payment\": 40000,\r\n  \"payment_terms\": \"30_70\",\r\n  \"order_priority\": \"high\",\r\n  \"special_instructions\": \"Deliver before festival season\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/order-entry/step-2/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"order-entry",
+								"step-2",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/order-entry/step-2/' \\\r\n--header 'Authorization: Bearer YOUR_ACCESS_TOKEN' \\\r\n--header 'Content-Type: application/json' \\\r\n--data '{\r\n  \"entry_id\": 12,\r\n  \"customer_name\": \"ABC Technologies Pvt Ltd\",\r\n  \"customer_type\": \"b2b\",\r\n  \"contact_person\": \"Ravi Kumar\",\r\n  \"mobile_no\": \"9876543210\",\r\n  \"product_device_model\": \"GPS Tracker Pro\",\r\n  \"product_specifications\": \"4G LTE, Waterproof\",\r\n  \"customization_details\": \"Custom logo on casing\",\r\n  \"quantity\": 100,\r\n  \"expected_delivery_date\": \"2026-02-10\",\r\n  \"unit_price\": 1200,\r\n  \"discount_percent\": 10,\r\n  \"gst_percent\": 18,\r\n  \"shipping_charges\": 500,\r\n  \"grand_total\": 127460,\r\n  \"advance_payment\": 40000,\r\n  \"payment_terms\": \"30_70\",\r\n  \"order_priority\": \"high\",\r\n  \"special_instructions\": \"Deliver before festival season\"\r\n}'\r\n"
 					},
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n  \"customer_name\": \"Test Customer\",\r\n  \"customer_type\": \"b2c\",\r\n  \"contact_person\": \"Test\",\r\n  \"mobile_no\": \"9999999999\",\r\n\r\n  \"product_device_model\": \"GPS Tracker Standard\",\r\n  \"batch\": \"BATCH-2024-003\",\r\n\r\n  \"quantity\": 999999,\r\n  \"unit_price\": 100,\r\n  \"discount_percent\": 0,\r\n  \"gst_percent\": 18,\r\n  \"shipping_charges\": 0,\r\n  \"grand_total\": 11800000,\r\n\r\n  \"delivery_date\": \"2026-01-20\",\r\n  \"delivery_address\": \"Test\",\r\n\r\n  \"payment_mode\": \"cash\",\r\n  \"payment_status\": \"paid\"\r\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
+					"response": []
 				},
-				"url": {
-					"raw": "http://127.0.0.1:8000/api/sales-orders/create/",
-					"protocol": "http",
-					"host": [
-						"127",
-						"0",
-						"0",
-						"1"
-					],
-					"port": "8000",
-					"path": [
-						"api",
-						"sales-orders",
-						"create",
-						""
-					]
+				{
+					"name": "🟢 STEP 2 — Order Entry (Make To Order)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NDUwNDc0LCJpYXQiOjE3NjgzNjQwNzQsImp0aSI6Ijc4MjU4MzNmNzAzNDQ3ODJiNmY4ODk3NjIyNmE1NzcwIiwidXNlcl9pZCI6IjMifQ.lmCkI3BEgbNCL-cU2I4mpEFBzq5xe5Tlk9YMw8Jiilk"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"entry_id\": 5,\r\n  \"customer_name\": \"ABC Technologies Pvt Ltd\",\r\n  \"customer_type\": \"b2b\",\r\n  \"contact_person\": \"Ravi Kumar\",\r\n  \"mobile_no\": \"9876543210\",\r\n  \"product_device_model\": \"GPS Tracker Pro\",\r\n  \"product_specifications\": \"4G LTE, Waterproof\",\r\n  \"customization_details\": \"Custom logo on casing\",\r\n  \"quantity\": 100,\r\n  \"expected_delivery_date\": \"2026-02-10\",\r\n  \"unit_price\": 1200,\r\n  \"discount_percent\": 10,\r\n  \"gst_percent\": 18,\r\n  \"shipping_charges\": 500,\r\n  \"grand_total\": 127940,\r\n  \"advance_payment\": 40000,\r\n  \"payment_terms\": \"30_70\",\r\n  \"order_priority\": \"high\",\r\n  \"special_instructions\": \"Deliver before festival season\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/order-entry/step-2/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"order-entry",
+								"step-2",
+								""
+							]
+						},
+						"description": "StartFragment\n\n### Order Entry – Step 2 (Customer, Product, Pricing & Delivery Details)\n\n**Method:**  \n`POST`\n\n**URL:**  \n`/api/order-entry/step-2/`\n\n**Auth:**  \n  \n✅ Required (JWT Bearer Token)\n\n**Description:**  \n  \nCompletes **Step-2 of the Order Entry workflow** by capturing **customer details, product details, pricing, payment terms, and delivery information** for an existing Order Entry created in Step-1.\n\nThis step:\n\n- Validates **pricing calculations** on the backend\n    \n- Marks the order entry as **step-2 completed**\n    \n- Returns a **fully structured summary** of the order\n    \n\n📌 Notes:\n\n- `entry_id` must refer to an existing Step-1 Order Entry\n    \n- Backend **recalculates totals** and validates `grand_total`\n    \n- This API is **idempotent** for Step-2 data\n    \n\n---\n\n**Headers:**\n\n- `Authorization: Bearer`\n    \n- `Content-Type: application/json`\n    \n\n---\n\n**Query Params:**\n\n| Name | Type | Required | Description |\n| --- | --- | --- | --- |\n| — | — | — | No query parameters |\n\n---\n\n**Request Body:**\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| entry_id | number | ✅ Yes | Order Entry ID returned from Step-1 |\n| customer_name | string | ✅ Yes | Customer / Company name |\n| customer_type | string | ✅ Yes | `b2b` or `b2c` |\n| contact_person | string | ❌ Optional | Contact person name |\n| mobile_no | string | ✅ Yes | 10-digit mobile number |\n| product_device_model | string | ✅ Yes | Product / Device model name |\n| product_specifications | string | ❌ Optional | Technical specifications |\n| customization_details | string | ❌ Optional | Customization requirements |\n| quantity | number | ✅ Yes | Order quantity |\n| expected_delivery_date | string (YYYY-MM-DD) | ✅ Yes | Expected delivery date |\n| unit_price | number | ✅ Yes | Price per unit |\n| discount_percent | number | ❌ Optional | Discount percentage |\n| gst_percent | number | ✅ Yes | GST percentage |\n| shipping_charges | number | ❌ Optional | Shipping charges |\n| grand_total | number | ✅ Yes | Final calculated total |\n| advance_payment | number | ❌ Optional | Advance amount |\n| payment_terms | string | ✅ Yes | Payment terms (e.g. `30_70`) |\n| order_priority | string | ❌ Optional | `low`, `medium`, `high` |\n| special_instructions | string | ❌ Optional | Additional notes |\n\n---\n\n**Example Request (JSON):**\n\n```\n{\n  \"entry_id\": 5,\n  \"customer_name\": \"ABC Technologies Pvt Ltd\",\n  \"customer_type\": \"b2b\",\n  \"contact_person\": \"Ravi Kumar\",\n  \"mobile_no\": \"9876543210\",\n  \"product_device_model\": \"GPS Tracker Pro\",\n  \"product_specifications\": \"4G LTE, Waterproof\",\n  \"customization_details\": \"Custom logo on casing\",\n  \"quantity\": 100,\n  \"expected_delivery_date\": \"2026-02-10\",\n  \"unit_price\": 1200,\n  \"discount_percent\": 10,\n  \"gst_percent\": 18,\n  \"shipping_charges\": 500,\n  \"grand_total\": 127940,\n  \"advance_payment\": 40000,\n  \"payment_terms\": \"30_70\",\n  \"order_priority\": \"high\",\n  \"special_instructions\": \"Deliver before festival season\"\n}\n\n ```\n\n---\n\n**Success Response:**\n\n### ✅ HTTP 200 – OK\n\n```\n{\n  \"message\": \"Order Entry completed successfully\",\n  \"order_entry\": {\n    \"id\": 5,\n    \"order_type\": \"production\",\n    \"production_type\": \"make_to_order\",\n    \"assembly_type\": \"fully_outsourced\",\n    \"is_step1_complete\": true,\n    \"is_step2_complete\": true,\n    \"created_at\": \"2026-01-14T04:47:21.643046Z\"\n  },\n  \"customer\": {\n    \"name\": \"ABC Technologies Pvt Ltd\",\n    \"type\": \"b2b\",\n    \"contact_person\": \"Ravi Kumar\",\n    \"mobile_no\": \"9876543210\"\n  },\n  \"product\": {\n    \"id\": 1,\n    \"name\": \"GPS Tracker Pro\"\n  },\n  \"order_summary\": {\n    \"quantity\": 100,\n    \"unit_price\": 1200.0,\n    \"discount_percent\": 10.0,\n    \"gst_percent\": 18.0,\n    \"shipping_charges\": 500.0,\n    \"grand_total\": 127940.0,\n    \"advance_payment\": 40000.0\n  },\n  \"delivery\": {\n    \"expected_delivery_date\": \"2026-02-10\",\n    \"priority\": \"high\"\n  }\n}\n\n ```\n\n---\n\n## ❌ Error Responses (ALL REALISTIC SCENARIOS)\n\n---\n\n### 🚫 1. Unauthorized – Missing / Invalid Token\n\n**HTTP Status:** `401 Unauthorized`\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n**Frontend Handling:**  \n  \nRedirect to login / refresh token.\n\n---\n\n### 🚫 2. Invalid `entry_id`\n\n**HTTP Status:** `404 Not Found`\n\n```\n{\n  \"detail\": \"Order entry not found.\"\n}\n\n ```\n\n**Frontend Handling:**  \n  \nEnsure Step-1 is completed and `entry_id` is valid.\n\n---\n\n### 🚫 3. Pricing Mismatch (Backend Validation)\n\n**HTTP Status:** `400 Bad Request`\n\n```\n{\n  \"grand_total\": [\n    \"Grand total mismatch with backend calculation\"\n  ]\n}\n\n ```\n\n**Frontend Handling:**  \n  \nRecalculate pricing using backend rules and resend request.\n\n---\n\n### 🚫 4. Missing Required Fields\n\n**HTTP Status:** `400 Bad Request`\n\n```\n{\n  \"customer_name\": [\"This field is required.\"],\n  \"unit_price\": [\"This field is required.\"]\n}\n\n ```\n\n**Frontend Handling:**  \n  \nHighlight missing fields before submission.\n\n---\n\n### 🚫 5. Invalid Data Types\n\n**HTTP Status:** `400 Bad Request`\n\n```\n{\n  \"quantity\": [\"A valid integer is required.\"]\n}\n\n ```\n\n**Frontend Handling:**  \n  \nValidate input types on client side.\n\n---\n\n### 🚫 6. Invalid Date Format\n\n**HTTP Status:** `400 Bad Request`\n\n```\n{\n  \"expected_delivery_date\": [\n    \"Date has wrong format. Use YYYY-MM-DD.\"\n  ]\n}\n\n ```\n\n---\n\n### 🚫 7. Wrong HTTP Method\n\n**HTTP Status:** `405 Method Not Allowed`\n\n```\n{\n  \"detail\": \"Method \\\"GET\\\" not allowed.\"\n}\n\n ```\n\n---\n\n### 🚫 8. Server Error (Unexpected)\n\n**HTTP Status:** `500 Internal Server Error`\n\n```\n{\n  \"detail\": \"Internal Server Error\"\n}\n\n ```\n\n**Frontend Handling:**  \n  \nShow generic error message and allow retry.\n\n---\n\n## 🔄 API Behavior Summary\n\n| Aspect | Behavior |\n| --- | --- |\n| Authentication | Required |\n| Transactional | ✅ Yes |\n| Pricing Validation | ✅ Strict |\n| Editable | ✅ Until final submission |\n| Used In | Order Entry Step-2 |\n| Breaking Change Risk | High |\n\n---\n\n## 🧪 Postman Testing Checklist\n\n✔ Valid token  \n  \n✔ Correct `entry_id`  \n  \n✔ Correct pricing math  \n  \n✔ Status = 200  \n  \n✔ `is_step2_complete = true`\n\n---\n\n## 📌 Frontend Best Practices\n\n- Always calculate totals using **backend rules**\n    \n- Prevent submission if totals mismatch\n    \n- Lock Step-2 after success\n    \n- Store response summary for review page\n    \n- Handle validation errors field-wise\n    \n\nEndFragment"
+					},
+					"response": []
 				},
-				"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/sales-orders/create/' \\\r\n--header 'Authorization: Bearer YOUR_ACCESS_TOKEN' \\\r\n--header 'Content-Type: application/json' \\\r\n--data '{\r\n  \"customer_name\": \"Test Customer\",\r\n  \"customer_type\": \"b2c\",\r\n  \"contact_person\": \"Test\",\r\n  \"mobile_no\": \"9999999999\",\r\n\r\n  \"product_device_model\": \"GPS Tracker Standard\",\r\n  \"batch\": \"BATCH-2024-003\",\r\n\r\n  \"quantity\": 999999,\r\n  \"unit_price\": 100,\r\n  \"discount_percent\": 0,\r\n  \"gst_percent\": 18,\r\n  \"shipping_charges\": 0,\r\n  \"grand_total\": 11800000,\r\n\r\n  \"delivery_date\": \"2026-01-20\",\r\n  \"delivery_address\": \"Test\",\r\n\r\n  \"payment_mode\": \"cash\",\r\n  \"payment_status\": \"paid\"\r\n}'\r\n"
-			},
-			"response": []
+				{
+					"name": "Customer Type Dropdown APi",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NDUwNDc0LCJpYXQiOjE3NjgzNjQwNzQsImp0aSI6Ijc4MjU4MzNmNzAzNDQ3ODJiNmY4ODk3NjIyNmE1NzcwIiwidXNlcl9pZCI6IjMifQ.lmCkI3BEgbNCL-cU2I4mpEFBzq5xe5Tlk9YMw8Jiilk"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/dropdowns/customer-types/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"dropdowns",
+								"customer-types",
+								""
+							]
+						},
+						"description": "StartFragment\n\n### Customer Types Dropdown\n\n**Method:**  \n`GET`\n\n**URL:**  \n`/api/dropdowns/customer-types/`\n\n**Auth:**  \n  \n✅ Required (JWT Bearer Token)\n\n**Description:**  \n  \nReturns the list of **Customer Types** used in **Order Entry – Step 2** while capturing customer details.  \n  \nThese values define the **business relationship type** of the customer and must align with backend-accepted enums.\n\n📌 Notes:\n\n- Values are **static and backend-controlled**\n    \n- Frontend must send the `key` value in Order Entry Step-2 API\n    \n- Labels are for UI display only\n    \n\n---\n\n**Headers:**\n\n- `Authorization: Bearer`\n    \n- `Content-Type: application/json`\n    \n\n---\n\n**Query Params:**\n\n| Name | Type | Required | Description |\n| --- | --- | --- | --- |\n| — | — | — | No query parameters |\n\n---\n\n**Request Body:**\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| — | — | — | No request body (GET request) |\n\n---\n\n**Example Request:**\n\n```\ncurl --location 'http://127.0.0.1:8000/api/dropdowns/customer-types/' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27;\n\n ```\n\n---\n\n**Success Response:**\n\n### ✅ HTTP 200 – OK\n\n```\n[\n  {\n    \"key\": \"b2b\",\n    \"label\": \"B2B Partner\"\n  },\n  {\n    \"key\": \"b2c\",\n    \"label\": \"B2C Customer\"\n  },\n  {\n    \"key\": \"distributor\",\n    \"label\": \"Distributor\"\n  },\n  {\n    \"key\": \"dealer\",\n    \"label\": \"Dealer\"\n  }\n]\n\n ```\n\n---\n\n### Response Field Description\n\n| Field | Type | Description |\n| --- | --- | --- |\n| key | string | Backend-accepted customer type value |\n| label | string | Human-readable customer type name |\n\n---\n\n**Frontend Usage Notes:**\n\n- Populate **Customer Type dropdown** in Order Entry Step-2\n    \n- Submit selected `key` value in Order Entry payload\n    \n- Do not hardcode customer types in frontend\n    \n\n---\n\n## ❌ Error Responses (ALL REALISTIC SCENARIOS)\n\n---\n\n### 🚫 1. Unauthorized – Missing Token\n\n**HTTP Status:** `401 Unauthorized`\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n**Frontend Handling:**\n\n- Redirect user to login\n    \n- Block order entry flow\n    \n\n---\n\n### 🚫 2. Unauthorized – Invalid / Expired Token\n\n**HTTP Status:** `401 Unauthorized`\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n**Frontend Handling:**\n\n- Attempt token refresh\n    \n- Redirect to login if refresh fails\n    \n\n---\n\n### 🚫 3. Permission Denied\n\n**HTTP Status:** `403 Forbidden`\n\n```\n{\n  \"detail\": \"You do not have permission to perform this action.\"\n}\n\n ```\n\n**Frontend Handling:**\n\n- Hide Order Entry screens\n    \n- Show access-denied message\n    \n\n---\n\n### 🚫 4. Wrong HTTP Method\n\n**HTTP Status:** `405 Method Not Allowed`\n\n```\n{\n  \"detail\": \"Method \\\"POST\\\" not allowed.\"\n}\n\n ```\n\n**Frontend Handling:**\n\n- Ensure only GET method is used\n    \n- Fix incorrect API invocation\n    \n\n---\n\n### 🚫 5. Server Error (Unexpected)\n\n**HTTP Status:** `500 Internal Server Error`\n\n```\n{\n  \"detail\": \"Internal Server Error\"\n}\n\n ```\n\n**Frontend Handling:**\n\n- Show generic error message\n    \n- Allow retry\n    \n- Log error for diagnostics\n    \n\n---\n\n## 🔄 API Behavior Summary\n\n| Aspect | Behavior |\n| --- | --- |\n| Authentication | Required |\n| Request Body | None |\n| Query Params | None |\n| Database Interaction | ❌ None |\n| Caching Possible | ✅ Yes |\n| Used In | Order Entry Step-2 |\n| Breaking Change Risk | Low |\n\n---\n\n## 🧪 Postman Testing Checklist\n\n✔ Method = GET  \n  \n✔ Authorization header present  \n  \n✔ Status code = 200  \n  \n✔ Response is array  \n  \n✔ Each item contains `key` and `label`\n\n---\n\n## 📌 Frontend Best Practices\n\n- Cache dropdown response per session\n    \n- Use backend response as single source of truth\n    \n- Validate selected value before submit\n    \n- Gracefully handle auth failures\n    \n- Disable order form if dropdown fails\n    \n\nEndFragment"
+					},
+					"response": []
+				},
+				{
+					"name": "Validation Test — Total Value Mismatch (Production)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NDUwNDc0LCJpYXQiOjE3NjgzNjQwNzQsImp0aSI6Ijc4MjU4MzNmNzAzNDQ3ODJiNmY4ODk3NjIyNmE1NzcwIiwidXNlcl9pZCI6IjMifQ.lmCkI3BEgbNCL-cU2I4mpEFBzq5xe5Tlk9YMw8Jiilk"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"production_type\": \"add_to_stock\",\r\n  \"product_device_model\": \"GPS Tracker Standard\",\r\n  \"product_category\": \"gps_devices\",\r\n  \"quantity_added\": 10,\r\n  \"unit_price\": 100,\r\n  \"total_value\": 999, \r\n  \"supplier_vendor_id\": 1,\r\n  \"purchase_date\": \"2026-01-12\",\r\n  \"manufacturing_date\": \"2026-01-12\",\r\n  \"batch_number\": \"BATCH-TEST-FAIL\",\r\n  \"remarks\": \"Should fail\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/production-orders/add-to-stock/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"production-orders",
+								"add-to-stock",
+								""
+							]
+						},
+						"description": "StartFragment\n\n### Production Order – Add to Stock\n\n**Method:**  \n`POST`\n\n**URL:**  \n`/api/production-orders/add-to-stock/`\n\n**Auth:**  \n  \n✅ Required (JWT Bearer Token)\n\n**Description:**  \n  \nCreates a **Production Order (Add to Stock)** entry by adding finished products directly into inventory.  \n  \nThis API is used when products are **manufactured for stock** (not tied to a specific sales order).\n\n📌 Key characteristics:\n\n- Backend **recalculates total value**\n    \n- `total_value` sent by frontend is **validated against backend calculation**\n    \n- Used for **inventory increment + production tracking**\n    \n\n---\n\n**Headers:**\n\n- `Authorization: Bearer`\n    \n- `Content-Type: application/json`\n    \n\n---\n\n**Query Params:**\n\n| Name | Type | Required | Description |\n| --- | --- | --- | --- |\n| — | — | — | No query parameters |\n\n---\n\n**Request Body:**\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| production_type | string | ✅ Yes | Must be `add_to_stock` |\n| product_device_model | string | ✅ Yes | Product / device model name |\n| product_category | string | ✅ Yes | Product category identifier |\n| quantity_added | number | ✅ Yes | Quantity added to stock |\n| unit_price | number | ✅ Yes | Price per unit |\n| total_value | number | ✅ Yes | Expected total value (`quantity × unit_price`) |\n| supplier_vendor_id | number | ✅ Yes | Vendor ID supplying/manufacturing the stock |\n| purchase_date | string (YYYY-MM-DD) | ✅ Yes | Date of purchase |\n| manufacturing_date | string (YYYY-MM-DD) | ❌ Optional | Manufacturing date |\n| batch_number | string | ❌ Optional | Batch / lot identifier |\n| remarks | string | ❌ Optional | Additional notes |\n\n---\n\n### Backend Calculation Rule (IMPORTANT)\n\n```\nexpected_total_value = quantity_added × unit_price\n\n ```\n\nIf `total_value` ≠ backend calculation → ❌ request fails.\n\n---\n\n**Example Request (JSON):**\n\n```\n{\n  \"production_type\": \"add_to_stock\",\n  \"product_device_model\": \"GPS Tracker Standard\",\n  \"product_category\": \"gps_devices\",\n  \"quantity_added\": 10,\n  \"unit_price\": 100,\n  \"total_value\": 1000,\n  \"supplier_vendor_id\": 1,\n  \"purchase_date\": \"2026-01-12\",\n  \"manufacturing_date\": \"2026-01-12\",\n  \"batch_number\": \"BATCH-001\",\n  \"remarks\": \"Initial stock entry\"\n}\n\n ```\n\n---\n\n**Success Response:**\n\n### ✅ HTTP 201 – Created\n\n```\n{\n  \"message\": \"Stock added successfully\",\n  \"stock_entry\": {\n    \"id\": 12,\n    \"product_device_model\": \"GPS Tracker Standard\",\n    \"quantity_added\": 10,\n    \"unit_price\": 100.0,\n    \"total_value\": 1000.0,\n    \"batch_number\": \"BATCH-001\",\n    \"created_at\": \"2026-01-12T10:45:22Z\"\n  }\n}\n\n ```\n\n---\n\n## ❌ Error Responses (ALL REALISTIC SCENARIOS)\n\n---\n\n### 🚫 1. Unauthorized – Missing Token\n\n**HTTP Status:** `401 Unauthorized`\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n**Frontend Handling:**  \n  \nRedirect to login and block stock creation.\n\n---\n\n### 🚫 2. Unauthorized – Invalid / Expired Token\n\n**HTTP Status:** `401 Unauthorized`\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n**Frontend Handling:**  \n  \nRefresh token or redirect to login.\n\n---\n\n### 🚫 3. Invalid `production_type`\n\n**HTTP Status:** `400 Bad Request`\n\n```\n{\n  \"production_type\": [\n    \"\\\"make_to_order\\\" is not a valid choice.\"\n  ]\n}\n\n ```\n\n**Frontend Handling:**  \n  \nEnsure value is strictly `add_to_stock`.\n\n---\n\n### 🚫 4. Total Value Mismatch (Your Case)\n\n**HTTP Status:** `400 Bad Request`\n\n```\n{\n  \"total_value\": [\n    \"Total value mismatch with backend calculation.\"\n  ]\n}\n\n ```\n\n**Reason:**\n\n```\nquantity_added (10) × unit_price (100) = 1000\nbut total_value sent = 999\n\n ```\n\n**Frontend Handling:**\n\n- Recalculate total on frontend\n    \n- Prefer backend-calculated total if exposed\n    \n- Block submission on mismatch\n    \n\n---\n\n### 🚫 5. Missing Required Fields\n\n**HTTP Status:** `400 Bad Request`\n\n```\n{\n  \"quantity_added\": [\"This field is required.\"],\n  \"unit_price\": [\"This field is required.\"]\n}\n\n ```\n\n**Frontend Handling:**  \n  \nHighlight missing inputs and prevent submit.\n\n---\n\n### 🚫 6. Invalid Data Types\n\n**HTTP Status:** `400 Bad Request`\n\n```\n{\n  \"quantity_added\": [\"A valid integer is required.\"]\n}\n\n ```\n\n**Frontend Handling:**  \n  \nValidate numeric inputs before API call.\n\n---\n\n### 🚫 7. Invalid Vendor ID\n\n**HTTP Status:** `404 Not Found`\n\n```\n{\n  \"detail\": \"Supplier vendor not found.\"\n}\n\n ```\n\n**Frontend Handling:**  \n  \nReload vendor dropdown and force reselection.\n\n---\n\n### 🚫 8. Invalid Date Format\n\n**HTTP Status:** `400 Bad Request`\n\n```\n{\n  \"purchase_date\": [\n    \"Date has wrong format. Use YYYY-MM-DD.\"\n  ]\n}\n\n ```\n\n**Frontend Handling:**  \n  \nUse date picker and ISO format.\n\n---\n\n### 🚫 9. Wrong HTTP Method\n\n**HTTP Status:** `405 Method Not Allowed`\n\n```\n{\n  \"detail\": \"Method \\\"GET\\\" not allowed.\"\n}\n\n ```\n\n**Frontend Handling:**  \n  \nEnsure POST method is used.\n\n---\n\n### 🚫 10. Server Error (Unexpected)\n\n**HTTP Status:** `500 Internal Server Error`\n\n```\n{\n  \"detail\": \"Internal Server Error\"\n}\n\n ```\n\n**Frontend Handling:**  \n  \nShow generic error, allow retry, log error.\n\n---\n\n## 🔄 API Behavior Summary\n\n| Aspect | Behavior |\n| --- | --- |\n| Authentication | Required |\n| Transactional | ✅ Yes |\n| Stock Updated | ✅ Yes |\n| Pricing Validation | ✅ Strict |\n| Inventory Impact | ✅ Immediate |\n| Breaking Change Risk | Medium |\n\n---\n\n## 🧪 Postman Testing Checklist\n\n✔ Authorization header present  \n  \n✔ Correct `production_type`  \n  \n✔ Correct total calculation  \n  \n✔ Status = 201 on success  \n  \n✔ Stock updated in DB\n\n---\n\n## 📌 Frontend Best Practices\n\n- Calculate totals dynamically\n    \n- Disable submit if totals mismatch\n    \n- Validate vendor selection\n    \n- Prevent duplicate batch numbers (if required)\n    \n- Handle 400 errors field-by-field\n    \n\nEndFragment"
+					},
+					"response": []
+				},
+				{
+					"name": "Payment Terms Dropdown",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MzcxNzIzLCJpYXQiOjE3NjgyODUzMjMsImp0aSI6ImIxN2RlYmY5YzBhMjQxNmY4MGZmMDg5N2QyZDg1YjUyIiwidXNlcl9pZCI6IjIifQ.lL3zTTKFWnsfzreJ6kk10B9P-zKLpily3fK7_OBv6yE"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/dropdowns/payment-terms/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"dropdowns",
+								"payment-terms",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/dropdowns/payment-terms/' \\\r\n--header 'Authorization: Bearer YOUR_ACCESS_TOKEN'\r\n"
+					},
+					"response": []
+				},
+				{
+					"name": "Order Priority Dropdown",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MzcxNzIzLCJpYXQiOjE3NjgyODUzMjMsImp0aSI6ImIxN2RlYmY5YzBhMjQxNmY4MGZmMDg5N2QyZDg1YjUyIiwidXNlcl9pZCI6IjIifQ.lL3zTTKFWnsfzreJ6kk10B9P-zKLpily3fK7_OBv6yE"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/dropdowns/order-priority/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"dropdowns",
+								"order-priority",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/dropdowns/order-priority/' \\\r\n--header 'Authorization: Bearer YOUR_ACCESS_TOKEN'\r\n"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Supplier Vendor Dropdown",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4Mjc4NzMxLCJpYXQiOjE3NjgxOTIzMzEsImp0aSI6IjE1N2QwMzRmNGRjNzRhYTY5ZDUwNTQ3NWJmOWI5Zjk5IiwidXNlcl9pZCI6IjIifQ.TSVKyio1SCH0vyyext5fVn6UDX6CP3b6BQWlUIplzeQ"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/dropdowns/suppliers/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"dropdowns",
+								"suppliers",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location \"http://127.0.0.1:8000/api/dropdowns/suppliers/\" \\\r\n--header \"Authorization: Bearer YOUR_ACCESS_TOKEN\"\r\n"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Product Category Dropdown",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4Mjc4NzMxLCJpYXQiOjE3NjgxOTIzMzEsImp0aSI6IjE1N2QwMzRmNGRjNzRhYTY5ZDUwNTQ3NWJmOWI5Zjk5IiwidXNlcl9pZCI6IjIifQ.TSVKyio1SCH0vyyext5fVn6UDX6CP3b6BQWlUIplzeQ"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/dropdowns/product-categories/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"dropdowns",
+								"product-categories",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location \"http://127.0.0.1:8000/api/dropdowns/product-categories/\" \\\r\n--header \"Authorization: Bearer YOUR_ACCESS_TOKEN\"\r\n"
+					},
+					"response": []
+				}
+			]
 		},
 		{
-			"name": "Validation Test — Invalid Batch",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Authorization",
-						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4Mjc4NzMxLCJpYXQiOjE3NjgxOTIzMzEsImp0aSI6IjE1N2QwMzRmNGRjNzRhYTY5ZDUwNTQ3NWJmOWI5Zjk5IiwidXNlcl9pZCI6IjIifQ.TSVKyio1SCH0vyyext5fVn6UDX6CP3b6BQWlUIplzeQ"
+			"name": "Request for Quote",
+			"item": [
+				{
+					"name": "🟢 STEP-1 — CREATE RFQ (Order Selection)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NDUwNDc0LCJpYXQiOjE3NjgzNjQwNzQsImp0aSI6Ijc4MjU4MzNmNzAzNDQ3ODJiNmY4ODk3NjIyNmE1NzcwIiwidXNlcl9pZCI6IjMifQ.lmCkI3BEgbNCL-cU2I4mpEFBzq5xe5Tlk9YMw8Jiilk"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"order_reference\": \"ORD001\",\r\n  \"device_name\": \"TechCorp GPS-Tracker-Pro\",\r\n  \"assembly_type\": \"pcb_assembly\",\r\n  \"quantity\": 50\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/rfq/step-1/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"rfq",
+								"step-1",
+								""
+							]
+						},
+						"description": "StartFragment\n\n# 📘 RFQ API – Step 1 (Order Selection)\n\nThis API creates a **Draft Request For Quote (RFQ)** using the **Order Selection step**.\n\n---\n\n## 🔐 Authentication\n\n**Required:** JWT Bearer Token\n\n```\nAuthorization: Bearer <ACCESS_TOKEN>\n\n ```\n\nIf the token is missing or invalid, the API will fail.\n\n---\n\n## 📌 Endpoint\n\n```\nPOST /api/rfq/step-1/\n\n ```\n\n---\n\n## 🎯 Purpose\n\n- Create a new RFQ in **draft** state\n    \n- Save **Order ID / Device Name**\n    \n- Save **Assembly Type**\n    \n- Save **Quantity**\n    \n- Automatically assign `created_by` from logged-in user\n    \n\nThis is the **first step** of the 3-step RFQ flow.\n\n---\n\n## 📥 Request Headers\n\n| Header | Value |\n| --- | --- |\n| Authorization | Bearer |\n| Content-Type | application/json |\n\n---\n\n## 📥 Request Body (JSON)\n\n```\n{\n  \"order_reference\": \"ORD001\",\n  \"device_name\": \"TechCorp GPS-Tracker-Pro\",\n  \"assembly_type\": \"pcb_assembly\",\n  \"quantity\": 50\n}\n\n ```\n\n---\n\n## 🧾 Field Description\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| order_reference | string | ✅ Yes | Selected Order ID from dropdown (e.g. `ORD001`) |\n| device_name | string | ✅ Yes | Device name shown in UI |\n| assembly_type | string | ✅ Yes | `pcb_assembly` or `device_assembly` |\n| quantity | number | ✅ Yes | Must be a positive integer |\n\n---\n\n## 📤 Success Response\n\n### ✅ HTTP 201 – Created\n\n```\n{\n  \"rfq_id\": 5,\n  \"message\": \"Step 1 completed\"\n}\n\n ```\n\n---\n\n## 📌 Success Notes (Frontend)\n\n- Store `rfq_id` securely\n    \n- Pass `rfq_id` to:\n    \n    - Step-2 API (Component Selection)\n        \n    - Step-3 API (Quote Details)\n        \n- RFQ status is **draft**\n    \n- RFQ can still be edited until Step-3 submission\n    \n\n---\n\n# ❌ Error Scenarios (VERY IMPORTANT FOR FRONTEND)\n\n---\n\n## 🚫 1. Unauthorized (Missing / Invalid Token)\n\n### ❌ HTTP 401 – Unauthorized\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\nOR\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n### 🔧 Frontend Action\n\n- Redirect user to login\n    \n- Refresh token if expired\n    \n\n---\n\n## 🚫 2. Missing Required Fields\n\n### ❌ HTTP 400 – Bad Request\n\nExample: missing `order_reference`\n\n```\n{\n  \"order_reference\": [\n    \"This field is required.\"\n  ]\n}\n\n ```\n\n### 🔧 Frontend Action\n\n- Highlight missing field\n    \n- Prevent form submission\n    \n\n---\n\n## 🚫 3. Invalid Assembly Type\n\n### ❌ HTTP 400 – Bad Request\n\n```\n{\n  \"assembly_type\": [\n    \"\\\"invalid_value\\\" is not a valid choice.\"\n  ]\n}\n\n ```\n\n### 🔧 Frontend Action\n\n- Ensure dropdown values exactly match:\n    \n    - `pcb_assembly`\n        \n    - `device_assembly`\n        \n\n---\n\n## 🚫 4. Quantity = 0 or Negative\n\n### ❌ HTTP 400 – Bad Request\n\n```\n{\n  \"quantity\": [\n    \"Ensure this value is greater than or equal to 1.\"\n  ]\n}\n\n ```\n\n### 🔧 Frontend Action\n\n- Validate quantity > 0 before API call\n    \n\n---\n\n## 🚫 5. Wrong Data Type\n\n### ❌ HTTP 400 – Bad Request\n\nExample: quantity as string\n\n```\n{\n  \"quantity\": [\n    \"A valid integer is required.\"\n  ]\n}\n\n ```\n\n### 🔧 Frontend Action\n\n- Ensure numeric input\n    \n- Sanitize input before sending\n    \n\n---\n\n## 🚫 6. Empty Request Body\n\n### ❌ HTTP 400 – Bad Request\n\n```\n{\n  \"order_reference\": [\n    \"This field is required.\"\n  ],\n  \"device_name\": [\n    \"This field is required.\"\n  ],\n  \"assembly_type\": [\n    \"This field is required.\"\n  ],\n  \"quantity\": [\n    \"This field is required.\"\n  ]\n}\n\n ```\n\n---\n\n## 🚫 7. Server Error (Unexpected)\n\n### ❌ HTTP 500 – Internal Server Error\n\n```\n{\n  \"detail\": \"Internal Server Error\"\n}\n\n ```\n\n### 🔧 Frontend Action\n\n- Show generic error message\n    \n- Retry option\n    \n- Log error for debugging\n    \n\n---\n\n# 🔄 API Lifecycle Summary\n\n| Step | Status |\n| --- | --- |\n| RFQ Created | ✅ |\n| Status | `draft` |\n| Editable | ✅ |\n| Selections Allowed | Next Step |\n| Final Submission | Step-3 |\n\n---\n\n# 🧪 Postman Test Checklist\n\n✔ Token valid  \n  \n✔ Status code = 201  \n  \n✔ `rfq_id` present  \n  \n✔ No validation errors  \n  \n✔ Data saved in DB\n\nEndFragment"
 					},
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n  \"customer_name\": \"Test\",\r\n  \"customer_type\": \"b2c\",\r\n  \"contact_person\": \"Test\",\r\n  \"mobile_no\": \"9999999999\",\r\n\r\n  \"product_device_model\": \"GPS Tracker Standard\",\r\n  \"batch\": \"INVALID-BATCH\",\r\n\r\n  \"quantity\": 1,\r\n  \"unit_price\": 100,\r\n  \"discount_percent\": 0,\r\n  \"gst_percent\": 18,\r\n  \"shipping_charges\": 0,\r\n  \"grand_total\": 118,\r\n\r\n  \"delivery_date\": \"2026-01-20\",\r\n  \"delivery_address\": \"Test\",\r\n\r\n  \"payment_mode\": \"cash\",\r\n  \"payment_status\": \"paid\"\r\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
+					"response": []
 				},
-				"url": {
-					"raw": "http://127.0.0.1:8000/api/sales-orders/create/",
-					"protocol": "http",
-					"host": [
-						"127",
-						"0",
-						"0",
-						"1"
-					],
-					"port": "8000",
-					"path": [
-						"api",
-						"sales-orders",
-						"create",
-						""
-					]
+				{
+					"name": "🟡 STEP-2 — SELECT BOM / COMPONENTS / SERVICES",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NDUwNDc0LCJpYXQiOjE3NjgzNjQwNzQsImp0aSI6Ijc4MjU4MzNmNzAzNDQ3ODJiNmY4ODk3NjIyNmE1NzcwIiwidXNlcl9pZCI6IjMifQ.lmCkI3BEgbNCL-cU2I4mpEFBzq5xe5Tlk9YMw8Jiilk"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"rfq_id\": 5,\r\n  \"bom_parts\": [\"PCB-001\", \"GPS-001\"],\r\n  \"components\": [\"Enclosure\", \"Wire Harness\"],\r\n  \"services\": [\"PCB Assembly\"]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/rfq/step-2/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"rfq",
+								"step-2",
+								""
+							]
+						},
+						"description": "StartFragment\n\n# 📘 RFQ API – Step 2 (Component / BOM / Service Selection)\n\nThis API saves **what the user selected** in the **Component Selection step** of the RFQ flow.\n\n---\n\n## 🔐 Authentication\n\n**Required:** JWT Bearer Token\n\n```\nAuthorization: Bearer <ACCESS_TOKEN>\n\n ```\n\nIf the token is missing or invalid, the API will fail.\n\n---\n\n## 📌 Endpoint\n\n```\nPOST /api/rfq/step-2/\n\n ```\n\n---\n\n## 🎯 Purpose\n\n- Attach **BOM Parts**, **Components**, and/or **Services** to an existing RFQ\n    \n- Overwrites previous selections (idempotent behavior)\n    \n- RFQ **must be in** **`draft`** **status**\n    \n- This is the **second step** in the RFQ workflow\n    \n\n---\n\n## 📥 Request Headers\n\n| Header | Value |\n| --- | --- |\n| Authorization | Bearer |\n| Content-Type | application/json |\n\n---\n\n## 📥 Request Body (JSON)\n\n```\n{\n  \"rfq_id\": 5,\n  \"bom_parts\": [\"PCB-001\", \"GPS-001\"],\n  \"components\": [\"Enclosure\", \"Wire Harness\"],\n  \"services\": [\"PCB Assembly\"]\n}\n\n ```\n\n---\n\n## 🧾 Field Description\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| rfq_id | number | ✅ Yes | RFQ ID returned from Step-1 |\n| bom_parts | array\\[string\\] | ❌ Optional | BOM Part IDs selected by user |\n| components | array\\[string\\] | ❌ Optional | Component names selected by user |\n| services | array\\[string\\] | ❌ Optional | Service names selected by user |\n\n📌 **At least one of** `bom_parts`, `components`, or `services` **should be provided** (UI must enforce this).\n\n---\n\n## 📤 Success Response\n\n### ✅ HTTP 200 – OK\n\n```\n{\n  \"message\": \"Step 2 completed\"\n}\n\n ```\n\n---\n\n## 📌 Success Notes (Frontend)\n\n- Selections are **saved atomically**\n    \n- Previous selections (if any) are **deleted and replaced**\n    \n- RFQ remains in **draft** status\n    \n- User can:\n    \n    - Go back and edit selections\n        \n    - Proceed to Step-3 (Final Submit)\n        \n\n---\n\n# ❌ ERROR SCENARIOS (VERY IMPORTANT FOR FRONTEND)\n\n---\n\n## 🚫 1. Unauthorized (Missing / Invalid Token)\n\n### ❌ HTTP 401 – Unauthorized\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\nOR\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n### 🔧 Frontend Action\n\n- Redirect user to login\n    \n- Refresh token if expired\n    \n\n---\n\n## 🚫 2. Missing `rfq_id`\n\n### ❌ HTTP 404 – Not Found\n\n```\n{\n  \"detail\": \"Not found.\"\n}\n\n ```\n\nThis happens because:\n\n```\nget_object_or_404(RequestForQuote, id=None, status=\"draft\")\n\n ```\n\n### 🔧 Frontend Action\n\n- Do not call Step-2 without Step-1\n    \n- Ensure `rfq_id` is stored and passed correctly\n    \n\n---\n\n## 🚫 3. Invalid `rfq_id`\n\n### ❌ HTTP 404 – Not Found\n\n```\n{\n  \"detail\": \"Not found.\"\n}\n\n ```\n\n### Causes\n\n- RFQ ID does not exist\n    \n- RFQ belongs to another user\n    \n- RFQ is already submitted\n    \n\n### 🔧 Frontend Action\n\n- Show “RFQ not found or already submitted”\n    \n- Prevent further edits\n    \n\n---\n\n## 🚫 4. RFQ Already Submitted\n\n### ❌ HTTP 404 – Not Found\n\n```\n{\n  \"detail\": \"Not found.\"\n}\n\n ```\n\n📌 This is intentional:\n\n```\nstatus=\"draft\"\n\n ```\n\n### 🔧 Frontend Action\n\n- Disable Step-2 UI if RFQ is submitted\n    \n- Redirect to RFQ preview\n    \n\n---\n\n## 🚫 5. Invalid Data Type in Arrays\n\n### ❌ HTTP 400 – Bad Request\n\nExample: number instead of string\n\n```\n{\n  \"bom_parts\": {\n    \"0\": [\"Not a valid string.\"]\n  }\n}\n\n ```\n\n### 🔧 Frontend Action\n\n- Ensure all array items are strings\n    \n- Sanitize payload before sending\n    \n\n---\n\n## 🚫 6. Empty Payload (No Selections)\n\n### ❌ HTTP 200 – OK (⚠️ LOGICAL ERROR)\n\n```\n{\n  \"message\": \"Step 2 completed\"\n}\n\n ```\n\n⚠️ Backend allows this  \n  \n⚠️ **UI MUST PREVENT this**\n\n### 🔧 Frontend Action\n\n- Ensure at least one checkbox/card is selected\n    \n- Disable “Next” button otherwise\n    \n\n---\n\n## 🚫 7. Duplicate Values in Lists\n\n### ❌ HTTP 200 – OK\n\nExample payload:\n\n```\n{\n  \"rfq_id\": 5,\n  \"services\": [\"PCB Assembly\", \"PCB Assembly\"]\n}\n\n ```\n\n📌 Backend will insert duplicates  \n  \n📌 **UI must deduplicate**\n\n### 🔧 Frontend Action\n\n- Remove duplicates before sending\n    \n\n---\n\n## 🚫 8. Server Error (Unexpected)\n\n### ❌ HTTP 500 – Internal Server Error\n\n```\n{\n  \"detail\": \"Internal Server Error\"\n}\n\n ```\n\n### 🔧 Frontend Action\n\n- Show generic error message\n    \n- Allow retry\n    \n- Log error for debugging\n    \n\n---\n\n# 🔄 API BEHAVIOR SUMMARY\n\n| Feature | Behavior |\n| --- | --- |\n| Idempotent | ✅ Yes (overwrites old selections) |\n| Transactional | ✅ Yes |\n| Editable | ✅ Until submitted |\n| Pricing Logic | ❌ None |\n| Validation | Partial (UI-driven) |\n\n---\n\n# 🧪 Postman Test Checklist\n\n✔ Valid token  \n  \n✔ RFQ exists and is draft  \n  \n✔ Status code = 200  \n  \n✔ Selections saved  \n  \n✔ No IntegrityError\n\nEndFragment"
+					},
+					"response": []
 				},
-				"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/sales-orders/create/' \\\r\n--header 'Authorization: Bearer YOUR_ACCESS_TOKEN' \\\r\n--header 'Content-Type: application/json' \\\r\n--data '{\r\n  \"customer_name\": \"Test\",\r\n  \"customer_type\": \"b2c\",\r\n  \"contact_person\": \"Test\",\r\n  \"mobile_no\": \"9999999999\",\r\n\r\n  \"product_device_model\": \"GPS Tracker Standard\",\r\n  \"batch\": \"INVALID-BATCH\",\r\n\r\n  \"quantity\": 1,\r\n  \"unit_price\": 100,\r\n  \"discount_percent\": 0,\r\n  \"gst_percent\": 18,\r\n  \"shipping_charges\": 0,\r\n  \"grand_total\": 118,\r\n\r\n  \"delivery_date\": \"2026-01-20\",\r\n  \"delivery_address\": \"Test\",\r\n\r\n  \"payment_mode\": \"cash\",\r\n  \"payment_status\": \"paid\"\r\n}'\r\n"
-			},
-			"response": []
+				{
+					"name": "STEP-3 — FINAL SUBMIT (Quote Details)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NDUwNDc0LCJpYXQiOjE3NjgzNjQwNzQsImp0aSI6Ijc4MjU4MzNmNzAzNDQ3ODJiNmY4ODk3NjIyNmE1NzcwIiwidXNlcl9pZCI6IjMifQ.lmCkI3BEgbNCL-cU2I4mpEFBzq5xe5Tlk9YMw8Jiilk"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"rfq_id\": 5,\r\n  \"vendor_ids\": [1, 2],\r\n  \"srn_no\": \"SRN001\",\r\n  \"delivery_date\": \"2026-01-14\",\r\n  \"delivery_address\": \"Mumbai Warehouse\",\r\n  \"additional_requirements\": \"Urgent delivery\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/rfq/step-3/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"rfq",
+								"step-3",
+								""
+							]
+						},
+						"description": "StartFragment\n\n# 📘 RFQ API – Step 3 (Final Submission / Quote Details)\n\nThis API **finalizes the RFQ** by saving quote details and **submitting** it.  \n  \nAfter this step, the RFQ **cannot be edited**.\n\n---\n\n## 🔐 Authentication\n\n**Required:** JWT Bearer Token\n\n```\nAuthorization: Bearer <ACCESS_TOKEN>\n\n ```\n\nIf authentication fails, the request will be rejected.\n\n---\n\n## 📌 Endpoint\n\n```\nPOST /api/rfq/step-3/\n\n ```\n\n---\n\n## 🎯 Purpose\n\n- Save **Quote Details**\n    \n- Assign **SRN**\n    \n- Save **Delivery Information**\n    \n- Mark RFQ status as **submitted**\n    \n- Lock the RFQ from further edits\n    \n\nThis is the **final step** in the RFQ workflow.\n\n---\n\n## 📥 Request Headers\n\n| Header | Value |\n| --- | --- |\n| Authorization | Bearer |\n| Content-Type | application/json |\n\n---\n\n## 📥 Request Body (JSON)\n\n```\n{\n  \"rfq_id\": 5,\n  \"vendor_ids\": [1, 2],\n  \"srn_no\": \"SRN001\",\n  \"delivery_date\": \"2026-01-14\",\n  \"delivery_address\": \"Mumbai Warehouse\",\n  \"additional_requirements\": \"Urgent delivery\"\n}\n\n ```\n\n---\n\n## 🧾 Field Description\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| rfq_id | number | ✅ Yes | RFQ ID created in Step-1 |\n| vendor_ids | array\\[number\\] | ✅ Yes | Selected vendor IDs (multi-select) |\n| srn_no | string | ✅ Yes | SRN dropdown value |\n| delivery_date | string (YYYY-MM-DD) | ✅ Yes | Expected delivery date |\n| delivery_address | string | ✅ Yes | Delivery location |\n| additional_requirements | string | ❌ Optional | Any special notes |\n\n📌 **Once this API succeeds, RFQ is locked.**\n\n---\n\n## 📤 Success Response\n\n### ✅ HTTP 201 – Created\n\n```\n{\n  \"message\": \"RFQ submitted successfully\"\n}\n\n ```\n\n---\n\n## 📌 Success Notes (Frontend)\n\n- RFQ status changes from **draft → submitted**\n    \n- RFQ **must not be editable** after this\n    \n- Disable all Step-1 and Step-2 inputs\n    \n- Redirect user to:\n    \n    - RFQ preview page, or\n        \n    - RFQ list page\n        \n\n---\n\n# ❌ ERROR SCENARIOS (CRITICAL FOR FRONTEND)\n\n---\n\n## 🚫 1. Unauthorized (Missing / Invalid Token)\n\n### ❌ HTTP 401 – Unauthorized\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\nOR\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n### 🔧 Frontend Action\n\n- Redirect to login\n    \n- Attempt token refresh if applicable\n    \n\n---\n\n## 🚫 2. Missing `rfq_id`\n\n### ❌ HTTP 404 – Not Found\n\n```\n{\n  \"detail\": \"Not found.\"\n}\n\n ```\n\n### Cause\n\n```\nget_object_or_404(RequestForQuote, id=None, status=\"draft\")\n\n ```\n\n### 🔧 Frontend Action\n\n- Ensure `rfq_id` exists before calling Step-3\n    \n- Do not allow direct access to Step-3\n    \n\n---\n\n## 🚫 3. Invalid `rfq_id`\n\n### ❌ HTTP 404 – Not Found\n\n```\n{\n  \"detail\": \"Not found.\"\n}\n\n ```\n\n### Causes\n\n- RFQ does not exist\n    \n- RFQ belongs to another user\n    \n- RFQ already submitted\n    \n\n### 🔧 Frontend Action\n\n- Show message: **“RFQ not found or already submitted”**\n    \n- Redirect to RFQ list\n    \n\n---\n\n## 🚫 4. RFQ Already Submitted\n\n### ❌ HTTP 404 – Not Found\n\n```\n{\n  \"detail\": \"Not found.\"\n}\n\n ```\n\n📌 Backend enforces:\n\n```\nstatus=\"draft\"\n\n ```\n\n### 🔧 Frontend Action\n\n- Disable submit button\n    \n- Prevent duplicate submission\n    \n\n---\n\n## 🚫 5. Missing Required Fields\n\n### ❌ HTTP 400 – Bad Request\n\nExample (missing SRN):\n\n```\n{\n  \"srn_no\": [\n    \"This field is required.\"\n  ]\n}\n\n ```\n\n### 🔧 Frontend Action\n\n- Highlight missing fields\n    \n- Prevent submit\n    \n\n---\n\n## 🚫 6. Invalid SRN Value\n\n### ❌ HTTP 400 – Bad Request\n\n```\n{\n  \"srn_no\": [\n    \"\\\"SRN999\\\" is not a valid choice.\"\n  ]\n}\n\n ```\n\n### 🔧 Frontend Action\n\n- Ensure SRN dropdown values exactly match backend\n    \n\n---\n\n## 🚫 7. Invalid Date Format\n\n### ❌ HTTP 400 – Bad Request\n\n```\n{\n  \"delivery_date\": [\n    \"Date has wrong format. Use one of these formats instead: YYYY-MM-DD.\"\n  ]\n}\n\n ```\n\n### 🔧 Frontend Action\n\n- Enforce date picker\n    \n- Send ISO format only\n    \n\n---\n\n## 🚫 8. Empty `vendor_ids` Array\n\n### ❌ HTTP 400 – Bad Request\n\n```\n{\n  \"vendor_ids\": [\n    \"Ensure this field has at least 1 elements.\"\n  ]\n}\n\n ```\n\n### 🔧 Frontend Action\n\n- Enforce vendor selection before submit\n    \n\n---\n\n## 🚫 9. Wrong Data Types\n\nExample: vendor_ids as string\n\n### ❌ HTTP 400 – Bad Request\n\n```\n{\n  \"vendor_ids\": [\n    \"Expected a list of items but got type \\\"str\\\".\"\n  ]\n}\n\n ```\n\n---\n\n## 🚫 10. Server Error (Unexpected)\n\n### ❌ HTTP 500 – Internal Server Error\n\n```\n{\n  \"detail\": \"Internal Server Error\"\n}\n\n ```\n\n### 🔧 Frontend Action\n\n- Show generic error message\n    \n- Allow retry\n    \n- Log error\n    \n\n---\n\n# 🔄 RFQ WORKFLOW SUMMARY (FRONTEND REFERENCE)\n\n| Step | Status |\n| --- | --- |\n| Step-1 completed | draft |\n| Step-2 completed | draft |\n| Step-3 completed | submitted |\n| Editable after submit | ❌ No |\n\n---\n\n# 🧪 Postman Testing Checklist\n\n✔ Valid token  \n  \n✔ RFQ exists and is draft  \n  \n✔ Status code = 201  \n  \n✔ RFQ status updated  \n  \n✔ No duplicate submission\n\nEndFragment"
+					},
+					"response": []
+				},
+				{
+					"name": "🔹 Quote Types Dropdown",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NDUwNDc0LCJpYXQiOjE3NjgzNjQwNzQsImp0aSI6Ijc4MjU4MzNmNzAzNDQ3ODJiNmY4ODk3NjIyNmE1NzcwIiwidXNlcl9pZCI6IjMifQ.lmCkI3BEgbNCL-cU2I4mpEFBzq5xe5Tlk9YMw8Jiilk"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/dropdowns/quote-types/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"dropdowns",
+								"quote-types",
+								""
+							]
+						},
+						"description": "StartFragment\n\n### Quote Types Dropdown\n\n**Method:**  \n`GET`\n\n**URL:**  \n`/api/dropdowns/quote-types/`\n\n**Auth:**  \n  \n✅ Required (JWT Bearer Token)\n\n**Description:**  \n  \nReturns the list of **Quote Types** used in **RFQ Step-1**.  \n  \nThese values control which sections (Components, BOM Parts, Services) are shown in **RFQ Step-2 UI**.\n\n⚠️ Note:\n\n- Quote Types are **UI-control values only**\n    \n- They are **NOT persisted** in the database\n    \n- Frontend should use `key` for logic and `label` for display\n    \n\n---\n\n**Headers:**\n\n- `Authorization: Bearer`\n    \n- `Content-Type: application/json`\n    \n\n---\n\n**Query Params:**\n\n| Name | Type | Required | Description |\n| --- | --- | --- | --- |\n| — | — | — | No query parameters required |\n\n---\n\n**Request Body:**\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| — | — | — | No request body (GET request) |\n\n---\n\n**Example Request:**\n\n```\ncurl --location 'http://127.0.0.1:8000/api/dropdowns/quote-types/' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27;\n\n ```\n\n---\n\n**Success Response:**\n\n### ✅ HTTP 200 – OK\n\n```\n[\n  {\n    \"key\": \"components\",\n    \"label\": \"Components\"\n  },\n  {\n    \"key\": \"bom\",\n    \"label\": \"Items (BOM Parts)\"\n  },\n  {\n    \"key\": \"services\",\n    \"label\": \"Services\"\n  }\n]\n\n ```\n\n---\n\n### Response Field Description\n\n| Field | Type | Description |\n| --- | --- | --- |\n| key | string | Internal identifier used for UI logic |\n| label | string | Human-readable label shown in dropdown |\n\n---\n\n**Frontend Usage Notes:**\n\n- Use `key` to decide which section to show in Step-2\n    \n- Do **not** send these values to backend later (not persisted)\n    \n- Multiple quote types can be selected in UI\n    \n\n---\n\n## ❌ Error Responses (ALL POSSIBLE SCENARIOS)\n\n---\n\n### 🚫 1. Unauthorized – Missing Token\n\n**HTTP Status:** `401 Unauthorized`\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n**Frontend Handling:**\n\n- Redirect user to login\n    \n- Do not retry automatically\n    \n\n---\n\n### 🚫 2. Unauthorized – Invalid / Expired Token\n\n**HTTP Status:** `401 Unauthorized`\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n**Frontend Handling:**\n\n- Attempt token refresh (if supported)\n    \n- Otherwise redirect to login\n    \n\n---\n\n### 🚫 3. Permission Denied (Rare but Possible)\n\n**HTTP Status:** `403 Forbidden`\n\n```\n{\n  \"detail\": \"You do not have permission to perform this action.\"\n}\n\n ```\n\n**Frontend Handling:**\n\n- Show “Access denied”\n    \n- Hide RFQ creation UI\n    \n\n---\n\n### 🚫 4. Wrong HTTP Method\n\n**HTTP Status:** `405 Method Not Allowed`\n\nExample (POST instead of GET):\n\n```\n{\n  \"detail\": \"Method \\\"POST\\\" not allowed.\"\n}\n\n ```\n\n**Frontend Handling:**\n\n- Ensure only GET requests are used\n    \n- Fix incorrect API calls\n    \n\n---\n\n### 🚫 5. Server Error (Unexpected)\n\n**HTTP Status:** `500 Internal Server Error`\n\n```\n{\n  \"detail\": \"Internal Server Error\"\n}\n\n ```\n\n**Frontend Handling:**\n\n- Show generic error message\n    \n- Provide retry option\n    \n- Log error for debugging\n    \n\n---\n\n## 🔄 API Behavior Summary\n\n| Aspect | Behavior |\n| --- | --- |\n| Authentication | Required |\n| Request Body | None |\n| Query Params | None |\n| Database Interaction | ❌ None |\n| Caching Possible | ✅ Yes |\n| UI Dependency | RFQ Step-1 |\n| Breaking Change Risk | Low |\n\n---\n\n## 🧪 Postman Testing Checklist\n\n✔ Authorization header present  \n  \n✔ Method = GET  \n  \n✔ Status = 200  \n  \n✔ Response is array  \n  \n✔ Each item has `key` and `label`\n\nEndFragment"
+					},
+					"response": []
+				},
+				{
+					"name": "🔹 Assembly Type Dropdown",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NDUwNDc0LCJpYXQiOjE3NjgzNjQwNzQsImp0aSI6Ijc4MjU4MzNmNzAzNDQ3ODJiNmY4ODk3NjIyNmE1NzcwIiwidXNlcl9pZCI6IjMifQ.lmCkI3BEgbNCL-cU2I4mpEFBzq5xe5Tlk9YMw8Jiilk"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/dropdowns/assembly-types/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"dropdowns",
+								"assembly-types",
+								""
+							]
+						},
+						"description": "StartFragment\n\n### Assembly Types Dropdown\n\n**Method:**  \n`GET`\n\n**URL:**  \n`/api/dropdowns/assembly-types/`\n\n**Auth:**  \n  \n✅ Required (JWT Bearer Token)\n\n**Description:**  \n  \nReturns the list of **Assembly Types** used in **RFQ Step-1**.  \n  \nThese values define **how the order will be assembled** and directly map to backend-accepted values.\n\n📌 Notes:\n\n- Values are **static** and controlled by backend\n    \n- Frontend must send the `key` value in RFQ Step-1 API\n    \n- Labels are for display only\n    \n\n---\n\n**Headers:**\n\n- `Authorization: Bearer`\n    \n- `Content-Type: application/json`\n    \n\n---\n\n**Query Params:**\n\n| Name | Type | Required | Description |\n| --- | --- | --- | --- |\n| — | — | — | No query parameters |\n\n---\n\n**Request Body:**\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| — | — | — | No request body (GET request) |\n\n---\n\n**Example Request:**\n\n```\ncurl --location 'http://127.0.0.1:8000/api/dropdowns/assembly-types/' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27;\n\n ```\n\n---\n\n**Success Response:**\n\n### ✅ HTTP 200 – OK\n\n```\n[\n  {\n    \"key\": \"pcb_assembly\",\n    \"label\": \"PCB Assembly\"\n  },\n  {\n    \"key\": \"device_assembly\",\n    \"label\": \"Device Assembly\"\n  }\n]\n\n ```\n\n---\n\n### Response Field Description\n\n| Field | Type | Description |\n| --- | --- | --- |\n| key | string | Backend-accepted value (must be sent in RFQ Step-1) |\n| label | string | Human-readable text for UI display |\n\n---\n\n**Frontend Usage Notes:**\n\n- Populate **Assembly Type dropdown** using this API\n    \n- Send `key` value to `/api/rfq/step-1/`\n    \n- Do **not** hardcode values in frontend\n    \n\n---\n\n## ❌ Error Responses (ALL POSSIBLE SCENARIOS)\n\n---\n\n### 🚫 1. Unauthorized – Missing Token\n\n**HTTP Status:** `401 Unauthorized`\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n**Frontend Handling:**\n\n- Redirect user to login\n    \n- Do not retry automatically\n    \n\n---\n\n### 🚫 2. Unauthorized – Invalid / Expired Token\n\n**HTTP Status:** `401 Unauthorized`\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n**Frontend Handling:**\n\n- Attempt token refresh\n    \n- Redirect to login if refresh fails\n    \n\n---\n\n### 🚫 3. Permission Denied\n\n**HTTP Status:** `403 Forbidden`\n\n```\n{\n  \"detail\": \"You do not have permission to perform this action.\"\n}\n\n ```\n\n**Frontend Handling:**\n\n- Hide RFQ creation flow\n    \n- Show access-denied message\n    \n\n---\n\n### 🚫 4. Wrong HTTP Method\n\n**HTTP Status:** `405 Method Not Allowed`\n\n```\n{\n  \"detail\": \"Method \\\"POST\\\" not allowed.\"\n}\n\n ```\n\n**Frontend Handling:**\n\n- Ensure API is called using GET only\n    \n\n---\n\n### 🚫 5. Server Error (Unexpected)\n\n**HTTP Status:** `500 Internal Server Error`\n\n```\n{\n  \"detail\": \"Internal Server Error\"\n}\n\n ```\n\n**Frontend Handling:**\n\n- Show generic error message\n    \n- Allow retry\n    \n- Log error for diagnostics\n    \n\n---\n\n## 🔄 API Behavior Summary\n\n| Aspect | Behavior |\n| --- | --- |\n| Authentication | Required |\n| Request Body | None |\n| Query Params | None |\n| Database Interaction | ❌ None |\n| Caching Possible | ✅ Yes |\n| Used In | RFQ Step-1 |\n| Breaking Change Risk | Low |\n\n---\n\n## 🧪 Postman Testing Checklist\n\n✔ Method = GET  \n  \n✔ Authorization header present  \n  \n✔ Status code = 200  \n  \n✔ Response is array  \n  \n✔ Each object has `key` and `label`\n\nEndFragment"
+					},
+					"response": []
+				},
+				{
+					"name": "🔹 Vendor Dropdown",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NDUwNDc0LCJpYXQiOjE3NjgzNjQwNzQsImp0aSI6Ijc4MjU4MzNmNzAzNDQ3ODJiNmY4ODk3NjIyNmE1NzcwIiwidXNlcl9pZCI6IjMifQ.lmCkI3BEgbNCL-cU2I4mpEFBzq5xe5Tlk9YMw8Jiilk"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/dropdowns/vendors/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"dropdowns",
+								"vendors",
+								""
+							]
+						},
+						"description": "StartFragment\n\n### Vendors Dropdown\n\n**Method:**  \n`GET`\n\n**URL:**  \n`/api/dropdowns/vendors/`\n\n**Auth:**  \n  \n✅ Required (JWT Bearer Token)\n\n**Description:**  \n  \nReturns the list of **Vendors** available for selection in **RFQ Step-3 (Final Submission)**.  \n  \nThese vendors are used to send the RFQ to selected suppliers.\n\n📌 Notes:\n\n- Data is fetched from the **Vendor master table**\n    \n- Frontend must send selected vendor `id`s in RFQ Step-3\n    \n- Labels are for display only\n    \n\n---\n\n**Headers:**\n\n- `Authorization: Bearer`\n    \n- `Content-Type: application/json`\n    \n\n---\n\n**Query Params:**\n\n| Name | Type | Required | Description |\n| --- | --- | --- | --- |\n| — | — | — | No query parameters |\n\n---\n\n**Request Body:**\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| — | — | — | No request body (GET request) |\n\n---\n\n**Example Request:**\n\n```\ncurl --location 'http://127.0.0.1:8000/api/dropdowns/vendors/' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27;\n\n ```\n\n---\n\n**Success Response:**\n\n### ✅ HTTP 200 – OK\n\n```\n[\n  {\n    \"id\": 2,\n    \"label\": \"ABC Supplies\"\n  },\n  {\n    \"id\": 1,\n    \"label\": \"ABC Supplies\"\n  }\n]\n\n ```\n\n---\n\n### Response Field Description\n\n| Field | Type | Description |\n| --- | --- | --- |\n| id | number | Vendor primary key (used in Step-3 submission) |\n| label | string | Vendor name shown in dropdown |\n\n---\n\n**Frontend Usage Notes:**\n\n- Display vendor `label` in multi-select dropdown\n    \n- Submit selected `id`s to RFQ Step-3 API\n    \n- Frontend must handle duplicate labels (IDs are unique)\n    \n\n---\n\n## ❌ Error Responses (ALL POSSIBLE SCENARIOS)\n\n---\n\n### 🚫 1. Unauthorized – Missing Token\n\n**HTTP Status:** `401 Unauthorized`\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n**Frontend Handling:**\n\n- Redirect user to login\n    \n- Do not retry automatically\n    \n\n---\n\n### 🚫 2. Unauthorized – Invalid / Expired Token\n\n**HTTP Status:** `401 Unauthorized`\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n**Frontend Handling:**\n\n- Attempt token refresh\n    \n- Redirect to login if refresh fails\n    \n\n---\n\n### 🚫 3. Permission Denied\n\n**HTTP Status:** `403 Forbidden`\n\n```\n{\n  \"detail\": \"You do not have permission to perform this action.\"\n}\n\n ```\n\n**Frontend Handling:**\n\n- Show access denied message\n    \n- Disable RFQ submission flow\n    \n\n---\n\n### 🚫 4. No Vendors Found\n\n**HTTP Status:** `200 OK`\n\n```\n[]\n\n ```\n\n📌 This is a **valid response**, not an error.\n\n**Frontend Handling:**\n\n- Show “No vendors available”\n    \n- Disable Step-3 submit button\n    \n\n---\n\n### 🚫 5. Wrong HTTP Method\n\n**HTTP Status:** `405 Method Not Allowed`\n\n```\n{\n  \"detail\": \"Method \\\"POST\\\" not allowed.\"\n}\n\n ```\n\n**Frontend Handling:**\n\n- Ensure GET method is used\n    \n- Fix incorrect API calls\n    \n\n---\n\n### 🚫 6. Server Error (Unexpected)\n\n**HTTP Status:** `500 Internal Server Error`\n\n```\n{\n  \"detail\": \"Internal Server Error\"\n}\n\n ```\n\n**Frontend Handling:**\n\n- Show generic error message\n    \n- Allow retry\n    \n- Log error for diagnostics\n    \n\n---\n\n## 🔄 API Behavior Summary\n\n| Aspect | Behavior |\n| --- | --- |\n| Authentication | Required |\n| Request Body | None |\n| Query Params | None |\n| Database Interaction | ✅ Yes (Vendor table) |\n| Pagination | ❌ No |\n| Caching Possible | ⚠️ Conditional |\n| Used In | RFQ Step-3 |\n| Breaking Change Risk | Medium |\n\n---\n\n## 🧪 Postman Testing Checklist\n\n✔ Method = GET  \n  \n✔ Authorization header present  \n  \n✔ Status code = 200  \n  \n✔ Response is array  \n  \n✔ Each item has `id` and `label`\n\n---\n\n## 📌 Frontend Best Practices\n\n- Sort vendors alphabetically by `label`\n    \n- Deduplicate labels visually (IDs are unique)\n    \n- Cache response for session\n    \n- Disable submit if vendor list fails\n    \n- Gracefully handle auth errors\n    \n\nEndFragment"
+					},
+					"response": []
+				},
+				{
+					"name": "🔹 SRN Dropdown",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NDUwNDc0LCJpYXQiOjE3NjgzNjQwNzQsImp0aSI6Ijc4MjU4MzNmNzAzNDQ3ODJiNmY4ODk3NjIyNmE1NzcwIiwidXNlcl9pZCI6IjMifQ.lmCkI3BEgbNCL-cU2I4mpEFBzq5xe5Tlk9YMw8Jiilk"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/dropdowns/srn/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"dropdowns",
+								"srn",
+								""
+							]
+						},
+						"description": "StartFragment\n\n### SRN Dropdown\n\n**Method:**  \n`GET`\n\n**URL:**  \n`/api/dropdowns/srn/`\n\n**Auth:**  \n  \n✅ Required (JWT Bearer Token)\n\n**Description:**  \n  \nReturns the list of **SRN (Standard Requirement Number)** options used in **RFQ Step-3 (Final Submission)**.  \n  \nThese values represent predefined requirement categories and must match backend-accepted values exactly.\n\n📌 Notes:\n\n- Values are defined by backend constants\n    \n- Frontend must send the `key` value to RFQ Step-3 API\n    \n- Labels are for display purposes only\n    \n\n---\n\n**Headers:**\n\n- `Authorization: Bearer`\n    \n- `Content-Type: application/json`\n    \n\n---\n\n**Query Params:**\n\n| Name | Type | Required | Description |\n| --- | --- | --- | --- |\n| — | — | — | No query parameters |\n\n---\n\n**Request Body:**\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| — | — | — | No request body (GET request) |\n\n---\n\n**Example Request:**\n\n```\ncurl --location 'http://127.0.0.1:8000/api/dropdowns/srn/' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27;\n\n ```\n\n---\n\n**Success Response:**\n\n### ✅ HTTP 200 – OK\n\n```\n[\n  {\n    \"key\": \"SRN001\",\n    \"label\": \"Standard Requirement - Basic GPS\"\n  },\n  {\n    \"key\": \"SRN002\",\n    \"label\": \"Advanced Requirement - GPS + IoT\"\n  },\n  {\n    \"key\": \"SRN003\",\n    \"label\": \"Premium Requirement - Full Suite\"\n  },\n  {\n    \"key\": \"SRN004\",\n    \"label\": \"Custom Requirement - Specialized\"\n  }\n]\n\n ```\n\n---\n\n### Response Field Description\n\n| Field | Type | Description |\n| --- | --- | --- |\n| key | string | Backend-accepted SRN value |\n| label | string | Human-readable requirement description |\n\n---\n\n**Frontend Usage Notes:**\n\n- Populate SRN dropdown in RFQ Step-3 using this API\n    \n- Send selected `key` value in Step-3 submit request\n    \n- Do not hardcode SRN values in frontend\n    \n\n---\n\n## ❌ Error Responses (ALL POSSIBLE SCENARIOS)\n\n---\n\n### 🚫 1. Unauthorized – Missing Token\n\n**HTTP Status:** `401 Unauthorized`\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n**Frontend Handling:**\n\n- Redirect user to login\n    \n- Do not retry automatically\n    \n\n---\n\n### 🚫 2. Unauthorized – Invalid / Expired Token\n\n**HTTP Status:** `401 Unauthorized`\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n**Frontend Handling:**\n\n- Attempt token refresh\n    \n- Redirect to login if refresh fails\n    \n\n---\n\n### 🚫 3. Permission Denied\n\n**HTTP Status:** `403 Forbidden`\n\n```\n{\n  \"detail\": \"You do not have permission to perform this action.\"\n}\n\n ```\n\n**Frontend Handling:**\n\n- Show access denied message\n    \n- Disable RFQ submission UI\n    \n\n---\n\n### 🚫 4. Wrong HTTP Method\n\n**HTTP Status:** `405 Method Not Allowed`\n\n```\n{\n  \"detail\": \"Method \\\"POST\\\" not allowed.\"\n}\n\n ```\n\n**Frontend Handling:**\n\n- Ensure GET method is used\n    \n- Fix incorrect API calls\n    \n\n---\n\n### 🚫 5. Server Error (Unexpected)\n\n**HTTP Status:** `500 Internal Server Error`\n\n```\n{\n  \"detail\": \"Internal Server Error\"\n}\n\n ```\n\n**Frontend Handling:**\n\n- Show generic error message\n    \n- Allow retry\n    \n- Log error for debugging\n    \n\n---\n\n## 🔄 API Behavior Summary\n\n| Aspect | Behavior |\n| --- | --- |\n| Authentication | Required |\n| Request Body | None |\n| Query Params | None |\n| Database Interaction | ❌ None |\n| Caching Possible | ✅ Yes |\n| Used In | RFQ Step-3 |\n| Breaking Change Risk | Low |\n\n---\n\n## 🧪 Postman Testing Checklist\n\n✔ Method = GET  \n  \n✔ Authorization header present  \n  \n✔ Status code = 200  \n  \n✔ Response is array  \n  \n✔ Each object has `key` and `label`\n\nEndFragment"
+					},
+					"response": []
+				}
+			]
 		},
 		{
-			"name": "Validation Test — Total Value Mismatch (Production)",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Authorization",
-						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4Mjc4NzMxLCJpYXQiOjE3NjgxOTIzMzEsImp0aSI6IjE1N2QwMzRmNGRjNzRhYTY5ZDUwNTQ3NWJmOWI5Zjk5IiwidXNlcl9pZCI6IjIifQ.TSVKyio1SCH0vyyext5fVn6UDX6CP3b6BQWlUIplzeQ"
+			"name": "Create Purchase Order",
+			"item": [
+				{
+					"name": "✅ STEP 1 — CREATE PURCHASE ORDER (Buyer & Order Type)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NDUwNDc0LCJpYXQiOjE3NjgzNjQwNzQsImp0aSI6Ijc4MjU4MzNmNzAzNDQ3ODJiNmY4ODk3NjIyNmE1NzcwIiwidXNlcl9pZCI6IjMifQ.lmCkI3BEgbNCL-cU2I4mpEFBzq5xe5Tlk9YMw8Jiilk"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"buyer_name\": \"mapwala\",\r\n  \"order_id\": \"ORD001\",\r\n  \"rfq_id\": \"RFQ-MW-2024-001\",\r\n  \"assembly_type\": \"pcb\",\r\n  \"order_types\": [\"bom\", \"component\", \"service\"]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/purchase/step-1/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"purchase",
+								"step-1",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/purchase/step-1/' \\\r\n--header 'Authorization: Bearer YOUR_ACCESS_TOKEN' \\\r\n--header 'Content-Type: application/json' \\\r\n--data '{\r\n  \"buyer_name\": \"mapwala\",\r\n  \"order_id\": \"ORD001\",\r\n  \"rfq_id\": \"RFQ-MW-2024-001\",\r\n  \"assembly_type\": \"pcb\",\r\n  \"order_types\": [\"bom\", \"component\", \"service\"]\r\n}'\r\n"
 					},
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n  \"production_type\": \"add_to_stock\",\r\n  \"product_device_model\": \"GPS Tracker Standard\",\r\n  \"product_category\": \"gps_devices\",\r\n  \"quantity_added\": 10,\r\n  \"unit_price\": 100,\r\n  \"total_value\": 999, \r\n  \"supplier_vendor_id\": 1,\r\n  \"purchase_date\": \"2026-01-12\",\r\n  \"manufacturing_date\": \"2026-01-12\",\r\n  \"batch_number\": \"BATCH-TEST-FAIL\",\r\n  \"remarks\": \"Should fail\"\r\n}",
-					"options": {
-						"raw": {
-							"language": "json"
+					"response": []
+				},
+				{
+					"name": "✅ STEP 2 — FINALIZE PURCHASE ORDER (Selection & Details)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NDUwNDc0LCJpYXQiOjE3NjgzNjQwNzQsImp0aSI6Ijc4MjU4MzNmNzAzNDQ3ODJiNmY4ODk3NjIyNmE1NzcwIiwidXNlcl9pZCI6IjMifQ.lmCkI3BEgbNCL-cU2I4mpEFBzq5xe5Tlk9YMw8Jiilk"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"purchase_order_id\": 2,\r\n  \"wastage_percentage\": 12,\r\n  \"selected_vendor_id\": \"VND002\",\r\n  \"delivery_date\": \"2024-03-15\",\r\n  \"payment_terms\": \"30_days\",\r\n  \"items\": [\r\n    {\r\n      \"item_code\": \"PCB-001\",\r\n      \"item_type\": \"bom\",\r\n      \"vendor_id\": \"VND002\",\r\n      \"vendor_name\": \"AutoTech Systems\",\r\n      \"unit_price\": \"1350.00\",\r\n      \"gst_amount\": \"243.00\",\r\n      \"total_price\": \"1593.00\",\r\n      \"delivery_days\": 12\r\n    },\r\n    {\r\n      \"item_code\": \"GPS-001\",\r\n      \"item_type\": \"bom\",\r\n      \"vendor_id\": \"VND002\",\r\n      \"vendor_name\": \"AutoTech Systems\",\r\n      \"unit_price\": \"720.00\",\r\n      \"gst_amount\": \"129.60\",\r\n      \"total_price\": \"849.60\",\r\n      \"delivery_days\": 12\r\n    },\r\n    {\r\n      \"item_code\": \"PCB_ASSEMBLY\",\r\n      \"item_type\": \"service\",\r\n      \"vendor_id\": \"VND002\",\r\n      \"vendor_name\": \"AutoTech Systems\",\r\n      \"unit_price\": \"380.00\",\r\n      \"gst_amount\": \"68.40\",\r\n      \"total_price\": \"448.40\",\r\n      \"delivery_days\": 12\r\n    }\r\n  ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/purchase/step-2/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"purchase",
+								"step-2",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/purchase/step-2/' \\\r\n--header 'Authorization: Bearer YOUR_ACCESS_TOKEN' \\\r\n--header 'Content-Type: application/json' \\\r\n--data '{\r\n  \"purchase_order_id\": 12,\r\n  \"wastage_percentage\": 12,\r\n  \"selected_vendor_id\": \"VND002\",\r\n  \"delivery_date\": \"2024-03-15\",\r\n  \"payment_terms\": \"30_days\",\r\n  \"items\": [\r\n    {\r\n      \"item_code\": \"PCB-001\",\r\n      \"item_type\": \"bom\",\r\n      \"vendor_id\": \"VND002\",\r\n      \"vendor_name\": \"AutoTech Systems\",\r\n      \"unit_price\": \"1350.00\",\r\n      \"gst_amount\": \"243.00\",\r\n      \"total_price\": \"1593.00\",\r\n      \"delivery_days\": 12\r\n    },\r\n    {\r\n      \"item_code\": \"GPS-001\",\r\n      \"item_type\": \"bom\",\r\n      \"vendor_id\": \"VND002\",\r\n      \"vendor_name\": \"AutoTech Systems\",\r\n      \"unit_price\": \"720.00\",\r\n      \"gst_amount\": \"129.60\",\r\n      \"total_price\": \"849.60\",\r\n      \"delivery_days\": 12\r\n    },\r\n    {\r\n      \"item_code\": \"PCB_ASSEMBLY\",\r\n      \"item_type\": \"service\",\r\n      \"vendor_id\": \"VND002\",\r\n      \"vendor_name\": \"AutoTech Systems\",\r\n      \"unit_price\": \"380.00\",\r\n      \"gst_amount\": \"68.40\",\r\n      \"total_price\": \"448.40\",\r\n      \"delivery_days\": 12\r\n    }\r\n  ]\r\n}'\r\n"
+					},
+					"response": []
+				},
+				{
+					"name": "1️⃣ ORDER TYPES (MULTI-SELECT)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NDUwNDc0LCJpYXQiOjE3NjgzNjQwNzQsImp0aSI6Ijc4MjU4MzNmNzAzNDQ3ODJiNmY4ODk3NjIyNmE1NzcwIiwidXNlcl9pZCI6IjMifQ.lmCkI3BEgbNCL-cU2I4mpEFBzq5xe5Tlk9YMw8Jiilk"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/dropdowns/order-types/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"dropdowns",
+								"order-types",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/dropdowns/order-types/' \\\r\n--header 'Authorization: Bearer YOUR_ACCESS_TOKEN'\r\n"
+					},
+					"response": []
+				},
+				{
+					"name": "2️⃣ ASSEMBLY TYPES",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NDUwNDc0LCJpYXQiOjE3NjgzNjQwNzQsImp0aSI6Ijc4MjU4MzNmNzAzNDQ3ODJiNmY4ODk3NjIyNmE1NzcwIiwidXNlcl9pZCI6IjMifQ.lmCkI3BEgbNCL-cU2I4mpEFBzq5xe5Tlk9YMw8Jiilk"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/dropdowns/assembly-types/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"dropdowns",
+								"assembly-types",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/dropdowns/assembly-types/' \\\r\n--header 'Authorization: Bearer YOUR_ACCESS_TOKEN'\r\n"
+					},
+					"response": []
+				},
+				{
+					"name": "3️⃣ PAYMENT TERMS",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NDUwNDc0LCJpYXQiOjE3NjgzNjQwNzQsImp0aSI6Ijc4MjU4MzNmNzAzNDQ3ODJiNmY4ODk3NjIyNmE1NzcwIiwidXNlcl9pZCI6IjMifQ.lmCkI3BEgbNCL-cU2I4mpEFBzq5xe5Tlk9YMw8Jiilk"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/dropdowns/payment-terms/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"dropdowns",
+								"payment-terms",
+								""
+							]
 						}
-					}
-				},
-				"url": {
-					"raw": "http://127.0.0.1:8000/api/production-orders/add-to-stock/",
-					"protocol": "http",
-					"host": [
-						"127",
-						"0",
-						"0",
-						"1"
-					],
-					"port": "8000",
-					"path": [
-						"api",
-						"production-orders",
-						"add-to-stock",
-						""
-					]
-				},
-				"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/production-orders/add-to-stock/' \\\r\n--header 'Authorization: Bearer YOUR_ACCESS_TOKEN' \\\r\n--header 'Content-Type: application/json' \\\r\n--data '{\r\n  \"production_type\": \"add_to_stock\",\r\n  \"product_device_model\": \"GPS Tracker Standard\",\r\n  \"product_category\": \"gps_devices\",\r\n  \"quantity_added\": 10,\r\n  \"unit_price\": 100,\r\n  \"total_value\": 999, \r\n  \"supplier_vendor_id\": 1,\r\n  \"purchase_date\": \"2026-01-12\",\r\n  \"manufacturing_date\": \"2026-01-12\",\r\n  \"batch_number\": \"BATCH-TEST-FAIL\",\r\n  \"remarks\": \"Should fail\"\r\n}'\r\n"
-			},
-			"response": []
+					},
+					"response": []
+				}
+			]
 		},
 		{
-			"name": "7️⃣ Step-2 Without Step-1 (Authorization flow check)",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Authorization",
-						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4Mjc4NzMxLCJpYXQiOjE3NjgxOTIzMzEsImp0aSI6IjE1N2QwMzRmNGRjNzRhYTY5ZDUwNTQ3NWJmOWI5Zjk5IiwidXNlcl9pZCI6IjIifQ.TSVKyio1SCH0vyyext5fVn6UDX6CP3b6BQWlUIplzeQ"
+			"name": "Material Receipt Note",
+			"item": [
+				{
+					"name": "Purchase Order Dropdown",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NDUwNDc0LCJpYXQiOjE3NjgzNjQwNzQsImp0aSI6Ijc4MjU4MzNmNzAzNDQ3ODJiNmY4ODk3NjIyNmE1NzcwIiwidXNlcl9pZCI6IjMifQ.lmCkI3BEgbNCL-cU2I4mpEFBzq5xe5Tlk9YMw8Jiilk"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/dropdowns/purchase-orders/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"dropdowns",
+								"purchase-orders",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/dropdowns/purchase-orders/' \\\r\n--header 'Authorization: Bearer YOUR_TOKEN'\r\n"
 					},
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n  \"production_type\": \"add_to_stock\",\r\n  \"product_device_model\": \"GPS Tracker Standard\",\r\n  \"product_category\": \"gps_devices\",\r\n  \"quantity_added\": 1,\r\n  \"unit_price\": 100,\r\n  \"total_value\": 100,\r\n  \"supplier_vendor_id\": 1,\r\n  \"purchase_date\": \"2026-01-12\",\r\n  \"manufacturing_date\": \"2026-01-12\",\r\n  \"batch_number\": \"BATCH-FAIL\",\r\n  \"remarks\": \"Should 404\"\r\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
+					"response": []
 				},
-				"url": {
-					"raw": "http://127.0.0.1:8000/api/order-entry/step-2/9999/",
-					"protocol": "http",
-					"host": [
-						"127",
-						"0",
-						"0",
-						"1"
-					],
-					"port": "8000",
-					"path": [
-						"api",
-						"order-entry",
-						"step-2",
-						"9999",
-						""
-					]
+				{
+					"name": "http://127.0.0.1:8000/api/dropdowns/inward-types/",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NDUwNDc0LCJpYXQiOjE3NjgzNjQwNzQsImp0aSI6Ijc4MjU4MzNmNzAzNDQ3ODJiNmY4ODk3NjIyNmE1NzcwIiwidXNlcl9pZCI6IjMifQ.lmCkI3BEgbNCL-cU2I4mpEFBzq5xe5Tlk9YMw8Jiilk"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/dropdowns/inward-types/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"dropdowns",
+								"inward-types",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/dropdowns/inward-types/' \\\r\n--header 'Authorization: Bearer YOUR_TOKEN'\r\n"
+					},
+					"response": []
 				},
-				"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/order-entry/step-2/9999/' \\\r\n--header 'Authorization: Bearer YOUR_ACCESS_TOKEN' \\\r\n--header 'Content-Type: application/json' \\\r\n--data '{\r\n  \"production_type\": \"add_to_stock\",\r\n  \"product_device_model\": \"GPS Tracker Standard\",\r\n  \"product_category\": \"gps_devices\",\r\n  \"quantity_added\": 1,\r\n  \"unit_price\": 100,\r\n  \"total_value\": 100,\r\n  \"supplier_vendor_id\": 1,\r\n  \"purchase_date\": \"2026-01-12\",\r\n  \"manufacturing_date\": \"2026-01-12\",\r\n  \"batch_number\": \"BATCH-FAIL\",\r\n  \"remarks\": \"Should 404\"\r\n}'\r\n"
-			},
-			"response": []
+				{
+					"name": "Purchase Order Items (For MRN Line Items)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NDUwNDc0LCJpYXQiOjE3NjgzNjQwNzQsImp0aSI6Ijc4MjU4MzNmNzAzNDQ3ODJiNmY4ODk3NjIyNmE1NzcwIiwidXNlcl9pZCI6IjMifQ.lmCkI3BEgbNCL-cU2I4mpEFBzq5xe5Tlk9YMw8Jiilk"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/purchase/2/items/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"purchase",
+								"2",
+								"items",
+								""
+							]
+						},
+						"description": "StartFragment\n\n### Purchase Order Items List\n\n**Method:** GET  \n**URL:** `/api/purchase/{po_id}/items/`  \n**Auth:** JWT Bearer Token (Required)  \n**Description:**  \n  \nReturns all **items associated with a specific Purchase Order**.  \n  \nThis API is primarily used while creating a **Material Receipt Note (MRN)** to select which Purchase Order items are being received.\n\n---\n\n### Headers\n\n- Authorization: Bearer\n    \n- Content-Type: application/json\n    \n\n---\n\n### Query Params\n\n_None_\n\n---\n\n### Path Params\n\n| Name | Type | Required | Description |\n| --- | --- | --- | --- |\n| po_id | integer | ✅ Yes | Purchase Order ID |\n\n---\n\n### Request Body\n\n_Not required_\n\n---\n\n### Example Request (cURL)\n\n```\ncurl --location 'http://127.0.0.1:8000/api/purchase/2/items/' \\\n--header &#x27;Authorization: Bearer <JWT_TOKEN>&#x27;\n\n ```\n\n---\n\n### Success Response (200 OK)\n\n```\n[\n  {\n    \"id\": 1,\n    \"product_id\": \"PCB-001\",\n    \"item_type\": \"bom\",\n    \"vendor_name\": \"AutoTech Systems\",\n    \"unit_price\": \"1350.00\",\n    \"delivery_days\": 12\n  },\n  {\n    \"id\": 2,\n    \"product_id\": \"GPS-001\",\n    \"item_type\": \"bom\",\n    \"vendor_name\": \"AutoTech Systems\",\n    \"unit_price\": \"720.00\",\n    \"delivery_days\": 12\n  },\n  {\n    \"id\": 3,\n    \"product_id\": \"PCB_ASSEMBLY\",\n    \"item_type\": \"service\",\n    \"vendor_name\": \"AutoTech Systems\",\n    \"unit_price\": \"380.00\",\n    \"delivery_days\": 12\n  }\n]\n\n ```\n\n---\n\n### Response Field Explanation\n\n| Field | Type | Description |\n| --- | --- | --- |\n| id | integer | PurchaseOrderItem ID (used in MRN create API) |\n| product_id | string | Item code from Purchase Order |\n| item_type | string | Type of item (`bom`, `component`, `service`) |\n| vendor_name | string | Vendor supplying this item |\n| unit_price | string (decimal) | Unit price of the item |\n| delivery_days | integer | Expected delivery lead time |\n\n---\n\n### Usage in Frontend\n\n- Used to **populate items table** after selecting a Purchase Order\n    \n- POST /api/mrn/create/\n    \n- Enables partial or full receipt of items\n    \n\n---\n\n### Error Responses\n\n#### ❌ Unauthorized (401)\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n**Frontend Handling:**  \n  \nRedirect user to login.\n\n---\n\n#### ❌ Forbidden (403)\n\n```\n{\n  \"detail\": \"You do not have permission to perform this action.\"\n}\n\n ```\n\n**Frontend Handling:**  \n  \nShow access denied message.\n\n---\n\n#### ❌ Purchase Order Not Found (404)\n\n```\n{\n  \"detail\": \"Not found.\"\n}\n\n ```\n\n**Frontend Handling:**  \n  \nShow “Purchase Order does not exist” and refresh dropdown.\n\n---\n\n#### ❌ Invalid Purchase Order ID (400)\n\n```\n{\n  \"detail\": \"Invalid purchase order ID.\"\n}\n\n ```\n\n**Frontend Handling:**  \n  \nValidate `po_id` before calling API.\n\n---\n\n#### ❌ Server Error (500)\n\n```\n{\n  \"detail\": \"Internal Server Error\"\n}\n\n ```\n\n**Frontend Handling:**  \n  \nRetry or show error banner.\n\n---\n\n### Notes\n\n- Only items belonging to the given Purchase Order are returned\n    \n- Items are read-only (no update/delete)\n    \n- Response is intentionally minimal for fast UI rendering\n    \n- Works seamlessly with MRN creation flow\n    \n\nEndFragment"
+					},
+					"response": []
+				},
+				{
+					"name": "Create MRN (Material Receipt Note)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NDUwNDc0LCJpYXQiOjE3NjgzNjQwNzQsImp0aSI6Ijc4MjU4MzNmNzAzNDQ3ODJiNmY4ODk3NjIyNmE1NzcwIiwidXNlcl9pZCI6IjMifQ.lmCkI3BEgbNCL-cU2I4mpEFBzq5xe5Tlk9YMw8Jiilk"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "purchase_order_id",
+									"value": "2",
+									"type": "text"
+								},
+								{
+									"key": "po_date",
+									"value": "2026-01-14",
+									"type": "text"
+								},
+								{
+									"key": "vendor_id",
+									"value": "2",
+									"type": "text"
+								},
+								{
+									"key": "inward_type",
+									"value": "bom_items",
+									"type": "text"
+								},
+								{
+									"key": "receipt_date",
+									"value": "2026-01-15",
+									"type": "text"
+								},
+								{
+									"key": "invoice_number",
+									"value": "INV-456",
+									"type": "text"
+								},
+								{
+									"key": "delivery_challan_number",
+									"value": "DC-789",
+									"type": "text"
+								},
+								{
+									"key": "eway_bill_number",
+									"value": "EWB-123",
+									"type": "text"
+								},
+								{
+									"key": "remarks",
+									"value": "Material received in good condition",
+									"type": "text"
+								},
+								{
+									"key": "items",
+									"value": "[\n  {\n    \"purchase_order_item_id\": 1,\n    \"received_qty\": 50,\n    \"serial_numbers\": \"SN001,SN002,SN003\"\n  },\n  {\n    \"purchase_order_item_id\": 2,\n    \"received_qty\": 50,\n    \"serial_numbers\": \"ANT001,ANT002\"\n  }\n]",
+									"type": "text"
+								},
+								{
+									"key": "invoice_file",
+									"type": "file",
+									"src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+								},
+								{
+									"key": "challan_file",
+									"type": "file",
+									"src": "/C:/Users/desk6/Downloads/screencapture-mapwala-link-surge-sh-receipt-against-po-2026-01-14-15_57_18.pdf"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/mrn/create/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"mrn",
+								"create",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/mrn/create/' \\\n--header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NDUwNDc0LCJpYXQiOjE3NjgzNjQwNzQsImp0aSI6Ijc4MjU4MzNmNzAzNDQ3ODJiNmY4ODk3NjIyNmE1NzcwIiwidXNlcl9pZCI6IjMifQ.lmCkI3BEgbNCL-cU2I4mpEFBzq5xe5Tlk9YMw8Jiilk' \\\n--form 'purchase_order_id=\"2\"' \\\n--form 'po_date=\"2026-01-14\"' \\\n--form 'vendor_id=\"2\"' \\\n--form 'inward_type=\"bom_items\"' \\\n--form 'receipt_date=\"2026-01-15\"' \\\n--form 'invoice_number=\"INV-456\"' \\\n--form 'delivery_challan_number=\"DC-789\"' \\\n--form 'eway_bill_number=\"EWB-123\"' \\\n--form 'remarks=\"Material received in good condition\"' \\\n--form 'items=\"[\n  {\n    \\\"purchase_order_item_id\\\": 1,\n    \\\"received_qty\\\": 50,\n    \\\"serial_numbers\\\": \\\"SN001,SN002,SN003\\\"\n  },\n  {\n    \\\"purchase_order_item_id\\\": 2,\n    \\\"received_qty\\\": 50,\n    \\\"serial_numbers\\\": \\\"ANT001,ANT002\\\"\n  }\n]\"' \\\n--form 'invoice_file=@\"/C:/Users/desk6/Downloads/git_cheat_sheet.pdf\"' \\\n--form 'challan_file=@\"/C:/Users/desk6/Downloads/screencapture-mapwala-link-surge-sh-receipt-against-po-2026-01-14-15_57_18.pdf\"'"
+					},
+					"response": []
+				}
+			]
 		}
 	]
 }

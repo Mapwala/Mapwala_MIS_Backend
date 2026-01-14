@@ -906,3 +906,101 @@ class PaymentTermsDropdown(APIView):
         ])
 
 
+# ---------------- Create Material Receipt Note (MRN) ----------------
+from datetime import datetime
+
+class MRNCreateAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request):
+        serializer = MRNCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        purchase_order = get_object_or_404(PurchaseOrder,id=serializer.validated_data["purchase_order_id"])
+        vendor = get_object_or_404(Vendor,id=serializer.validated_data["vendor_id"])
+        batch_number = f"MRN-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        mrn = MaterialReceiptNote.objects.create(
+            purchase_order=purchase_order,
+            po_date=serializer.validated_data["po_date"],
+            vendor=vendor,
+            inward_type=serializer.validated_data["inward_type"],
+            receipt_date=serializer.validated_data["receipt_date"],
+            batch_number=batch_number,
+            invoice_number=serializer.validated_data.get("invoice_number", ""),
+            delivery_challan_number=serializer.validated_data.get("delivery_challan_number", ""),
+            eway_bill_number=serializer.validated_data.get("eway_bill_number", ""),
+            remarks=serializer.validated_data.get("remarks", ""),
+            created_by=request.user,
+            invoice_file=request.FILES.get("invoice_file"),
+            challan_file=request.FILES.get("challan_file"),
+            eway_bill_file=request.FILES.get("eway_bill_file"),
+        )
+
+        for item in serializer.validated_data["items"]:
+            po_item = get_object_or_404(
+                PurchaseOrderItem,
+                id=item["purchase_order_item_id"],
+                purchase_order=purchase_order
+            )
+            MaterialReceiptItem.objects.create(
+                mrn=mrn,
+                purchase_order_item=po_item,
+                received_qty=item["received_qty"],
+                serial_numbers=item.get("serial_numbers", "")
+            )
+
+        return Response(
+            {
+                "mrn_id": mrn.id,
+                "batch_number": mrn.batch_number,
+                "message": "Material Receipt Note created successfully"
+            },
+            status=201
+        )
+
+
+class PurchaseOrderDropdown(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response([
+            {
+                "id": po.id,
+                "label": f"{po.order_id} ({po.assembly_type.replace('_', ' ').title()})"
+            }
+            for po in PurchaseOrder.objects.all()
+        ])
+
+
+class InwardTypeDropdown(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response([
+            {"key": "bom_items", "label": "BOM Items"},
+            {"key": "materials", "label": "Materials"},
+            {"key": "assembled_pcb", "label": "Assembled PCB"},
+            {"key": "assembled_device", "label": "Assembled Device"},
+        ])
+
+
+class PurchaseOrderItemsAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, po_id):
+        po = get_object_or_404(PurchaseOrder, id=po_id)
+
+        return Response([
+            {
+                "id": item.id,
+                "product_id": item.item_code,
+                "item_type": item.item_type,
+                "vendor_name": item.vendor_name,
+                "unit_price": str(item.unit_price),
+                "delivery_days": item.delivery_days
+            }
+            for item in po.items.all()
+        ])
+
+
+

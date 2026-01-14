@@ -1,6 +1,7 @@
 from django.contrib.auth import authenticate
 from rest_framework import serializers
 from .models import *
+import json
 
 
 # ---------------- Login ----------------
@@ -634,6 +635,43 @@ class PurchaseStep2Serializer(serializers.Serializer):
     )
 
     items = PurchaseLineSerializer(many=True, min_length=1)
+
+
+# ---------------- Create Material Receipt Note (MRN) ----------------
+class MRNItemSerializer(serializers.Serializer):
+    purchase_order_item_id = serializers.IntegerField()
+    received_qty = serializers.IntegerField(min_value=1)
+    serial_numbers = serializers.CharField(required=False, allow_blank=True)
+
+
+
+
+class MRNCreateSerializer(serializers.Serializer):
+    purchase_order_id = serializers.IntegerField()
+    po_date = serializers.DateField()
+    vendor_id = serializers.IntegerField()
+    inward_type = serializers.ChoiceField(
+        choices=MaterialReceiptNote.INWARD_TYPE_CHOICES
+    )
+    receipt_date = serializers.DateField()
+
+    invoice_number = serializers.CharField(required=False, allow_blank=True)
+    delivery_challan_number = serializers.CharField(required=False, allow_blank=True)
+    eway_bill_number = serializers.CharField(required=False, allow_blank=True)
+    remarks = serializers.CharField(required=False, allow_blank=True)
+
+    items = serializers.CharField()
+
+    def validate_items(self, value):
+        try:
+            data = json.loads(value)
+        except Exception:
+            raise serializers.ValidationError("Invalid JSON format for items")
+
+        if not isinstance(data, list) or not data:
+            raise serializers.ValidationError("Items must be a non-empty list")
+
+        return data
 
 
 

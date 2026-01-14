@@ -53,13 +53,23 @@ urlpatterns = [
     path("dropdowns/assembly-types/", AssemblyTypeDropdownAPIView.as_view()),
     path("dropdowns/srn/", SRNDropdownAPIView.as_view()),
     path("dropdowns/vendors/", VendorDropdownAPIView.as_view()),
+    
     # ---------------- Create Purchase Order ----------------
     path("purchase/step-1/", Step1APIView.as_view()),
     path("purchase/step-2/", Step2APIView.as_view()),
-
+    
+    # ---------------- Purchase Order Dropdowns ----------------
     path("dropdowns/order-types/", OrderTypeDropdown.as_view()),
     path("dropdowns/assembly-types/", AssemblyTypeDropdown.as_view()),
     path("dropdowns/payment-terms/", PaymentTermsDropdown.as_view()),
+    
+    # ---------------- MRN (Material Receipt Note) ----------------
+    path("mrn/create/", MRNCreateAPIView.as_view()),
+    
+    # ---------------- MRN (Material Receipt Note) ----------------
+    path("dropdowns/purchase-orders/",PurchaseOrderDropdown.as_view(),name="purchase-order-dropdown"),
+    path("dropdowns/inward-types/",InwardTypeDropdown.as_view(),name="inward-type-dropdown"),
+    path("purchase/<int:po_id>/items/",PurchaseOrderItemsAPIView.as_view(),name="purchase-order-items"),
 ]
 
 urlpatterns += router.urls

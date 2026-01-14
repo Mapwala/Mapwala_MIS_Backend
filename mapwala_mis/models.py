@@ -746,7 +746,7 @@ class OrderEntryMakeToOrder(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 
-# _____________________ Request For Quote (RFQ) ____________________________
+# ---------------- Request For Quote (RFQ) ----------------
 class RequestForQuote(models.Model):
     STATUS_CHOICES = (
         ("draft", "Draft"),
@@ -786,6 +786,7 @@ class RequestForQuote(models.Model):
         return f"RFQ-{self.id} | {self.order_reference}"
 
 
+# ---------------- RFQ Selection ----------------
 class RFQSelection(models.Model):
     ITEM_TYPE_CHOICES = (
         ("bom", "BOM Part"),
@@ -804,8 +805,6 @@ class RFQSelection(models.Model):
         help_text="Selected BOM ID / Component name / Service name"
     )
 
-
-# _____________________________________________________________________
 
 # ---------------- Create Purchase Order ----------------
 class PurchaseOrder(models.Model):
@@ -857,6 +856,7 @@ class PurchaseOrder(models.Model):
         return f"PO-{self.id} | {self.order_id}"
 
 
+# ---------------- Purchase Order Type ----------------
 class PurchaseOrderType(models.Model):
     """
     Stores multi-select Order Types from UI
@@ -883,33 +883,77 @@ class PurchaseOrderType(models.Model):
         unique_together = ("purchase_order", "order_type")
 
 
+# ---------------- Purchase Order Item ----------------
 class PurchaseOrderItem(models.Model):
     """
     Selected items / components / services
     """
-
     ITEM_TYPE_CHOICES = (
         ("bom", "BOM Item"),
         ("component", "Component"),
         ("service", "Service"),
     )
-
-    purchase_order = models.ForeignKey(
-        PurchaseOrder,
-        on_delete=models.CASCADE,
-        related_name="items"
-    )
-
+    purchase_order = models.ForeignKey(PurchaseOrder,on_delete=models.CASCADE,related_name="items")
     item_code = models.CharField(max_length=50)
     item_type = models.CharField(max_length=20, choices=ITEM_TYPE_CHOICES)
-
     vendor_id = models.CharField(max_length=50)
     vendor_name = models.CharField(max_length=255)
-
+    quantity = models.PositiveIntegerField(default=0)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     gst_amount = models.DecimalField(max_digits=10, decimal_places=2)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
-
     delivery_days = models.PositiveIntegerField()
+
+
+# ---------------- Material Receipt Note (MRN) ----------------
+class MaterialReceiptNote(models.Model):
+    INWARD_TYPE_CHOICES = (
+        ("bom_items", "BOM Items"),
+        ("materials", "Materials"),
+        ("assembled_pcb", "Assembled PCB"),
+        ("assembled_device", "Assembled Device"),
+    )
+    purchase_order = models.ForeignKey("PurchaseOrder",on_delete=models.PROTECT,related_name="mrns")
+    po_date = models.DateField()
+    vendor = models.ForeignKey(Vendor,on_delete=models.PROTECT,related_name="mrns")
+    inward_type = models.CharField(max_length=30,choices=INWARD_TYPE_CHOICES)
+    receipt_date = models.DateField()
+    batch_number = models.CharField(max_length=50, unique=True)
+    invoice_number = models.CharField(max_length=50, blank=True)
+    delivery_challan_number = models.CharField(max_length=50, blank=True)
+    eway_bill_number = models.CharField(max_length=50, blank=True)
+    invoice_file = models.FileField(upload_to="mrn/invoice/", null=True, blank=True)
+    challan_file = models.FileField(upload_to="mrn/challan/", null=True, blank=True)
+    eway_bill_file = models.FileField(upload_to="mrn/eway/", null=True, blank=True)
+    remarks = models.TextField(blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"MRN-{self.id} | PO-{self.purchase_order.order_id}"
+
+
+# ---------------- Material Receipt Item ----------------
+class MaterialReceiptItem(models.Model):
+    mrn = models.ForeignKey(MaterialReceiptNote,on_delete=models.CASCADE,related_name="items")
+    purchase_order_item = models.ForeignKey("PurchaseOrderItem",on_delete=models.PROTECT,related_name="mrn_items")
+    received_qty = models.PositiveIntegerField()
+    serial_numbers = models.TextField(help_text="Comma separated serial numbers",blank=True)
+    balance_qty = models.PositiveIntegerField()
+    def save(self, *args, **kwargs):
+        """
+        Balance Qty = Ordered Qty - Total Received Qty (across all MRNs)
+        """
+        ordered_qty = self.purchase_order_item.quantity
+        total_received = (
+            MaterialReceiptItem.objects
+            .filter(purchase_order_item=self.purchase_order_item)
+            .exclude(pk=self.pk)
+            .aggregate(models.Sum("received_qty"))["received_qty__sum"] or 0
+        )
+        self.balance_qty = ordered_qty - (total_received + self.received_qty)
+        if self.balance_qty < 0:
+            raise ValueError("Received quantity exceeds ordered quantity")
+        super().save(*args, **kwargs)
 
 
