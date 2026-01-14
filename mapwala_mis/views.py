@@ -806,3 +806,103 @@ class VendorDropdownAPIView(APIView):
 
 # _____________________________________________________________________________
 
+
+
+# ---------------- Create Purchase Order STEP 1 ----------------
+class Step1APIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request):
+        serializer = PurchaseStep1Serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        po = PurchaseOrder.objects.create(
+            buyer_name=serializer.validated_data["buyer_name"],
+            order_id=serializer.validated_data["order_id"],
+            rfq_id=serializer.validated_data["rfq_id"],
+            assembly_type=serializer.validated_data["assembly_type"],
+            created_by=request.user
+        )
+
+        for ot in serializer.validated_data["order_types"]:
+            PurchaseOrderType.objects.create(
+                purchase_order=po,
+                order_type=ot
+            )
+
+        return Response(
+            {
+                "purchase_order_id": po.id,
+                "message": "Step 1 completed"
+            },
+            status=201
+        )
+
+
+# ---------------- Create Purchase Order STEP 2 ----------------
+class Step2APIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request):
+        po = get_object_or_404(
+            PurchaseOrder,
+            id=request.data.get("purchase_order_id")
+        )
+
+        serializer = PurchaseStep2Serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        po.wastage_percentage = serializer.validated_data["wastage_percentage"]
+        po.selected_vendor_id = serializer.validated_data["selected_vendor_id"]
+        po.delivery_date = serializer.validated_data["delivery_date"]
+        po.payment_terms = serializer.validated_data["payment_terms"]
+        po.save()
+
+        po.items.all().delete()
+
+        for item in serializer.validated_data["items"]:
+            PurchaseOrderItem.objects.create(
+                purchase_order=po,
+                **item
+            )
+
+        return Response(
+            {"message": "Purchase Order created successfully"},
+            status=201
+        )
+
+
+# ---------------- Dropdowns for Purchase Order ----------------
+class OrderTypeDropdown(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response([
+            {"key": "bom", "label": "Items (BOM Parts)"},
+            {"key": "component", "label": "Components (Enclosure, Battery, etc.)"},
+            {"key": "service", "label": "Services (Assembly, Quality Check, etc.)"},
+        ])
+
+
+class AssemblyTypeDropdown(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response([
+            {"key": "pcb", "label": "PCB Assembly"},
+            {"key": "device", "label": "Device Assembly"},
+        ])
+
+
+class PaymentTermsDropdown(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response([
+            {"key": k, "label": v}
+            for k, v in PurchaseOrder.PAYMENT_TERMS_CHOICES
+        ])
+
+

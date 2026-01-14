@@ -587,6 +587,54 @@ class RFQStep3Serializer(serializers.Serializer):
         required=False, allow_blank=True
     )
 
-
 # _____________________________________________________________________________
+
+# ---------- Create Purchase Order STEP 1 ----------
+class PurchaseStep1Serializer(serializers.Serializer):
+    buyer_name = serializers.CharField()
+    order_id = serializers.CharField()
+    rfq_id = serializers.CharField()
+
+    assembly_type = serializers.ChoiceField(
+        choices=PurchaseOrder.ASSEMBLY_TYPE_CHOICES
+    )
+
+    order_types = serializers.ListField(
+        child=serializers.ChoiceField(
+            choices=["bom", "component", "service"]
+        ),
+        min_length=1
+    )
+
+
+
+# ---------- Create Purchase Order STEP 2 ----------
+class PurchaseLineSerializer(serializers.Serializer):
+    item_code = serializers.CharField()
+    item_type = serializers.ChoiceField(
+        choices=["bom", "component", "service"]
+    )
+    vendor_id = serializers.CharField()
+    vendor_name = serializers.CharField()
+
+    unit_price = serializers.DecimalField(max_digits=10, decimal_places=2)
+    gst_amount = serializers.DecimalField(max_digits=10, decimal_places=2)
+    total_price = serializers.DecimalField(max_digits=10, decimal_places=2)
+
+    delivery_days = serializers.IntegerField(min_value=1)
+
+
+class PurchaseStep2Serializer(serializers.Serializer):
+    wastage_percentage = serializers.IntegerField(min_value=0, max_value=100)
+    selected_vendor_id = serializers.CharField()
+    delivery_date = serializers.DateField()
+
+    payment_terms = serializers.ChoiceField(
+        choices=[c[0] for c in PurchaseOrder.PAYMENT_TERMS_CHOICES]
+    )
+
+    items = PurchaseLineSerializer(many=True, min_length=1)
+
+
+
 

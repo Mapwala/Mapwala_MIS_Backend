@@ -2,6 +2,9 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
 from decimal import Decimal
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 
 # ---------------- User Profile ----------------
@@ -803,4 +806,110 @@ class RFQSelection(models.Model):
 
 
 # _____________________________________________________________________
+
+# ---------------- Create Purchase Order ----------------
+class PurchaseOrder(models.Model):
+    """
+    Main entity: Create Purchase Order
+    """
+
+    ASSEMBLY_TYPE_CHOICES = (
+        ("pcb", "PCB Assembly"),
+        ("device", "Device Assembly"),
+    )
+
+    PAYMENT_TERMS_CHOICES = (
+        ("full_payment", "Full Payment"),
+        ("down_payment", "Down Payment"),
+        ("advance", "Advance"),
+        ("30_days", "30 Days Net"),
+        ("60_days", "60 Days Net"),
+        ("90_days", "90 Days Net"),
+        ("cod", "Cash on Delivery"),
+    )
+
+    # ---------- STEP 1 ----------
+    buyer_name = models.CharField(max_length=255)
+    order_id = models.CharField(max_length=50)
+    rfq_id = models.CharField(max_length=50)
+
+    assembly_type = models.CharField(
+        max_length=20,
+        choices=ASSEMBLY_TYPE_CHOICES
+    )
+
+    # ---------- STEP 2 ----------
+    wastage_percentage = models.PositiveIntegerField(null=True, blank=True)
+    selected_vendor_id = models.CharField(max_length=50, null=True, blank=True)
+    delivery_date = models.DateField(null=True, blank=True)
+
+    payment_terms = models.CharField(
+        max_length=20,
+        choices=PAYMENT_TERMS_CHOICES,
+        null=True,
+        blank=True
+    )
+
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"PO-{self.id} | {self.order_id}"
+
+
+class PurchaseOrderType(models.Model):
+    """
+    Stores multi-select Order Types from UI
+    """
+
+    ORDER_TYPE_CHOICES = (
+        ("bom", "Items (BOM Parts)"),
+        ("component", "Components (Enclosure, Battery, etc.)"),
+        ("service", "Services (Assembly, Quality Check, etc.)"),
+    )
+
+    purchase_order = models.ForeignKey(
+        PurchaseOrder,
+        on_delete=models.CASCADE,
+        related_name="order_types"
+    )
+
+    order_type = models.CharField(
+        max_length=20,
+        choices=ORDER_TYPE_CHOICES
+    )
+
+    class Meta:
+        unique_together = ("purchase_order", "order_type")
+
+
+class PurchaseOrderItem(models.Model):
+    """
+    Selected items / components / services
+    """
+
+    ITEM_TYPE_CHOICES = (
+        ("bom", "BOM Item"),
+        ("component", "Component"),
+        ("service", "Service"),
+    )
+
+    purchase_order = models.ForeignKey(
+        PurchaseOrder,
+        on_delete=models.CASCADE,
+        related_name="items"
+    )
+
+    item_code = models.CharField(max_length=50)
+    item_type = models.CharField(max_length=20, choices=ITEM_TYPE_CHOICES)
+
+    vendor_id = models.CharField(max_length=50)
+    vendor_name = models.CharField(max_length=255)
+
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    gst_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    total_price = models.DecimalField(max_digits=10, decimal_places=2)
+
+    delivery_days = models.PositiveIntegerField()
+
 
