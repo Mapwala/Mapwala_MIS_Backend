@@ -141,102 +141,191 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
-# Jazzmin Configuration
+# ==================== Jazzmin Core Settings ====================
 JAZZMIN_SETTINGS = {
-    # Window title
+    # -------------------- General --------------------
     "site_title": "Mapwala MIS Admin",
-    # Header text
     "site_header": "Mapwala MIS",
-    # Brand text (top left)
     "site_brand": "Mapwala MIS",
-    # Logo (optional — keep None unless you add a static logo)
+    "welcome_sign": "Welcome to Mapwala MIS",
+    "copyright": "© Mapwala Technologies",
+
+    # -------------------- Logos --------------------
     "site_logo": None,
+    "site_logo_classes": "img-circle",
+    "site_icon": "fas fa-warehouse",
     "login_logo": None,
     "login_logo_dark": None,
-    "site_logo_classes": "img-circle",
-    # Favicon
-    "site_icon": None,
-    # Login welcome
-    "welcome_sign": "Welcome to Mapwala MIS",
-    # Footer text
-    "copyright": "© Mapwala Technologies",
-    # Search models
-    "search_model": ["auth.User", "auth.Group"],
-    # Avatar field
-    "user_avatar": None,
-    ################
-    # Top Menu
-    ################
-    "topmenu_links": [
-        {"name": "Home", "url": "admin:index"},
-        {"model": "auth.User"},
-        {"model": "auth.Group"},
-    ],
-    ################
-    # User Menu
-    ################
-    "usermenu_links": [
-        {"name": "Support", "url": "https://mapwala.com", "new_window": True},
-    ],
-    ################
-    # Side Menu
-    ################
+
+    # -------------------- Theme --------------------
+    "theme": "flatly",
+    "dark_mode_theme": None,
+    "show_theme_switcher": True,
+
+    # -------------------- Layout --------------------
     "show_sidebar": True,
     "navigation_expanded": False,
-    "hide_apps": [],
-    "hide_models": [],
-    # Order side menu
     "order_with_respect_to": ["auth", "mapwala_mis"],
-    ################
-    # Icons
-    ################
-    "icons": {
-        "auth": "fas fa-users-cog",
-        "auth.user": "fas fa-user",
-        "auth.group": "fas fa-users",
-        "mapwala_mis": "fas fa-database",
-    },
-    "default_icon_parents": "fas fa-chevron-circle-right",
-    "default_icon_children": "fas fa-circle",
-    ################
-    # UI Tweaks
-    ################
-    "related_modal_active": False,
-    "use_google_fonts_cdn": True,
-    "show_ui_builder": False,
-    ################
-    # Change Form
-    ################
+
     "changeform_format": "horizontal_tabs",
     "changeform_format_overrides": {
         "auth.user": "collapsible",
         "auth.group": "vertical_tabs",
     },
-    "language_chooser": False,
-    
+
+    # -------------------- Sidebar --------------------
+    "sidebar_fixed": True,
+    "sidebar": {
+        "scrollbar_theme": "os-theme-dark",
+        "scrollbar_auto_hide": "l",
+    },
+
+    # -------------------- Icons --------------------
     "icons": {
         "auth": "fas fa-users-cog",
-        "auth.user": "fas fa-user",
+        "auth.user": "fas fa-user-circle",
         "auth.group": "fas fa-users",
 
         "mapwala_mis": "fas fa-database",
         "mapwala_mis.state": "fas fa-map",
         "mapwala_mis.district": "fas fa-map-marked-alt",
         "mapwala_mis.parentcompany": "fas fa-building",
-        "mapwala_mis.vendor": "fas fa-truck",
+        "mapwala_mis.vendor": "fas fa-truck-loading",
         "mapwala_mis.b2ccustomer": "fas fa-user-tag",
         "mapwala_mis.b2bpartner": "fas fa-handshake",
-        "mapwala_mis.userprofile": "fas fa-id-badge",
+        "mapwala_mis.userprofile": "fas fa-id-card",
+
+        "admin.LogEntry": "fas fa-history",
+        "sessions": "fas fa-clock",
+        "sites": "fas fa-globe",
     },
-    
-    "search_model": [
-        "auth.User",
-        "auth.Group",
-        "mapwala_mis.ParentCompany",
-        "mapwala_mis.Vendor",
-        "mapwala_mis.B2CCustomer",
-        "mapwala_mis.B2BPartner",
+
+    "default_icon_parents": "fas fa-chevron-right",
+    "default_icon_children": "fas fa-circle",
+
+    # -------------------- Menus --------------------
+    "topmenu_links": [
+        {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"name": "Dashboard", "url": "/admin/dashboard/"},
+        {"model": "auth.User"},
+        {"model": "auth.Group"},
+        {"name": "Support", "url": "https://mapwala.com/support", "new_window": True, "icon": "fas fa-life-ring"},
     ],
+
+    "usermenu_links": [
+        {
+            "name": "Profile",
+            "url": "admin:auth_user_change",
+            "icon": "fas fa-user-edit",
+            "url_args": lambda request: {"object_id": request.user.pk},
+        },
+        {"name": "Support", "url": "https://mapwala.com/support", "new_window": True, "icon": "fas fa-question-circle"},
+        {"name": "Documentation", "url": "https://docs.mapwala.com", "new_window": True, "icon": "fas fa-book"},
+        {"model": "auth.user"},
+    ],
+
+    # -------------------- UI Behaviour --------------------
+    "related_modal_active": True,
+    "use_google_fonts_cdn": True,
+    "show_ui_builder": True,
+    "actions_sticky_top": False,  # overridden by your tweak request
+    "language_chooser": False,
+    "collapse_nav": True,
+
+    "form_nav_classes": {
+        "default": "nav-tabs nav-justified",
+        "auth.user": "nav-tabs",
+    },
+}
+
+# ==================== Jazzmin UI Tweaks ====================
+JAZZMIN_UI_TWEAKS = {
+    # -------------------- Text sizes --------------------
+    "navbar_small_text": False,
+    "footer_small_text": False,
+    "body_small_text": True,
+    "brand_small_text": False,
+
+    # -------------------- Brand --------------------
+    "brand_colour": False,
+
+    # -------------------- Accent --------------------
+    "accent": "accent-primary",
+
+    # -------------------- Navbar --------------------
+    "navbar": "navbar-dark",
+    "navbar_dark": True,
+    "navbar_color": "dark",
+    "no_navbar_border": False,
+    "navbar_fixed": False,
+
+    # -------------------- Layout --------------------
+    "layout_boxed": False,
+    "footer_fixed": True,
+    "sidebar_fixed": True,
+
+    # -------------------- Sidebar --------------------
+    "sidebar": "sidebar-dark-primary",
+    "sidebar_nav_small_text": False,
+    "sidebar_disable_expand": False,
+    "sidebar_nav_child_indent": True,
+    "sidebar_nav_compact_style": True,
+    "sidebar_nav_legacy_style": False,
+    "sidebar_nav_flat_style": True,
+
+    # -------------------- Theme --------------------
+    "theme": "flatly",
+    "dark_mode_theme": None,
+
+    # -------------------- Buttons --------------------
+    "button_classes": {
+        "primary": "btn-primary",
+        "secondary": "btn-secondary",
+        "info": "btn-info",
+        "warning": "btn-warning",
+        "danger": "btn-danger",
+        "success": "btn-success",
+    },
+
+    # -------------------- Alerts --------------------
+    "alert_classes": {
+        "error": "alert-danger",
+        "warning": "alert-warning",
+        "success": "alert-success",
+        "info": "alert-info",
+    },
+
+    # -------------------- Cards --------------------
+    "card": {
+        "theme": "dark",
+        "background": "bg-dark",
+        "border": "border-dark",
+    },
+
+    # -------------------- Tables --------------------
+    "table": {
+        "theme": "dark",
+        "striped": True,
+        "hover": True,
+        "bordered": False,
+        "condensed": True,
+    },
+
+    # -------------------- Forms --------------------
+    "form": {
+        "field_background": "bg-dark",
+        "field_border": "border-secondary",
+        "field_text_color": "text-light",
+    },
+
+    # -------------------- Modals --------------------
+    "modal": {
+        "theme": "dark",
+        "backdrop": True,
+    },
+
+    # -------------------- Actions --------------------
+    "actions_sticky_top": False,
 }
 
 
