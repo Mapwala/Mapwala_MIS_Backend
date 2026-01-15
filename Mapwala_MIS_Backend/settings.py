@@ -214,10 +214,6 @@ JAZZMIN_SETTINGS = {
     },
     "language_chooser": False,
     
-    # "navigation_autocollapse": True,
-    
-    # "app_name": "Mapwala MIS",
-    
     "icons": {
         "auth": "fas fa-users-cog",
         "auth.user": "fas fa-user",
@@ -241,15 +237,6 @@ JAZZMIN_SETTINGS = {
         "mapwala_mis.B2CCustomer",
         "mapwala_mis.B2BPartner",
     ],
-    
-    # "changeform_format_overrides": {
-    #     "auth.user": "collapsible",
-    #     "auth.group": "vertical_tabs",
-    #     "mapwala_mis.parentcompany": "horizontal_tabs",
-    #     "mapwala_mis.vendor": "horizontal_tabs",
-    #     "mapwala_mis.b2ccustomer": "horizontal_tabs",
-    #     "mapwala_mis.b2bpartner": "horizontal_tabs",
-    # },
 }
 
 

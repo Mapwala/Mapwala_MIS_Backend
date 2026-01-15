@@ -15,6 +15,7 @@ from django.shortcuts import get_object_or_404
 from django.db import transaction
 from collections import defaultdict
 from rest_framework.throttling import ScopedRateThrottle
+from decimal import Decimal
 
 from .serializers import *
 from .models import *
@@ -1002,5 +1003,280 @@ class PurchaseOrderItemsAPIView(APIView):
             for item in po.items.all()
         ])
 
+
+# ---------------- Dispatch Workflow APIs ----------------
+# ---------------- STEP 1 ----------------
+class DispatchStep1APIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = DispatchStep1Serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        dispatch = Dispatch.objects.create(
+            **serializer.validated_data,
+            created_by=request.user
+        )
+
+        return Response(
+            {"dispatch_id": dispatch.id},
+            status=status.HTTP_201_CREATED
+        )
+
+
+# ---------------- STEP 2 ----------------
+class DispatchStep2APIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, dispatch_id):
+        dispatch = get_object_or_404(Dispatch, id=dispatch_id)
+
+        serializer = DispatchStep2Serializer(
+            dispatch,
+            data=request.data,
+            partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        remaining_stock = (
+            dispatch.batch.available_stock - dispatch.dispatch_quantity
+        )
+
+        return Response(
+            {
+                "message": "Stock verified",
+                "remaining_stock": remaining_stock
+            }
+        )
+
+
+# ---------------- STEP 3 ----------------
+class DispatchStep3APIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, dispatch_id):
+        dispatch = get_object_or_404(Dispatch, id=dispatch_id)
+
+        # 🚫 Block if Step-2 not completed
+        if not all([
+            dispatch.product,
+            dispatch.batch,
+            dispatch.dispatch_quantity
+        ]):
+            return Response(
+                {
+                    "error": "Step-2 (Stock Verification) must be completed first."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = DispatchStep3Serializer(
+            dispatch,
+            data=request.data,
+            partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response({"message": "Dispatch details saved"})
+
+
+
+# ---------------- STEP 4 ----------------
+class DispatchStep4APIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request, dispatch_id):
+        dispatch = get_object_or_404(Dispatch, id=dispatch_id)
+
+        # 🚫 Block if Step-3 not completed
+        if not dispatch.dispatch_date:
+            return Response(
+                {
+                    "error": "Step-3 (Dispatch Details) must be completed first."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = DispatchStep4Serializer(
+            dispatch,
+            data=request.data,
+            partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        # 🔐 Prevent double stock deduction
+        if not dispatch.stock_deducted:
+            batch = dispatch.batch
+
+            if dispatch.dispatch_quantity > batch.available_stock:
+                return Response(
+                    {
+                        "error": "Insufficient stock at final dispatch."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            batch.available_stock -= dispatch.dispatch_quantity
+            batch.save(update_fields=["available_stock"])
+
+            dispatch.stock_deducted = True
+
+        # ✅ Mark workflow completed
+        dispatch.status = "completed"
+        dispatch.save(update_fields=["status", "stock_deducted"])
+
+        return Response(
+            {
+                "message": "Dispatch completed successfully",
+                "dispatch_id": dispatch.id
+            },
+            status=status.HTTP_200_OK
+        )
+
+
+# ---------------- Dropdown APIs for Dispatch Workflow ----------------
+class SalesOrderDropdownAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response([
+            {"id": so.id, "label": f"SO-{so.id}"}
+            for so in SalesOrder.objects.all().order_by("-id")
+        ])
+
+
+class DispatchOrderTypeDropdownAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response([
+            {"key": "distributor", "label": "Distributor"},
+            {"key": "dealer", "label": "Dealer"},
+            {"key": "b2c", "label": "B2C Customer"},
+        ])
+
+
+class DispatchProductDropdownAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response([
+            {"id": p.id, "label": p.name}
+            for p in OrderProduct.objects.all().order_by("name")
+        ])
+
+
+class DispatchBatchDropdownAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        product_id = request.query_params.get("product_id")
+
+        if not product_id:
+            return Response(
+                {"error": "product_id is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return Response([
+            {
+                "id": b.id,
+                "label": b.batch_number,
+                "available_stock": b.available_stock
+            }
+            for b in OrderBatch.objects.filter(product_id=product_id)
+        ])
+
+
+# ----------------------------------
+# Create Post Dispatch Return API
+# ----------------------------------
+class PostDispatchReturnCreateAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request):
+        serializer = PostDispatchReturnCreateSerializer(
+            data=request.data
+        )
+        serializer.is_valid(raise_exception=True)
+
+        header_data = serializer.validated_data["header"]
+        items_data = serializer.validated_data["items"]
+
+        # Create main return record
+        return_obj = PostDispatchReturn.objects.create(
+            **header_data,
+            created_by=request.user
+        )
+
+        total_amount = Decimal("0.00")
+
+        # Create item records
+        for item in items_data:
+            item_amount = (
+                Decimal(item["return_qty"]) * item["unit_price"]
+            )
+
+            total_amount += item_amount
+
+            PostDispatchReturnItem.objects.create(
+                post_dispatch_return=return_obj,
+                product_id=item["product_id"],
+                description=item["description"],
+                dispatched_qty=item["dispatched_qty"],
+                unit_price=item["unit_price"],
+                return_qty=item["return_qty"],
+                return_amount=item_amount,
+            )
+
+        # Update calculated total
+        return_obj.total_return_amount = total_amount
+        return_obj.save(update_fields=["total_return_amount"])
+
+        return Response(
+            {
+                "return_id": return_obj.id,
+                "total_return_amount": total_amount,
+                "message": "Return created and credit note initiated"
+            },
+            status=status.HTTP_201_CREATED
+        )
+
+
+# ----------------------------------
+# Return Type Dropdown API
+# ----------------------------------
+class ReturnTypeDropdownAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response([
+            {"key": "full", "label": "Full Return (All Items)"},
+            {"key": "partial", "label": "Partial Return (Some Items)"},
+            {"key": "replacement", "label": "Return for Replacement"},
+        ])
+
+
+# ----------------------------------
+# Return Reason Dropdown API
+# ----------------------------------
+class ReturnReasonDropdownAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response([
+            {"key": "damaged", "label": "Damaged in Transit"},
+            {"key": "defective", "label": "Defective Product"},
+            {"key": "wrong_item", "label": "Wrong Item Delivered"},
+            {"key": "rejected", "label": "Customer Rejection"},
+            {"key": "quality", "label": "Quality Issues"},
+            {"key": "spec_mismatch", "label": "Specification Mismatch"},
+            {"key": "other", "label": "Other"},
+        ])
 
 

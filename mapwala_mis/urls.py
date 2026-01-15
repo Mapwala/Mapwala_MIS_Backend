@@ -70,6 +70,25 @@ urlpatterns = [
     path("dropdowns/purchase-orders/",PurchaseOrderDropdown.as_view(),name="purchase-order-dropdown"),
     path("dropdowns/inward-types/",InwardTypeDropdown.as_view(),name="inward-type-dropdown"),
     path("purchase/<int:po_id>/items/",PurchaseOrderItemsAPIView.as_view(),name="purchase-order-items"),
+    
+    # Create post-dispatch return
+    path("returns/post-dispatch/create/",PostDispatchReturnCreateAPIView.as_view(),name="post-dispatch-return-create"),
+
+    # Post-Dispatch Return Dropdowns
+    path("dropdowns/return-types/",ReturnTypeDropdownAPIView.as_view(),name="return-type-dropdown"),
+    path("dropdowns/return-reasons/",ReturnReasonDropdownAPIView.as_view(),name="return-reason-dropdown"),
+    
+    # ---------------- Dispatch Workflow ----------------
+    path("dispatch/step-1/", DispatchStep1APIView.as_view()),
+    path("dispatch/step-2/<int:dispatch_id>/", DispatchStep2APIView.as_view()),
+    path("dispatch/step-3/<int:dispatch_id>/", DispatchStep3APIView.as_view()),
+    path("dispatch/step-4/<int:dispatch_id>/", DispatchStep4APIView.as_view()),
+
+    # Dispatch Workflow Dropdowns
+    path("dropdowns/sales-orders/", SalesOrderDropdownAPIView.as_view()),
+    path("dropdowns/dispatch-order-types/", DispatchOrderTypeDropdownAPIView.as_view()),
+    path("dropdowns/dispatch-products/", DispatchProductDropdownAPIView.as_view()),
+    path("dropdowns/dispatch-batches/", DispatchBatchDropdownAPIView.as_view()),
 ]
 
 urlpatterns += router.urls

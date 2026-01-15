@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate
 from rest_framework import serializers
+from decimal import Decimal
 from .models import *
 import json
 
@@ -558,6 +559,7 @@ class RFQStep1Serializer(serializers.ModelSerializer):
             "quantity",
         ]
 
+
 # Step-2 Serializer
 class RFQStep2Serializer(serializers.Serializer):
     bom_parts = serializers.ListField(
@@ -572,6 +574,7 @@ class RFQStep2Serializer(serializers.Serializer):
         child=serializers.CharField(),
         required=False
     )
+
 
 # Step-3 Serializer
 class RFQStep3Serializer(serializers.Serializer):
@@ -606,7 +609,6 @@ class PurchaseStep1Serializer(serializers.Serializer):
         ),
         min_length=1
     )
-
 
 
 # ---------- Create Purchase Order STEP 2 ----------
@@ -644,8 +646,6 @@ class MRNItemSerializer(serializers.Serializer):
     serial_numbers = serializers.CharField(required=False, allow_blank=True)
 
 
-
-
 class MRNCreateSerializer(serializers.Serializer):
     purchase_order_id = serializers.IntegerField()
     po_date = serializers.DateField()
@@ -673,6 +673,127 @@ class MRNCreateSerializer(serializers.Serializer):
 
         return data
 
+
+# ---------------- Dispatch Workflow ----------------
+# ---------------- STEP 1 ----------------
+class DispatchStep1Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = Dispatch
+        fields = [
+            "sales_order",
+            "order_type",
+        ]
+
+
+# ---------------- STEP 2 ----------------
+class DispatchStep2Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = Dispatch
+        fields = [
+            "product",
+            "batch",
+            "dispatch_quantity",
+            "imei_number",
+            "serial_number",
+            "iccid_number",
+        ]
+
+    def validate(self, data):
+        batch = data["batch"]
+        qty = data["dispatch_quantity"]
+
+        if qty > batch.available_stock:
+            raise serializers.ValidationError(
+                "Dispatch quantity cannot exceed available stock."
+            )
+
+        return data
+
+
+# ---------------- STEP 3 ----------------
+class DispatchStep3Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = Dispatch
+        fields = [
+            "dispatch_date",
+            "dispatch_remarks",
+        ]
+
+
+# ---------------- STEP 4 ----------------
+class DispatchStep4Serializer(serializers.ModelSerializer):
+    class Meta:
+        model = Dispatch
+        fields = [
+            "customer_name",
+            "customer_contact",
+            "customer_email",
+            "customer_address",
+            "urgent_delivery_required",
+            "insurance_required",
+        ]
+
+
+# ---------------------------
+# Header Serializer (Step 2)
+# ---------------------------
+class PostDispatchReturnHeaderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PostDispatchReturn
+        fields = [
+            "dispatch_id",
+            "invoice_no",
+            "customer_name",
+            "dispatch_total_value",
+            "return_type",
+            "return_reason",
+            "return_date",
+            "return_remarks",
+        ]
+
+
+# ---------------------------
+# Item Serializer (Step 3)
+# ---------------------------
+class PostDispatchReturnItemSerializer(serializers.Serializer):
+    product_id = serializers.CharField()
+    description = serializers.CharField()
+    dispatched_qty = serializers.IntegerField(min_value=1)
+    unit_price = serializers.DecimalField(
+        max_digits=10,
+        decimal_places=2
+    )
+    return_qty = serializers.IntegerField(min_value=1)
+
+    def validate(self, data):
+        if data["return_qty"] > data["dispatched_qty"]:
+            raise serializers.ValidationError(
+                "Return quantity cannot exceed dispatched quantity."
+            )
+        return data
+
+
+# ---------------------------
+# Final Submit Serializer
+# ---------------------------
+class PostDispatchReturnCreateSerializer(serializers.Serializer):
+    header = PostDispatchReturnHeaderSerializer()
+    items = PostDispatchReturnItemSerializer(many=True)
+
+    def validate(self, data):
+        if not data.get("items"):
+            raise serializers.ValidationError(
+                "At least one item must be selected for return."
+            )
+        return data
+
+
+# ---------------------------
+# Generic Dropdown Serializer
+# ---------------------------
+class DropdownSerializer(serializers.Serializer):
+    key = serializers.CharField()
+    label = serializers.CharField()
 
 
 

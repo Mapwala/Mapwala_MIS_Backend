@@ -3237,6 +3237,432 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Dispatch",
+			"item": [
+				{
+					"name": "Sales Order Dropdown API",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NTQ2NDU4LCJpYXQiOjE3Njg0NjAwNTgsImp0aSI6IjYyMjUxNjRhZDBkZjQ0YzQ5NjAwNTA1NDQ3NGJlMmVmIiwidXNlcl9pZCI6IjMifQ.PLNTyBzLD4ynY8vHnwGIuCXW-JzhD0m26jZr3G7m7J8"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/dropdowns/sales-orders/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"dropdowns",
+								"sales-orders",
+								""
+							]
+						},
+						"description": "StartFragment\n\n# 📄 Sales Order Dropdown API Documentation\n\nThis API is used to **fetch a list of Sales Orders** for selection in dropdowns (e.g., Dispatch Step-1).\n\n---\n\n---\n\n### Sales Order Dropdown\n\n---\n\n**Method:**  \n`GET`\n\n**URL:**\n\n```\n/api/dropdowns/sales-orders/\n\n ```\n\n**Auth:**\n\n✅ Required (JWT Bearer Token)\n\n**Purpose / Description:**\n\nReturns a list of existing **Sales Orders** in a simple `{id, label}` format, suitable for rendering directly in a dropdown UI.\n\nThe latest Sales Orders appear first.\n\n---\n\n## 🔐 Headers\n\n| Header | Value | Required |\n| --- | --- | --- |\n| Authorization | Bearer | ✅ Yes |\n| Content-Type | application/json | ❌ Optional |\n\n---\n\n## 🔎 Query Parameters\n\n❌ **None**\n\nThis endpoint does not accept any query parameters.\n\n---\n\n## 📥 Request Body\n\n❌ **Not Required**\n\nThis is a GET request.\n\n---\n\n## ✅ Example cURL Request\n\n```\ncurl --location 'http://127.0.0.1:8000/api/dropdowns/sales-orders/' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27;\n\n ```\n\n---\n\n## ✅ Success Response\n\n### **HTTP 200 OK**\n\n```\n[\n  { \"id\": 13, \"label\": \"SO-13\" },\n  { \"id\": 12, \"label\": \"SO-12\" },\n  { \"id\": 11, \"label\": \"SO-11\" },\n  { \"id\": 10, \"label\": \"SO-10\" },\n  { \"id\": 9,  \"label\": \"SO-9\"  },\n  { \"id\": 8,  \"label\": \"SO-8\"  },\n  { \"id\": 7,  \"label\": \"SO-7\"  },\n  { \"id\": 6,  \"label\": \"SO-6\"  },\n  { \"id\": 5,  \"label\": \"SO-5\"  },\n  { \"id\": 4,  \"label\": \"SO-4\"  },\n  { \"id\": 3,  \"label\": \"SO-3\"  },\n  { \"id\": 2,  \"label\": \"SO-2\"  },\n  { \"id\": 1,  \"label\": \"SO-1\"  }\n]\n\n ```\n\n---\n\n## 🧠 How Frontend Should Use This Response\n\n- Use `id` as the **value** sent to backend\n    \n- Use `label` as the **display text** in dropdown\n    \n\n### Example (React)\n\n```\n<Select>\n  {salesOrders.map(so => (\n    <Option key={so.id} value={so.id}>\n      {so.label}\n    </Option>\n  ))}\n</Select>\n\n ```\n\n---\n\n# ❌ ERROR SCENARIOS (ALL POSSIBLE & REALISTIC)\n\n---\n\n## ❌ 401 Unauthorized — Missing Token\n\n**When this happens**\n\n- Authorization header is missing\n    \n\n### Response\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n**Frontend Handling**\n\n- Redirect user to login\n    \n- Do not retry automatically\n    \n\n---\n\n## ❌ 401 Unauthorized — Invalid / Expired Token\n\n**When this happens**\n\n- Token is expired or malformed\n    \n\n### Response\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n**Frontend Handling**\n\n- Refresh token or force logout\n    \n- Redirect to login page\n    \n\n---\n\n## ❌ 403 Forbidden — Permission Denied\n\n**When this happens**\n\n- User is authenticated but not allowed to access this resource\n    \n\n### Response\n\n```\n{\n  \"detail\": \"You do not have permission to perform this action.\"\n}\n\n ```\n\n**Frontend Handling**\n\n- Show access denied message\n    \n- Hide dispatch functionality\n    \n\n---\n\n## ❌ 500 Internal Server Error\n\n**When this happens**\n\n- Database error\n    \n- Unexpected backend exception\n    \n\n### Response\n\n```\n{\n  \"detail\": \"Internal Server Error\"\n}\n\n ```\n\n**Frontend Handling**\n\n- Show generic error message\n    \n- Allow retry\n    \n- Optionally log error\n    \n\n---\n\n## ⚠️ Empty List (Not an Error)\n\n### Scenario\n\n- No sales orders exist in the system\n    \n\n### Response (200 OK)\n\n```\n[]\n\n ```\n\n**Frontend Handling**\n\n- Show “No Sales Orders Available”\n    \n- Disable “Create Dispatch” button\n    \n\n---\n\n# ✅ Summary for Frontend Developers\n\n| Item | Details |\n| --- | --- |\n| Purpose | Populate Sales Order dropdown |\n| Method | GET |\n| Auth | Required |\n| Retry Safe | ✅ Yes |\n| Caching | Optional |\n| Response Ready for UI | ✅ Yes |\n| Error Handling Needed | 401, 403, 500 |\n\n---\n\n## 📌 Important Notes\n\n- This endpoint is **read-only**\n    \n- Safe to call multiple times\n    \n- No pagination needed (dropdown use-case)\n    \n- Always call before Dispatch Step-1\n    \n\nEndFragment"
+					},
+					"response": []
+				},
+				{
+					"name": "Dispatch Order Type Dropdown API",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NTQ2NDU4LCJpYXQiOjE3Njg0NjAwNTgsImp0aSI6IjYyMjUxNjRhZDBkZjQ0YzQ5NjAwNTA1NDQ3NGJlMmVmIiwidXNlcl9pZCI6IjMifQ.PLNTyBzLD4ynY8vHnwGIuCXW-JzhD0m26jZr3G7m7J8"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/dropdowns/dispatch-order-types/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"dropdowns",
+								"dispatch-order-types",
+								""
+							]
+						},
+						"description": "StartFragment\n\n# 📄 Dispatch Order Type Dropdown API Documentation\n\nThis API is used to **fetch available order types** for the **Dispatch creation flow (Step-1)**.  \n  \nIt provides static, backend-controlled values to ensure **data consistency**.\n\n---\n\n---\n\n### Dispatch Order Type Dropdown\n\n---\n\n**Method:**  \n`GET`\n\n**URL:**\n\n```\n/api/dropdowns/dispatch-order-types/\n\n ```\n\n**Auth:**  \n  \n✅ Required (JWT Bearer Token)\n\n**Description / Purpose:**  \n  \nReturns a list of **allowed dispatch order types** that the user can select while creating a Dispatch.  \n  \nThe values returned here must be sent exactly as-is in **Dispatch Step-1**.\n\n---\n\n## 🔐 Headers\n\n| Header | Value | Required |\n| --- | --- | --- |\n| Authorization | Bearer | ✅ Yes |\n| Content-Type | application/json | ❌ Optional |\n\n---\n\n## 🔎 Query Parameters\n\n❌ **None**\n\nThis endpoint does not accept query parameters.\n\n---\n\n## 📥 Request Body\n\n❌ **Not Required**\n\nThis is a GET request.\n\n---\n\n## ✅ Example cURL Request\n\n```\ncurl --location 'http://127.0.0.1:8000/api/dropdowns/dispatch-order-types/' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27;\n\n ```\n\n---\n\n## ✅ Success Response\n\n### **HTTP 200 OK**\n\n```\n[\n  {\n    \"key\": \"distributor\",\n    \"label\": \"Distributor\"\n  },\n  {\n    \"key\": \"dealer\",\n    \"label\": \"Dealer\"\n  },\n  {\n    \"key\": \"b2c\",\n    \"label\": \"B2C Customer\"\n  }\n]\n\n ```\n\n---\n\n## 🧠 How Frontend Should Use This Response\n\n- Use **`key`** as the value sent to backend\n    \n- Use **`label`** as the dropdown display text\n    \n\n### Example (React / Vue / Angular)\n\n```\n<Select>\n  {orderTypes.map(type => (\n    <Option key={type.key} value={type.key}>\n      {type.label}\n    </Option>\n  ))}\n</Select>\n\n ```\n\n---\n\n## 📌 Important Rules for Frontend\n\n- The value sent to backend **must be one of the returned keys**\n    \n- Do **not hardcode** these values in frontend\n    \n- Always fetch from this API to avoid mismatch with backend validation\n    \n\n---\n\n# ❌ ERROR SCENARIOS (ALL REALISTIC CASES)\n\n---\n\n## ❌ 401 Unauthorized — Missing Token\n\n### When this happens\n\n- Authorization header is missing\n    \n\n### Response\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n**Frontend Handling**\n\n- Redirect user to login\n    \n- Do not retry automatically\n    \n\n---\n\n## ❌ 401 Unauthorized — Invalid or Expired Token\n\n### When this happens\n\n- Token is expired, malformed, or revoked\n    \n\n### Response\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n**Frontend Handling**\n\n- Attempt token refresh\n    \n- If refresh fails, logout user\n    \n\n---\n\n## ❌ 403 Forbidden — Permission Denied\n\n### When this happens\n\n- User is authenticated but not allowed to access dispatch features\n    \n\n### Response\n\n```\n{\n  \"detail\": \"You do not have permission to perform this action.\"\n}\n\n ```\n\n**Frontend Handling**\n\n- Hide Dispatch UI\n    \n- Show “Access Denied” message\n    \n\n---\n\n## ❌ 500 Internal Server Error\n\n### When this happens\n\n- Unexpected backend failure\n    \n- Configuration or server issue\n    \n\n### Response\n\n```\n{\n  \"detail\": \"Internal Server Error\"\n}\n\n ```\n\n**Frontend Handling**\n\n- Show generic error message\n    \n- Allow retry\n    \n- Log error for debugging\n    \n\n---\n\n## ⚠️ Empty Response (NOT an error)\n\n### Scenario\n\n- Backend temporarily disables order types (rare)\n    \n\n### Response (200 OK)\n\n```\n[]\n\n ```\n\n**Frontend Handling**\n\n- Disable submit button\n    \n- Show “No order types available”\n    \n\n---\n\n# ✅ Summary for Frontend Developers\n\n| Item | Details |\n| --- | --- |\n| Purpose | Populate Dispatch Order Type dropdown |\n| Method | GET |\n| Authentication | Required |\n| Retry Safe | ✅ Yes |\n| Static Values | Yes (backend-controlled) |\n| Frontend Hardcoding | ❌ Not allowed |\n\n---\n\n## 🔗 Used In\n\n- **Dispatch – Step 1 (Create Dispatch)**\n    \n\nEndFragment"
+					},
+					"response": []
+				},
+				{
+					"name": "Dispatch Product Dropdown API",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NTQ2NDU4LCJpYXQiOjE3Njg0NjAwNTgsImp0aSI6IjYyMjUxNjRhZDBkZjQ0YzQ5NjAwNTA1NDQ3NGJlMmVmIiwidXNlcl9pZCI6IjMifQ.PLNTyBzLD4ynY8vHnwGIuCXW-JzhD0m26jZr3G7m7J8"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/dropdowns/dispatch-products/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"dropdowns",
+								"dispatch-products",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location \"http://127.0.0.1:8000/api/dropdowns/dispatch-products/\" \\\r\n-H \"Authorization: Bearer <ACCESS_TOKEN>\"\r\n"
+					},
+					"response": []
+				},
+				{
+					"name": "Dispatch Batch Dropdown API",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NTQ2NDU4LCJpYXQiOjE3Njg0NjAwNTgsImp0aSI6IjYyMjUxNjRhZDBkZjQ0YzQ5NjAwNTA1NDQ3NGJlMmVmIiwidXNlcl9pZCI6IjMifQ.PLNTyBzLD4ynY8vHnwGIuCXW-JzhD0m26jZr3G7m7J8"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/dropdowns/dispatch-batches/?product_id=2",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"dropdowns",
+								"dispatch-batches",
+								""
+							],
+							"query": [
+								{
+									"key": "product_id",
+									"value": "2"
+								}
+							]
+						},
+						"description": "Generated from cURL: curl --location \"http://127.0.0.1:8000/api/dropdowns/dispatch-batches/?product_id=1\" \\\r\n-H \"Authorization: Bearer <ACCESS_TOKEN>\"\r\n"
+					},
+					"response": []
+				},
+				{
+					"name": "Dispatch – Step 1 (Create Dispatch) API",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NTQ2NDU4LCJpYXQiOjE3Njg0NjAwNTgsImp0aSI6IjYyMjUxNjRhZDBkZjQ0YzQ5NjAwNTA1NDQ3NGJlMmVmIiwidXNlcl9pZCI6IjMifQ.PLNTyBzLD4ynY8vHnwGIuCXW-JzhD0m26jZr3G7m7J8"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"sales_order\": 13,\r\n  \"order_type\": \"distributor\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/dispatch/step-1/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"dispatch",
+								"step-1",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/dispatch/step-1/' \\\r\n-H 'Authorization: Bearer <ACCESS_TOKEN>' \\\r\n-H 'Content-Type: application/json' \\\r\n--data '{\r\n  \"sales_order\": 13,\r\n  \"order_type\": \"distributor\"\r\n}'\r\n"
+					},
+					"response": []
+				},
+				{
+					"name": "Dispatch – Step 2 (Stock Verification) API",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NTQ2NDU4LCJpYXQiOjE3Njg0NjAwNTgsImp0aSI6IjYyMjUxNjRhZDBkZjQ0YzQ5NjAwNTA1NDQ3NGJlMmVmIiwidXNlcl9pZCI6IjMifQ.PLNTyBzLD4ynY8vHnwGIuCXW-JzhD0m26jZr3G7m7J8"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"product\": 2,\r\n  \"batch\": 12,\r\n  \"dispatch_quantity\": 50,\r\n  \"imei_number\": \"356789012345678\",\r\n  \"serial_number\": \"SN-987654\",\r\n  \"iccid_number\": \"8991001200234567890\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/dispatch/step-2/4/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"dispatch",
+								"step-2",
+								"4",
+								""
+							]
+						},
+						"description": "StartFragment\n\n# 📄 Dispatch – Step 2 (Stock Verification) API Documentation\n\nThis API is used to **select product & batch**, verify **available stock**, and save **dispatch quantity and identifiers**.  \n  \nThis is a **mandatory step** before entering dispatch details.\n\n---\n\n---\n\n### Dispatch Stock Verification (Step 2)\n\n---\n\n**Method:**  \n`POST`\n\n**URL:**\n\n```\n/api/dispatch/step-2/{dispatch_id}/\n\n ```\n\n**Auth:**  \n  \n✅ Required (JWT Bearer Token)\n\n**Description / Purpose:**  \n  \nAssigns product and batch to a dispatch and validates whether the requested quantity can be dispatched based on available stock.  \n  \nNo stock is deducted at this stage — only verification happens.\n\n---\n\n## 🔐 Headers\n\n| Header | Value | Required |\n| --- | --- | --- |\n| Authorization | Bearer | ✅ Yes |\n| Content-Type | application/json | ✅ Yes |\n\n---\n\n## 🔎 URL Parameters\n\n| Name | Type | Required | Description |\n| --- | --- | --- | --- |\n| dispatch_id | integer | ✅ Yes | Dispatch ID returned from Step-1 |\n\n---\n\n## 📥 Request Body\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| product | integer | ✅ Yes | Product ID selected from product dropdown |\n| batch | integer | ✅ Yes | Batch ID selected from batch dropdown |\n| dispatch_quantity | integer | ✅ Yes | Quantity to be dispatched |\n| imei_number | string | ❌ Optional | IMEI number |\n| serial_number | string | ❌ Optional | Serial number |\n| iccid_number | string | ❌ Optional | ICCID number |\n\n---\n\n## ✅ Example cURL Request\n\n```\ncurl --location 'http://127.0.0.1:8000/api/dispatch/step-2/4/' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27; \\\n--header 'Content-Type: application/json' \\\n--data '{\n  \"product\": 2,\n  \"batch\": 12,\n  \"dispatch_quantity\": 50,\n  \"imei_number\": \"356789012345678\",\n  \"serial_number\": \"SN-987654\",\n  \"iccid_number\": \"8991001200234567890\"\n}'\n\n ```\n\n---\n\n## ✅ Success Response\n\n### **HTTP 200 OK**\n\n```\n{\n  \"message\": \"Stock verified\",\n  \"remaining_stock\": 45034\n}\n\n ```\n\n---\n\n## 🧠 How Frontend Should Use This Response\n\n- Display `remaining_stock` to user\n    \n- Allow proceeding to **Step-3**\n    \n- Do NOT deduct stock on frontend\n    \n- Re-verify stock if batch or quantity changes\n    \n\n---\n\n# ❌ ERROR SCENARIOS (ALL REALISTIC CASES)\n\n---\n\n## ❌ 400 Bad Request — Missing Required Fields\n\n### When this happens\n\n- Required fields are missing\n    \n\n### Response\n\n```\n{\n  \"product\": [\"This field is required.\"]\n}\n\n ```\n\nor\n\n```\n{\n  \"batch\": [\"This field is required.\"]\n}\n\n ```\n\nor\n\n```\n{\n  \"dispatch_quantity\": [\"This field is required.\"]\n}\n\n ```\n\n**Frontend Handling**\n\n- Show field-level validation errors\n    \n- Prevent submission\n    \n\n---\n\n## ❌ 400 Bad Request — Dispatch Quantity Exceeds Stock\n\n### When this happens\n\n- `dispatch_quantity` > `available_stock`\n    \n\n### Response\n\n```\n{\n  \"non_field_errors\": [\n    \"Dispatch quantity cannot exceed available stock.\"\n  ]\n}\n\n ```\n\n**Frontend Handling**\n\n- Display error message\n    \n- Reduce quantity or select another batch\n    \n\n---\n\n## ❌ 400 Bad Request — Invalid Quantity\n\n### When this happens\n\n- Quantity is zero or negative\n    \n\n### Response\n\n```\n{\n  \"dispatch_quantity\": [\n    \"Ensure this value is greater than or equal to 1.\"\n  ]\n}\n\n ```\n\n**Frontend Handling**\n\n- Enforce minimum quantity in UI\n    \n\n---\n\n## ❌ 404 Not Found — Invalid Dispatch ID\n\n### When this happens\n\n- Dispatch ID does not exist\n    \n\n### Response\n\n```\n{\n  \"detail\": \"Not found.\"\n}\n\n ```\n\n**Frontend Handling**\n\n- Restart dispatch flow\n    \n- Call Step-1 again\n    \n\n---\n\n## ❌ 404 Not Found — Invalid Product or Batch\n\n### When this happens\n\n- Product or Batch ID is invalid\n    \n\n### Response\n\n```\n{\n  \"detail\": \"Not found.\"\n}\n\n ```\n\n**Frontend Handling**\n\n- Refresh dropdowns\n    \n- Ask user to reselect product/batch\n    \n\n---\n\n## ❌ 400 Bad Request — Dispatch Already Completed\n\n### When this happens\n\n- Attempting to modify a completed dispatch\n    \n\n### Response\n\n```\n{\n  \"error\": \"Dispatch is already completed and cannot be modified.\"\n}\n\n ```\n\n**Frontend Handling**\n\n- Disable Step-2 form\n    \n- Show read-only summary\n    \n\n---\n\n## ❌ 401 Unauthorized — Missing Token\n\n### Response\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n**Frontend Handling**\n\n- Redirect to login\n    \n\n---\n\n## ❌ 401 Unauthorized — Invalid / Expired Token\n\n### Response\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n**Frontend Handling**\n\n- Refresh token\n    \n- Logout if refresh fails\n    \n\n---\n\n## ❌ 403 Forbidden — Permission Denied\n\n### Response\n\n```\n{\n  \"detail\": \"You do not have permission to perform this action.\"\n}\n\n ```\n\n**Frontend Handling**\n\n- Hide dispatch module\n    \n\n---\n\n## ❌ 500 Internal Server Error\n\n### Response\n\n```\n{\n  \"detail\": \"Internal Server Error\"\n}\n\n ```\n\n**Frontend Handling**\n\n- Show generic error\n    \n- Allow retry\n    \n- Log error\n    \n\n---\n\n# ⚠️ IMPORTANT FRONTEND RULES\n\n- Must complete Step-1 before Step-2\n    \n- Always use dropdown APIs for IDs\n    \n- Do not hardcode stock values\n    \n- Step-2 can be retried safely\n    \n\n---\n\n# ✅ Summary for Frontend Developers\n\n| Item | Details |\n| --- | --- |\n| Purpose | Verify stock & save product selection |\n| Method | POST |\n| Authentication | Required |\n| Stock Deduction | ❌ No |\n| Retry Safe | ✅ Yes |\n| Blocks Next Step | ❌ Until valid |\n\n---\n\n## 🔗 Used In\n\n- **Dispatch – Step 2 (Stock Verification)**\n    \n\nEndFragment"
+					},
+					"response": []
+				},
+				{
+					"name": "Dispatch – Step 3 (Dispatch Details) API",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NTQ2NDU4LCJpYXQiOjE3Njg0NjAwNTgsImp0aSI6IjYyMjUxNjRhZDBkZjQ0YzQ5NjAwNTA1NDQ3NGJlMmVmIiwidXNlcl9pZCI6IjMifQ.PLNTyBzLD4ynY8vHnwGIuCXW-JzhD0m26jZr3G7m7J8"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"dispatch_date\": \"2026-01-20\",\r\n  \"dispatch_remarks\": \"Handle with care\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/dispatch/step-3/4/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"dispatch",
+								"step-3",
+								"4",
+								""
+							]
+						},
+						"description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/dispatch/step-3/21/' \\\r\n-H 'Authorization: Bearer <ACCESS_TOKEN>' \\\r\n-H 'Content-Type: application/json' \\\r\n--data '{\r\n  \"dispatch_date\": \"2026-01-20\",\r\n  \"dispatch_remarks\": \"Handle with care\"\r\n}'\r\n"
+					},
+					"response": []
+				},
+				{
+					"name": "Dispatch – Step 4 (Finalize Dispatch) API",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NTQ2NDU4LCJpYXQiOjE3Njg0NjAwNTgsImp0aSI6IjYyMjUxNjRhZDBkZjQ0YzQ5NjAwNTA1NDQ3NGJlMmVmIiwidXNlcl9pZCI6IjMifQ.PLNTyBzLD4ynY8vHnwGIuCXW-JzhD0m26jZr3G7m7J8"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"customer_name\": \"Vaibhav Sharma\",\r\n  \"customer_contact\": \"9876543210\",\r\n  \"customer_email\": \"vaibhav@gmail.com\",\r\n  \"customer_address\": \"Delhi, India\",\r\n  \"urgent_delivery_required\": true,\r\n  \"insurance_required\": true\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/dispatch/step-4/4/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"dispatch",
+								"step-4",
+								"4",
+								""
+							]
+						},
+						"description": "StartFragment\n\n# 📄 Dispatch – Step 4 (Finalize Dispatch) API Documentation\n\nThis API is the **final step** in the Dispatch workflow.  \n  \nIt saves **customer details**, **deducts stock exactly once**, and marks the Dispatch as **completed**.\n\n---\n\n---\n\n### Finalize Dispatch (Step 4)\n\n---\n\n**Method:**  \n`POST`\n\n**URL:**\n\n```\n/api/dispatch/step-4/{dispatch_id}/\n\n ```\n\n**Auth:**  \n  \n✅ Required (JWT Bearer Token)\n\n**Description / Purpose:**  \n  \nFinalizes a Dispatch by saving customer information, performing a **one-time stock deduction**, and updating the Dispatch status to **completed**.  \n  \nThis step is **blocked unless Step-3 is completed**.\n\n---\n\n## 🔐 Headers\n\n| Header | Value | Required |\n| --- | --- | --- |\n| Authorization | Bearer | ✅ Yes |\n| Content-Type | application/json | ✅ Yes |\n\n---\n\n## 🔎 URL Parameters\n\n| Name | Type | Required | Description |\n| --- | --- | --- | --- |\n| dispatch_id | integer | ✅ Yes | Dispatch ID from Step-1 |\n\n---\n\n## 📥 Request Body\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| customer_name | string | ✅ Yes | Customer full name |\n| customer_contact | string | ✅ Yes | Customer phone number |\n| customer_email | string | ✅ Yes | Customer email address |\n| customer_address | string | ✅ Yes | Delivery address |\n| urgent_delivery_required | boolean | ❌ Optional | Urgent delivery flag |\n| insurance_required | boolean | ❌ Optional | Insurance required flag |\n\n---\n\n## ✅ Example cURL Request\n\n```\ncurl --location 'http://127.0.0.1:8000/api/dispatch/step-4/4/' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27; \\\n--header 'Content-Type: application/json' \\\n--data '{\n  \"customer_name\": \"Vaibhav Sharma\",\n  \"customer_contact\": \"9876543210\",\n  \"customer_email\": \"vaibhav@gmail.com\",\n  \"customer_address\": \"Delhi, India\",\n  \"urgent_delivery_required\": true,\n  \"insurance_required\": true\n}'\n\n ```\n\n---\n\n## ✅ Success Response\n\n### **HTTP 200 OK**\n\n```\n{\n  \"message\": \"Dispatch completed successfully\",\n  \"dispatch_id\": 4\n}\n\n ```\n\n---\n\n## 🧠 How Frontend Should Use This Response\n\n- Mark dispatch as **completed**\n    \n- Redirect user to **Dispatch summary / list page**\n    \n- Disable all editing for this dispatch\n    \n- Do **not retry** unless user refreshes accidentally\n    \n\n---\n\n# ❌ ERROR SCENARIOS (ALL REALISTIC CASES)\n\n---\n\n## ❌ 400 Bad Request — Missing Required Fields\n\n### When this happens\n\n- One or more required customer fields are missing\n    \n\n### Response\n\n```\n{\n  \"customer_name\": [\"This field is required.\"]\n}\n\n ```\n\nor\n\n```\n{\n  \"customer_email\": [\"This field is required.\"]\n}\n\n ```\n\n**Frontend Handling**\n\n- Highlight missing fields\n    \n- Prevent submission\n    \n\n---\n\n## ❌ 400 Bad Request — Step-3 Not Completed\n\n### When this happens\n\n- Dispatch date not saved in Step-3\n    \n\n### Response\n\n```\n{\n  \"error\": \"Step-3 (Dispatch Details) must be completed first.\"\n}\n\n ```\n\n**Frontend Handling**\n\n- Redirect user to Step-3\n    \n- Block final submission\n    \n\n---\n\n## ❌ 400 Bad Request — Insufficient Stock at Finalization\n\n### When this happens\n\n- Stock changed between Step-2 and Step-4\n    \n\n### Response\n\n```\n{\n  \"error\": \"Insufficient stock at final dispatch.\"\n}\n\n ```\n\n**Frontend Handling**\n\n- Show error message\n    \n- Redirect to Step-2 for re-verification\n    \n\n---\n\n## ❌ 400 Bad Request — Dispatch Already Completed\n\n### When this happens\n\n- Attempting to finalize the same dispatch again\n    \n\n### Response\n\n```\n{\n  \"message\": \"Dispatch completed successfully\",\n  \"dispatch_id\": 4\n}\n\n ```\n\n⚠️ **Idempotent behavior**\n\n**Frontend Handling**\n\n- Treat as success\n    \n- Do not show error\n    \n\n---\n\n## ❌ 404 Not Found — Invalid Dispatch ID\n\n### When this happens\n\n- `dispatch_id` does not exist\n    \n\n### Response\n\n```\n{\n  \"detail\": \"Not found.\"\n}\n\n ```\n\n**Frontend Handling**\n\n- Restart Dispatch workflow\n    \n- Return to Step-1\n    \n\n---\n\n## ❌ 401 Unauthorized — Missing Token\n\n### Response\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n**Frontend Handling**\n\n- Redirect to login\n    \n- Do not retry automatically\n    \n\n---\n\n## ❌ 401 Unauthorized — Invalid / Expired Token\n\n### Response\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n**Frontend Handling**\n\n- Refresh token\n    \n- Logout user if refresh fails\n    \n\n---\n\n## ❌ 403 Forbidden — Permission Denied\n\n### Response\n\n```\n{\n  \"detail\": \"You do not have permission to perform this action.\"\n}\n\n ```\n\n**Frontend Handling**\n\n- Hide Dispatch module\n    \n- Show access-denied message\n    \n\n---\n\n## ❌ 500 Internal Server Error\n\n### Response\n\n```\n{\n  \"detail\": \"Internal Server Error\"\n}\n\n ```\n\n**Frontend Handling**\n\n- Show generic error\n    \n- Allow retry\n    \n- Log error\n    \n\n---\n\n# ⚠️ IMPORTANT FRONTEND RULES\n\n- Step-4 must be called **only once per dispatch**\n    \n- Treat repeated calls as success (idempotent)\n    \n- Never deduct stock on frontend\n    \n- Disable editing after completion\n    \n\n---\n\n# ✅ Summary for Frontend Developers\n\n| Item | Details |\n| --- | --- |\n| Purpose | Finalize Dispatch |\n| Method | POST |\n| Authentication | Required |\n| Stock Deduction | ✅ Yes (once only) |\n| Retry Safe | ⚠️ Yes (idempotent) |\n| Marks Completed | ✅ Yes |\n\n---\n\n## 🔗 Used In\n\n- **Dispatch – Step 4 (Finalize Dispatch)**\n    \n\nEndFragment"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Post-Dispatch Returns",
+			"item": [
+				{
+					"name": "Post-Dispatch Return – Create API",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NTQ2NDU4LCJpYXQiOjE3Njg0NjAwNTgsImp0aSI6IjYyMjUxNjRhZDBkZjQ0YzQ5NjAwNTA1NDQ3NGJlMmVmIiwidXNlcl9pZCI6IjMifQ.PLNTyBzLD4ynY8vHnwGIuCXW-JzhD0m26jZr3G7m7J8"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"header\": {\r\n    \"dispatch_id\": \"DISP-001\",\r\n    \"invoice_no\": \"INV-123456\",\r\n    \"customer_name\": \"ABC Electronics Ltd.\",\r\n    \"dispatch_total_value\": \"275000\",\r\n    \"return_type\": \"partial\",\r\n    \"return_reason\": \"defective\",\r\n    \"return_date\": \"2026-01-17\",\r\n    \"return_remarks\": \"Defective units returned\"\r\n  },\r\n  \"items\": [\r\n    {\r\n      \"product_id\": \"GPS-PRO\",\r\n      \"description\": \"GPS-Tracker-Pro\",\r\n      \"dispatched_qty\": 100,\r\n      \"unit_price\": \"2500\",\r\n      \"return_qty\": 5\r\n    }\r\n  ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/returns/post-dispatch/create/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"returns",
+								"post-dispatch",
+								"create",
+								""
+							]
+						},
+						"description": "StartFragment\n\n# 📄 Post-Dispatch Return – Create API Documentation\n\nThis API is used to **create a post-dispatch return request** and **initiate a credit note** based on returned items.\n\nIt supports:\n\n- Full / Partial / Replacement returns\n    \n- Multiple return items\n    \n- Backend-calculated return amount (no frontend trust)\n    \n\n---\n\n---\n\n### Create Post-Dispatch Return\n\n---\n\n**Method:**  \n`POST`\n\n**URL:**\n\n```\n/api/returns/post-dispatch/create/\n\n ```\n\n**Auth:**  \n  \n✅ Required (JWT Bearer Token)\n\n**Description:**  \n  \nCreates a **post-dispatch return entry** with header information and one or more returned items.  \n  \nThe backend calculates the **total return amount** and initiates the credit note process.\n\n---\n\n## 🔐 Headers\n\n| Header | Value | Required |\n| --- | --- | --- |\n| Authorization | Bearer | ✅ Yes |\n| Content-Type | application/json | ✅ Yes |\n\n---\n\n## 🔎 Query Parameters\n\n❌ None\n\n---\n\n## 📥 Request Body\n\n### Root Object\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| header | object | ✅ Yes | Return header details |\n| items | array | ✅ Yes | List of returned items |\n\n---\n\n### Header Object\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| dispatch_id | string | ✅ Yes | Dispatch reference number |\n| invoice_no | string | ✅ Yes | Invoice number |\n| customer_name | string | ✅ Yes | Customer name |\n| dispatch_total_value | decimal (string) | ✅ Yes | Original dispatch total value |\n| return_type | string | ✅ Yes | `full`, `partial`, `replacement` |\n| return_reason | string | ✅ Yes | Reason for return |\n| return_date | date (YYYY-MM-DD) | ✅ Yes | Date of return |\n| return_remarks | string | ❌ Optional | Additional remarks |\n\n---\n\n### Items Array Object\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| product_id | string | ✅ Yes | Product identifier |\n| description | string | ✅ Yes | Product description |\n| dispatched_qty | integer | ✅ Yes | Quantity originally dispatched |\n| unit_price | decimal (string) | ✅ Yes | Price per unit |\n| return_qty | integer | ✅ Yes | Quantity being returned |\n\n---\n\n## ✅ Example cURL Request\n\n```\ncurl --location 'http://127.0.0.1:8000/api/returns/post-dispatch/create/' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27; \\\n--header 'Content-Type: application/json' \\\n--data '{\n  \"header\": {\n    \"dispatch_id\": \"DISP-001\",\n    \"invoice_no\": \"INV-123456\",\n    \"customer_name\": \"ABC Electronics Ltd.\",\n    \"dispatch_total_value\": \"275000\",\n    \"return_type\": \"partial\",\n    \"return_reason\": \"defective\",\n    \"return_date\": \"2026-01-17\",\n    \"return_remarks\": \"Defective units returned\"\n  },\n  \"items\": [\n    {\n      \"product_id\": \"GPS-PRO\",\n      \"description\": \"GPS-Tracker-Pro\",\n      \"dispatched_qty\": 100,\n      \"unit_price\": \"2500\",\n      \"return_qty\": 5\n    }\n  ]\n}'\n\n ```\n\n---\n\n## ✅ Success Response\n\n### **HTTP 201 Created**\n\n```\n{\n  \"return_id\": 3,\n  \"total_return_amount\": 12500.0,\n  \"message\": \"Return created and credit note initiated\"\n}\n\n ```\n\n---\n\n## 🧠 How Frontend Should Use This Response\n\n- Show **success confirmation**\n    \n- Display **return ID**\n    \n- Display **credit note amount**\n    \n- Redirect to **Returns list / details page**\n    \n- Disable resubmission\n    \n\n---\n\n# ❌ ERROR SCENARIOS (ALL REALISTIC CASES)\n\n---\n\n## ❌ 400 Bad Request — Missing Header Object\n\n```\n{\n  \"header\": [\"This field is required.\"]\n}\n\n ```\n\n**Frontend Action:**  \n  \nBlock submission, show validation error.\n\n---\n\n## ❌ 400 Bad Request — Missing Items Array\n\n```\n{\n  \"items\": [\"This field is required.\"]\n}\n\n ```\n\n---\n\n## ❌ 400 Bad Request — Empty Items Array\n\n```\n{\n  \"non_field_errors\": [\n    \"At least one item must be selected for return\"\n  ]\n}\n\n ```\n\n**Frontend Action:**  \n  \nEnsure at least one item is selected.\n\n---\n\n## ❌ 400 Bad Request — Return Quantity Exceeds Dispatched Quantity\n\n```\n{\n  \"items\": [\n    {\n      \"non_field_errors\": [\n        \"Return quantity cannot exceed dispatched quantity\"\n      ]\n    }\n  ]\n}\n\n ```\n\n**Frontend Action:**  \n  \nValidate quantity on UI before submit.\n\n---\n\n## ❌ 400 Bad Request — Invalid Return Type\n\n```\n{\n  \"header\": {\n    \"return_type\": [\n      \"\\\"invalid\\\" is not a valid choice.\"\n    ]\n  }\n}\n\n ```\n\n**Frontend Action:**  \n  \nAlways use dropdown values from backend.\n\n---\n\n## ❌ 400 Bad Request — Invalid Return Reason\n\n```\n{\n  \"header\": {\n    \"return_reason\": [\n      \"\\\"invalid_reason\\\" is not a valid choice.\"\n    ]\n  }\n}\n\n ```\n\n---\n\n## ❌ 400 Bad Request — Invalid Date Format\n\n```\n{\n  \"header\": {\n    \"return_date\": [\n      \"Date has wrong format. Use YYYY-MM-DD.\"\n    ]\n  }\n}\n\n ```\n\n---\n\n## ❌ 401 Unauthorized — Missing Token\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n**Frontend Action:**  \n  \nRedirect to login.\n\n---\n\n## ❌ 401 Unauthorized — Expired / Invalid Token\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n**Frontend Action:**  \n  \nRefresh token or logout.\n\n---\n\n## ❌ 403 Forbidden — Permission Denied\n\n```\n{\n  \"detail\": \"You do not have permission to perform this action.\"\n}\n\n ```\n\n---\n\n## ❌ 500 Internal Server Error\n\n```\n{\n  \"detail\": \"Internal Server Error\"\n}\n\n ```\n\n**Frontend Action:**  \n  \nShow generic error, allow retry, log issue.\n\n---\n\n# ⚠️ IMPORTANT FRONTEND RULES\n\n- ❌ Do NOT calculate return amount on frontend\n    \n- ❌ Do NOT trust frontend totals\n    \n- ✅ Always send numeric values as strings for decimals\n    \n- ✅ Use backend dropdown APIs for return type & reason\n    \n- ✅ Treat duplicate submits carefully (disable button)\n    \n\n---\n\n# ✅ Summary for Frontend Developers\n\n| Item | Details |\n| --- | --- |\n| Purpose | Create Post-Dispatch Return |\n| Method | POST |\n| Authentication | Required |\n| Multiple Items | ✅ Supported |\n| Backend Amount Calculation | ✅ Yes |\n| Credit Note Trigger | ✅ Yes |\n| Retry Safe | ❌ No (avoid duplicates) |\n\nEndFragment"
+					},
+					"response": []
+				},
+				{
+					"name": "Return Type Dropdown API",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NTQ2NDU4LCJpYXQiOjE3Njg0NjAwNTgsImp0aSI6IjYyMjUxNjRhZDBkZjQ0YzQ5NjAwNTA1NDQ3NGJlMmVmIiwidXNlcl9pZCI6IjMifQ.PLNTyBzLD4ynY8vHnwGIuCXW-JzhD0m26jZr3G7m7J8"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/dropdowns/return-types/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"dropdowns",
+								"return-types",
+								""
+							]
+						},
+						"description": "StartFragment\n\n# 📄 Return Type Dropdown API Documentation\n\nThis API provides the **list of return types** available while creating a **Post-Dispatch Return**.  \n  \nIt is used to populate the **Return Type dropdown** in the UI.\n\n---\n\n---\n\n### Return Type Dropdown\n\n---\n\n**Method:**  \n`GET`\n\n**URL:**\n\n```\n/api/dropdowns/return-types/\n\n ```\n\n**Auth:**  \n  \n✅ Required (JWT Bearer Token)\n\n**Description:**  \n  \nFetches all **allowed return types** exactly as configured in the backend.  \n  \nFrontend **must use these values only** when submitting a post-dispatch return.\n\n---\n\n## 🔐 Headers\n\n| Header | Value | Required |\n| --- | --- | --- |\n| Authorization | Bearer | ✅ Yes |\n| Content-Type | application/json | ❌ Optional |\n\n---\n\n## 🔎 Query Parameters\n\n❌ None\n\n---\n\n## 📥 Request Body\n\n❌ Not required (GET request)\n\n---\n\n## ✅ Example cURL Request\n\n```\ncurl --location 'http://127.0.0.1:8000/api/dropdowns/return-types/' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27;\n\n ```\n\n---\n\n## ✅ Success Response\n\n### **HTTP 200 OK**\n\n```\n[\n  {\n    \"key\": \"full\",\n    \"label\": \"Full Return (All Items)\"\n  },\n  {\n    \"key\": \"partial\",\n    \"label\": \"Partial Return (Some Items)\"\n  },\n  {\n    \"key\": \"replacement\",\n    \"label\": \"Return for Replacement\"\n  }\n]\n\n ```\n\n---\n\n## 🧠 How Frontend Should Use This Response\n\n- Use **`key`** as the value sent to backend\n    \n- Use **`label`** as the display text in dropdown\n    \n\n### Example (React / Vue)\n\n```\n<Select>\n  {returnTypes.map(rt => (\n    <Option key={rt.key} value={rt.key}>\n      {rt.label}\n    </Option>\n  ))}\n</Select>\n\n ```\n\n---\n\n## 📌 Important Frontend Rules\n\n- ❌ Do NOT hardcode return types\n    \n- ✅ Always fetch from this API\n    \n- ❌ Do NOT send labels to backend\n    \n- ✅ Send only the `key` value\n    \n\n---\n\n# ❌ ERROR SCENARIOS (ALL REALISTIC CASES)\n\n---\n\n## ❌ 401 Unauthorized — Missing Token\n\n### When this happens\n\n- Authorization header is not provided\n    \n\n### Response\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n**Frontend Handling**\n\n- Redirect user to login screen\n    \n- Stop further API calls\n    \n\n---\n\n## ❌ 401 Unauthorized — Invalid / Expired Token\n\n### When this happens\n\n- JWT token is expired or invalid\n    \n\n### Response\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n**Frontend Handling**\n\n- Attempt token refresh\n    \n- Logout user if refresh fails\n    \n\n---\n\n## ❌ 403 Forbidden — Permission Denied\n\n### When this happens\n\n- User role does not have access to Returns module\n    \n\n### Response\n\n```\n{\n  \"detail\": \"You do not have permission to perform this action.\"\n}\n\n ```\n\n**Frontend Handling**\n\n- Hide Returns UI\n    \n- Show access-denied message\n    \n\n---\n\n## ❌ 500 Internal Server Error\n\n### When this happens\n\n- Backend exception\n    \n- Database or deployment issue\n    \n\n### Response\n\n```\n{\n  \"detail\": \"Internal Server Error\"\n}\n\n ```\n\n**Frontend Handling**\n\n- Show generic error message\n    \n- Allow user to retry\n    \n- Log error for support\n    \n\n---\n\n## ⚠️ Empty Response (NOT an error)\n\n### Scenario\n\n- Return types temporarily unavailable (rare)\n    \n\n### Response\n\n```\n[]\n\n ```\n\n**Frontend Handling**\n\n- Disable return form\n    \n- Show “No return types available”\n    \n\n---\n\n# ✅ Summary for Frontend Developers\n\n| Item | Details |\n| --- | --- |\n| Purpose | Populate Return Type dropdown |\n| Method | GET |\n| Authentication | Required |\n| Retry Safe | ✅ Yes |\n| Hardcoding Allowed | ❌ No |\n| Backend Validation Depends On | `key` |\n\n---\n\n## 🔗 Used In\n\n- **Post-Dispatch Return – Header Section**\n    \n\nEndFragment"
+					},
+					"response": []
+				},
+				{
+					"name": "Return Reason Dropdown API",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NTQ2NDU4LCJpYXQiOjE3Njg0NjAwNTgsImp0aSI6IjYyMjUxNjRhZDBkZjQ0YzQ5NjAwNTA1NDQ3NGJlMmVmIiwidXNlcl9pZCI6IjMifQ.PLNTyBzLD4ynY8vHnwGIuCXW-JzhD0m26jZr3G7m7J8"
+							}
+						],
+						"url": {
+							"raw": "http://127.0.0.1:8000/api/dropdowns/return-reasons/",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8000",
+							"path": [
+								"api",
+								"dropdowns",
+								"return-reasons",
+								""
+							]
+						},
+						"description": "StartFragment\n\n# 📄 Return Reason Dropdown API Documentation\n\nThis API provides the **list of allowed return reasons** used while creating a **Post-Dispatch Return**.  \n  \nIt populates the **Return Reason dropdown** in the UI.\n\n---\n\n---\n\n### Return Reason Dropdown\n\n---\n\n**Method:**  \n`GET`\n\n**URL:**\n\n```\n/api/dropdowns/return-reasons/\n\n ```\n\n**Auth:**  \n  \n✅ Required (JWT Bearer Token)\n\n**Description:**  \n  \nFetches all **valid return reasons** configured in the backend.  \n  \nFrontend must send **only these keys** while submitting a post-dispatch return.\n\n---\n\n## 🔐 Headers\n\n| Header | Value | Required |\n| --- | --- | --- |\n| Authorization | Bearer | ✅ Yes |\n| Content-Type | application/json | ❌ Optional |\n\n---\n\n## 🔎 Query Parameters\n\n❌ None\n\n---\n\n## 📥 Request Body\n\n❌ Not required (GET request)\n\n---\n\n## ✅ Example cURL Request\n\n```\ncurl --location 'http://127.0.0.1:8000/api/dropdowns/return-reasons/' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27;\n\n ```\n\n---\n\n## ✅ Success Response\n\n### **HTTP 200 OK**\n\n```\n[\n  {\n    \"key\": \"damaged\",\n    \"label\": \"Damaged in Transit\"\n  },\n  {\n    \"key\": \"defective\",\n    \"label\": \"Defective Product\"\n  },\n  {\n    \"key\": \"wrong_item\",\n    \"label\": \"Wrong Item Delivered\"\n  },\n  {\n    \"key\": \"rejected\",\n    \"label\": \"Customer Rejection\"\n  },\n  {\n    \"key\": \"quality\",\n    \"label\": \"Quality Issues\"\n  },\n  {\n    \"key\": \"spec_mismatch\",\n    \"label\": \"Specification Mismatch\"\n  },\n  {\n    \"key\": \"other\",\n    \"label\": \"Other\"\n  }\n]\n\n ```\n\n---\n\n## 🧠 How Frontend Should Use This Response\n\n- Use **`key`** as the value sent to backend\n    \n- Use **`label`** as the visible dropdown text\n    \n\n### Example (React / Vue)\n\n```\n<Select>\n  {returnReasons.map(reason => (\n    <Option key={reason.key} value={reason.key}>\n      {reason.label}\n    </Option>\n  ))}\n</Select>\n\n ```\n\n---\n\n## 📌 Important Frontend Rules\n\n- ❌ Do NOT hardcode return reasons\n    \n- ✅ Always load from this API\n    \n- ❌ Do NOT send labels in API requests\n    \n- ✅ Send only the `key` value (e.g. `\"defective\"`)\n    \n\n---\n\n# ❌ ERROR SCENARIOS (ALL REALISTIC CASES)\n\n---\n\n## ❌ 401 Unauthorized — Missing Token\n\n### When this happens\n\n- Authorization header is missing\n    \n\n### Response\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n**Frontend Handling**\n\n- Redirect to login\n    \n- Stop further API calls\n    \n\n---\n\n## ❌ 401 Unauthorized — Invalid / Expired Token\n\n### When this happens\n\n- Token is expired or malformed\n    \n\n### Response\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n**Frontend Handling**\n\n- Attempt token refresh\n    \n- Logout user if refresh fails\n    \n\n---\n\n## ❌ 403 Forbidden — Permission Denied\n\n### When this happens\n\n- User does not have access to Returns module\n    \n\n### Response\n\n```\n{\n  \"detail\": \"You do not have permission to perform this action.\"\n}\n\n ```\n\n**Frontend Handling**\n\n- Hide return functionality\n    \n- Show access denied message\n    \n\n---\n\n## ❌ 500 Internal Server Error\n\n### When this happens\n\n- Backend exception\n    \n- Database or deployment issue\n    \n\n### Response\n\n```\n{\n  \"detail\": \"Internal Server Error\"\n}\n\n ```\n\n**Frontend Handling**\n\n- Show generic error message\n    \n- Allow retry\n    \n- Log issue for support\n    \n\n---\n\n## ⚠️ Empty Response (Not an Error)\n\n### Scenario\n\n- No return reasons configured (rare)\n    \n\n### Response\n\n```\n[]\n\n ```\n\n**Frontend Handling**\n\n- Disable return form\n    \n- Show “No return reasons available”\n    \n\n---\n\n# ✅ Summary for Frontend Developers\n\n| Item | Details |\n| --- | --- |\n| Purpose | Populate Return Reason dropdown |\n| Method | GET |\n| Authentication | Required |\n| Retry Safe | ✅ Yes |\n| Hardcoding Allowed | ❌ No |\n| Backend Validation Uses | `key` |\n\n---\n\n## 🔗 Used In\n\n- **Post-Dispatch Return – Header Section**\n    \n\nEndFragment"
+					},
+					"response": []
+				}
+			]
 		}
 	]
 }

@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+# from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
 from decimal import Decimal
 from django.contrib.auth import get_user_model
@@ -955,5 +955,189 @@ class MaterialReceiptItem(models.Model):
         if self.balance_qty < 0:
             raise ValueError("Received quantity exceeds ordered quantity")
         super().save(*args, **kwargs)
+
+
+# ---------------- Dispatch Workflow ----------------
+class Dispatch(models.Model):
+    """
+    Dispatch workflow main model.
+    """
+
+    STATUS_CHOICES = (
+        ("draft", "Draft"),
+        ("completed", "Completed"),
+    )
+
+    ORDER_TYPE_CHOICES = (
+        ("distributor", "Distributor"),
+        ("dealer", "Dealer"),
+        ("b2c", "B2C Customer"),
+    )
+
+    # ---------------- STEP 1 ----------------
+    sales_order = models.ForeignKey(
+        SalesOrder,
+        on_delete=models.PROTECT,
+        related_name="dispatches"
+    )
+
+    order_type = models.CharField(
+        max_length=20,
+        choices=ORDER_TYPE_CHOICES
+    )
+
+    # ---------------- STEP 2 ----------------
+    product = models.ForeignKey(
+        OrderProduct,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True
+    )
+
+    batch = models.ForeignKey(
+        OrderBatch,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True
+    )
+
+    dispatch_quantity = models.PositiveIntegerField(
+        validators=[MinValueValidator(1)],
+        null=True,
+        blank=True
+    )
+
+    imei_number = models.CharField(max_length=50, blank=True)
+    serial_number = models.CharField(max_length=50, blank=True)
+    iccid_number = models.CharField(max_length=50, blank=True)
+
+    # ---------------- STEP 3 ----------------
+    dispatch_date = models.DateField(null=True, blank=True)
+    dispatch_remarks = models.TextField(blank=True)
+
+    # ---------------- STEP 4 ----------------
+    customer_name = models.CharField(max_length=255, null=True, blank=True)
+    customer_contact = models.CharField(max_length=15, null=True, blank=True)
+    customer_email = models.EmailField(null=True, blank=True)
+    customer_address = models.TextField(null=True, blank=True)
+
+    urgent_delivery_required = models.BooleanField(default=False)
+    insurance_required = models.BooleanField(default=False)
+
+    # ---------------- WORKFLOW CONTROL ----------------
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="draft"
+    )
+
+    stock_deducted = models.BooleanField(default=False)
+
+    # ---------------- SYSTEM ----------------
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-id"]
+
+    def __str__(self):
+        return f"Dispatch-{self.id} | {self.status.upper()}"
+
+
+# ---------------- Post-Dispatch Returns Management ----------------
+class PostDispatchReturn(models.Model):
+    """
+    Main model representing a post-dispatch return entry.
+    One record per return request.
+    """
+
+    RETURN_TYPE_CHOICES = (
+        ("full", "Full Return (All Items)"),
+        ("partial", "Partial Return (Some Items)"),
+        ("replacement", "Return for Replacement"),
+    )
+
+    RETURN_REASON_CHOICES = (
+        ("damaged", "Damaged in Transit"),
+        ("defective", "Defective Product"),
+        ("wrong_item", "Wrong Item Delivered"),
+        ("rejected", "Customer Rejection"),
+        ("quality", "Quality Issues"),
+        ("spec_mismatch", "Specification Mismatch"),
+        ("other", "Other"),
+    )
+
+    # Dispatch reference information (read-only in UI)
+    dispatch_id = models.CharField(max_length=50)
+    invoice_no = models.CharField(max_length=50)
+    customer_name = models.CharField(max_length=255)
+    dispatch_total_value = models.DecimalField(
+        max_digits=12,
+        decimal_places=2
+    )
+
+    # Return details
+    return_type = models.CharField(
+        max_length=20,
+        choices=RETURN_TYPE_CHOICES
+    )
+    return_reason = models.CharField(
+        max_length=20,
+        choices=RETURN_REASON_CHOICES
+    )
+    return_date = models.DateField()
+    return_remarks = models.TextField(blank=True)
+
+    # Calculated field
+    total_return_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0
+    )
+
+    # System fields
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-id"]
+
+    def __str__(self):
+        return f"PostDispatchReturn-{self.id}"
+
+
+class PostDispatchReturnItem(models.Model):
+    """
+    Line items selected for return.
+    """
+
+    post_dispatch_return = models.ForeignKey(
+        PostDispatchReturn,
+        on_delete=models.CASCADE,
+        related_name="items"
+    )
+
+    product_id = models.CharField(max_length=50)
+    description = models.CharField(max_length=255)
+    dispatched_qty = models.PositiveIntegerField()
+    unit_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2
+    )
+
+    return_qty = models.PositiveIntegerField(
+        validators=[MinValueValidator(1)]
+    )
+
+    return_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2
+    )
+
+    def __str__(self):
+        return f"{self.product_id} | Return Qty: {self.return_qty}"
 
 

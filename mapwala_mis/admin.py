@@ -4,6 +4,9 @@ from django.utils.safestring import mark_safe
 from django.contrib import messages
 from django.urls import reverse
 from django.utils.html import format_html
+from django.forms.models import BaseInlineFormSet
+from decimal import Decimal
+
 
 
 # ------------------ User Profile ------------------
@@ -1526,5 +1529,258 @@ class MaterialReceiptNoteAdmin(admin.ModelAdmin):
             "fields": ("created_by", "created_at")
         }),
     )
+
+
+# -----------------------Dispatch Admin--------------------------
+@admin.register(Dispatch)
+class DispatchAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "sales_order",
+        "order_type",
+        "product",
+        "batch",
+        "dispatch_quantity",
+        "dispatch_date",
+        "created_by",
+        "created_at",
+    )
+
+    list_filter = (
+        "order_type",
+        "dispatch_date",
+        "urgent_delivery_required",
+        "insurance_required",
+    )
+
+    search_fields = (
+        "sales_order__id",
+        "customer_name",
+        "customer_contact",
+        "customer_email",
+    )
+
+    readonly_fields = (
+        "created_by",
+        "created_at",
+    )
+
+    fieldsets = (
+        (
+            "STEP 1: Sales Order Selection",
+            {
+                "fields": (
+                    "sales_order",
+                    "order_type",
+                )
+            },
+        ),
+        (
+            "STEP 2: Stock Verification",
+            {
+                "fields": (
+                    "product",
+                    "batch",
+                    "dispatch_quantity",
+                    "imei_number",
+                    "serial_number",
+                    "iccid_number",
+                )
+            },
+        ),
+        (
+            "STEP 3: Dispatch Details",
+            {
+                "fields": (
+                    "dispatch_date",
+                    "dispatch_remarks",
+                )
+            },
+        ),
+        (
+            "STEP 4: Customer Details & Review",
+            {
+                "fields": (
+                    "customer_name",
+                    "customer_contact",
+                    "customer_email",
+                    "customer_address",
+                    "urgent_delivery_required",
+                    "insurance_required",
+                )
+            },
+        ),
+        (
+            "System Information",
+            {
+                "fields": (
+                    "created_by",
+                    "created_at",
+                )
+            },
+        ),
+    )
+
+    def save_model(self, request, obj, form, change):
+        """
+        Auto-assign created_by on first save
+        """
+        if not obj.pk:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+# ---------------------------------------------------
+# Inline Formset with validation & auto-calculation
+# ---------------------------------------------------
+class PostDispatchReturnItemInlineFormset(BaseInlineFormSet):
+    """
+    Ensures:
+    - return_qty <= dispatched_qty
+    - return_amount is auto-calculated
+    """
+
+    def clean(self):
+        super().clean()
+
+        for form in self.forms:
+            if not form.cleaned_data or form.cleaned_data.get("DELETE"):
+                continue
+
+            dispatched_qty = form.cleaned_data.get("dispatched_qty")
+            return_qty = form.cleaned_data.get("return_qty")
+            unit_price = form.cleaned_data.get("unit_price")
+
+            if return_qty > dispatched_qty:
+                raise ValueError(
+                    "Return quantity cannot exceed dispatched quantity."
+                )
+
+            # Auto-calculate return_amount
+            form.instance.return_amount = (
+                Decimal(return_qty) * unit_price
+            )
+
+# ---------------------------------------------------
+# Inline admin for items
+# ---------------------------------------------------
+class PostDispatchReturnItemInline(admin.TabularInline):
+    model = PostDispatchReturnItem
+    formset = PostDispatchReturnItemInlineFormset
+    extra = 1
+
+    readonly_fields = ("return_amount",)
+
+    fields = (
+        "product_id",
+        "description",
+        "dispatched_qty",
+        "unit_price",
+        "return_qty",
+        "return_amount",
+    )
+
+# ---------------------------------------------------
+# Main admin
+# ---------------------------------------------------
+@admin.register(PostDispatchReturn)
+class PostDispatchReturnAdmin(admin.ModelAdmin):
+    """
+    Admin panel for Post-Dispatch Returns
+    Allows controlled raw data insertion.
+    """
+
+    inlines = [PostDispatchReturnItemInline]
+
+    # ---------------- List View ----------------
+    list_display = (
+        "id",
+        "dispatch_id",
+        "invoice_no",
+        "customer_name",
+        "return_type",
+        "return_reason",
+        "total_return_amount",
+        "created_by",
+        "created_at",
+    )
+
+    list_filter = ("return_type", "return_reason", "created_at")
+    search_fields = ("dispatch_id", "invoice_no", "customer_name")
+    ordering = ("-id",)
+    date_hierarchy = "created_at"
+
+    # ---------------- Form Layout ----------------
+    fieldsets = (
+        (
+            "Dispatch Information",
+            {
+                "fields": (
+                    "dispatch_id",
+                    "invoice_no",
+                    "customer_name",
+                    "dispatch_total_value",
+                )
+            },
+        ),
+        (
+            "Return Details",
+            {
+                "fields": (
+                    "return_type",
+                    "return_reason",
+                    "return_date",
+                    "return_remarks",
+                )
+            },
+        ),
+        (
+            "System Information",
+            {
+                "fields": (
+                    "total_return_amount",
+                    "created_by",
+                )
+            },
+        ),
+    )
+
+    # ---------------- Readonly ----------------
+    readonly_fields = (
+        "total_return_amount",
+        "created_at",
+    )
+
+    # ---------------- Auto fields ----------------
+    def save_model(self, request, obj, form, change):
+        """
+        Auto-assign created_by when adding from admin
+        """
+        if not change and not obj.created_by:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+    def save_related(self, request, form, formsets, change):
+        """
+        Recalculate total_return_amount after saving items
+        """
+        super().save_related(request, form, formsets, change)
+
+        total = Decimal("0.00")
+        for item in form.instance.items.all():
+            total += item.return_amount
+
+        form.instance.total_return_amount = total
+        form.instance.save(update_fields=["total_return_amount"])
+
+    # ---------------- Permissions ----------------
+    def has_delete_permission(self, request, obj=None):
+        """
+        Optional: allow delete only to superusers
+        """
+        return request.user.is_superuser
+
+    list_per_page = 25
+    save_on_top = True
 
 
