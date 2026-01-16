@@ -6,7 +6,9 @@ from django.urls import reverse
 from django.utils.html import format_html
 from django.forms.models import BaseInlineFormSet
 from decimal import Decimal
-
+from django.urls import path
+from django.http import JsonResponse
+from django.core.paginator import Paginator
 
 
 # ------------------ User Profile ------------------
@@ -1107,9 +1109,7 @@ class OrderProductAdmin(admin.ModelAdmin):
     list_display = ("name",)
     search_fields = ("name",)
     ordering = ("name",)
-
     inlines = [OrderBatchInline]
-
     fieldsets = (
         (
             "Product / Device Model",
@@ -1122,12 +1122,9 @@ class OrderProductAdmin(admin.ModelAdmin):
 @admin.register(OrderBatch)
 class OrderBatchAdmin(admin.ModelAdmin):
     list_display = ("product", "batch_number", "available_stock")
-
     list_filter = ("product",)
     search_fields = ("product__name", "batch_number")
-
     ordering = ("product__name", "batch_number")
-
     fieldsets = (
         (
             "Product Reference",
@@ -1168,22 +1165,8 @@ class SalesOrderAdmin(admin.ModelAdmin):
         "delivery_date",
         "created_at",
     )
-    list_filter = (
-        "customer_type",
-        "payment_mode",
-        "payment_status",
-        "delivery_date",
-        "created_at",
-    )
-    search_fields = (
-        "id",
-        "customer_name",
-        "contact_person",
-        "mobile_no",
-        "invoice_number",
-        "product__name",
-        "batch__batch_number",
-    )
+    list_filter = ("customer_type","payment_mode","payment_status","delivery_date","created_at")
+    search_fields = ("id","customer_name","contact_person","mobile_no","invoice_number","product__name","batch__batch_number")
     ordering = ("-created_at",)
     readonly_fields = ("created_at",)
     fieldsets = (
@@ -1294,12 +1277,7 @@ class OrderEntryMakeToOrderAdmin(admin.ModelAdmin):
         (
             "Customer Information",
             {
-                "fields": (
-                    "customer_name",
-                    "customer_type",
-                    "contact_person",
-                    "mobile_no",
-                )
+                "fields": ("customer_name","customer_type","contact_person","mobile_no")
             },
         ),
         (
@@ -1310,14 +1288,7 @@ class OrderEntryMakeToOrderAdmin(admin.ModelAdmin):
         (
             "Pricing",
             {
-                "fields": (
-                    "unit_price",
-                    "discount_percent",
-                    "gst_percent",
-                    "shipping_charges",
-                    "grand_total",
-                    "advance_payment",
-                )
+                "fields": ("unit_price","discount_percent","gst_percent","shipping_charges","grand_total","advance_payment")
             },
         ),
         ("Payment & Priority", {"fields": ("payment_terms", "order_priority")}),
@@ -1348,23 +1319,13 @@ class RequestForQuoteAdmin(admin.ModelAdmin):
         (
             "STEP 1 — Order Selection (UI Driven)",
             {
-                "fields": (
-                    "order_reference",
-                    "device_name",
-                    "assembly_type",
-                    "quantity",
-                )
+                "fields": ("order_reference","device_name","assembly_type","quantity")
             },
         ),
         (
             "STEP 3 — Quote Details (UI Driven)",
             {
-                "fields": (
-                    "srn_no",
-                    "delivery_date",
-                    "delivery_address",
-                    "additional_requirements",
-                )
+                "fields": ("srn_no","delivery_date","delivery_address","additional_requirements")
             },
         ),
         ("System Status", {"fields": ("status",)}),
@@ -1402,16 +1363,7 @@ class PurchaseOrderTypeInline(admin.TabularInline):
 class PurchaseOrderItemInline(admin.TabularInline):
     model = PurchaseOrderItem
     extra = 1
-    fields = (
-        "item_code",
-        "item_type",
-        "vendor_id",
-        "vendor_name",
-        "unit_price",
-        "gst_amount",
-        "total_price",
-        "delivery_days",
-    )
+    fields = ("item_code","item_type","vendor_id","vendor_name","unit_price","gst_amount","total_price","delivery_days")
     show_change_link = True
 
 
@@ -1479,12 +1431,7 @@ class PurchaseOrderItemAdmin(admin.ModelAdmin):
             "fields": ("purchase_order",)
         }),
         ("Item Details", {
-            "fields": (
-                "item_code",
-                "item_type",
-                "quantity",
-                "delivery_days",
-            )
+            "fields": ("item_code","item_type","quantity","delivery_days")
         }),
         ("Vendor", {
             "fields": ("vendor_id", "vendor_name")
@@ -1534,89 +1481,39 @@ class MaterialReceiptNoteAdmin(admin.ModelAdmin):
 # -----------------------Dispatch Admin--------------------------
 @admin.register(Dispatch)
 class DispatchAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "sales_order",
-        "order_type",
-        "product",
-        "batch",
-        "dispatch_quantity",
-        "dispatch_date",
-        "created_by",
-        "created_at",
-    )
-
-    list_filter = (
-        "order_type",
-        "dispatch_date",
-        "urgent_delivery_required",
-        "insurance_required",
-    )
-
-    search_fields = (
-        "sales_order__id",
-        "customer_name",
-        "customer_contact",
-        "customer_email",
-    )
-
-    readonly_fields = (
-        "created_by",
-        "created_at",
-    )
-
+    list_display = ("id","sales_order","order_type","product","batch","dispatch_quantity","dispatch_date","created_by","created_at")
+    list_filter = ("order_type","dispatch_date","urgent_delivery_required","insurance_required")
+    search_fields = ("sales_order__id","customer_name","customer_contact","customer_email")
+    readonly_fields = ("created_by","created_at")
     fieldsets = (
         (
             "STEP 1: Sales Order Selection",
             {
-                "fields": (
-                    "sales_order",
-                    "order_type",
-                )
+                "fields": ("sales_order","order_type")
             },
         ),
         (
             "STEP 2: Stock Verification",
             {
-                "fields": (
-                    "product",
-                    "batch",
-                    "dispatch_quantity",
-                    "imei_number",
-                    "serial_number",
-                    "iccid_number",
-                )
+                "fields": ("product","batch","dispatch_quantity","imei_number","serial_number","iccid_number")
             },
         ),
         (
             "STEP 3: Dispatch Details",
             {
-                "fields": (
-                    "dispatch_date",
-                    "dispatch_remarks",
-                )
+                "fields": ("dispatch_date","dispatch_remarks")
             },
         ),
         (
             "STEP 4: Customer Details & Review",
             {
-                "fields": (
-                    "customer_name",
-                    "customer_contact",
-                    "customer_email",
-                    "customer_address",
-                    "urgent_delivery_required",
-                    "insurance_required",
-                )
+                "fields": ("customer_name","customer_contact","customer_email","customer_address","urgent_delivery_required","insurance_required")
             },
         ),
         (
             "System Information",
             {
-                "fields": (
-                    "created_by",
-                    "created_at",
-                )
+                "fields": ("created_by","created_at")
             },
         ),
     )
@@ -1630,9 +1527,7 @@ class DispatchAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-# ---------------------------------------------------
-# Inline Formset with validation & auto-calculation
-# ---------------------------------------------------
+# ---------------------- Inline Formset with validation & auto-calculation ----------------------
 class PostDispatchReturnItemInlineFormset(BaseInlineFormSet):
     """
     Ensures:
@@ -1661,55 +1556,28 @@ class PostDispatchReturnItemInlineFormset(BaseInlineFormSet):
                 Decimal(return_qty) * unit_price
             )
 
-# ---------------------------------------------------
-# Inline admin for items
-# ---------------------------------------------------
+# --------------------------- Post Dispatch Return Item Inline --------------------------
 class PostDispatchReturnItemInline(admin.TabularInline):
     model = PostDispatchReturnItem
     formset = PostDispatchReturnItemInlineFormset
     extra = 1
-
     readonly_fields = ("return_amount",)
+    fields = ("product_id", "description", "dispatched_qty", "unit_price", "return_qty", "return_amount")
 
-    fields = (
-        "product_id",
-        "description",
-        "dispatched_qty",
-        "unit_price",
-        "return_qty",
-        "return_amount",
-    )
-
-# ---------------------------------------------------
-# Main admin
-# ---------------------------------------------------
+# -----------------------Post Dispatch Return Admin--------------------------
 @admin.register(PostDispatchReturn)
 class PostDispatchReturnAdmin(admin.ModelAdmin):
     """
     Admin panel for Post-Dispatch Returns
     Allows controlled raw data insertion.
     """
-
     inlines = [PostDispatchReturnItemInline]
-
     # ---------------- List View ----------------
-    list_display = (
-        "id",
-        "dispatch_id",
-        "invoice_no",
-        "customer_name",
-        "return_type",
-        "return_reason",
-        "total_return_amount",
-        "created_by",
-        "created_at",
-    )
-
+    list_display = ("id","dispatch_id","invoice_no","customer_name","return_type","return_reason","total_return_amount","created_by","created_at")
     list_filter = ("return_type", "return_reason", "created_at")
     search_fields = ("dispatch_id", "invoice_no", "customer_name")
     ordering = ("-id",)
     date_hierarchy = "created_at"
-
     # ---------------- Form Layout ----------------
     fieldsets = (
         (
@@ -1783,4 +1651,177 @@ class PostDispatchReturnAdmin(admin.ModelAdmin):
     list_per_page = 25
     save_on_top = True
 
+# -------------------------- BaseRegistrationAdmin --------------------------
+class BaseRegistrationAdmin(admin.ModelAdmin):
+    readonly_fields = ("created_at",)
+    list_filter = ("state", "district", "created_at")
+    search_fields = ("phone_number", "email")
 
+    autocomplete_fields = ("state", "district")
+
+    fieldsets = (
+        ("Basic Information", {
+            "fields": ("phone_number", "email", "address")
+        }),
+        ("Location Details", {
+            "fields": ("state", "district")
+        }),
+        ("Identity Details", {
+            "fields": ("aadhar_number", "aadhar_document", "pan_number", "pan_document")
+        }),
+        ("System Information", {
+            "fields": ("created_at",)
+        }),
+    )
+
+
+# --------------------------------- Account Registration ---------------------------------
+@admin.register(AccountRegistration)
+class AccountRegistrationAdmin(BaseRegistrationAdmin):
+    list_display = ("account_name","phone_number","email","state","district","created_at")
+    search_fields = BaseRegistrationAdmin.search_fields + ("account_name",)
+    fieldsets = (
+        ("Account Information", {
+            "fields": ("account_name",)
+        }),
+    ) + BaseRegistrationAdmin.fieldsets
+
+
+# ----------------------- QC Inspector Registration ---------------------------
+@admin.register(QCInspectorRegistration)
+class QCInspectorRegistrationAdmin(BaseRegistrationAdmin):
+    list_display = ("qc_inspector_name","phone_number","email","state","district","created_at")
+    search_fields = BaseRegistrationAdmin.search_fields + ("qc_inspector_name",)
+    fieldsets = (
+        ("QC Inspector Information", {
+            "fields": ("qc_inspector_name",)
+        }),
+    ) + BaseRegistrationAdmin.fieldsets
+
+
+# ---------------------------- Purchase Department Registration ----------------------------
+@admin.register(PurchaseDepartmentRegistration)
+class PurchaseDepartmentRegistrationAdmin(BaseRegistrationAdmin):
+    list_display = ("purchase_department_name","phone_number","email","state","district","created_at")
+    search_fields = BaseRegistrationAdmin.search_fields + ("purchase_department_name",)
+    fieldsets = (
+        ("Purchase Department Information", {
+            "fields": ("purchase_department_name",)
+        }),
+    ) + BaseRegistrationAdmin.fieldsets
+
+
+# ------------------------- Store Manager Registration --------------------------
+@admin.register(StoreManagerRegistration)
+class StoreManagerRegistrationAdmin(BaseRegistrationAdmin):
+    list_display = ("store_manager_name","phone_number","email","state","district","created_at")
+    search_fields = BaseRegistrationAdmin.search_fields + ("store_manager_name",)
+    fieldsets = (
+        ("Store Manager Information", {
+            "fields": ("store_manager_name",)
+        }),
+    ) + BaseRegistrationAdmin.fieldsets
+
+
+# ------------------------- Repair Technician Registration --------------------------
+@admin.register(RepairTechnicianRegistration)
+class RepairTechnicianRegistrationAdmin(BaseRegistrationAdmin):
+    list_display = ("repair_technician_name","phone_number","email","state","district","created_at")
+    search_fields = BaseRegistrationAdmin.search_fields + ("repair_technician_name",)
+    fieldsets = (
+        ("Repair Technician Information", {
+            "fields": ("repair_technician_name",)
+        }),
+    ) + BaseRegistrationAdmin.fieldsets
+
+
+# ------------------ Product Category ------------------
+@admin.register(ProductCategory)
+class ProductCategoryAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "name",
+        "created_at",
+    )
+    search_fields = ("name",)
+    ordering = ("name",)
+    readonly_fields = ("created_at",)
+
+
+# ------------------ Store Transfer ------------------
+
+@admin.register(StoreTransfer)
+class StoreTransferAdmin(admin.ModelAdmin):
+    list_display = (
+        "transfer_id",
+        "product_name",
+        "product",
+        "category",
+        "vendor",
+        "quantity",
+        "total_value",
+        "dispatch_status",
+        "transfer_date",
+        "created_at",
+    )
+
+    search_fields = (
+        "transfer_id",
+        "product_name",
+        "batch_number",
+        "mrn_number",
+        "vendor__name",
+        "product__product_id",
+    )
+
+    list_filter = (
+        "dispatch_status",
+        "transfer_date",
+        "category",
+        "vendor",
+        "created_at",
+    )
+
+    ordering = ("-created_at",)
+    readonly_fields = (
+        "created_at",
+        "updated_at",
+    )
+
+    fieldsets = (
+        ("Product Information", {
+            "fields": (
+                "product",
+                "product_name",
+                "category",
+            )
+        }),
+        ("Transfer Details", {
+            "fields": (
+                "transfer_id",
+                "mrn_number",
+                "batch_number",
+            )
+        }),
+        ("Vendor & Quantity", {
+            "fields": (
+                "vendor",
+                "quantity",
+                "unit_price",
+                "total_value",
+            )
+        }),
+        ("Dates & Status", {
+            "fields": (
+                "transfer_date",
+                "dispatch_status",
+            )
+        }),
+        ("System Info", {
+            "fields": (
+                "created_by",
+                "created_at",
+                "updated_at",
+            )
+        }),
+    )

@@ -1141,3 +1141,151 @@ class PostDispatchReturnItem(models.Model):
         return f"{self.product_id} | Return Qty: {self.return_qty}"
 
 
+# ---------------- Module Management Account Registration ----------------
+class AccountRegistration(models.Model):
+    account_name = models.CharField(max_length=255)
+    phone_number = models.CharField(max_length=15)
+    email = models.EmailField()
+    address = models.TextField()
+    state = models.ForeignKey(State, on_delete=models.PROTECT, related_name="account_registrations")
+    district = models.ForeignKey(District, on_delete=models.PROTECT, related_name="account_registrations")
+    aadhar_number = models.CharField(max_length=20)
+    aadhar_document = models.FileField(upload_to="documents/aadhar/")
+    pan_number = models.CharField(max_length=20)
+    pan_document = models.FileField(upload_to="documents/pan/")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.account_name
+
+
+# ---------------- Module Management QC Inspector Registration ----------------
+class QCInspectorRegistration(models.Model):
+    qc_inspector_name = models.CharField(max_length=255)
+    phone_number = models.CharField(max_length=15)
+    email = models.EmailField()
+    address = models.TextField()
+    state = models.ForeignKey(State, on_delete=models.PROTECT, related_name="qc_inspectors")
+    district = models.ForeignKey(District, on_delete=models.PROTECT, related_name="qc_inspectors")
+    aadhar_number = models.CharField(max_length=20)
+    aadhar_document = models.FileField(upload_to="documents/qc_inspector/aadhar/")
+    pan_number = models.CharField(max_length=20)
+    pan_document = models.FileField(upload_to="documents/qc_inspector/pan/")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.qc_inspector_name
+
+
+# ---------------- Module Management Purchase Department Registration ----------------
+class PurchaseDepartmentRegistration(models.Model):
+    purchase_department_name = models.CharField(max_length=255)
+    phone_number = models.CharField(max_length=15)
+    email = models.EmailField()
+    address = models.TextField()
+    state = models.ForeignKey(State, on_delete=models.PROTECT, related_name="purchase_departments")
+    district = models.ForeignKey(District, on_delete=models.PROTECT, related_name="purchase_departments")
+    aadhar_number = models.CharField(max_length=20)
+    aadhar_document = models.FileField(upload_to="documents/purchase_department/aadhar/")
+    pan_number = models.CharField(max_length=20)
+    pan_document = models.FileField(upload_to="documents/purchase_department/pan/")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.purchase_department_name
+
+
+class StoreManagerRegistration(models.Model):
+    store_manager_name = models.CharField(max_length=255)
+    phone_number = models.CharField(max_length=15)
+    email = models.EmailField()
+    address = models.TextField()
+    state = models.ForeignKey(State, on_delete=models.PROTECT, related_name="store_managers")
+    district = models.ForeignKey(District, on_delete=models.PROTECT, related_name="store_managers")
+    aadhar_number = models.CharField(max_length=20)
+    aadhar_document = models.FileField(upload_to="documents/store_manager/aadhar/")
+    pan_number = models.CharField(max_length=20)
+    pan_document = models.FileField(upload_to="documents/store_manager/pan/")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.store_manager_name
+
+
+# ---------------- Module Management Repair Technician Registration ----------------
+class RepairTechnicianRegistration(models.Model):
+    repair_technician_name = models.CharField(max_length=255)
+    phone_number = models.CharField(max_length=15)
+    email = models.EmailField()
+    address = models.TextField()
+    state = models.ForeignKey(State, on_delete=models.PROTECT, related_name="repair_technicians")
+    district = models.ForeignKey(District, on_delete=models.PROTECT, related_name="repair_technicians")
+    aadhar_number = models.CharField(max_length=20)
+    aadhar_document = models.FileField(upload_to="documents/repair_technician/aadhar/")
+    pan_number = models.CharField(max_length=20)
+    pan_document = models.FileField(upload_to="documents/repair_technician/pan/")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.repair_technician_name
+
+
+# ---------------- Store Transfer (Inventory Data) ----------------
+class StoreTransfer(models.Model):
+    DISPATCH_STATUS_CHOICES = (
+        ("dispatched", "Dispatched"),
+        ("non_dispatched", "Non-dispatched"),
+        ("return", "Return"),
+    )
+    
+    # Product Information
+    product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name="store_transfers")
+    product_name = models.CharField(max_length=255)
+    category = models.ForeignKey('ProductCategory', on_delete=models.PROTECT, null=True, blank=True, related_name="store_transfers")
+    
+    # Transfer Details
+    transfer_id = models.CharField(max_length=50, unique=True)
+    mrn_number = models.CharField(max_length=50, null=True, blank=True)
+    batch_number = models.CharField(max_length=50)
+    
+    # Vendor & Quantity
+    vendor = models.ForeignKey(Vendor, on_delete=models.PROTECT, related_name="store_transfers")
+    quantity = models.IntegerField(validators=[MinValueValidator(1)])
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
+    total_value = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
+    
+    # Dates & Status
+    transfer_date = models.DateField()
+    dispatch_status = models.CharField(max_length=20, choices=DISPATCH_STATUS_CHOICES, default="non_dispatched")
+    
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="created_store_transfers")
+    
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=['transfer_id']),
+            models.Index(fields=['batch_number']),
+            models.Index(fields=['dispatch_status']),
+            models.Index(fields=['transfer_date']),
+        ]
+    
+    def __str__(self):
+        return f"Transfer {self.transfer_id} - {self.product_name}"
+
+
+# ProductCategory Model (if not exists)
+class ProductCategory(models.Model):
+    name = models.CharField(max_length=255, unique=True)
+    description = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name_plural = "Product Categories"
+        ordering = ['name']
+    
+    def __str__(self):
+        return self.name
+

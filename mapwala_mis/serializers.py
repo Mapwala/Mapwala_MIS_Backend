@@ -1,9 +1,17 @@
 from django.contrib.auth import authenticate
+from django.conf import settings
 from rest_framework import serializers
 from decimal import Decimal
 from .models import *
 import json
 
+def validate_file_size(file):
+    max_size = settings.FILE_UPLOAD_MAX_MEMORY_SIZE
+
+    if file.size > max_size:
+        raise serializers.ValidationError(
+            f"File size must be less than or equal to {max_size // (1024 * 1024)} MB."
+        )
 
 # ---------------- Login ----------------
 class LoginSerializer(serializers.Serializer):
@@ -796,4 +804,224 @@ class DropdownSerializer(serializers.Serializer):
     label = serializers.CharField()
 
 
+# ---------------- Module Management Account Registration ----------------
+class AccountRegistrationSerializer(serializers.ModelSerializer):
+    aadhar_document = serializers.FileField(validators=[validate_file_size])
+    pan_document = serializers.FileField(validators=[validate_file_size])
+    class Meta:
+        model = AccountRegistration
+        fields = ["id", "account_name", "phone_number", "email", "address", "state", "district", "aadhar_number", "aadhar_document", "pan_number", "pan_document" ]
+
+    def validate(self, data):
+        # Enforce State → District dependency (visible in UI)
+        if data["district"].state_id != data["state"].id:
+            raise serializers.ValidationError({
+                "district": "Selected district does not belong to selected state."
+            })
+        return data
+
+
+# ---------------- Module Management QC Inspector Registration ----------------
+class QCInspectorRegistrationSerializer(serializers.ModelSerializer):
+    aadhar_document = serializers.FileField(validators=[validate_file_size])
+    pan_document = serializers.FileField(validators=[validate_file_size])
+
+    class Meta:
+        model = QCInspectorRegistration
+        fields = ["id","qc_inspector_name","phone_number","email","address","state","district","aadhar_number","aadhar_document","pan_number","pan_document"]
+
+    def validate(self, data):
+        # State → District dependency (implied by dropdown behavior)
+        if data["district"].state_id != data["state"].id:
+            raise serializers.ValidationError({
+                "district": "Selected district does not belong to selected state."
+            })
+        return data
+
+
+# ---------------- Module Management Purchase Department Registration ----------------
+class PurchaseDepartmentRegistrationSerializer(serializers.ModelSerializer):
+    aadhar_document = serializers.FileField(validators=[validate_file_size])
+    pan_document = serializers.FileField(validators=[validate_file_size])
+    class Meta:
+        model = PurchaseDepartmentRegistration
+        fields = ["id","purchase_department_name","phone_number","email","address","state","district","aadhar_number","aadhar_document","pan_number","pan_document"]
+        
+    def validate(self, data):
+        # Enforce State → District dependency (visible in UI)
+        if data["district"].state_id != data["state"].id:
+            raise serializers.ValidationError({
+                "district": "Selected district does not belong to selected state."
+            })
+        return data
+
+
+# ---------------- Module Management Store Manager Registration ----------------
+class StoreManagerRegistrationSerializer(serializers.ModelSerializer):
+    aadhar_document = serializers.FileField(validators=[validate_file_size])
+    pan_document = serializers.FileField(validators=[validate_file_size])
+    class Meta:
+        model = StoreManagerRegistration
+        fields = ["id","store_manager_name","phone_number","email","address","state","district","aadhar_number","aadhar_document","pan_number","pan_document"]
+        
+    def validate(self, data):
+        # Enforce State → District dependency (visible in UI)
+        if data["district"].state_id != data["state"].id:
+            raise serializers.ValidationError({
+                "district": "Selected district does not belong to selected state."
+            })
+        return data
+
+
+# ---------------- Module Management Repair Technician Registration ----------------
+class RepairTechnicianRegistrationSerializer(serializers.ModelSerializer):
+    aadhar_document = serializers.FileField(validators=[validate_file_size])
+    pan_document = serializers.FileField(validators=[validate_file_size])
+    class Meta:
+        model = RepairTechnicianRegistration
+        fields = ["id","repair_technician_name","phone_number","email","address","state","district","aadhar_number","aadhar_document","pan_number","pan_document"]
+        
+    def validate(self, data):
+        # Enforce State → District dependency (visible in UI)
+        if data["district"].state_id != data["state"].id:
+            raise serializers.ValidationError({
+                "district": "Selected district does not belong to selected state."
+            })
+        return data
+
+
+# ---------------- Product Category ----------------
+class ProductCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductCategory
+        fields = ["id", "name", "description", "created_at"]
+        read_only_fields = ["created_at"]
+
+
+# ---------------- Store Transfer (Inventory Data) ----------------
+class StoreTransferListSerializer(serializers.ModelSerializer):
+    """List view with all columns for Inventory Data table"""
+    product_name = serializers.CharField(read_only=True)
+    category_name = serializers.CharField(source="category.name", read_only=True)
+    vendor_name = serializers.CharField(source="vendor.name", read_only=True)
+    dispatch_status_display = serializers.CharField(source="get_dispatch_status_display", read_only=True)
+    
+    class Meta:
+        model = StoreTransfer
+        fields = [
+            "id",
+            "transfer_id",
+            "product_id",
+            "product_name",
+            "category",
+            "category_name",
+            "mrn_number",
+            "batch_number",
+            "vendor",
+            "vendor_name",
+            "quantity",
+            "unit_price",
+            "total_value",
+            "transfer_date",
+            "dispatch_status",
+            "dispatch_status_display",
+            "created_at"
+        ]
+        read_only_fields = [
+            "id",
+            "product_name",
+            "vendor_name",
+            "dispatch_status_display",
+            "created_at"
+        ]
+
+
+class StoreTransferDetailSerializer(serializers.ModelSerializer):
+    """Detailed view with all information including creator"""
+    product_name = serializers.CharField(read_only=True)
+    category_name = serializers.CharField(source="category.name", read_only=True)
+    vendor_name = serializers.CharField(source="vendor.name", read_only=True)
+    created_by_username = serializers.CharField(source="created_by.username", read_only=True)
+    dispatch_status_display = serializers.CharField(source="get_dispatch_status_display", read_only=True)
+    
+    class Meta:
+        model = StoreTransfer
+        fields = [
+            "id",
+            "transfer_id",
+            "product_id",
+            "product_name",
+            "category",
+            "category_name",
+            "mrn_number",
+            "batch_number",
+            "vendor",
+            "vendor_name",
+            "quantity",
+            "unit_price",
+            "total_value",
+            "transfer_date",
+            "dispatch_status",
+            "dispatch_status_display",
+            "created_at",
+            "updated_at",
+            "created_by",
+            "created_by_username"
+        ]
+        read_only_fields = [
+            "id",
+            "product_name",
+            "vendor_name",
+            "created_by_username",
+            "dispatch_status_display",
+            "created_at",
+            "updated_at"
+        ]
+
+
+class StoreTransferCreateUpdateSerializer(serializers.ModelSerializer):
+    """Create and update operations"""
+    
+    class Meta:
+        model = StoreTransfer
+        fields = [
+            "product",
+            "product_name",
+            "category",
+            "mrn_number",
+            "batch_number",
+            "vendor",
+            "quantity",
+            "unit_price",
+            "total_value",
+            "transfer_date",
+            "dispatch_status"
+        ]
+    
+    def validate(self, data):
+        # Validate quantity
+        if data.get("quantity", 0) <= 0:
+            raise serializers.ValidationError({
+                "quantity": "Quantity must be greater than 0."
+            })
+        
+        # Validate unit_price
+        if data.get("unit_price", 0) < 0:
+            raise serializers.ValidationError({
+                "unit_price": "Unit price cannot be negative."
+            })
+        
+        # Validate total_value matches quantity * unit_price
+        quantity = data.get("quantity")
+        unit_price = data.get("unit_price")
+        total_value = data.get("total_value")
+        
+        if quantity and unit_price:
+            expected_total = Decimal(str(quantity)) * Decimal(str(unit_price))
+            if Decimal(str(total_value)) != expected_total:
+                raise serializers.ValidationError({
+                    "total_value": f"Total value must equal quantity × unit_price. Expected: {expected_total}"
+                })
+        
+        return data
 

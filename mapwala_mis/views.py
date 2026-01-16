@@ -1280,3 +1280,228 @@ class ReturnReasonDropdownAPIView(APIView):
         ])
 
 
+# ---------------- State Dropdown APIView ----------------
+class StateDropdownAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        states = State.objects.all().order_by("name")
+        return Response([
+            {
+                "id": state.id,
+                "label": state.name
+            }
+            for state in states
+        ])
+
+# ---------------- District Dropdown APIView ----------------
+class DistrictDropdownAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        state_id = request.query_params.get("state_id")
+
+        if not state_id:
+            return Response(
+                {"state_id": "state_id query param is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        districts = District.objects.filter(state_id=state_id)
+
+        return Response([
+            {
+                "id": district.id,
+                "label": district.name
+            }
+            for district in districts
+        ])
+
+# ---------------- Module Management Account Registration ----------------
+class AccountRegistrationCreateAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        serializer = AccountRegistrationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        account = serializer.save()
+
+        return Response(
+            {
+                "message": "Account created successfully",
+                "account_id": account.id
+            },
+            status=status.HTTP_201_CREATED
+        )
+
+
+# ---------------- Module Management QC Inspector Registration ----------------
+class QCInspectorRegistrationCreateAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        serializer = QCInspectorRegistrationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        qc_inspector = serializer.save()
+
+        return Response(
+            {
+                "message": "QC Inspector registered successfully",
+                "qc_inspector_id": qc_inspector.id
+            },
+            status=status.HTTP_201_CREATED
+        )
+
+
+# ---------------- Module Management Purchase Department Registration ----------------
+class PurchaseDepartmentRegistrationCreateAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        serializer = PurchaseDepartmentRegistrationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        purchase_department = serializer.save()
+
+        return Response(
+            {
+                "message": "Purchase Department registered successfully",
+                "purchase_department_id": purchase_department.id
+            },
+            status=status.HTTP_201_CREATED
+        )
+
+
+# ---------------- Module Management Store Manager Registration ----------------
+class StoreManagerRegistrationCreateAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        serializer = StoreManagerRegistrationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        store_manager = serializer.save()
+
+        return Response(
+            {
+                "message": "Store Manager registered successfully",
+                "store_manager_id": store_manager.id
+            },
+            status=status.HTTP_201_CREATED
+        )
+
+
+# ---------------- Module Management Repair Technician Registration --------------
+class RepairTechnicianRegistrationCreateAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        serializer = RepairTechnicianRegistrationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        repair_technician = serializer.save()
+
+        return Response(
+            {
+                "message": "Repair Technician registered successfully",
+                "repair_technician_id": repair_technician.id
+            },
+            status=status.HTTP_201_CREATED
+        )
+
+
+# ============================================================
+# STORE TRANSFER (INVENTORY DATA) - REST API
+# ============================================================
+
+# ---------------- Store Transfer ViewSet ----------------
+class StoreTransferViewSet(ModelViewSet):
+    """
+    ViewSet for Store Transfer (Inventory Data) Management.
+    
+    Supports:
+    - LIST: Get all store transfers with search and filtering
+    - RETRIEVE: Get detailed information about a specific transfer
+    - CREATE: Create a new store transfer
+    - UPDATE/PARTIAL_UPDATE: Update store transfer information
+    - DESTROY: Delete a store transfer
+    """
+    queryset = StoreTransfer.objects.select_related('product', 'category', 'vendor', 'created_by').all()
+    permission_classes = [IsAuthenticated]
+    filter_backends = [SearchFilter]
+    search_fields = [
+        'product_name',           # Search by product name
+        'batch_number',           # Search by batch number
+        'vendor__name',           # Search by vendor name
+        'category__name',         # Search by category name
+        'transfer_id',            # Search by transfer ID
+        'mrn_number',             # Search by MRN number
+    ]
+    pagination_class = None  # Optional: can be configured with settings
+    
+    def get_serializer_class(self):
+        """Choose serializer based on action"""
+        if self.action == 'retrieve':
+            return StoreTransferDetailSerializer
+        elif self.action in ['create', 'update', 'partial_update']:
+            return StoreTransferCreateUpdateSerializer
+        return StoreTransferListSerializer
+    
+    def get_queryset(self):
+        """Filter by dispatch_status if provided in query params"""
+        queryset = super().get_queryset()
+        
+        # Filter by dispatch status if provided
+        dispatch_status = self.request.query_params.get('dispatch_status')
+        if dispatch_status:
+            queryset = queryset.filter(dispatch_status=dispatch_status)
+        
+        # Filter by category if provided
+        category_id = self.request.query_params.get('category_id')
+        if category_id:
+            queryset = queryset.filter(category_id=category_id)
+        
+        # Filter by date range if provided
+        transfer_date_from = self.request.query_params.get('transfer_date_from')
+        if transfer_date_from:
+            queryset = queryset.filter(transfer_date__gte=transfer_date_from)
+        
+        transfer_date_to = self.request.query_params.get('transfer_date_to')
+        if transfer_date_to:
+            queryset = queryset.filter(transfer_date__lte=transfer_date_to)
+        
+        return queryset
+    
+    def perform_create(self, serializer):
+        """Set the created_by field to the current user"""
+        serializer.save(created_by=self.request.user)
+    
+    @action(detail=False, methods=['get'])
+    def filter_options(self, request):
+        """Get available filter options for the UI"""
+        dispatch_statuses = StoreTransfer.DISPATCH_STATUS_CHOICES
+        categories = ProductCategory.objects.all()
+        
+        return Response({
+            'dispatch_statuses': [
+                {'value': choice[0], 'label': choice[1]} 
+                for choice in dispatch_statuses
+            ],
+            'categories': ProductCategorySerializer(categories, many=True).data
+        })
+
+
+# ============================================================
+# PRODUCT CATEGORY - REST API
+# ============================================================
+
+# ---------------- Product Category ViewSet ----------------
+class ProductCategoryViewSet(ModelViewSet):
+    """ViewSet for Product Categories"""
+    queryset = ProductCategory.objects.all()
+    serializer_class = ProductCategorySerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [SearchFilter]
+    search_fields = ['name', 'description']

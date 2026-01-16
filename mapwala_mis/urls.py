@@ -8,6 +8,8 @@ router.register("states", StateViewSet, basename="states") # Register StateViewS
 router.register("districts", DistrictViewSet, basename="districts") # Register DistrictViewSet
 router.register("parent-companies", ParentCompanyViewSet, basename="parent-companies") # Register ParentCompanyViewSet
 router.register("vendors", VendorViewSet, basename="vendors") # Register VendorViewSet
+router.register("store-transfers", StoreTransferViewSet, basename="store-transfers") # Register StoreTransferViewSet
+router.register("product-categories", ProductCategoryViewSet, basename="product-categories") # Register ProductCategoryViewSet
 
 urlpatterns = [
     path("auth/login/", LoginAPIView.as_view(), name="login"),
@@ -15,6 +17,7 @@ urlpatterns = [
     path("b2b/register/", B2BPartnerRegistrationAPIView.as_view(), name="b2b-register"),
     path("distributor/register/", DistributorRegistrationAPIView.as_view(), name="distributor-register"),
     path("dealer/register/",DealerRegistrationAPIView.as_view(),name="dealer-register"),
+    
     # ---------------- Device Creation ----------------
     path("devices/step-1/", DeviceStep1APIView.as_view()),
     path("devices/step-2/", DeviceStep2APIView.as_view()),
@@ -27,14 +30,15 @@ urlpatterns = [
     path("devices/step-9/", DeviceStep9APIView.as_view()),
     path("devices/step-10/", DeviceAccessoryAPIView.as_view()),
     
+    # ---------------- Proforma Invoice Creation ----------------
     path("pi/create/", ProformaInvoiceCreateAPIView.as_view(), name="create-pi"),
     
+    # ---------------- Sales Order Creation ----------------
     path("order-entry/step-1/", OrderEntryStep1APIView.as_view()),
-    
     path("order-products/", OrderProductListAPIView.as_view()),
     path("order-batches/", OrderBatchListAPIView.as_view()),
     path("sales-orders/create/", SalesOrderCreateAPIView.as_view()),
-    
+    # ---------------- Production Order Creation ----------------
     path("production-orders/add-to-stock/", ProductionOrderCreateAPIView.as_view()),
     path("dropdowns/products/", ProductDropdownAPIView.as_view()),
     path("dropdowns/suppliers/", SupplierVendorDropdownAPIView.as_view()),
@@ -89,6 +93,23 @@ urlpatterns = [
     path("dropdowns/dispatch-order-types/", DispatchOrderTypeDropdownAPIView.as_view()),
     path("dropdowns/dispatch-products/", DispatchProductDropdownAPIView.as_view()),
     path("dropdowns/dispatch-batches/", DispatchBatchDropdownAPIView.as_view()),
+    
+    # ---------------- Module Management Account Registration ----------------
+    path("dropdowns/states/", StateDropdownAPIView.as_view()),
+    path("dropdowns/districts/", DistrictDropdownAPIView.as_view()),
+    path("account/register/", AccountRegistrationCreateAPIView.as_view()),
+    
+    # ---------------- Module Management QC Inspector Registration ----------------
+    path("qc-inspectors/register/", QCInspectorRegistrationCreateAPIView.as_view()),
+    
+    # ---------------- Module Management Purchase Department Registration ----------------
+    path("purchase-departments/register/", PurchaseDepartmentRegistrationCreateAPIView.as_view()),
+    
+    # ---------------- Module Management Store Manager Registration ----------------
+    path("store-managers/register/", StoreManagerRegistrationCreateAPIView.as_view()),
+    
+    # ---------------- Module Management Repair Technician Registration ----------------
+    path("repair-technicians/register/", RepairTechnicianRegistrationCreateAPIView.as_view()),
 ]
 
 urlpatterns += router.urls
