@@ -2,7 +2,7 @@
 
 **Project Type:** Django REST Framework Backend with JWT Authentication  
 **Database:** PostgreSQL  
-**Last Updated:** January 13, 2026
+**Last Updated:** January 17, 2026
 
 ---
 
@@ -13,8 +13,11 @@ Mapwala MIS (Management Information System) is a comprehensive backend service d
 - **Geographical Data** (States & Districts)
 - **Business Partners** (B2B, B2C, Distributors, Dealers, Vendors)
 - **Manufacturing & Production** (Devices, BOMs, Components)
-- **Order Management** (Production Orders, Sales Orders)
-- **Inventory Management** (Stock tracking through batches)
+- **Order Management** (Production Orders, Sales Orders, RFQ, Purchase Orders)
+- **Inventory Management** (Stock tracking through batches, Store Transfers, MRN)
+- **Logistics & Dispatch** (Dispatch workflow, Post-Dispatch Returns)
+- **Account Management** (Debit Notes, Credit Notes)
+- **Module Management** (QC Inspectors, Purchase Departments, Store Managers, Repair Technicians)
 
 ---
 
@@ -35,6 +38,8 @@ Mapwala_MIS_Backend/
 │   ├── admin.py                  # Django admin config
 │   ├── apps.py                   # App configuration
 │   ├── tests.py                  # Test cases
+|   ├── utils.py                  # 
+|   ├── jazzmin_patch.py          # 
 │   └── migrations/               # Database migration files
 ├── requirements.txt              # Python dependencies
 ├── manage.py                     # Django CLI
@@ -46,7 +51,7 @@ Mapwala_MIS_Backend/
 
 ---
 
-## 🗄️ DATABASE MODELS (Detailed Overview)
+## 🗄️ DATABASE MODELS (Detailed Overview - 50+ Models)
 
 ### 1. **User Management**
 
@@ -93,13 +98,13 @@ Mapwala_MIS_Backend/
 #### **B2CCustomer** (Business-to-Consumer)
 - Individual customer information
 - Fields include all standard business details + tax documents
-- Documents uploaded to: `documents/b2c/`
+- Documents uploaded to: `documents/b2c/gst/`, `documents/b2c/tan/`, `documents/b2c/pan/`
 - Indexed Fields: `gst_number`, `pan_number`, `phone_number`
 
 #### **B2BPartner** (Business-to-Business)
 - Partner company information
 - Field name: `partner_name` (instead of just `name`)
-- Documents uploaded to: `documents/b2b/`
+- Documents uploaded to: `documents/b2b/gst/`, `documents/b2b/tan/`, `documents/b2b/pan/`
 - Indexed Fields: `gst_number`, `pan_number`, `phone_number`
 
 #### **Manufacturer**
@@ -216,21 +221,20 @@ Mapwala_MIS_Backend/
 
 ---
 
-### 6. **Order Management Models**
+### 6. **Product & Inventory Models**
 
-#### **OrderEntry**
-- Master record for order creation flow
-- `user`: Foreign Key to Django User
-- `order_type`: "production" | "sales"
-- `production_type`: "add_to_stock" | "make_to_order" (conditional)
-- `assembly_type`: "fully_outsourced" | "pcb_device" | "pcb_outside_device_inside"
-- Status Flags: `is_step1_complete`, `is_step2_complete`
+#### **Product**
+- Master product record
+- Fields: `product_id` (unique, CharField), `created_at`
+- String representation: "Product {product_id}"
+- Usage: Base for ordering and inventory
 
 #### **OrderProduct**
 - Product/Device Model for ordering (e.g., "GPS Tracker Pro")
 - Field: `name` (unique)
 - Example: "Product 101", "Product 102" (must match UI dropdown)
-- Used in: Sales Orders, Production Orders
+- Used in: Sales Orders, Production Orders, Make-to-Order
+- Ordering: By name
 
 #### **OrderBatch**
 - Batch-level inventory tracking
@@ -239,6 +243,30 @@ Mapwala_MIS_Backend/
 - `available_stock`: Current inventory count
 - Unique Constraint: (product, batch_number)
 - Usage: Each product can have MULTIPLE batches with separate stock
+- Ordering: By batch_number
+
+#### **SupplierVendor**
+- Supplier/Vendor dropdown for production orders
+- Field: `name` (unique)
+- Ordering: By name
+
+#### **ProductCategory**
+- Product categorization
+- Fields: `name` (unique), `description`, `created_at`
+- Ordering: By name
+- Related: One-to-Many with StoreTransfer
+
+---
+
+### 7. **Order Management Models**
+
+#### **OrderEntry**
+- Master record for order creation flow
+- `user`: Foreign Key to Django User
+- `order_type`: "production" | "sales"
+- `production_type`: "add_to_stock" | "make_to_order" (conditional)
+- `assembly_type`: "fully_outsourced" | "pcb_device" | "pcb_outside_device_inside"
+- Status Flags: `is_step1_complete`, `is_step2_complete`
 
 #### **SalesOrder**
 - Customer purchase order
@@ -252,15 +280,6 @@ Mapwala_MIS_Backend/
 - **Method**: `calculate_grand_total()` - calculates: (qty × unit_price - discount) × (1 + gst%) + shipping
 - Stock Deduction: Reduces `available_stock` in OrderBatch
 
----
-
-### 7. **Production & Supplier Models**
-
-#### **SupplierVendor**
-- Supplier/Vendor for production orders
-- Field: `name` (unique)
-- Dropdown usage for sourcing
-
 #### **ProductionOrder**
 - Manufacturing/Add-to-Stock order
 - `production_type`: "add_to_stock"
@@ -273,9 +292,184 @@ Mapwala_MIS_Backend/
 - **Method**: `calculate_total_value()` - qty × unit_price
 - Stock Addition: Increases `available_stock` in OrderBatch
 
+#### **OrderEntryMakeToOrder**
+- Make-to-Order workflow with advanced customization
+- Customer Info: `customer_name`, `customer_type`, `contact_person`, `mobile_no`
+- Product Customization: `product_specifications`, `customization_details`
+- Quantities: `quantity`, `unit_price`, `discount_percent`, `gst_percent`
+- Payment: `advance_payment`, `payment_terms` (100% advance, 50/50, etc.)
+- Priority: `order_priority` (low, medium, high, urgent)
+- Expected Delivery: `expected_delivery_date`
+- Additional: `special_instructions`, `grand_total`
+
 ---
 
-## 🔌 API ENDPOINTS
+### 8. **RFQ (Request For Quote) Models**
+
+#### **RequestForQuote**
+- Request for quotation management
+- STEP 1: `order_reference`, `device_name`, `assembly_type`, `quantity`
+- STEP 3: `srn_no`, `delivery_date`, `delivery_address`, `additional_requirements`
+- Status: "draft" | "submitted"
+- Relations: One-to-Many with RFQSelection
+
+#### **RFQSelection**
+- Selected items for RFQ
+- Fields: `item_type` (bom, component, service), `reference` (BOM ID / Component name / Service name)
+- Many-to-One: request_for_quote
+
+---
+
+### 9. **Purchase Order Models**
+
+#### **PurchaseOrder**
+- Main PO entity with 2-step workflow
+- STEP 1: `buyer_name`, `order_id`, `rfq_id`, `assembly_type`
+- STEP 2: `wastage_percentage`, `selected_vendor_id`, `delivery_date`, `payment_terms`
+- Created by: User FK
+- Relations: One-to-Many with PurchaseOrderItem, PurchaseOrderType
+
+#### **PurchaseOrderType**
+- Multi-select Order Types from UI
+- Choices: "bom" (Items), "component" (Components), "service" (Services)
+- Unique Constraint: (purchase_order, order_type)
+
+#### **PurchaseOrderItem**
+- Line items in PO
+- Fields: `item_code`, `item_type`, `vendor_id`, `vendor_name`
+- Quantities: `quantity`, `unit_price`, `gst_amount`, `total_price`
+- Delivery: `delivery_days`
+- Many-to-One: purchase_order
+
+---
+
+### 10. **Material Receipt Note (MRN) Models**
+
+#### **MaterialReceiptNote**
+- GRN/Goods Receipt Note
+- `purchase_order` (FK), `po_date`, `vendor` (FK)
+- `inward_type`: bom_items, materials, assembled_pcb, assembled_device
+- `receipt_date`, `batch_number` (unique)
+- Documents: `invoice_file`, `challan_file`, `eway_bill_file`
+- Fields: `invoice_number`, `delivery_challan_number`, `eway_bill_number`, `remarks`
+- Created by: User FK
+
+#### **MaterialReceiptItem**
+- Individual items received in MRN
+- `purchase_order_item` (FK)
+- Quantities: `received_qty`, `balance_qty` (auto-calculated)
+- Field: `serial_numbers` (comma-separated)
+- Many-to-One: material_receipt_note
+
+---
+
+### 11. **Dispatch Workflow Models**
+
+#### **Dispatch**
+- Dispatch workflow main model (4-step process)
+- Status: "draft" | "completed"
+- STEP 1: `sales_order` (FK), `order_type`
+- STEP 2: `product` (FK), `batch` (FK), `dispatch_quantity`
+- Fields: `imei_number`, `serial_number`, `iccid_number`
+- STEP 3: `dispatch_date`, `dispatch_remarks`
+- STEP 4: `customer_name`, `customer_contact`, `customer_email`, `customer_address`
+- Flags: `urgent_delivery_required`, `insurance_required`, `stock_deducted`
+- Created by: User FK
+
+---
+
+### 12. **Post-Dispatch Returns Models**
+
+#### **PostDispatchReturn**
+- Post-dispatch return management
+- Dispatch Reference: `dispatch_id`, `invoice_no`, `customer_name`, `dispatch_total_value` (read-only)
+- Return Details:
+  - `return_type`: "full" | "partial" | "replacement"
+  - `return_reason`: "damaged", "defective", "wrong_item", "rejected", "quality", "spec_mismatch", "other"
+  - `return_date`, `return_remarks`
+- Calculated: `total_return_amount`
+- Created by: User FK
+
+#### **PostDispatchReturnItem**
+- Line items for return
+- Fields: `product_id`, `description`, `dispatched_qty`, `unit_price`
+- Return Details: `return_qty`, `return_amount`
+- Many-to-One: post_dispatch_return
+
+---
+
+### 13. **Inventory Models**
+
+#### **StoreTransfer**
+- Inventory data tracking
+- Product Info: `product` (FK), `product_name`, `category` (FK to ProductCategory)
+- Transfer Details: `transfer_id` (unique), `mrn_number`, `batch_number`
+- Vendor & Quantity: `vendor` (FK), `quantity`, `unit_price`, `total_value`
+- Dates: `transfer_date`, `created_at`, `updated_at`
+- Status: `dispatch_status` ("dispatched", "non_dispatched", "return")
+- Metadata: `created_by` (User FK)
+- Indexes: transfer_id, batch_number, dispatch_status, transfer_date
+
+---
+
+### 14. **Account Management Models**
+
+#### **DebitNote**
+- Debit notes for vendor returns, disputes, penalties
+- Fields: `number` (auto-generated: DN-YYYY-NNN), `date`, `vendor`, `amount`
+- Reason: "vendor_rejected_return", "quality_dispute", "late_delivery_penalty", "specification_mismatch", "warranty_claim_denied", "other"
+- Status: "pending" | "approved" | "rejected" | "processed"
+- Reference: `reference_document` (RTN-001, PO-001, etc.)
+- Created by: User FK
+
+#### **CreditNote**
+- Credit notes for customer returns, discounts, refunds
+- Fields: `number` (auto-generated: CN-YYYY-NNN), `date`, `customer`, `amount`
+- Reason: "return_accepted", "discount_adjustment", "overpayment_refund", "quality_issue", "price_correction", "other"
+- Status: "pending" | "approved" | "rejected" | "processed"
+- Reference: `reference_document` (INV-001, RTN-001, etc.)
+- Created by: User FK
+
+#### **NoteSequence**
+- Maintains year-wise running sequence for DebitNote & CreditNote
+- Fields: `year`, `note_type` ("debit" | "credit"), `last_number`
+- Unique Constraint: (year, note_type)
+
+---
+
+### 15. **Module Management Registration Models**
+
+#### **AccountRegistration**
+- Account holder registration
+- Fields: `account_name`, `phone_number`, `email`, `address`
+- Location: `state` (FK), `district` (FK)
+- Documents: `aadhar_number`, `aadhar_document`, `pan_number`, `pan_document`
+
+#### **QCInspectorRegistration**
+- QC Inspector registration
+- Fields: `qc_inspector_name`, `phone_number`, `email`, `address`
+- Location: `state` (FK), `district` (FK)
+- Documents: `aadhar_number`, `aadhar_document`, `pan_number`, `pan_document`
+
+#### **PurchaseDepartmentRegistration**
+- Purchase Department registration
+- Fields: `purchase_department_name`, `phone_number`, `email`, `address`
+- Location: `state` (FK), `district` (FK)
+- Documents: `aadhar_number`, `aadhar_document`, `pan_number`, `pan_document`
+
+#### **StoreManagerRegistration**
+- Store Manager registration
+- Fields: `store_manager_name`, `phone_number`, `email`, `address`
+- Location: `state` (FK), `district` (FK)
+- Documents: `aadhar_number`, `aadhar_document`, `pan_number`, `pan_document`
+
+#### **RepairTechnicianRegistration**
+- Repair Technician registration
+- Fields: `repair_technician_name`, `phone_number`, `email`, `address`
+- Location: `state` (FK), `district` (FK)
+- Documents: `aadhar_number`, `aadhar_document`, `pan_number`, `pan_document`
+
+## 🔌 API ENDPOINTS (60+ Endpoints)
 
 ### **Authentication**
 - `POST /api/auth/login/`
@@ -289,6 +483,8 @@ Mapwala_MIS_Backend/
 - `DELETE /api/states/{id}/` - Delete with district validation
 - `GET/POST /api/districts/` - List/Create districts
 - `GET /api/districts/?state={state_id}` - Filter by state
+- `GET /api/dropdowns/states/` - States dropdown
+- `GET /api/dropdowns/districts/` - Districts dropdown
 
 ### **Company Management**
 - `GET/POST /api/parent-companies/` - Parent company CRUD
@@ -301,6 +497,12 @@ Mapwala_MIS_Backend/
 - `POST /api/dealer/register/` - Dealer registration
 - All support multipart file uploads (documents)
 - Returns: created entity ID, name, email/contact
+
+### **Module Management Registrations**
+- `POST /api/account/register/` - Account holder registration
+- `POST /api/qc-inspectors/register/` - QC Inspector registration
+- `POST /api/purchase-departments/register/` - Purchase Department registration
+- `POST /api/store-managers/register/` - Store Manager registration
 
 ### **Device Creation (10-Step Process)**
 - `POST /api/devices/step-1/` - Device info (DeviceInformation)
@@ -321,6 +523,7 @@ Mapwala_MIS_Backend/
 
 ### **Order Management**
 - `POST /api/order-entry/step-1/` - Order entry initialization
+- `POST /api/order-entry/step-2/` - Order entry step 2
 - `GET /api/order-products/` - Product dropdown
 - `GET /api/order-batches/?product_id={id}` - Batch dropdown
 - `POST /api/sales-orders/create/` - Create sales order
@@ -329,58 +532,116 @@ Mapwala_MIS_Backend/
 - `POST /api/production-orders/add-to-stock/` - Production order
   - Increases batch stock
   - Returns: production_order_id, current_stock
-
-### **Dropdowns**
 - `GET /api/dropdowns/products/` - All products for selection
 - `GET /api/dropdowns/suppliers/` - All suppliers/vendors
 - `GET /api/dropdowns/product-categories/` - Hardcoded category list
+- `GET /api/dropdowns/customer-types/` - Customer type choices
+- `GET /api/dropdowns/payment-terms/` - Payment terms choices
+- `GET /api/dropdowns/order-priority/` - Order priority levels
+- `GET /api/dropdowns/sales-orders/` - Sales orders dropdown
+
+### **RFQ (Request For Quote) Management**
+- `POST /api/rfq/step-1/` - RFQ Step 1 (device & assembly info)
+- `POST /api/rfq/step-2/` - RFQ Step 2 (selected items)
+- `POST /api/rfq/step-3/` - RFQ Step 3 (delivery & requirements)
+- `GET /api/dropdowns/quote-types/` - Quote type choices
+- `GET /api/dropdowns/assembly-types/` - Assembly type choices
+- `GET /api/dropdowns/srn/` - SRN choices (Standard Requirement Numbers)
+- `GET /api/dropdowns/vendors/` - Vendors dropdown
+
+### **Purchase Order Management**
+- `POST /api/purchase/step-1/` - PO Step 1 (buyer & order info)
+- `POST /api/purchase/step-2/` - PO Step 2 (vendor & terms)
+- `GET /api/dropdowns/order-types/` - Order type choices (BOM, Component, Service)
+- `GET /api/dropdowns/assembly-types/` - Assembly type choices
+- `GET /api/dropdowns/payment-terms/` - Payment term choices
+
+### **Material Receipt Note (MRN)**
+- `POST /api/mrn/create/` - Create MRN
+- `GET /api/dropdowns/purchase-orders/` - Purchase orders dropdown
+- `GET /api/dropdowns/inward-types/` - Inward type choices
+- `GET /api/purchase/{po_id}/items/` - Get PO items by purchase order ID
+
+### **Dispatch Workflow (4-Step Process)**
+- `POST /api/dispatch/step-1/` - Dispatch Step 1 (select sales order)
+- `POST /api/dispatch/step-2/{dispatch_id}/` - Dispatch Step 2 (select product & batch)
+- `POST /api/dispatch/step-3/{dispatch_id}/` - Dispatch Step 3 (dispatch date & remarks)
+- `POST /api/dispatch/step-4/{dispatch_id}/` - Dispatch Step 4 (customer details & completion)
+- `GET /api/dropdowns/dispatch-order-types/` - Dispatch order type choices
+- `GET /api/dropdowns/dispatch-products/` - Products dropdown for dispatch
+- `GET /api/dropdowns/dispatch-batches/` - Batches dropdown for dispatch
+
+### **Post-Dispatch Returns Management**
+- `POST /api/returns/post-dispatch/create/` - Create post-dispatch return
+- `GET /api/dropdowns/return-types/` - Return type choices (Full, Partial, Replacement)
+- `GET /api/dropdowns/return-reasons/` - Return reason choices
+
+### **Account Management - Debit & Credit Notes**
+- `GET /api/account-management/dashboard/` - Account management dashboard
+- `GET /api/debit-notes/reasons/` - Debit note reason choices
+- `GET /api/credit-notes/reasons/` - Credit note reason choices
+- `GET /api/notes/statuses/` - Note status choices
+- `GET/POST /api/debit-notes/` - Debit Notes CRUD (ViewSet)
+- `GET/POST /api/credit-notes/` - Credit Notes CRUD (ViewSet)
+
+### **Inventory Management**
+- `GET/POST /api/store-transfers/` - Store transfers CRUD (ViewSet)
+
+### **Product Management**
+- `GET/POST /api/product-categories/` - Product categories CRUD (ViewSet)
 
 ---
 
-## 📝 SERIALIZERS BREAKDOWN
+---
 
-### **Authentication**
-- `LoginSerializer`: Validates username, password, terms acceptance. Returns authenticated user.
+## 📝 SERIALIZERS OVERVIEW
 
-### **Location**
-- `StateSerializer`: id, name, status
-- `DistrictSerializer`: id, name, code, state, state_name, status (includes state name)
+The project uses 50+ serializers for request/response validation:
 
-### **Registrations**
-- `B2CCustomerRegistrationSerializer`: 16 fields including documents
-- `B2BPartnerRegistrationSerializer`: 16 fields (partner_name instead of name)
-- `DistributorRegistrationSerializer`: 21 fields + authorised_states/districts
-- `DealerRegistrationSerializer`: 21 fields + manufacturer/distributor FK selection
+### **Core Serializers**
+- `LoginSerializer` - Authentication with terms acceptance
+- `StateSerializer`, `DistrictSerializer` - Location management
+- `ProformaInvoiceCreateSerializer` - PI creation with party validation
 
-### **Device Steps (1-10)**
-- `DeviceInformationSerializer`: Device specs excluding device FK
-- `BOMSerializer`: Upload type + file (validates bulk/individual)
-- `BOMComponentSerializer`: Component fields excluding bom FK
-- `EnclosureSerializer`: Dimensions, material, quantity
-- `WireConnectorSerializer`: Connector details
-- `WireHarnessSerializer`: Nested connector serializer with create method
-- `BatterySerializer`: Capacity and dimensions
-- `SOSButtonSerializer`: SOS button specs
-- `StickerSerializer`: Sticker details (multiple allowed)
-- `UserManualSerializer`: Manual file upload
-- `AccessorySerializer`: Accessory details (multiple allowed)
+### **Registration Serializers**
+- `B2CCustomerRegistrationSerializer` - B2C customer with documents
+- `B2BPartnerRegistrationSerializer` - B2B partner registration
+- `DistributorRegistrationSerializer` - Distributor with authorized areas
+- `DealerRegistrationSerializer` - Dealer with manufacturer/distributor FK selection
 
-### **Order Management**
-- `OrderEntryStep1Serializer`: order_type, production_type, assembly_type
-- `OrderProductSerializer`: id, name (dropdown)
-- `OrderBatchSerializer`: id, batch_number, available_stock
-- `SalesOrderCreateSerializer`:
-  - Input: product_device_model (string), batch (string)
-  - Resolves to actual product/batch objects
-  - Validates stock availability
-  - Validates grand_total calculation
-- `ProductionOrderCreateSerializer`:
-  - Input: product_device_model, batch_number, supplier_vendor_id
-  - Auto-creates batch if needed
-  - Validates total_value calculation
+### **Device Creation Serializers (Steps 1-10)**
+- `DeviceInformationSerializer` - Device specs
+- `BOMSerializer` - BOM with upload type validation
+- `BOMComponentSerializer` - Individual components
+- `EnclosureSerializer`, `WireConnectorSerializer`, `WireHarnessSerializer` - Components
+- `BatterySerializer`, `SOSButtonSerializer` - Specifications
+- `StickerSerializer`, `UserManualSerializer`, `AccessorySerializer` - Attachments
 
-### **Proforma Invoice**
-- `ProformaInvoiceCreateSerializer`: All fields, validates single party selection
+### **Order Management Serializers**
+- `OrderEntryStep1Serializer` - Order type selection
+- `OrderProductSerializer`, `OrderBatchSerializer` - Dropdowns
+- `SalesOrderCreateSerializer` - Sales order with stock validation
+- `ProductionOrderCreateSerializer` - Production order with batch auto-creation
+
+### **RFQ & Purchase Order Serializers**
+- `RFQStep1Serializer`, `RFQStep2Serializer`, `RFQStep3Serializer` - RFQ workflow
+- `PurchaseOrderStep1Serializer`, `PurchaseOrderStep2Serializer` - PO workflow
+- `PurchaseOrderItemSerializer` - Line items
+
+### **MRN & Dispatch Serializers**
+- `MRNCreateSerializer` - Material receipt with item details
+- `DispatchStep1Serializer` through `DispatchStep4Serializer` - Dispatch workflow
+- `PostDispatchReturnCreateSerializer` - Return with line items
+
+### **Account Management Serializers**
+- `DebitNoteSerializer`, `CreditNoteSerializer` - Accounting documents
+- `AccountManagementDashboardSerializer` - Dashboard data
+
+### **Module Management Serializers**
+- `AccountRegistrationSerializer` - Account registration
+- `QCInspectorRegistrationSerializer` - QC inspector registration
+- `PurchaseDepartmentRegistrationSerializer` - Purchase department registration
+- `StoreManagerRegistrationSerializer` - Store manager registration
 
 ---
 
@@ -427,36 +688,96 @@ Mapwala_MIS_Backend/
 - Exactly ONE party field must be filled (rest must be null/empty)
 - Party type must match the filled party field
 
+### **Dispatch Validation**
+- Sales order must exist and be in valid state
+- Product & batch must match sales order
+- Dispatch quantity ≤ sales order quantity
+- IMEI/Serial/ICCID numbers: Optional, unique if provided
+
+### **Post-Dispatch Return Validation**
+- Dispatch must exist (referenced via dispatch_id)
+- Return quantity ≤ dispatched quantity per item
+- Return reason must be valid choice
+- Total return amount calculated from line items
+
+### **MRN Validation**
+- Purchase order must exist
+- Vendor must match PO vendor
+- Received quantity + total received (from all MRNs) ≤ ordered quantity
+- Balance qty auto-calculated: ordered_qty - (total_received + current_received_qty)
+
+### **Account Note Validation**
+- Debit Note: Vendor name required, amount > 0
+- Credit Note: Customer name required, amount > 0
+- Note numbers: Auto-generated in format DN-YYYY-NNN / CN-YYYY-NNN
+- Status progression: pending → approved/rejected → processed
+
 ---
 
 ## 💾 DATABASE CONSTRAINTS
 
-- **Unique Constraints**:
-  - State.name
-  - District (code, state)
-  - OrderProduct.name
-  - OrderBatch (product, batch_number)
-  - SupplierVendor.name
-  - Manufacturer.name
-  - ParentCompany: Indexes on GST/PAN numbers
+### **Unique Constraints**
+- `State.name`
+- `District (code, state)`
+- `OrderProduct.name`
+- `OrderBatch (product, batch_number)`
+- `SupplierVendor.name`
+- `Manufacturer.name`
+- `MaterialReceiptNote.batch_number`
+- `StoreTransfer.transfer_id`
+- `ProductCategory.name`
+- `DebitNote.number` (auto-generated)
+- `CreditNote.number` (auto-generated)
+- `NoteSequence (year, note_type)`
+- `PurchaseOrderType (purchase_order, order_type)`
 
-- **Foreign Key Protection**:
-  - on_delete=PROTECT: Prevents deletion if children exist
-  - on_delete=CASCADE: Deletes children when parent deleted
-  - on_delete=SET_NULL: Only if field is nullable
+### **Indexed Fields**
+- `State`: id
+- `District`: (code, state)
+- `ParentCompany`: gst_number, pan_number
+- `Vendor`: gst_number, pan_number
+- `B2CCustomer`: gst_number, pan_number, phone_number
+- `B2BPartner`: gst_number, pan_number, phone_number
+- `OrderBatch`: (product, batch_number)
+- `StoreTransfer`: transfer_id, batch_number, dispatch_status, transfer_date
+- `DebitNote`: status, date, vendor
+- `CreditNote`: status, date, customer
+
+### **Foreign Key Protection**
+- `on_delete=PROTECT`: Prevents deletion if children exist
+  - State (on Districts)
+  - OrderProduct (on OrderBatch, SalesOrder, ProductionOrder)
+  - Vendor (on MRN)
+  - Distributor (on Dealers)
+  - SupplierVendor (on ProductionOrder)
+  
+- `on_delete=CASCADE`: Deletes children when parent deleted
+  - Device (on DeviceInformation, BOM, Enclosure, WireHarness, Battery, SOSButton, UserManual, Sticker, Accessory)
+  - BOM (on BOMComponent)
+  - OrderEntry (on OrderEntryMakeToOrder)
+  - PurchaseOrder (on PurchaseOrderItem, PurchaseOrderType)
+  - MaterialReceiptNote (on MaterialReceiptItem)
+  - PostDispatchReturn (on PostDispatchReturnItem)
+  - RFQ (on RFQSelection)
+
+- `on_delete=SET_NULL`: Only if field is nullable
+  - User (on StoreTransfer.created_by)
 
 ---
 
 ## 📦 DEPENDENCIES
 
 **Key Packages**:
-- Django 6.0 - Web framework
-- djangorestframework 3.16.1 - REST API framework
-- djangorestframework-simplejwt 5.5.1 - JWT authentication
-- psycopg2-binary 2.9.11 - PostgreSQL adapter
-- django-jazzmin 3.0.1 - Admin interface enhancement
-- python-dotenv 1.2.1 - Environment variables
-- dj-database-url 3.1.0 - Database URL parsing
+- **Django 6.0** - Web framework
+- **djangorestframework 3.16.1** - REST API framework
+- **djangorestframework-simplejwt 5.5.1** - JWT authentication
+- **psycopg2-binary 2.9.11** - PostgreSQL adapter
+- **django-jazzmin 3.0.1** - Admin interface enhancement
+- **django-cors-headers 4.9.0** - CORS support
+- **python-dotenv 1.2.1** - Environment variables
+- **dj-database-url 3.1.0** - Database URL parsing
+
+See `requirements.txt` for complete list with versions.
 
 ---
 
@@ -467,63 +788,94 @@ Mapwala_MIS_Backend/
 Django requires a secure `SECRET_KEY` for cryptographic signing.  
 This project does **not** store the secret key in the codebase — it must be generated and stored in a `.env` file.
 
----
-
 #### 1️⃣ Generate a secure secret key
 
 From the project root, run:
-
 ```bash
 python - << 'EOF'
 from django.core.management.utils import get_random_secret_key
 print(get_random_secret_key())
 EOF
+```
+OR
+
+```bash
+python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+```
 
 Or, if you are already inside the Django shell:
 
+```python
 from django.core.management.utils import get_random_secret_key
 print(get_random_secret_key())
+```
 
 This will output a long random string — copy it.
 
+#### 2️⃣ Create a .env file
 
-2️⃣ Create a .env file
+In the project root, create a file named `.env` and add:
 
-In the project root, create a file named .env and add:
-
+```env
 SECRET_KEY=your_generated_secret_key_here
 DEBUG=True
+DATABASE_URL=postgresql://user:password@localhost:5432/mapwala_mis
+ALLOWED_HOSTS=localhost,127.0.0.1
+CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+```
 
-⚠️ Do not commit this file — make sure .env is in .gitignore.
+Or use individual database settings:
 
-3️⃣ Django will automatically load it
-The project loads environment variables using python-dotenv inside settings.py.
-Django will fail to start if SECRET_KEY is missing.
+```env
+SECRET_KEY=your_generated_secret_key_here
+DEBUG=True
+DB_ENGINE=postgresql
+DB_NAME=mapwala_mis
+DB_USER=postgres
+DB_PASSWORD=your_password
+DB_HOST=localhost
+DB_PORT=5432
+ALLOWED_HOSTS=localhost,127.0.0.1
+CORS_ALLOWED_ORIGINS=http://localhost:3000
+```
 
-🔒 Security Notes
-  Never commit or share your SECRET_KEY.
-  Use a different key for each environment (local, staging, production).
-  Rotate the key immediately if it is exposed.
+⚠️ Do not commit this file — make sure `.env` is in `.gitignore`.
+
+#### 3️⃣ Django will automatically load it
+The project loads environment variables using `python-dotenv` inside `settings.py`.
+Django will fail to start if `SECRET_KEY` is missing.
+
+#### 🔒 Security Notes
+- Never commit or share your `SECRET_KEY`.
+- Use a different key for each environment (local, staging, production).
+- Rotate the key immediately if it is exposed.
 
 ### **Django Settings**
 - **DEBUG**: Controlled via .env (DEBUG=True/False)
-- **ALLOWED_HOSTS**: * (all hosts allowed)
-- **Installed Apps**: jazzmin, admin, auth, contenttypes, sessions, messages, staticfiles, rest_framework, mapwala_mis
-- **Authentication**: JWTAuthentication
-- **Default Permission**: IsAuthenticated
-- **CORS**: Not explicitly configured (all origins)
+- **ALLOWED_HOSTS**: From .env (default: localhost)
+- **Installed Apps**: jazzmin, admin, auth, contenttypes, sessions, messages, staticfiles, corsheaders, rest_framework, mapwala_mis
+- **Authentication**: JWTAuthentication (djangorestframework-simplejwt)
+- **Default Permission**: IsAuthenticated on most endpoints
+- **CORS**: Configured via CORS_ALLOWED_ORIGINS from .env
 
 ### **JWT Configuration**
 - **ACCESS_TOKEN_LIFETIME**: 24 hours
-- **REFRESH_TOKEN_LIFETIME**: 0 seconds (no refresh)
+- **REFRESH_TOKEN_LIFETIME**: Not used (single access token)
 - **AUTH_HEADER_TYPES**: Bearer
+
+### **Database**
+- **Engine**: PostgreSQL
+- **Configuration**: Via DATABASE_URL or individual DB_* env variables
+- **Connection Pooling**: conn_max_age=600
 
 ### **Admin Interface (Jazzmin)**
 - **Site Title**: Mapwala MIS Admin
 - **Icons**: Custom icons for models
 - **Search Models**: User, Group, ParentCompany, Vendor, B2CCustomer, B2BPartner
 
----
+### **File Uploads**
+- **Media Root**: Configured for document uploads
+- **Upload Paths**: Organized folder structure (documents/, mrn/, bom/, etc.)
 
 ## 📊 WORKFLOW EXAMPLES
 
@@ -571,6 +923,164 @@ Django will fail to start if SECRET_KEY is missing.
    - OrderBatch.available_stock += quantity_added
    - Batch auto-created if doesn't exist
 
+### **Example 4: RFQ → Purchase Order → MRN Workflow**
+
+1. **Create RFQ (3-Step)**
+   ```
+   POST /api/rfq/step-1/  → device info, quantity
+   POST /api/rfq/step-2/  → select items (BOM parts, components, services)
+   POST /api/rfq/step-3/  → delivery details, SRN number
+   Returns: rfq_id
+   ```
+
+2. **Create Purchase Order (2-Step)**
+   ```
+   POST /api/purchase/step-1/  → buyer info, RFQ reference
+   POST /api/purchase/step-2/  → vendor selection, payment terms
+   Returns: po_id
+   ```
+
+3. **Create Material Receipt Note (MRN)**
+   ```
+   POST /api/mrn/create/
+   Body: po_id, vendor, inward_type, received_qty
+   Returns: mrn_id, batch_number
+   ```
+
+### **Example 5: Dispatch & Post-Dispatch Return Workflow**
+
+1. **Create Dispatch (4-Step)**
+   ```
+   POST /api/dispatch/step-1/           → select sales order
+   POST /api/dispatch/step-2/<id>/      → select product & batch
+   POST /api/dispatch/step-3/<id>/      → dispatch date & remarks
+   POST /api/dispatch/step-4/<id>/      → customer details, mark completed
+   Returns: dispatch_id, status=completed, stock_deducted=true
+   ```
+
+2. **Create Post-Dispatch Return**
+   ```
+   POST /api/returns/post-dispatch/create/
+   Body: dispatch_ref, return_type, return_reason, return_qty
+   Returns: return_id, total_return_amount
+   ```
+
+### **Example 6: Account Management (Debit & Credit Notes)**
+
+1. **Create Debit Note (Vendor)**
+   ```
+   POST /api/debit-notes/
+   Body: vendor, reason, amount, reference_document
+   Auto-generated: DN-2026-001, DN-2026-002, etc.
+   Returns: debit_note_id, number
+   ```
+
+2. **Create Credit Note (Customer)**
+   ```
+   POST /api/credit-notes/
+   Body: customer, reason, amount, reference_document
+   Auto-generated: CN-2026-001, CN-2026-002, etc.
+   Returns: credit_note_id, number
+   ```
+
+### **Example 7: Make-to-Order Production**
+
+1. **Create Order Entry with Make-to-Order**
+   ```
+   POST /api/order-entry/step-1/
+   Body: order_type="production", production_type="make_to_order"
+   ```
+
+2. **Create Make-to-Order Details**
+   ```
+   POST /api/order-entry/step-2/
+   Body: customer_type, product_specifications, customization_details, 
+         quantity, expected_delivery_date, payment_terms, order_priority
+   Returns: order_id
+   ```
+
+## 🚀 RUNNING THE PROJECT
+
+### **Prerequisites**
+- Python 3.10+
+- PostgreSQL 12+
+- Virtual environment (venv, conda, etc.)
+
+### **Local Development Setup**
+
+1. **Clone the repository**
+   ```bash
+   cd /home/vaibhav/project/Mapwala_MIS_Backend
+   ```
+
+2. **Create & activate virtual environment**
+   ```bash
+   python -m venv vir_env
+   source vir_env/bin/activate  # On Windows: vir_env\Scripts\activate
+   ```
+
+3. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Create .env file** (see Configuration section above)
+   ```bash
+   cp env_example .env
+   # Edit .env with your settings
+   ```
+
+5. **Run migrations**
+   ```bash
+   python manage.py migrate
+   ```
+
+6. **Create superuser (for admin access)**
+   ```bash
+   python manage.py createsuperuser
+   ```
+
+7. **Run development server**
+   ```bash
+   python manage.py runserver
+   # Server runs on http://localhost:8000
+   ```
+
+8. **Access admin panel**
+   ```
+   http://localhost:8000/admin/
+   ```
+
+### **Docker Deployment**
+
+1. **Build Docker image**
+   ```bash
+   docker build -t mapwala-mis .
+   ```
+
+2. **Run with Docker Compose**
+   ```bash
+   docker-compose up -d
+   ```
+
+3. **Run migrations in container**
+   ```bash
+   docker-compose exec web python manage.py migrate
+   docker-compose exec web python manage.py createsuperuser
+   ```
+
+### **Production Deployment**
+
+- Use gunicorn or uWSGI as application server
+- Configure reverse proxy (nginx/Apache)
+- Set DEBUG=False in .env
+- Use strong SECRET_KEY
+- Configure allowed hosts properly
+- Set up SSL/TLS certificates
+- Use environment-specific database
+- Enable CORS only for trusted origins
+- Configure static files serving
+
 ---
 
 ## 🚀 DEPLOYMENT NOTES
@@ -580,24 +1090,28 @@ Django will fail to start if SECRET_KEY is missing.
 - **Static Files**: Basic static configuration
 - **Database**: PostgreSQL with connection pooling (conn_max_age=600)
 - **Environment Variables**: .env file required (see env_example)
+- **Logging**: Standard Django logging configured
+- **Rate Limiting**: Login endpoint has throttling enabled
 
 ---
 
 ## ✅ COMPLETE UNDERSTANDING CHECKLIST
 
-- ✅ **Models**: All 31 models thoroughly documented
-- ✅ **Relationships**: Foreign keys, many-to-many, one-to-one mapped
-- ✅ **APIs**: All 30+ endpoints with methods and parameters documented
-- ✅ **Serializers**: 20+ serializers with validation rules
-- ✅ **Authentication**: JWT implementation with 24h tokens
-- ✅ **Business Logic**: Multi-step device creation, order workflows, stock management
-- ✅ **Validation**: Comprehensive validation at serializer level
-- ✅ **Database Constraints**: Unique together, indexes, protection modes
-- ✅ **Permissions**: IsAuthenticated on protected endpoints
-- ✅ **Configuration**: Django settings, JWT config, Jazzmin admin
-- ✅ **File Uploads**: Multipart handling for documents and files
-- ✅ **Transactions**: Atomic transactions for stock management
+- ✅ **Models**: 50+ models thoroughly documented including new RFQ, Purchase Order, MRN, Dispatch, Post-Dispatch Returns, Account Management, and Module Registration models
+- ✅ **Relationships**: Foreign keys, many-to-many, one-to-one mapped with proper protection modes
+- ✅ **APIs**: 60+ endpoints across all features documented with methods and parameters
+- ✅ **Authentication**: JWT implementation with 24h tokens and terms acceptance tracking
+- ✅ **Business Logic**: Multi-step device creation, order workflows, RFQ-PO-MRN pipeline, dispatch workflow, post-dispatch returns
+- ✅ **Inventory Management**: Batch-level stock tracking, production orders, store transfers
+- ✅ **Validation**: Comprehensive validation at serializer and model level
+- ✅ **Database Constraints**: Unique constraints, indexes, protection modes documented
+- ✅ **Permissions**: IsAuthenticated on protected endpoints, AllowAny on login
+- ✅ **Configuration**: Django settings, JWT config, Database config, CORS setup
+- ✅ **File Uploads**: Multipart handling for documents and files with organized folder structure
+- ✅ **Account Management**: Debit/Credit notes with auto-numbered sequences
+- ✅ **Module Management**: QC Inspectors, Purchase Departments, Store Managers, Repair Technicians, Account Registrations
+- ✅ **Workflow Integration**: Complete end-to-end examples from registration to dispatch and returns
 
 ---
 
-This documentation represents a complete understanding of the Mapwala MIS Backend project as of January 13, 2026.
+This documentation represents a complete understanding of the Mapwala MIS Backend project as of January 17, 2026.
