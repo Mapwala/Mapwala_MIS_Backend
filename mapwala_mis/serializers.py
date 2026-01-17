@@ -5,6 +5,8 @@ from decimal import Decimal
 from .models import *
 import json
 
+
+# ---------------- File Size Validator ----------------
 def validate_file_size(file):
     max_size = settings.FILE_UPLOAD_MAX_MEMORY_SIZE
 
@@ -12,6 +14,7 @@ def validate_file_size(file):
         raise serializers.ValidationError(
             f"File size must be less than or equal to {max_size // (1024 * 1024)} MB."
         )
+
 
 # ---------------- Login ----------------
 class LoginSerializer(serializers.Serializer):
@@ -555,7 +558,7 @@ class OrderEntryStep2MakeToOrderSerializer(serializers.ModelSerializer):
         return data
 
 
-# _______________________ Request For Quote (RFQ) Step 1 __________________________
+# ------------------------- Request For Quote (RFQ) Step 1 --------------------------
 # Step-1 Serializer
 class RFQStep1Serializer(serializers.ModelSerializer):
     class Meta:
@@ -568,7 +571,7 @@ class RFQStep1Serializer(serializers.ModelSerializer):
         ]
 
 
-# Step-2 Serializer
+# -------------------------- Request For Quote (RFQ) Step 2 --------------------------
 class RFQStep2Serializer(serializers.Serializer):
     bom_parts = serializers.ListField(
         child=serializers.CharField(),
@@ -584,7 +587,7 @@ class RFQStep2Serializer(serializers.Serializer):
     )
 
 
-# Step-3 Serializer
+# -------------------------- Request For Quote (RFQ) Step 3 --------------------------
 class RFQStep3Serializer(serializers.Serializer):
     vendor_ids = serializers.ListField(
         child=serializers.IntegerField(),
@@ -599,9 +602,8 @@ class RFQStep3Serializer(serializers.Serializer):
         required=False, allow_blank=True
     )
 
-# _____________________________________________________________________________
 
-# ---------- Create Purchase Order STEP 1 ----------
+# ------------------ Create Purchase Order STEP 1 ------------------
 class PurchaseStep1Serializer(serializers.Serializer):
     buyer_name = serializers.CharField()
     order_id = serializers.CharField()
@@ -635,6 +637,7 @@ class PurchaseLineSerializer(serializers.Serializer):
     delivery_days = serializers.IntegerField(min_value=1)
 
 
+# ---------- Create Purchase Order STEP 2 ----------
 class PurchaseStep2Serializer(serializers.Serializer):
     wastage_percentage = serializers.IntegerField(min_value=0, max_value=100)
     selected_vendor_id = serializers.CharField()
@@ -654,6 +657,7 @@ class MRNItemSerializer(serializers.Serializer):
     serial_numbers = serializers.CharField(required=False, allow_blank=True)
 
 
+# ---------------- Create Material Receipt Note (MRN) ----------------
 class MRNCreateSerializer(serializers.Serializer):
     purchase_order_id = serializers.IntegerField()
     po_date = serializers.DateField()
@@ -742,9 +746,7 @@ class DispatchStep4Serializer(serializers.ModelSerializer):
         ]
 
 
-# ---------------------------
-# Header Serializer (Step 2)
-# ---------------------------
+# --------------------------- Header Serializer (Step 2) ---------------------------
 class PostDispatchReturnHeaderSerializer(serializers.ModelSerializer):
     class Meta:
         model = PostDispatchReturn
@@ -760,9 +762,7 @@ class PostDispatchReturnHeaderSerializer(serializers.ModelSerializer):
         ]
 
 
-# ---------------------------
-# Item Serializer (Step 3)
-# ---------------------------
+# ---------------------------- Item Serializer (Step 3) ----------------------------
 class PostDispatchReturnItemSerializer(serializers.Serializer):
     product_id = serializers.CharField()
     description = serializers.CharField()
@@ -781,9 +781,7 @@ class PostDispatchReturnItemSerializer(serializers.Serializer):
         return data
 
 
-# ---------------------------
-# Final Submit Serializer
-# ---------------------------
+# -------------------------- Final Submit Serializer --------------------------
 class PostDispatchReturnCreateSerializer(serializers.Serializer):
     header = PostDispatchReturnHeaderSerializer()
     items = PostDispatchReturnItemSerializer(many=True)
@@ -796,9 +794,7 @@ class PostDispatchReturnCreateSerializer(serializers.Serializer):
         return data
 
 
-# ---------------------------
-# Generic Dropdown Serializer
-# ---------------------------
+# -------------------- Generic Dropdown Serializer --------------------
 class DropdownSerializer(serializers.Serializer):
     key = serializers.CharField()
     label = serializers.CharField()
@@ -908,34 +904,11 @@ class StoreTransferListSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = StoreTransfer
-        fields = [
-            "id",
-            "transfer_id",
-            "product_id",
-            "product_name",
-            "category",
-            "category_name",
-            "mrn_number",
-            "batch_number",
-            "vendor",
-            "vendor_name",
-            "quantity",
-            "unit_price",
-            "total_value",
-            "transfer_date",
-            "dispatch_status",
-            "dispatch_status_display",
-            "created_at"
-        ]
-        read_only_fields = [
-            "id",
-            "product_name",
-            "vendor_name",
-            "dispatch_status_display",
-            "created_at"
-        ]
+        fields = ["id","transfer_id","product_id","product_name","category","category_name","mrn_number","batch_number","vendor","vendor_name","quantity","unit_price","total_value","transfer_date","dispatch_status","dispatch_status_display","created_at"]
+        read_only_fields = ["id","product_name","vendor_name","dispatch_status_display","created_at"]
 
 
+# ---------------- Detailed View Serializer ----------------
 class StoreTransferDetailSerializer(serializers.ModelSerializer):
     """Detailed view with all information including creator"""
     product_name = serializers.CharField(read_only=True)
@@ -946,57 +919,17 @@ class StoreTransferDetailSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = StoreTransfer
-        fields = [
-            "id",
-            "transfer_id",
-            "product_id",
-            "product_name",
-            "category",
-            "category_name",
-            "mrn_number",
-            "batch_number",
-            "vendor",
-            "vendor_name",
-            "quantity",
-            "unit_price",
-            "total_value",
-            "transfer_date",
-            "dispatch_status",
-            "dispatch_status_display",
-            "created_at",
-            "updated_at",
-            "created_by",
-            "created_by_username"
-        ]
-        read_only_fields = [
-            "id",
-            "product_name",
-            "vendor_name",
-            "created_by_username",
-            "dispatch_status_display",
-            "created_at",
-            "updated_at"
-        ]
+        fields = ["id","transfer_id","product_id","product_name","category","category_name","mrn_number","batch_number","vendor","vendor_name","quantity","unit_price","total_value","transfer_date","dispatch_status","dispatch_status_display","created_at","updated_at","created_by","created_by_username"]
+        read_only_fields = ["id","product_name","vendor_name","created_by_username","dispatch_status_display","created_at","updated_at"]
 
 
+# ------------- Create and Update Serializer -----------------
 class StoreTransferCreateUpdateSerializer(serializers.ModelSerializer):
     """Create and update operations"""
     
     class Meta:
         model = StoreTransfer
-        fields = [
-            "product",
-            "product_name",
-            "category",
-            "mrn_number",
-            "batch_number",
-            "vendor",
-            "quantity",
-            "unit_price",
-            "total_value",
-            "transfer_date",
-            "dispatch_status"
-        ]
+        fields = ["product","product_name","category","mrn_number","batch_number","vendor","quantity","unit_price","total_value","transfer_date","dispatch_status"]
     
     def validate(self, data):
         # Validate quantity
@@ -1024,4 +957,97 @@ class StoreTransferCreateUpdateSerializer(serializers.ModelSerializer):
                 })
         
         return data
+
+
+# ------------- DEBIT NOTES & CREDIT NOTES - ACCOUNT MANAGEMENT -----------------
+class DebitNoteListSerializer(serializers.ModelSerializer):
+    """List view for debit notes with essential fields"""
+    created_by_name = serializers.CharField(source="created_by.username", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    reason_display = serializers.CharField(source="get_reason_display", read_only=True)
+    
+    class Meta:
+        model = DebitNote
+        fields = ["id","number","date","vendor","reason","reason_display","amount","status","status_display","created_by_name","created_at"]
+        read_only_fields = ["number", "created_at", "created_by_name", "reason_display", "status_display"]
+
+
+# ------------- Debit Note Detail Serializer -----------------
+class DebitNoteDetailSerializer(serializers.ModelSerializer):
+    """Detail view for single debit note"""
+    created_by_name = serializers.CharField(source="created_by.username", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    reason_display = serializers.CharField(source="get_reason_display", read_only=True)
+    
+    class Meta:
+        model = DebitNote
+        fields = ["id","number","date","vendor","reason","reason_display","amount","status","status_display","reference_document","remarks","created_by_name","created_at","updated_at"]
+        read_only_fields = ["number", "created_at", "updated_at", "created_by_name", "reason_display", "status_display"]
+
+
+# ------------- Create and Update Serializer -----------------
+class DebitNoteCreateUpdateSerializer(serializers.ModelSerializer):
+    """Create and update serializer for debit notes"""
+    number = serializers.CharField(read_only=True)
+    
+    class Meta:
+        model = DebitNote
+        fields = ["number","vendor","reason","amount","reference_document","remarks","status"]
+    
+    def validate_amount(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Amount must be greater than 0.")
+        return value
+    
+    def validate_vendor(self, value):
+        if not value or not value.strip():
+            raise serializers.ValidationError("Vendor name cannot be empty.")
+        return value.strip()
+
+
+# ------------- CREDIT NOTES - ACCOUNT MANAGEMENT -----------------
+class CreditNoteListSerializer(serializers.ModelSerializer):
+    """List view for credit notes with essential fields"""
+    created_by_name = serializers.CharField(source="created_by.username", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    reason_display = serializers.CharField(source="get_reason_display", read_only=True)
+    
+    class Meta:
+        model = CreditNote
+        fields = ["id","number","date","customer","reason","reason_display","amount","status","status_display","created_by_name","created_at"]
+        read_only_fields = ["number", "created_at", "created_by_name", "reason_display", "status_display"]
+
+
+# ------------- Credit Note Detail Serializer -----------------
+class CreditNoteDetailSerializer(serializers.ModelSerializer):
+    """Detail view for single credit note"""
+    created_by_name = serializers.CharField(source="created_by.username", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    reason_display = serializers.CharField(source="get_reason_display", read_only=True)
+    
+    class Meta:
+        model = CreditNote
+        fields = ["id","number","date","customer","reason","reason_display","amount","status","status_display","reference_document","remarks","created_by_name","created_at","updated_at"]
+        read_only_fields = ["number", "created_at", "updated_at", "created_by_name", "reason_display", "status_display"]
+
+
+# ------------- Create and Update Serializer -----------------
+class CreditNoteCreateUpdateSerializer(serializers.ModelSerializer):
+    """Create and update serializer for credit notes"""
+    number = serializers.CharField(read_only=True)
+    
+    class Meta:
+        model = CreditNote
+        fields = ["number","customer","reason","amount","reference_document","remarks","status"]
+    
+    def validate_amount(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Amount must be greater than 0.")
+        return value
+    
+    def validate_customer(self, value):
+        if not value or not value.strip():
+            raise serializers.ValidationError("Customer name cannot be empty.")
+        return value.strip()
+
 

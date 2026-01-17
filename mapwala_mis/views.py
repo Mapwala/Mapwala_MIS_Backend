@@ -16,10 +16,11 @@ from django.db import transaction
 from collections import defaultdict
 from rest_framework.throttling import ScopedRateThrottle
 from decimal import Decimal
+from .utils import generate_note_number
+from datetime import datetime
 
 from .serializers import *
 from .models import *
-
 
 
 # ---------------- Login API ----------------
@@ -58,6 +59,9 @@ class LoginAPIView(APIView):
             status=status.HTTP_200_OK,
         )
 
+# ======================================================================
+# ============================ Settings APIs ===========================
+# ======================================================================
 
 # ---------------- State ViewSet ----------------
 class StateViewSet(ModelViewSet):
@@ -126,6 +130,7 @@ class VendorViewSet(ModelViewSet):
     queryset = Vendor.objects.select_related("state", "district").all()
     serializer_class = VendorSerializer
     permission_classes = [IsAuthenticated]
+
 
 # ---------------- Registrations ----------------
 class B2CCustomerRegistrationAPIView(APIView):
@@ -222,6 +227,9 @@ class DealerRegistrationAPIView(APIView):
             status=status.HTTP_201_CREATED,
         )
 
+# ======================================================================
+# ====================== Sales & Production APIs =======================
+# ======================================================================
 
 # ---------------- Proforma Invoice Create ----------------
 class ProformaInvoiceCreateAPIView(APIView):
@@ -241,7 +249,7 @@ class ProformaInvoiceCreateAPIView(APIView):
             status=status.HTTP_201_CREATED,
         )
 
-
+# ================================= Order Entry APIs ==================================
 # ---------------- STEP 1 ----------------
 class DeviceStep1APIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -288,7 +296,6 @@ class DeviceStep3APIView(APIView):
 
 
 # ---------------- STEP 4 ----------------
-
 class DeviceStep4APIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -366,7 +373,6 @@ class DeviceStep8APIView(APIView):
         serializer.save(device=device)
 
         return Response({"message": "Step 8 completed"})
-
 
 
 # ---------------- STEP 9 ----------------
@@ -554,6 +560,7 @@ class SupplierVendorDropdownAPIView(APIView):
             for v in SupplierVendor.objects.all()
         ])
 
+
 # ---------------- ProductCategory Dropdown APIView ----------------
 class ProductCategoryDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -591,7 +598,6 @@ class OrderEntryStep2APIView(APIView):
         serializer = OrderEntryStep2MakeToOrderSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         make_to_order = serializer.save(order_entry=order_entry)
-
         order_entry.is_step2_complete = True
         order_entry.save(update_fields=["is_step2_complete"])
 
@@ -667,6 +673,7 @@ class PaymentTermsDropdownAPIView(APIView):
             {"key": "custom", "label": "Custom Terms"},
         ])
 
+
 # ---------------- Order Priority Dropdown APIView ----------------
 class OrderPriorityDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -679,7 +686,7 @@ class OrderPriorityDropdownAPIView(APIView):
             {"key": "urgent", "label": "Urgent"},
         ])
 
-
+# ========================= Request for Quote =============================
 # ---------------- RFQ Step 1 ----------------
 class RFQStep1APIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -694,6 +701,7 @@ class RFQStep1APIView(APIView):
             {"rfq_id": rfq.id, "message": "Step 1 completed"},
             status=201
         )
+
 
 # ---------------- RFQ Step 2 ----------------
 class RFQStep2APIView(APIView):
@@ -765,6 +773,8 @@ class RFQStep3APIView(APIView):
             status=201
         )
 
+
+# ---------------- Dropdowns for RFQ ----------------
 class QuoteTypeDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -775,6 +785,8 @@ class QuoteTypeDropdownAPIView(APIView):
             {"key": "services", "label": "Services"},
         ])
 
+
+# ---------------- Assembly Type Dropdown APIView ----------------
 class AssemblyTypeDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -784,6 +796,8 @@ class AssemblyTypeDropdownAPIView(APIView):
             {"key": "device_assembly", "label": "Device Assembly"},
         ])
 
+
+# ---------------- SRN Dropdown APIView ----------------
 class SRNDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -793,6 +807,8 @@ class SRNDropdownAPIView(APIView):
             for k, v in RequestForQuote.SRN_CHOICES
         ])
 
+
+# ---------------- Vendor Dropdown APIView ----------------
 class VendorDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -804,9 +820,6 @@ class VendorDropdownAPIView(APIView):
             }
             for v in Vendor.objects.all()
         ])
-
-# _____________________________________________________________________________
-
 
 
 # ---------------- Create Purchase Order STEP 1 ----------------
@@ -840,7 +853,7 @@ class Step1APIView(APIView):
             status=201
         )
 
-
+# =========================== Create Purchase Order ==========================
 # ---------------- Create Purchase Order STEP 2 ----------------
 class Step2APIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -887,6 +900,7 @@ class OrderTypeDropdown(APIView):
         ])
 
 
+# ---------------- Assembly Type Dropdown APIView ----------------
 class AssemblyTypeDropdown(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -897,6 +911,7 @@ class AssemblyTypeDropdown(APIView):
         ])
 
 
+# ---------------- Payment Terms Dropdown APIView ----------------
 class PaymentTermsDropdown(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -906,10 +921,8 @@ class PaymentTermsDropdown(APIView):
             for k, v in PurchaseOrder.PAYMENT_TERMS_CHOICES
         ])
 
-
+# ============================== MRN =================================
 # ---------------- Create Material Receipt Note (MRN) ----------------
-from datetime import datetime
-
 class MRNCreateAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -960,6 +973,7 @@ class MRNCreateAPIView(APIView):
         )
 
 
+# ---------------- Dropdown APIs for MRN ----------------
 class PurchaseOrderDropdown(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -973,6 +987,7 @@ class PurchaseOrderDropdown(APIView):
         ])
 
 
+# ---------------- Inward Type Dropdown APIView ----------------
 class InwardTypeDropdown(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -985,6 +1000,7 @@ class InwardTypeDropdown(APIView):
         ])
 
 
+# ---------------- Purchase Order Items APIView ----------------
 class PurchaseOrderItemsAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -1004,7 +1020,7 @@ class PurchaseOrderItemsAPIView(APIView):
         ])
 
 
-# ---------------- Dispatch Workflow APIs ----------------
+# ===================================== Dispatch Workflow APIs ========================================
 # ---------------- STEP 1 ----------------
 class DispatchStep1APIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -1058,7 +1074,7 @@ class DispatchStep3APIView(APIView):
     def post(self, request, dispatch_id):
         dispatch = get_object_or_404(Dispatch, id=dispatch_id)
 
-        # 🚫 Block if Step-2 not completed
+        # Block if Step-2 not completed
         if not all([
             dispatch.product,
             dispatch.batch,
@@ -1082,7 +1098,6 @@ class DispatchStep3APIView(APIView):
         return Response({"message": "Dispatch details saved"})
 
 
-
 # ---------------- STEP 4 ----------------
 class DispatchStep4APIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -1091,7 +1106,7 @@ class DispatchStep4APIView(APIView):
     def post(self, request, dispatch_id):
         dispatch = get_object_or_404(Dispatch, id=dispatch_id)
 
-        # 🚫 Block if Step-3 not completed
+        # Block if Step-3 not completed
         if not dispatch.dispatch_date:
             return Response(
                 {
@@ -1108,7 +1123,7 @@ class DispatchStep4APIView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        # 🔐 Prevent double stock deduction
+        # Prevent double stock deduction
         if not dispatch.stock_deducted:
             batch = dispatch.batch
 
@@ -1125,7 +1140,7 @@ class DispatchStep4APIView(APIView):
 
             dispatch.stock_deducted = True
 
-        # ✅ Mark workflow completed
+        # Mark workflow completed
         dispatch.status = "completed"
         dispatch.save(update_fields=["status", "stock_deducted"])
 
@@ -1149,6 +1164,7 @@ class SalesOrderDropdownAPIView(APIView):
         ])
 
 
+# ---------------- Dispatch Order Type Dropdown APIView ----------------
 class DispatchOrderTypeDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -1160,6 +1176,7 @@ class DispatchOrderTypeDropdownAPIView(APIView):
         ])
 
 
+# ---------------- Dispatch Product Dropdown APIView ----------------
 class DispatchProductDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -1170,6 +1187,7 @@ class DispatchProductDropdownAPIView(APIView):
         ])
 
 
+# ---------------- Dispatch Batch Dropdown APIView ----------------
 class DispatchBatchDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -1192,9 +1210,8 @@ class DispatchBatchDropdownAPIView(APIView):
         ])
 
 
-# ----------------------------------
-# Create Post Dispatch Return API
-# ----------------------------------
+# ======================================= Post-Dispatch Returns APIs =========================================
+# --------------------- Create Post Dispatch Return API ---------------------
 class PostDispatchReturnCreateAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -1248,9 +1265,7 @@ class PostDispatchReturnCreateAPIView(APIView):
         )
 
 
-# ----------------------------------
-# Return Type Dropdown API
-# ----------------------------------
+# ------------------------ Return Type Dropdown APIView ----------------
 class ReturnTypeDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -1262,9 +1277,7 @@ class ReturnTypeDropdownAPIView(APIView):
         ])
 
 
-# ----------------------------------
-# Return Reason Dropdown API
-# ----------------------------------
+# ---------------------- Return Reason Dropdown API View ----------------
 class ReturnReasonDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -1294,6 +1307,7 @@ class StateDropdownAPIView(APIView):
             for state in states
         ])
 
+
 # ---------------- District Dropdown APIView ----------------
 class DistrictDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -1316,6 +1330,7 @@ class DistrictDropdownAPIView(APIView):
             }
             for district in districts
         ])
+
 
 # ---------------- Module Management Account Registration ----------------
 class AccountRegistrationCreateAPIView(APIView):
@@ -1412,10 +1427,6 @@ class RepairTechnicianRegistrationCreateAPIView(APIView):
         )
 
 
-# ============================================================
-# STORE TRANSFER (INVENTORY DATA) - REST API
-# ============================================================
-
 # ---------------- Store Transfer ViewSet ----------------
 class StoreTransferViewSet(ModelViewSet):
     """
@@ -1493,10 +1504,6 @@ class StoreTransferViewSet(ModelViewSet):
         })
 
 
-# ============================================================
-# PRODUCT CATEGORY - REST API
-# ============================================================
-
 # ---------------- Product Category ViewSet ----------------
 class ProductCategoryViewSet(ModelViewSet):
     """ViewSet for Product Categories"""
@@ -1505,3 +1512,211 @@ class ProductCategoryViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
     filter_backends = [SearchFilter]
     search_fields = ['name', 'description']
+
+
+# ============================================================
+# ACCOUNT MANAGEMENT
+# ============================================================
+
+# ---------------- Debit Note ViewSet ----------------
+class DebitNoteViewSet(ModelViewSet):
+    """
+    ViewSet for managing Debit Notes.
+    
+    Supports:
+    - LIST: Get all debit notes with search and status filtering
+    - RETRIEVE: Get detailed information about a specific debit note
+    - CREATE: Create a new debit note
+    - UPDATE/PARTIAL_UPDATE: Update debit note information
+    - DESTROY: Delete a debit note
+    - SUMMARY: Get dashboard summary (pending amount, total amount)
+    """
+    queryset = DebitNote.objects.select_related('created_by').all()
+    permission_classes = [IsAuthenticated]
+    filter_backends = [SearchFilter]
+    search_fields = ['number', 'vendor', 'reference_document']
+    pagination_class = None
+    
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return DebitNoteDetailSerializer
+        elif self.action == 'list':
+            return DebitNoteListSerializer
+        return DebitNoteCreateUpdateSerializer
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        
+        # Filter by status if provided
+        status = self.request.query_params.get('status')
+        if status and status != 'all':
+            queryset = queryset.filter(status=status)
+        
+        return queryset.order_by('-created_at')
+    
+    def perform_create(self, serializer):
+        number = generate_note_number("debit")
+
+        serializer.save(
+            created_by=self.request.user,
+            number=number,
+            date=timezone.now().date(),
+        )
+    
+    @action(detail=False, methods=['get'])
+    def summary(self, request):
+        """Get dashboard summary for debit notes"""
+        all_notes = self.get_queryset()
+        
+        pending_amount = all_notes.filter(status='pending').aggregate(
+            total=models.Sum('amount')
+        )['total'] or Decimal('0')
+        
+        total_amount = all_notes.aggregate(
+            total=models.Sum('amount')
+        )['total'] or Decimal('0')
+        
+        return Response({
+            "pending_amount": float(pending_amount),
+            "total_amount": float(total_amount),
+            "pending_count": all_notes.filter(status='pending').count(),
+            "total_count": all_notes.count(),
+        })
+
+
+# ---------------- Credit Note ViewSet ----------------
+class CreditNoteViewSet(ModelViewSet):
+    """
+    ViewSet for managing Credit Notes.
+    
+    Supports:
+    - LIST: Get all credit notes with search and status filtering
+    - RETRIEVE: Get detailed information about a specific credit note
+    - CREATE: Create a new credit note
+    - UPDATE/PARTIAL_UPDATE: Update credit note information
+    - DESTROY: Delete a credit note
+    - SUMMARY: Get dashboard summary (pending amount, total amount)
+    """
+    queryset = CreditNote.objects.select_related('created_by').all()
+    permission_classes = [IsAuthenticated]
+    filter_backends = [SearchFilter]
+    search_fields = ['number', 'customer', 'reference_document']
+    pagination_class = None
+    
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return CreditNoteDetailSerializer
+        elif self.action == 'list':
+            return CreditNoteListSerializer
+        return CreditNoteCreateUpdateSerializer
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        
+        # Filter by status if provided
+        status = self.request.query_params.get('status')
+        if status and status != 'all':
+            queryset = queryset.filter(status=status)
+        
+        return queryset.order_by('-created_at')
+    
+    def perform_create(self, serializer):
+        number = generate_note_number("credit")
+
+        serializer.save(
+            created_by=self.request.user,
+            number=number,
+            date=timezone.now().date(),
+        )
+    
+    @action(detail=False, methods=['get'])
+    def summary(self, request):
+        """Get dashboard summary for credit notes"""
+        all_notes = self.get_queryset()
+        
+        pending_amount = all_notes.filter(status='pending').aggregate(
+            total=models.Sum('amount')
+        )['total'] or Decimal('0')
+        
+        total_amount = all_notes.aggregate(
+            total=models.Sum('amount')
+        )['total'] or Decimal('0')
+        
+        return Response({
+            "pending_amount": float(pending_amount),
+            "total_amount": float(total_amount),
+            "pending_count": all_notes.filter(status='pending').count(),
+            "total_count": all_notes.count(),
+        })
+
+
+# ---------------- Account Management Dashboard API ----------------
+class AccountManagementDashboardAPIView(APIView):
+    """
+    Dashboard view for Account Management.
+    Returns summary of debit notes and credit notes.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        debit_summary = DebitNote.objects.aggregate(
+            pending=models.Sum('amount', filter=models.Q(status='pending')),
+            total=models.Sum('amount')
+        )
+        
+        credit_summary = CreditNote.objects.aggregate(
+            pending=models.Sum('amount', filter=models.Q(status='pending')),
+            total=models.Sum('amount')
+        )
+        
+        return Response({
+            "debit_notes": {
+                "pending_amount": float(debit_summary['pending'] or 0),
+                "total_amount": float(debit_summary['total'] or 0),
+            },
+            "credit_notes": {
+                "pending_amount": float(credit_summary['pending'] or 0),
+                "total_amount": float(credit_summary['total'] or 0),
+            },
+        })
+
+
+# ---------------- Dropdown APIs for Debit/Credit Notes ----------------
+class DebitNoteReasonsAPIView(APIView):
+    """Get available debit note reason choices"""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        reasons = [
+            {"key": choice[0], "label": choice[1]}
+            for choice in DebitNote.REASON_CHOICES
+        ]
+        return Response(reasons)
+
+
+# ---------------- Dropdown APIs for Debit/Credit Notes ----------------
+class CreditNoteReasonsAPIView(APIView):
+    """Get available credit note reason choices"""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        reasons = [
+            {"key": choice[0], "label": choice[1]}
+            for choice in CreditNote.REASON_CHOICES
+        ]
+        return Response(reasons)
+
+
+# ---------------- Dropdown APIs for Debit/Credit Notes ----------------
+class NoteStatusChoicesAPIView(APIView):
+    """Get available note status choices"""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        statuses = [
+            {"key": choice[0], "label": choice[1]}
+            for choice in DebitNote.STATUS_CHOICES
+        ]
+        return Response(statuses)
+
+

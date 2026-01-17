@@ -289,7 +289,6 @@ class Device(models.Model):
         ("draft", "Draft"),
         ("completed", "Completed"),
     )
-
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
     created_by = models.ForeignKey(User, on_delete=models.PROTECT)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -301,11 +300,9 @@ class Device(models.Model):
 # ---------------- Device Information ----------------
 class DeviceInformation(models.Model):
     device = models.OneToOneField(Device, on_delete=models.CASCADE, related_name="info")
-
     make = models.CharField(max_length=255)
     model = models.CharField(max_length=255)
     mrp = models.DecimalField(max_digits=10, decimal_places=2)
-
     unit_of_measure = models.CharField(max_length=50)
     version = models.CharField(max_length=50)
     variant = models.CharField(max_length=50)
@@ -318,24 +315,15 @@ class BOM(models.Model):
         ("individual", "Individual Entry"),
         ("bulk", "Bulk Upload"),
     )
-
     device = models.OneToOneField(Device, on_delete=models.CASCADE, related_name="bom")
-
     upload_type = models.CharField(max_length=20, choices=UPLOAD_TYPE_CHOICES)
-
-    bom_file = models.FileField(
-        upload_to="bom/excel/",
-        null=True,
-        blank=True
-    )
-
+    bom_file = models.FileField(upload_to="bom/excel/",null=True,blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
 
 # ---------------- BOM Component ----------------
 class BOMComponent(models.Model):
     bom = models.ForeignKey(BOM, on_delete=models.CASCADE, related_name="components")
-
     identification_mark = models.CharField(max_length=100)
     description = models.CharField(max_length=255)
     designator = models.CharField(max_length=255)
@@ -345,18 +333,15 @@ class BOMComponent(models.Model):
     part_make = models.CharField(max_length=100)
     per_device_quantity = models.PositiveIntegerField()
     remarks = models.CharField(max_length=255, blank=True)
-
     created_at = models.DateTimeField(auto_now_add=True)
 
 
 # ---------------- Enclosure ----------------
 class Enclosure(models.Model):
     device = models.OneToOneField(Device, on_delete=models.CASCADE)
-
     length = models.DecimalField(max_digits=8, decimal_places=2)
     breadth = models.DecimalField(max_digits=8, decimal_places=2)
     height = models.DecimalField(max_digits=8, decimal_places=2)
-
     color = models.CharField(max_length=100)
     material = models.CharField(max_length=100)
     quantity = models.PositiveIntegerField()
@@ -367,7 +352,6 @@ class Enclosure(models.Model):
 # ---------------- Wire Harness ----------------
 class WireHarness(models.Model):
     device = models.OneToOneField(Device, on_delete=models.CASCADE)
-
     number_of_wires = models.PositiveIntegerField()
     specification = models.CharField(max_length=255)
     make = models.CharField(max_length=100)
@@ -376,12 +360,7 @@ class WireHarness(models.Model):
 
 # ---------------- Wire Connector ----------------
 class WireConnector(models.Model):
-    wire_harness = models.ForeignKey(
-        WireHarness,
-        on_delete=models.CASCADE,
-        related_name="connectors"
-    )
-
+    wire_harness = models.ForeignKey(WireHarness,on_delete=models.CASCADE,related_name="connectors")
     connector_name = models.CharField(max_length=100)
     number_of_pins = models.PositiveIntegerField()
     wire_colors = models.CharField(max_length=255)
@@ -390,7 +369,6 @@ class WireConnector(models.Model):
 # ------------------ Battery ----------------
 class Battery(models.Model):
     device = models.OneToOneField(Device, on_delete=models.CASCADE)
-
     capacity = models.CharField(max_length=100)
     length = models.DecimalField(max_digits=8, decimal_places=2)
     breadth = models.DecimalField(max_digits=8, decimal_places=2)
@@ -401,7 +379,6 @@ class Battery(models.Model):
 # ---------------- SOS Button ----------------
 class SOSButton(models.Model):
     device = models.OneToOneField(Device, on_delete=models.CASCADE)
-
     total_length = models.DecimalField(max_digits=8, decimal_places=2)
     quantity_per_set = models.PositiveIntegerField()
     make = models.CharField(max_length=100)
@@ -411,7 +388,6 @@ class SOSButton(models.Model):
 # ---------------- Sticker ----------------
 class Sticker(models.Model):
     device = models.ForeignKey(Device, on_delete=models.CASCADE)
-
     name = models.CharField(max_length=255)
     length = models.DecimalField(max_digits=8, decimal_places=2)
     breadth = models.DecimalField(max_digits=8, decimal_places=2)
@@ -430,7 +406,6 @@ class UserManual(models.Model):
 # ---------------- Accessories ----------------
 class Accessory(models.Model):
     device = models.ForeignKey(Device, on_delete=models.CASCADE, related_name="accessories")
-
     name = models.CharField(max_length=255)
     quantity = models.PositiveIntegerField()
     specifications = models.CharField(max_length=255)
@@ -505,7 +480,6 @@ class OrderEntry(models.Model):
     order_type = models.CharField(max_length=20, choices=ORDER_TYPE_CHOICES)
     production_type = models.CharField(max_length=20, choices=PRODUCTION_TYPE_CHOICES, null=True, blank=True)
     assembly_type = models.CharField(max_length=30, choices=ASSEMBLY_TYPE_CHOICES, null=True, blank=True)
-
     is_step1_complete = models.BooleanField(default=False)
     is_step2_complete = models.BooleanField(default=False)
 
@@ -518,12 +492,7 @@ class OrderProduct(models.Model):
     Product / Device Model shown in UI
     Example: GPS Tracker Pro, GPS Tracker Standard
     """
-    name = models.CharField(
-        max_length=100,
-        unique=True,
-        verbose_name="Product / Device Model"
-    )
-
+    name = models.CharField(max_length=100,unique=True,verbose_name="Product / Device Model")
     class Meta:
         ordering = ["name"]
         verbose_name = "Order Product"
@@ -539,14 +508,9 @@ class OrderBatch(models.Model):
     Each product can have MULTIPLE batches.
     Each batch maintains ITS OWN stock.
     """
-    product = models.ForeignKey(
-        OrderProduct,
-        on_delete=models.PROTECT,
-        related_name="batches"
-    )
+    product = models.ForeignKey(OrderProduct,on_delete=models.PROTECT,related_name="batches")
     batch_number = models.CharField(max_length=50)
     available_stock = models.PositiveIntegerField()
-
     class Meta:
         unique_together = ("product", "batch_number")
         ordering = ["batch_number"]
@@ -564,7 +528,6 @@ class SalesOrder(models.Model):
         ("distributor", "Distributor"),
         ("dealer", "Dealer"),
     )
-
     PAYMENT_MODE_CHOICES = (
         ("cash", "Cash"),
         ("bank_transfer", "Bank Transfer"),
@@ -573,54 +536,33 @@ class SalesOrder(models.Model):
         ("upi", "UPI"),
         ("credit_terms", "Credit Terms"),
     )
-
     PAYMENT_STATUS_CHOICES = (
         ("paid", "Paid"),
         ("partially_paid", "Partially Paid"),
         ("pending", "Pending"),
         ("on_credit", "On Credit"),
     )
-
     # Customer
     customer_name = models.CharField(max_length=255)
     customer_type = models.CharField(max_length=20, choices=CUSTOMER_TYPE_CHOICES)
     contact_person = models.CharField(max_length=255)
     mobile_no = models.CharField(max_length=15)
-
     # Product + Batch (IMPORTANT)
     product = models.ForeignKey(OrderProduct, on_delete=models.PROTECT)
     batch = models.ForeignKey(OrderBatch, on_delete=models.PROTECT)
-
     quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
-
-    discount_percent = models.DecimalField(
-        max_digits=5,
-        decimal_places=2,
-        validators=[MinValueValidator(0), MaxValueValidator(100)],
-        default=0
-    )
-
-    gst_percent = models.DecimalField(
-        max_digits=5,
-        decimal_places=2,
-        validators=[MinValueValidator(0), MaxValueValidator(100)]
-    )
-
+    discount_percent = models.DecimalField(max_digits=5,decimal_places=2,validators=[MinValueValidator(0), MaxValueValidator(100)],default=0)
+    gst_percent = models.DecimalField(max_digits=5,decimal_places=2,validators=[MinValueValidator(0), MaxValueValidator(100)])
     shipping_charges = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     grand_total = models.DecimalField(max_digits=12, decimal_places=2)
-
     delivery_date = models.DateField()
     delivery_address = models.TextField()
-
     payment_mode = models.CharField(max_length=20, choices=PAYMENT_MODE_CHOICES)
     payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES)
-
     invoice_number = models.CharField(max_length=100, blank=True)
     remarks = models.TextField(blank=True)
-
     created_at = models.DateTimeField(auto_now_add=True)
-
     def calculate_grand_total(self):
         base = Decimal(self.quantity) * self.unit_price
         discount = (base * self.discount_percent) / Decimal("100")
@@ -638,7 +580,6 @@ class SupplierVendor(models.Model):
     Supplier / Vendor dropdown
     """
     name = models.CharField(max_length=255, unique=True)
-
     class Meta:
         ordering = ["name"]
         verbose_name = "Supplier / Vendor"
@@ -661,40 +602,18 @@ class ProductionOrder(models.Model):
         ("accessories", "Accessories"),
         ("components", "Components"),
     )
-
-    production_type = models.CharField(
-        max_length=20,
-        choices=PRODUCTION_TYPE_CHOICES
-    )
-
+    production_type = models.CharField(max_length=20,choices=PRODUCTION_TYPE_CHOICES)
     product = models.ForeignKey(OrderProduct, on_delete=models.PROTECT)
-
-    product_category = models.CharField(
-        max_length=30,
-        choices=PRODUCT_CATEGORY_CHOICES
-    )
-
-    quantity_added = models.PositiveIntegerField(
-        validators=[MinValueValidator(1)]
-    )
-
+    product_category = models.CharField(max_length=30,choices=PRODUCT_CATEGORY_CHOICES)
+    quantity_added = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     total_value = models.DecimalField(max_digits=12, decimal_places=2)
-
-    supplier_vendor = models.ForeignKey(
-        SupplierVendor,
-        on_delete=models.PROTECT
-    )
-
+    supplier_vendor = models.ForeignKey(SupplierVendor,on_delete=models.PROTECT)
     purchase_date = models.DateField()
     manufacturing_date = models.DateField()
-
     batch = models.ForeignKey(OrderBatch, on_delete=models.PROTECT)
-
     remarks = models.TextField(blank=True)
-
     created_at = models.DateTimeField(auto_now_add=True)
-
     def calculate_total_value(self):
         return Decimal(self.quantity_added) * self.unit_price
 
@@ -764,21 +683,17 @@ class RequestForQuote(models.Model):
         ("SRN003", "Premium Requirement - Full Suite"),
         ("SRN004", "Custom Requirement - Specialized"),
     )
-
     # STEP 1
     order_reference = models.CharField(max_length=100)
     device_name = models.CharField(max_length=255)
     assembly_type = models.CharField(max_length=30, choices=ASSEMBLY_TYPE_CHOICES)
     quantity = models.PositiveIntegerField()
-
     # STEP 3
     srn_no = models.CharField(max_length=20, choices=SRN_CHOICES, null=True, blank=True)
     delivery_date = models.DateField(null=True, blank=True)
     delivery_address = models.TextField(null=True, blank=True)
     additional_requirements = models.TextField(blank=True)
-
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
-
     created_by = models.ForeignKey(User, on_delete=models.PROTECT)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -793,12 +708,7 @@ class RFQSelection(models.Model):
         ("component", "Component"),
         ("service", "Service"),
     )
-
-    rfq = models.ForeignKey(
-        RequestForQuote,
-        on_delete=models.CASCADE,
-        related_name="selections"
-    )
+    rfq = models.ForeignKey(RequestForQuote,on_delete=models.CASCADE,related_name="selections")
     item_type = models.CharField(max_length=20, choices=ITEM_TYPE_CHOICES)
     reference = models.CharField(
         max_length=255,
@@ -811,12 +721,10 @@ class PurchaseOrder(models.Model):
     """
     Main entity: Create Purchase Order
     """
-
     ASSEMBLY_TYPE_CHOICES = (
         ("pcb", "PCB Assembly"),
         ("device", "Device Assembly"),
     )
-
     PAYMENT_TERMS_CHOICES = (
         ("full_payment", "Full Payment"),
         ("down_payment", "Down Payment"),
@@ -826,29 +734,16 @@ class PurchaseOrder(models.Model):
         ("90_days", "90 Days Net"),
         ("cod", "Cash on Delivery"),
     )
-
     # ---------- STEP 1 ----------
     buyer_name = models.CharField(max_length=255)
     order_id = models.CharField(max_length=50)
     rfq_id = models.CharField(max_length=50)
-
-    assembly_type = models.CharField(
-        max_length=20,
-        choices=ASSEMBLY_TYPE_CHOICES
-    )
-
+    assembly_type = models.CharField(max_length=20,choices=ASSEMBLY_TYPE_CHOICES)
     # ---------- STEP 2 ----------
     wastage_percentage = models.PositiveIntegerField(null=True, blank=True)
     selected_vendor_id = models.CharField(max_length=50, null=True, blank=True)
     delivery_date = models.DateField(null=True, blank=True)
-
-    payment_terms = models.CharField(
-        max_length=20,
-        choices=PAYMENT_TERMS_CHOICES,
-        null=True,
-        blank=True
-    )
-
+    payment_terms = models.CharField(max_length=20,choices=PAYMENT_TERMS_CHOICES,null=True,blank=True)
     created_by = models.ForeignKey(User, on_delete=models.PROTECT)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -867,17 +762,8 @@ class PurchaseOrderType(models.Model):
         ("component", "Components (Enclosure, Battery, etc.)"),
         ("service", "Services (Assembly, Quality Check, etc.)"),
     )
-
-    purchase_order = models.ForeignKey(
-        PurchaseOrder,
-        on_delete=models.CASCADE,
-        related_name="order_types"
-    )
-
-    order_type = models.CharField(
-        max_length=20,
-        choices=ORDER_TYPE_CHOICES
-    )
+    purchase_order = models.ForeignKey(PurchaseOrder,on_delete=models.CASCADE,related_name="order_types")
+    order_type = models.CharField(max_length=20,choices=ORDER_TYPE_CHOICES)
 
     class Meta:
         unique_together = ("purchase_order", "order_type")
@@ -962,12 +848,10 @@ class Dispatch(models.Model):
     """
     Dispatch workflow main model.
     """
-
     STATUS_CHOICES = (
         ("draft", "Draft"),
         ("completed", "Completed"),
     )
-
     ORDER_TYPE_CHOICES = (
         ("distributor", "Distributor"),
         ("dealer", "Dealer"),
@@ -975,46 +859,18 @@ class Dispatch(models.Model):
     )
 
     # ---------------- STEP 1 ----------------
-    sales_order = models.ForeignKey(
-        SalesOrder,
-        on_delete=models.PROTECT,
-        related_name="dispatches"
-    )
-
-    order_type = models.CharField(
-        max_length=20,
-        choices=ORDER_TYPE_CHOICES
-    )
-
+    sales_order = models.ForeignKey(SalesOrder,on_delete=models.PROTECT,related_name="dispatches")
+    order_type = models.CharField(max_length=20,choices=ORDER_TYPE_CHOICES)
     # ---------------- STEP 2 ----------------
-    product = models.ForeignKey(
-        OrderProduct,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True
-    )
-
-    batch = models.ForeignKey(
-        OrderBatch,
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True
-    )
-
-    dispatch_quantity = models.PositiveIntegerField(
-        validators=[MinValueValidator(1)],
-        null=True,
-        blank=True
-    )
-
+    product = models.ForeignKey(OrderProduct,on_delete=models.PROTECT,null=True,blank=True)
+    batch = models.ForeignKey(OrderBatch,on_delete=models.PROTECT,null=True,blank=True)
+    dispatch_quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)],null=True,blank=True)
     imei_number = models.CharField(max_length=50, blank=True)
     serial_number = models.CharField(max_length=50, blank=True)
     iccid_number = models.CharField(max_length=50, blank=True)
-
     # ---------------- STEP 3 ----------------
     dispatch_date = models.DateField(null=True, blank=True)
     dispatch_remarks = models.TextField(blank=True)
-
     # ---------------- STEP 4 ----------------
     customer_name = models.CharField(max_length=255, null=True, blank=True)
     customer_contact = models.CharField(max_length=15, null=True, blank=True)
@@ -1050,13 +906,11 @@ class PostDispatchReturn(models.Model):
     Main model representing a post-dispatch return entry.
     One record per return request.
     """
-
     RETURN_TYPE_CHOICES = (
         ("full", "Full Return (All Items)"),
         ("partial", "Partial Return (Some Items)"),
         ("replacement", "Return for Replacement"),
     )
-
     RETURN_REASON_CHOICES = (
         ("damaged", "Damaged in Transit"),
         ("defective", "Defective Product"),
@@ -1066,40 +920,20 @@ class PostDispatchReturn(models.Model):
         ("spec_mismatch", "Specification Mismatch"),
         ("other", "Other"),
     )
-
     # Dispatch reference information (read-only in UI)
     dispatch_id = models.CharField(max_length=50)
     invoice_no = models.CharField(max_length=50)
     customer_name = models.CharField(max_length=255)
-    dispatch_total_value = models.DecimalField(
-        max_digits=12,
-        decimal_places=2
-    )
-
+    dispatch_total_value = models.DecimalField(max_digits=12,decimal_places=2)
     # Return details
-    return_type = models.CharField(
-        max_length=20,
-        choices=RETURN_TYPE_CHOICES
-    )
-    return_reason = models.CharField(
-        max_length=20,
-        choices=RETURN_REASON_CHOICES
-    )
+    return_type = models.CharField(max_length=20,choices=RETURN_TYPE_CHOICES)
+    return_reason = models.CharField(max_length=20,choices=RETURN_REASON_CHOICES)
     return_date = models.DateField()
     return_remarks = models.TextField(blank=True)
-
     # Calculated field
-    total_return_amount = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        default=0
-    )
-
+    total_return_amount = models.DecimalField(max_digits=12,decimal_places=2,default=0)
     # System fields
-    created_by = models.ForeignKey(
-        User,
-        on_delete=models.PROTECT
-    )
+    created_by = models.ForeignKey(User,on_delete=models.PROTECT)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -1109,33 +943,18 @@ class PostDispatchReturn(models.Model):
         return f"PostDispatchReturn-{self.id}"
 
 
+# ---------------- Post-Dispatch Return Item ----------------
 class PostDispatchReturnItem(models.Model):
     """
     Line items selected for return.
     """
-
-    post_dispatch_return = models.ForeignKey(
-        PostDispatchReturn,
-        on_delete=models.CASCADE,
-        related_name="items"
-    )
-
+    post_dispatch_return = models.ForeignKey(PostDispatchReturn,on_delete=models.CASCADE,related_name="items")
     product_id = models.CharField(max_length=50)
     description = models.CharField(max_length=255)
     dispatched_qty = models.PositiveIntegerField()
-    unit_price = models.DecimalField(
-        max_digits=10,
-        decimal_places=2
-    )
-
-    return_qty = models.PositiveIntegerField(
-        validators=[MinValueValidator(1)]
-    )
-
-    return_amount = models.DecimalField(
-        max_digits=12,
-        decimal_places=2
-    )
+    unit_price = models.DecimalField(max_digits=10,decimal_places=2)
+    return_qty = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+    return_amount = models.DecimalField(max_digits=12, decimal_places=2)
 
     def __str__(self):
         return f"{self.product_id} | Return Qty: {self.return_qty}"
@@ -1195,6 +1014,7 @@ class PurchaseDepartmentRegistration(models.Model):
         return self.purchase_department_name
 
 
+# ---------------- Module Management Store Manager Registration ----------------
 class StoreManagerRegistration(models.Model):
     store_manager_name = models.CharField(max_length=255)
     phone_number = models.CharField(max_length=15)
@@ -1242,22 +1062,18 @@ class StoreTransfer(models.Model):
     product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name="store_transfers")
     product_name = models.CharField(max_length=255)
     category = models.ForeignKey('ProductCategory', on_delete=models.PROTECT, null=True, blank=True, related_name="store_transfers")
-    
     # Transfer Details
     transfer_id = models.CharField(max_length=50, unique=True)
     mrn_number = models.CharField(max_length=50, null=True, blank=True)
     batch_number = models.CharField(max_length=50)
-    
     # Vendor & Quantity
     vendor = models.ForeignKey(Vendor, on_delete=models.PROTECT, related_name="store_transfers")
     quantity = models.IntegerField(validators=[MinValueValidator(1)])
     unit_price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
     total_value = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
-    
     # Dates & Status
     transfer_date = models.DateField()
     dispatch_status = models.CharField(max_length=20, choices=DISPATCH_STATUS_CHOICES, default="non_dispatched")
-    
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -1276,7 +1092,7 @@ class StoreTransfer(models.Model):
         return f"Transfer {self.transfer_id} - {self.product_name}"
 
 
-# ProductCategory Model (if not exists)
+# -------------------- ProductCategory Model (if not exists) --------------------
 class ProductCategory(models.Model):
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(null=True, blank=True)
@@ -1288,4 +1104,119 @@ class ProductCategory(models.Model):
     
     def __str__(self):
         return self.name
+
+
+# ============================================================
+# DEBIT NOTES & CREDIT NOTES - ACCOUNT MANAGEMENT
+# ============================================================
+class DebitNote(models.Model):
+    """
+    Debit Note for vendor returns, disputes, penalties, etc.
+    """
+    REASON_CHOICES = (
+        ("vendor_rejected_return", "Vendor Rejected Return"),
+        ("quality_dispute", "Quality Dispute"),
+        ("late_delivery_penalty", "Late Delivery Penalty"),
+        ("specification_mismatch", "Specification Mismatch"),
+        ("warranty_claim_denied", "Warranty Claim Denied"),
+        ("other", "Other"),
+    )
+    
+    STATUS_CHOICES = (
+        ("pending", "Pending"),
+        ("approved", "Approved"),
+        ("rejected", "Rejected"),
+        ("processed", "Processed"),
+    )
+    
+    # Auto-generated number in format DN-YYYY-NNN
+    number = models.CharField(max_length=20, unique=True, db_index=True)
+    date = models.DateField()
+    vendor = models.CharField(max_length=255)
+    reason = models.CharField(max_length=50, choices=REASON_CHOICES)
+    amount = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending", db_index=True)
+    reference_document = models.CharField(max_length=255, blank=True, help_text="e.g., RTN-001, PO-001")
+    remarks = models.TextField(blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="created_debit_notes")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["status"]),
+            models.Index(fields=["date"]),
+            models.Index(fields=["vendor"]),
+        ]
+    
+    def __str__(self):
+        return f"{self.number} - {self.vendor}"
+
+
+# ---------------- Credit Note ----------------
+class CreditNote(models.Model):
+    """
+    Credit Note for customer returns, discounts, refunds, etc.
+    """
+    REASON_CHOICES = (
+        ("return_accepted", "Return Accepted"),
+        ("discount_adjustment", "Discount Adjustment"),
+        ("overpayment_refund", "Overpayment Refund"),
+        ("quality_issue", "Quality Issue"),
+        ("price_correction", "Price Correction"),
+        ("other", "Other"),
+    )
+    
+    STATUS_CHOICES = (
+        ("pending", "Pending"),
+        ("approved", "Approved"),
+        ("rejected", "Rejected"),
+        ("processed", "Processed"),
+    )
+    
+    # Auto-generated number in format CN-YYYY-NNN
+    number = models.CharField(max_length=20, unique=True, db_index=True)
+    date = models.DateField()
+    customer = models.CharField(max_length=255)
+    reason = models.CharField(max_length=50, choices=REASON_CHOICES)
+    amount = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending", db_index=True)
+    reference_document = models.CharField(max_length=255, blank=True, help_text="e.g., INV-001, RTN-001")
+    remarks = models.TextField(blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="created_credit_notes")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["status"]),
+            models.Index(fields=["date"]),
+            models.Index(fields=["customer"]),
+        ]
+    
+    def __str__(self):
+        return f"{self.number} - {self.customer}"
+
+
+# ---------------- Note Sequence ----------------
+class NoteSequence(models.Model):
+    """
+    Maintains year-wise running sequence for Debit & Credit Notes
+    """
+    NOTE_TYPE_CHOICES = (
+        ("debit", "Debit Note"),
+        ("credit", "Credit Note"),
+    )
+    year = models.PositiveIntegerField()
+    note_type = models.CharField(max_length=10, choices=NOTE_TYPE_CHOICES)
+    last_number = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        unique_together = ("year", "note_type")
+
+    def __str__(self):
+        return f"{self.note_type.upper()}-{self.year}: {self.last_number}"
+
 
