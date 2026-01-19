@@ -4,6 +4,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from decimal import Decimal
 from django.contrib.auth import get_user_model
 
+
 User = get_user_model()
 
 
@@ -1218,5 +1219,119 @@ class NoteSequence(models.Model):
 
     def __str__(self):
         return f"{self.note_type.upper()}-{self.year}: {self.last_number}"
+
+
+# ============================================================
+# ========================== Vendor ==========================
+# ============================================================
+
+# ----------------------------- RETURN REQUEST MANAGEMENT -----------------------------
+class ReturnRequest(models.Model):
+    STATUS_CHOICES = (
+        ("pending", "Pending"),
+        ("accepted", "Accepted"),
+        ("rejected", "Rejected"),
+    )
+    # Return identification
+    return_number = models.CharField(max_length=50,unique=True,db_index=True,verbose_name="Return Number")
+    date = models.DateField(verbose_name="Return Date")
+    # Return details
+    items = models.TextField(verbose_name="Items",help_text="Comma-separated list of returned items or item count")
+    reason = models.CharField(max_length=255,verbose_name="Reason")
+    amount = models.DecimalField(max_digits=12,decimal_places=2,validators=[MinValueValidator(0)],verbose_name="Return Amount")
+    # Status tracking
+    status = models.CharField(max_length=20,choices=STATUS_CHOICES,default="pending",db_index=True,verbose_name="Status")
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(User,on_delete=models.PROTECT,related_name="created_return_requests")
+    
+    class Meta:
+        ordering = ["-date"]
+        verbose_name = "Return Request"
+        verbose_name_plural = "Return Requests"
+        indexes = [
+            models.Index(fields=["status"]),
+            models.Index(fields=["-date"]),
+            models.Index(fields=["return_number"]),
+        ]
+
+    def __str__(self):
+        return f"{self.return_number} - {self.status.upper()}"
+
+
+# ----------------------------- REPAIR DATA MANAGEMENT -----------------------------
+class RepairRecord(models.Model):
+    STATUS_CHOICES = (
+        ("pending", "Pending"),
+        ("in_progress", "In Progress"),
+        ("completed", "Completed"),
+        ("failed", "Failed"),
+    )
+
+    # Product reference
+    product_id = models.CharField(max_length=50,db_index=True,verbose_name="Product ID")
+    product_name = models.CharField(max_length=255,verbose_name="Product Name")
+    # Vendor & MRN reference
+    vendor = models.CharField(max_length=255,db_index=True,verbose_name="Vendor")
+    mrn_number = models.CharField(max_length=50,db_index=True,verbose_name="MRN Number")
+    # Quantities
+    failed_qty = models.PositiveIntegerField(verbose_name="Failed Qty")
+    repaired_qty = models.PositiveIntegerField(default=0,verbose_name="Repaired Qty")
+    rejected_qty = models.PositiveIntegerField(default=0,verbose_name="Rejected Qty")
+    repair_pending = models.PositiveIntegerField(default=0,verbose_name="Repair Pending")
+    # Repair details
+    repair_type = models.CharField(max_length=100,verbose_name="Repair Type")
+    repair_center = models.CharField(max_length=255,verbose_name="Repair Center")
+    # Status
+    status = models.CharField(max_length=20,choices=STATUS_CHOICES,default="pending",db_index=True,verbose_name="Status")
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(User,on_delete=models.PROTECT,related_name="created_repair_records")
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Repair Record"
+        verbose_name_plural = "Repair Records"
+        indexes = [
+            models.Index(fields=["product_id"]),
+            models.Index(fields=["status"]),
+            models.Index(fields=["mrn_number"]),
+            models.Index(fields=["vendor"]),
+        ]
+
+    def __str__(self):
+        return f"{self.product_name} - MRN: {self.mrn_number}"
+
+
+# ------------------------------ REPAIR DATA MANAGEMENT -----------------------------
+class RejectedItem(models.Model):
+    # Product reference
+    product_id = models.CharField(max_length=50,db_index=True,verbose_name="Product ID")
+    product_name = models.CharField(max_length=255,verbose_name="Product Name")
+    # Vendor & MRN reference
+    vendor = models.CharField(max_length=255,db_index=True,verbose_name="Vendor")
+    mrn_number = models.CharField(max_length=50,db_index=True,verbose_name="MRN Number")
+    # Rejection details
+    rejected_qty = models.PositiveIntegerField(verbose_name="Rejected Qty")
+    qc_date = models.DateField(verbose_name="QC Date")
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(User,on_delete=models.PROTECT,related_name="created_rejected_items")
+    class Meta:
+        ordering = ["-qc_date"]
+        verbose_name = "Rejected Item"
+        verbose_name_plural = "Rejected Items"
+        indexes = [
+            models.Index(fields=["product_id"]),
+            models.Index(fields=["mrn_number"]),
+            models.Index(fields=["vendor"]),
+            models.Index(fields=["qc_date"]),
+        ]
+
+    def __str__(self):
+        return f"{self.product_id} - {self.mrn_number}"
 
 

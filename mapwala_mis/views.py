@@ -1,26 +1,29 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.permissions import AllowAny
-from rest_framework_simplejwt.tokens import AccessToken
-from django.utils import timezone
-from rest_framework.viewsets import ModelViewSet
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import action
-from rest_framework.filters import SearchFilter
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework.parsers import MultiPartParser, FormParser
-from django.shortcuts import get_object_or_404
-from django.db import transaction
-from collections import defaultdict
-from rest_framework.throttling import ScopedRateThrottle
-from decimal import Decimal
-from .utils import generate_note_number
 from datetime import datetime
+from decimal import Decimal
+from collections import defaultdict
 
-from .serializers import *
+from django.db import transaction
+from django.db.models import Count, Q
+from django.shortcuts import get_object_or_404
+from django.db.models import Sum
+from django.utils import timezone
+
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
+from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
+
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework_simplejwt.tokens import AccessToken
+
 from .models import *
+from .serializers import *
+from .utils import generate_note_number
 
 
 # ---------------- Login API ----------------
@@ -1515,7 +1518,7 @@ class ProductCategoryViewSet(ModelViewSet):
 
 
 # ============================================================
-# ACCOUNT MANAGEMENT
+# ===================== ACCOUNT MANAGEMENT ===================
 # ============================================================
 
 # ---------------- Debit Note ViewSet ----------------
@@ -1719,4 +1722,324 @@ class NoteStatusChoicesAPIView(APIView):
         ]
         return Response(statuses)
 
+
+# ==================================================================================
+# ====================================== Vendor ====================================
+# ==================================================================================
+# ----------------------------- RETURN REQUEST VIEWSET -----------------------------
+class ReturnRequestViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing Return Requests
+    
+    Features:
+    - List all return requests with pagination
+    - Filter by status (pending, accepted, rejected)
+    - Search by return number or reason
+    - Get count of returns by status
+    - Retrieve specific return request details
+    - Create new return request
+    - Update return request status
+    - Delete return request
+    """
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    search_fields = ['return_number', 'reason', 'items']
+    ordering_fields = ['date', 'amount', 'status', 'created_at']
+    ordering = ['-date']
+    filterset_fields = ['status']
+
+    def get_queryset(self):
+        return ReturnRequest.objects.select_related('created_by')
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return ReturnRequestListSerializer
+        elif self.action == 'counts':
+            return ReturnRequestCountSerializer
+        return ReturnRequestSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+    def perform_update(self, serializer):
+        serializer.save()
+
+    @action(detail=False, methods=['get'])
+    def counts(self, request):
+        """
+        Get count of returns by status
+        
+        Returns:
+        {
+            "pending": 5,
+            "accepted": 3,
+            "rejected": 2
+        }
+        """
+        queryset = self.get_queryset()
+        counts = {
+            'pending': queryset.filter(status='pending').count(),
+            'accepted': queryset.filter(status='accepted').count(),
+            'rejected': queryset.filter(status='rejected').count(),
+        }
+        # serializer = self.get_serializer(counts)
+        serializer = ReturnRequestCountSerializer(counts)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def recent(self, request):
+        """
+        Get recent return requests (last 10 by date)
+        """
+        queryset = self.get_queryset()[:10]
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['patch'])
+    def change_status(self, request, pk=None):
+        """
+        Change return request status
+        
+        Request:
+        {
+            "status": "accepted"  // or "rejected"
+        }
+        """
+        return_request = self.get_object()
+        new_status = request.data.get('status')
+
+        if new_status not in ['pending', 'accepted', 'rejected']:
+            return Response(
+                {'error': 'Invalid status. Must be pending, accepted, or rejected'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return_request.status = new_status
+        return_request.save()
+
+        serializer = self.get_serializer(return_request)
+        return Response(
+            {
+                'message': f'Return status updated to {new_status}',
+                'return_request': serializer.data
+            },
+            status=status.HTTP_200_OK
+        )
+
+
+# ------------------------------ REPAIR RECORD VIEWSET -------------------------------
+class RepairRecordViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing Repair Records
+    
+    Features:
+    - List all repair records with search and filter
+    - Search by product ID, product name, vendor, MRN number, repair type, or repair center
+    - Filter by status or repair type
+    - Get repair statistics
+    - Create new repair record
+    - Update repair record
+    - Delete repair record
+    """
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    search_fields = [
+        'product_id',
+        'product_name',
+        'vendor',
+        'mrn_number',
+        'repair_type',
+        'repair_center'
+    ]
+    ordering_fields = ['created_at', 'product_name', 'status']
+    ordering = ['-created_at']
+    filterset_fields = ['status', 'repair_type']
+
+    def get_queryset(self):
+        return RepairRecord.objects.select_related('created_by')
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return RepairRecordListSerializer
+        return RepairRecordSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+    def perform_update(self, serializer):
+        serializer.save()
+    @action(detail=False, methods=['get'])
+    def statistics(self, request):
+        """
+        Get repair statistics
+
+        Returns:
+        {
+            "total_failed": 100,
+            "total_repaired": 85,
+            "total_rejected": 10,
+            "total_pending": 5,
+            "by_status": {
+                "pending": 10,
+                "in_progress": 20,
+                "completed": 60,
+                "failed": 10
+            }
+        }
+        """
+        queryset = self.get_queryset()
+
+        # ✅ Database-level aggregation (FAST & SAFE)
+        totals = queryset.aggregate(
+            total_failed=Sum('failed_qty'),
+            total_repaired=Sum('repaired_qty'),
+            total_rejected=Sum('rejected_qty'),
+            total_pending=Sum('repair_pending'),
+        )
+
+        # Replace None with 0 (important when table is empty)
+        totals = {k: v or 0 for k, v in totals.items()}
+
+        by_status = {
+            status: queryset.filter(status=status).count()
+            for status in ['pending', 'in_progress', 'completed', 'failed']
+        }
+
+        return Response({
+            **totals,
+            "by_status": by_status
+        })
+    
+    @action(detail=True, methods=['patch'])
+    def update_quantities(self, request, pk=None):
+        """
+        Update repair quantities
+        
+        Request:
+        {
+            "repaired_qty": 10,
+            "rejected_qty": 2,
+            "repair_pending": 3
+        }
+        """
+        repair_record = self.get_object()
+        
+        repaired_qty = request.data.get('repaired_qty', repair_record.repaired_qty)
+        rejected_qty = request.data.get('rejected_qty', repair_record.rejected_qty)
+        repair_pending = request.data.get('repair_pending', repair_record.repair_pending)
+
+        # Validate quantities
+        if repaired_qty + rejected_qty > repair_record.failed_qty:
+            return Response(
+                {'error': 'Repaired Qty + Rejected Qty cannot exceed Failed Qty'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        repair_record.repaired_qty = repaired_qty
+        repair_record.rejected_qty = rejected_qty
+        repair_record.repair_pending = repair_pending
+        repair_record.save()
+
+        serializer = self.get_serializer(repair_record)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+# ------------------------------- REJECTED ITEM VIEWSET -------------------------------
+class RejectedItemViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing Rejected Items
+    
+    Features:
+    - List all rejected items with search and filter
+    - Search by product ID, product name, vendor, MRN number, or reason
+    - Filter by vendor or date range
+    - Get rejected items statistics
+    - Create new rejected item record
+    - Update rejected item
+    - Delete rejected item
+    """
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    search_fields = ['product_id','product_name','vendor','mrn_number',]
+    ordering_fields = ['qc_date', 'product_name', 'rejected_qty']
+    ordering = ['-qc_date']
+    filterset_fields = ['vendor', 'qc_date']
+
+    def get_queryset(self):
+        return RejectedItem.objects.select_related('created_by')
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return RejectedItemListSerializer
+        return RejectedItemSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+    def perform_update(self, serializer):
+        serializer.save()
+
+    @action(detail=False, methods=['get'])
+    def statistics(self, request):
+        """
+        Get rejected items statistics
+
+        Returns:
+        {
+            "total_rejected_items": 50,
+            "total_rejected_qty": 250,
+            "by_vendor": {
+                "Vendor A": 100,
+                "Vendor B": 150
+            }
+        }
+        """
+        queryset = self.get_queryset()
+
+        total_rejected_qty = (queryset.aggregate(total=Sum('rejected_qty'))['total'] or 0)
+
+        vendor_stats = (
+            queryset
+            .values('vendor')
+            .annotate(total=Sum('rejected_qty'))
+            .order_by('-total')
+        )
+
+        by_vendor = {
+            row['vendor']: row['total']
+            for row in vendor_stats
+        }
+
+        return Response({
+            'total_rejected_items': queryset.count(),
+            'total_rejected_qty': total_rejected_qty,
+            'by_vendor': by_vendor
+        })
+
+    @action(detail=False, methods=['get'])
+    def by_vendor(self, request):
+        """
+        Get rejected items grouped by vendor
+        """
+        vendor = request.query_params.get('vendor')
+
+        if not vendor:
+            return Response(
+                {'error': 'vendor parameter is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        queryset = self.get_queryset().filter(vendor=vendor)
+
+        total_rejected_qty = (
+            queryset.aggregate(total=Sum('rejected_qty'))['total'] or 0
+        )
+
+        serializer = self.get_serializer(queryset, many=True)
+
+        return Response({
+            'vendor': vendor,
+            'total_rejected_qty': total_rejected_qty,
+            'items': serializer.data
+        })
 

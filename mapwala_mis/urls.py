@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 
 from .views import *
 
+
 router = DefaultRouter()
 router.register("states", StateViewSet, basename="states")
 router.register("districts", DistrictViewSet, basename="districts")
@@ -12,6 +13,9 @@ router.register("store-transfers", StoreTransferViewSet, basename="store-transfe
 router.register("product-categories", ProductCategoryViewSet, basename="product-categories")
 router.register("debit-notes", DebitNoteViewSet, basename="debit-notes")
 router.register("credit-notes", CreditNoteViewSet, basename="credit-notes")
+router.register('return-requests', ReturnRequestViewSet, basename='return-request')
+router.register('repair-records', RepairRecordViewSet, basename='repair-record')
+router.register('rejected-items', RejectedItemViewSet, basename='rejected-item')
 
 urlpatterns = [
     path("auth/login/", LoginAPIView.as_view(), name="login"),

@@ -1051,3 +1051,115 @@ class CreditNoteCreateUpdateSerializer(serializers.ModelSerializer):
         return value.strip()
 
 
+# ============================================================
+# RETURN REQUEST SERIALIZERS
+# ============================================================
+class ReturnRequestSerializer(serializers.ModelSerializer):
+    created_by_username = serializers.CharField(
+        source='created_by.username',
+        read_only=True
+    )
+
+    class Meta:
+        model = ReturnRequest
+        fields = ['id','return_number','date','items','reason','amount','status','created_at','updated_at','created_by_username']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'created_by_username']
+
+    def validate_date(self, value):
+        """Ensure date is not in future"""
+        from django.utils import timezone
+        if value > timezone.now().date():
+            raise serializers.ValidationError("Return date cannot be in the future")
+        return value
+
+    def validate_amount(self, value):
+        """Ensure amount is positive"""
+        if value <= 0:
+            raise serializers.ValidationError("Amount must be greater than 0")
+        return value
+
+
+class ReturnRequestListSerializer(serializers.ModelSerializer):
+    """Lightweight serializer for list views"""
+    class Meta:
+        model = ReturnRequest
+        fields = ['id','return_number','date','items','reason','amount','status']
+
+
+class ReturnRequestCountSerializer(serializers.Serializer):
+    """Serializer for return request counts by status"""
+    pending = serializers.IntegerField()
+    accepted = serializers.IntegerField()
+    rejected = serializers.IntegerField()
+
+
+# ============================================================
+# REPAIR RECORD SERIALIZERS
+# ============================================================
+class RepairRecordSerializer(serializers.ModelSerializer):
+    created_by_username = serializers.CharField(
+        source='created_by.username',
+        read_only=True
+    )
+
+    class Meta:
+        model = RepairRecord
+        fields = ['id','product_id','product_name','vendor','mrn_number','failed_qty','repaired_qty','rejected_qty','repair_pending','repair_type','repair_center','status','created_at','updated_at','created_by_username']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'created_by_username']
+
+    def validate(self, data):
+        """Validate repair quantities"""
+        if data.get('repaired_qty', 0) + data.get('rejected_qty', 0) > data.get('failed_qty', 0):
+            raise serializers.ValidationError(
+                "Repaired Qty + Rejected Qty cannot exceed Failed Qty"
+            )
+        
+        repair_pending = data.get('repair_pending', 0)
+        if repair_pending < 0:
+            raise serializers.ValidationError("Repair Pending cannot be negative")
+        
+        return data
+
+
+class RepairRecordListSerializer(serializers.ModelSerializer):
+    """Lightweight serializer for list views"""
+    class Meta:
+        model = RepairRecord
+        fields = ['id','product_id','product_name','vendor','mrn_number','failed_qty','repaired_qty','rejected_qty','repair_pending','repair_type','repair_center','status']
+
+
+# ============================================================
+# REJECTED ITEM SERIALIZERS
+# ============================================================
+class RejectedItemSerializer(serializers.ModelSerializer):
+    created_by_username = serializers.CharField(
+        source='created_by.username',
+        read_only=True
+    )
+
+    class Meta:
+        model = RejectedItem
+        fields = ['id','product_id','product_name','vendor','mrn_number','rejected_qty','qc_date','created_at','updated_at','created_by_username']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'created_by_username']
+
+    def validate_qc_date(self, value):
+        """Ensure QC date is not in future"""
+        from django.utils import timezone
+        if value > timezone.now().date():
+            raise serializers.ValidationError("QC date cannot be in the future")
+        return value
+
+    def validate_rejected_qty(self, value):
+        """Ensure rejected quantity is positive"""
+        if value <= 0:
+            raise serializers.ValidationError("Rejected Qty must be greater than 0")
+        return value
+
+
+class RejectedItemListSerializer(serializers.ModelSerializer):
+    """Lightweight serializer for list views"""
+    class Meta:
+        model = RejectedItem
+        fields = ['id','product_id','product_name','vendor','mrn_number','rejected_qty','qc_date']
+
+

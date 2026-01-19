@@ -5043,6 +5043,626 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "Vendor",
+      "item": [
+        {
+          "name": "RETURN REQUEST APIs",
+          "item": [
+            {
+              "name": "Create Return Request",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4ODg0ODgwLCJpYXQiOjE3Njg3OTg0ODAsImp0aSI6ImJjODFhZGRmNWMwMjRhNGY4YjA5NmNlYjU3MWUxMGFhIiwidXNlcl9pZCI6IjMifQ.-8-Y03LsEZHb-sZEyzpFsVHRLYV122gTdVeFxwPPTvg"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"return_number\": \"RR-1001\",\r\n  \"date\": \"2024-09-10\",\r\n  \"items\": \"2 items\",\r\n  \"reason\": \"Damaged product\",\r\n  \"amount\": 1500.00\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:8000/api/return-requests/",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "return-requests",
+                    ""
+                  ]
+                },
+                "description": "Generated from cURL: curl -X POST BASE_URL/return-requests/ \\\r\n-H \"Authorization: Bearer YOUR_TOKEN_HERE\" \\\r\n-H \"Content-Type: application/json\" \\\r\n-d '{\r\n  \"return_number\": \"RR-1001\",\r\n  \"date\": \"2024-09-10\",\r\n  \"items\": \"2 items\",\r\n  \"reason\": \"Damaged product\",\r\n  \"amount\": 1500.00\r\n}'\r\n"
+              },
+              "response": []
+            },
+            {
+              "name": "List All Return Requests",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4ODg0ODgwLCJpYXQiOjE3Njg3OTg0ODAsImp0aSI6ImJjODFhZGRmNWMwMjRhNGY4YjA5NmNlYjU3MWUxMGFhIiwidXNlcl9pZCI6IjMifQ.-8-Y03LsEZHb-sZEyzpFsVHRLYV122gTdVeFxwPPTvg"
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:8000/api/return-requests/",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "return-requests",
+                    ""
+                  ]
+                },
+                "description": "StartFragment\n\n# 📘 Return Requests – List API\n\n_(Frontend Integration Documentation)_\n\n---\n\n## Overview\n\nThis API retrieves a **paginated list of Return Requests**.  \n  \nIt is used to populate:\n\n- ✅ **Return Requests table**\n    \n- ✅ **Vendor / Admin dashboards**\n    \n- ✅ **Search & filter views**\n    \n\n---\n\n## Base URL\n\n```\nhttp://localhost:8000/api\n\n ```\n\n---\n\n## Authentication\n\n🔐 **JWT Authentication Required**\n\n### Required Headers\n\n```\nAuthorization: Bearer <ACCESS_TOKEN>\nContent-Type: application/json\n\n ```\n\n---\n\n## Endpoint\n\n```\nGET /return-requests/\n\n ```\n\n---\n\n## Purpose\n\n- Fetch all return requests\n    \n- Supports:\n    \n    - Pagination\n        \n    - Search\n        \n    - Filtering\n        \n    - Ordering\n        \n\n---\n\n## Example cURL (Verified)\n\n```\ncurl --location 'http://localhost:8000/api/return-requests/' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27;\n\n ```\n\n---\n\n## ✅ Success Response – `200 OK`\n\n```\n{\n  \"count\": 1,\n  \"next\": null,\n  \"previous\": null,\n  \"results\": [\n    {\n      \"id\": 1,\n      \"return_number\": \"RR-1001\",\n      \"date\": \"2024-09-10\",\n      \"items\": \"2 items\",\n      \"reason\": \"Damaged product\",\n      \"amount\": \"1500.00\",\n      \"status\": \"pending\"\n    }\n  ]\n}\n\n ```\n\n---\n\n## Response Structure Explained\n\n| Field | Type | Description |\n| --- | --- | --- |\n| count | number | Total number of return requests |\n| next | string | null | URL for next page |\n| previous | string | null | URL for previous page |\n| results | array | List of return requests |\n\n---\n\n## `results[]` Object\n\n| Field | Type | Description |\n| --- | --- | --- |\n| id | number | Return request ID |\n| return_number | string | Unique return reference |\n| date | string (YYYY-MM-DD) | Return date |\n| items | string | Items summary |\n| reason | string | Reason for return |\n| amount | string | Return amount |\n| status | string | `pending` | `accepted` | `rejected` |\n\n---\n\n## 🔍 Query Parameters (Optional)\n\n### 1️⃣ Pagination\n\n```\nGET /return-requests/?page=1\n\n ```\n\n| Param | Type | Description |\n| --- | --- | --- |\n| page | number | Page number |\n\n---\n\n### 2️⃣ Filter by Status\n\n```\nGET /return-requests/?status=pending\n\n ```\n\nValid values:\n\n- `pending`\n    \n- `accepted`\n    \n- `rejected`\n    \n\n---\n\n### 3️⃣ Search\n\n```\nGET /return-requests/?search=RR-1001\n\n ```\n\nSearch applies to:\n\n- `return_number`\n    \n- `reason`\n    \n- `items`\n    \n\n---\n\n### 4️⃣ Ordering\n\n```\nGET /return-requests/?ordering=-date\n\n ```\n\nSupported ordering fields:\n\n- `date`\n    \n- `amount`\n    \n- `status`\n    \n- `created_at`\n    \n\nPrefix with `-` for descending order.\n\n---\n\n## ❌ Error Responses (ALL POSSIBLE CASES)\n\n---\n\n### 1️⃣ Missing Authorization Header\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n---\n\n### 2️⃣ Invalid / Expired Token\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n---\n\n### 3️⃣ Invalid Status Filter\n\n```\nGET /return-requests/?status=approved\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"status\": [\n    \"Select a valid choice. approved is not one of the available choices.\"\n  ]\n}\n\n ```\n\n---\n\n### 4️⃣ Invalid Page Number\n\n```\nGET /return-requests/?page=999\n\n ```\n\n**Response –** **`404 Not Found`**\n\n```\n{\n  \"detail\": \"Invalid page.\"\n}\n\n ```\n\n---\n\n### 5️⃣ Invalid Ordering Field\n\n```\nGET /return-requests/?ordering=invalid_field\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"detail\": \"Invalid ordering field.\"\n}\n\n ```\n\n---\n\n## ⚠️ Frontend Integration Guidelines\n\n### ✅ DO\n\n- Always read data from `results[]`\n    \n- Use `count` for pagination UI\n    \n- Use `next` / `previous` URLs for page navigation\n    \n- Handle empty `results` gracefully\n    \n\n---\n\n### ❌ DO NOT\n\n- Assume non-paginated response\n    \n- Calculate totals on frontend\n    \n- Ignore `401` / `400` errors\n    \n\n---\n\n## 🧪 Empty State Example\n\nIf no return requests exist:\n\n```\n{\n  \"count\": 0,\n  \"next\": null,\n  \"previous\": null,\n  \"results\": []\n}\n\n ```\n\nFrontend should display:\n\n> &lt;p &gt;“No return requests found”&lt;/p&gt; \n  \n\n---\n\n## ✅ Integration Checklist\n\n✔ Authentication enforced  \n  \n✔ Pagination supported  \n  \n✔ Search & filters available  \n  \n✔ Stable response contract  \n  \n✔ Production-safe\n\nEndFragment"
+              },
+              "response": []
+            },
+            {
+              "name": "Filter Return Requests by Status",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4ODg0ODgwLCJpYXQiOjE3Njg3OTg0ODAsImp0aSI6ImJjODFhZGRmNWMwMjRhNGY4YjA5NmNlYjU3MWUxMGFhIiwidXNlcl9pZCI6IjMifQ.-8-Y03LsEZHb-sZEyzpFsVHRLYV122gTdVeFxwPPTvg"
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:8000/api/return-requests/?status=pending",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "return-requests",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "pending"
+                    }
+                  ]
+                },
+                "description": "StartFragment\n\n# 📘 Return Requests – Filter by Status API\n\n_(Frontend Integration Documentation)_\n\n---\n\n## Overview\n\nThis API retrieves **Return Requests filtered by status**.  \n  \nIt is primarily used for:\n\n- ✅ **Dashboard tabs** (Pending / Accepted / Rejected)\n    \n- ✅ **Status-based filtering in tables**\n    \n- ✅ **Vendor / Admin workflows**\n    \n\n---\n\n## Base URL\n\n```\nhttp://localhost:8000/api\n\n ```\n\n---\n\n## Authentication\n\n🔐 **JWT Authentication Required**\n\n### Required Headers\n\n```\nAuthorization: Bearer <ACCESS_TOKEN>\nContent-Type: application/json\n\n ```\n\n---\n\n## Endpoint\n\n```\nGET /return-requests/?status={status}\n\n ```\n\n---\n\n## Purpose\n\n- Fetch only return requests with a specific status\n    \n- Supports pagination, search, and ordering\n    \n\n---\n\n## Example cURL (Verified)\n\n```\ncurl --location 'http://localhost:8000/api/return-requests/?status=pending' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27;\n\n ```\n\n---\n\n## Query Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| status | string | ✅ | Filter return requests by status |\n\n### Allowed Status Values\n\n- `pending`\n    \n- `accepted`\n    \n- `rejected`\n    \n\n---\n\n## ✅ Success Response – `200 OK`\n\n```\n{\n  \"count\": 1,\n  \"next\": null,\n  \"previous\": null,\n  \"results\": [\n    {\n      \"id\": 1,\n      \"return_number\": \"RR-1001\",\n      \"date\": \"2024-09-10\",\n      \"items\": \"2 items\",\n      \"reason\": \"Damaged product\",\n      \"amount\": \"1500.00\",\n      \"status\": \"pending\"\n    }\n  ]\n}\n\n ```\n\n---\n\n## Response Structure\n\n### Pagination Wrapper\n\n| Field | Type | Description |\n| --- | --- | --- |\n| count | number | Total items matching filter |\n| next | string | null | Next page URL |\n| previous | string | null | Previous page URL |\n| results | array | Filtered return requests |\n\n---\n\n### `results[]` Object\n\n| Field | Type | Description |\n| --- | --- | --- |\n| id | number | Return request ID |\n| return_number | string | Unique return reference |\n| date | string (YYYY-MM-DD) | Return date |\n| items | string | Returned items summary |\n| reason | string | Return reason |\n| amount | string | Return amount |\n| status | string | Current return status |\n\n---\n\n## 🔍 Additional Optional Query Parameters\n\n### 1️⃣ Pagination\n\n```\nGET /return-requests/?status=pending&page=1\n\n ```\n\n---\n\n### 2️⃣ Search within Status\n\n```\nGET /return-requests/?status=pending&search=RR-1001\n\n ```\n\nSearch applies to:\n\n- `return_number`\n    \n- `reason`\n    \n- `items`\n    \n\n---\n\n### 3️⃣ Ordering\n\n```\nGET /return-requests/?status=pending&ordering=-date\n\n ```\n\nSupported ordering fields:\n\n- `date`\n    \n- `amount`\n    \n- `status`\n    \n- `created_at`\n    \n\n---\n\n## ❌ Error Responses (ALL POSSIBLE CASES)\n\n---\n\n### 1️⃣ Missing Authentication\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n---\n\n### 2️⃣ Invalid or Expired Token\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n---\n\n### 3️⃣ Invalid Status Value\n\n```\nGET /return-requests/?status=approved\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"status\": [\n    \"Select a valid choice. approved is not one of the available choices.\"\n  ]\n}\n\n ```\n\n---\n\n### 4️⃣ Invalid Page Number\n\n```\nGET /return-requests/?status=pending&page=999\n\n ```\n\n**Response –** **`404 Not Found`**\n\n```\n{\n  \"detail\": \"Invalid page.\"\n}\n\n ```\n\n---\n\n### 5️⃣ Invalid Ordering Field\n\n```\nGET /return-requests/?status=pending&ordering=unknown\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"detail\": \"Invalid ordering field.\"\n}\n\n ```\n\n---\n\n## 🧪 Empty State Example\n\nWhen no records match the status:\n\n```\n{\n  \"count\": 0,\n  \"next\": null,\n  \"previous\": null,\n  \"results\": []\n}\n\n ```\n\nFrontend should display:\n\n> \n\n**“No pending return requests found”**\n\n \n  \n\n---\n\n## ⚠️ Frontend Integration Guidelines\n\n### ✅ Best Practices\n\n- Always read data from `results[]`\n    \n- Use `count` for pagination controls\n    \n- Use backend filtering instead of client-side filtering\n    \n- Handle empty results gracefully\n    \n\n---\n\n### ❌ Avoid\n\n- Hard-coding status values\n    \n- Assuming non-paginated responses\n    \n- Ignoring `400` and `401` errors\n    \n\n---\n\n## ✅ Integration Status\n\n✔ Tested via cURL  \n  \n✔ Pagination confirmed  \n  \n✔ Filters validated  \n  \n✔ UI-compatible response\n\nEndFragment"
+              },
+              "response": []
+            },
+            {
+              "name": "Search Return Requests",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4ODg0ODgwLCJpYXQiOjE3Njg3OTg0ODAsImp0aSI6ImJjODFhZGRmNWMwMjRhNGY4YjA5NmNlYjU3MWUxMGFhIiwidXNlcl9pZCI6IjMifQ.-8-Y03LsEZHb-sZEyzpFsVHRLYV122gTdVeFxwPPTvg"
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:8000/api/return-requests/?search=RR-1001",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "return-requests",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "search",
+                      "value": "RR-1001"
+                    }
+                  ]
+                },
+                "description": "StartFragment\n\n# 📘 Return Requests – Search API\n\n_(Frontend Integration Documentation)_\n\n---\n\n## Overview\n\nThis API retrieves **Return Requests based on a search keyword**.  \n  \nIt is used for:\n\n- 🔍 **Search bar** in the Return Requests table\n    \n- 📊 **Quick filtering** by return number, reason, or items\n    \n- 🧭 **Global search** within return requests\n    \n\n---\n\n## Base URL\n\n```\nhttp://localhost:8000/api\n\n ```\n\n---\n\n## Authentication\n\n🔐 **JWT Authentication Required**\n\n### Required Headers\n\n```\nAuthorization: Bearer <ACCESS_TOKEN>\nContent-Type: application/json\n\n ```\n\n---\n\n## Endpoint\n\n```\nGET /return-requests/?search={query}\n\n ```\n\n---\n\n## Purpose\n\n- Search return requests using a keyword\n    \n- Works across multiple fields\n    \n- Supports pagination, filtering, and ordering\n    \n\n---\n\n## Example cURL (Verified)\n\n```\ncurl --location 'http://localhost:8000/api/return-requests/?search=RR-1001' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27;\n\n ```\n\n---\n\n## Query Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| search | string | ✅ | Search keyword |\n\n### Fields Included in Search\n\nThe search term is matched against:\n\n- `return_number`\n    \n- `reason`\n    \n- `items`\n    \n\n---\n\n## ✅ Success Response – `200 OK`\n\n```\n{\n  \"count\": 1,\n  \"next\": null,\n  \"previous\": null,\n  \"results\": [\n    {\n      \"id\": 1,\n      \"return_number\": \"RR-1001\",\n      \"date\": \"2024-09-10\",\n      \"items\": \"2 items\",\n      \"reason\": \"Damaged product\",\n      \"amount\": \"1500.00\",\n      \"status\": \"pending\"\n    }\n  ]\n}\n\n ```\n\n---\n\n## Response Structure\n\n### Pagination Wrapper\n\n| Field | Type | Description |\n| --- | --- | --- |\n| count | number | Total records matching search |\n| next | string | null | Next page URL |\n| previous | string | null | Previous page URL |\n| results | array | Matching return requests |\n\n---\n\n### `results[]` Object\n\n| Field | Type | Description |\n| --- | --- | --- |\n| id | number | Return request ID |\n| return_number | string | Unique return reference |\n| date | string (YYYY-MM-DD) | Return date |\n| items | string | Returned items summary |\n| reason | string | Reason for return |\n| amount | string | Return amount |\n| status | string | Current status |\n\n---\n\n## 🔍 Combining Search with Other Parameters\n\n### Search + Status\n\n```\nGET /return-requests/?search=RR&status=pending\n\n ```\n\n---\n\n### Search + Pagination\n\n```\nGET /return-requests/?search=RR&page=1\n\n ```\n\n---\n\n### Search + Ordering\n\n```\nGET /return-requests/?search=RR&ordering=-date\n\n ```\n\n---\n\n## ❌ Error Responses (ALL POSSIBLE CASES)\n\n---\n\n### 1️⃣ Missing Authentication\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n---\n\n### 2️⃣ Invalid or Expired Token\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n---\n\n### 3️⃣ Invalid Query Parameter Name\n\n```\nGET /return-requests/?q=RR-1001\n\n ```\n\n**Behavior**\n\n- Backend **ignores unknown params**\n    \n- Returns **unfiltered list**\n    \n\n⚠️ **Frontend must use** **`search`****, not** **`q`**\n\n---\n\n### 4️⃣ Invalid Page Number\n\n```\nGET /return-requests/?search=RR&page=999\n\n ```\n\n**Response –** **`404 Not Found`**\n\n```\n{\n  \"detail\": \"Invalid page.\"\n}\n\n ```\n\n---\n\n### 5️⃣ Invalid Ordering Field\n\n```\nGET /return-requests/?search=RR&ordering=invalid\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"detail\": \"Invalid ordering field.\"\n}\n\n ```\n\n---\n\n## 🧪 Empty Search Result Example\n\nWhen search matches no records:\n\n```\n{\n  \"count\": 0,\n  \"next\": null,\n  \"previous\": null,\n  \"results\": []\n}\n\n ```\n\nFrontend should display:\n\n> \n\n**“No results found for ‘RR-1001’”**\n\n \n  \n\n---\n\n## ⚠️ Frontend Integration Guidelines\n\n### ✅ Best Practices\n\n- Debounce search input (300–500ms)\n    \n- Always read from `results[]`\n    \n- Reset pagination on new search\n    \n- Handle empty result states gracefully\n    \n\n---\n\n### ❌ Avoid\n\n- Client-side filtering for large datasets\n    \n- Assuming search is case-sensitive\n    \n- Using search without debounce\n    \n\n---\n\n## ✅ Integration Status\n\n✔ Search behavior verified via cURL  \n  \n✔ Pagination preserved  \n  \n✔ Filters compatible  \n  \n✔ UI-safe response contract\n\nEndFragment"
+              },
+              "response": []
+            },
+            {
+              "name": "Return Requests Count (Dashboard Cards)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4ODg0ODgwLCJpYXQiOjE3Njg3OTg0ODAsImp0aSI6ImJjODFhZGRmNWMwMjRhNGY4YjA5NmNlYjU3MWUxMGFhIiwidXNlcl9pZCI6IjMifQ.-8-Y03LsEZHb-sZEyzpFsVHRLYV122gTdVeFxwPPTvg"
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:8000/api/return-requests/counts/",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "return-requests",
+                    "counts",
+                    ""
+                  ]
+                },
+                "description": "StartFragment\n\n# 📘 Return Requests – Counts API\n\n_(Dashboard Cards Integration Documentation)_\n\n---\n\n## Overview\n\nThis API returns **aggregated counts of Return Requests by status**.  \n  \nIt is designed specifically for:\n\n- 📊 **Dashboard cards**\n    \n    - Pending Returns\n        \n    - Accepted Returns\n        \n    - Rejected Returns\n        \n- ⚡ Fast, lightweight summary data\n    \n\n---\n\n## Base URL\n\n```\nhttp://localhost:8000/api\n\n ```\n\n---\n\n## Authentication\n\n🔐 **JWT Authentication Required**\n\n### Required Headers\n\n```\nAuthorization: Bearer <ACCESS_TOKEN>\nContent-Type: application/json\n\n ```\n\n---\n\n## Endpoint\n\n```\nGET /return-requests/counts/\n\n ```\n\n---\n\n## Purpose\n\n- Fetch total counts of return requests grouped by status\n    \n- Avoids fetching full datasets\n    \n- Optimized for dashboard use\n    \n\n---\n\n## Example cURL (Verified)\n\n```\ncurl --location 'http://localhost:8000/api/return-requests/counts/' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27;\n\n ```\n\n---\n\n## ✅ Success Response – `200 OK`\n\n```\n{\n  \"pending\": 1,\n  \"accepted\": 0,\n  \"rejected\": 0\n}\n\n ```\n\n---\n\n## Response Fields\n\n| Field | Type | Description |\n| --- | --- | --- |\n| pending | number | Total pending return requests |\n| accepted | number | Total accepted return requests |\n| rejected | number | Total rejected return requests |\n\n---\n\n## Usage in Frontend\n\n### Example Mapping (Dashboard Cards)\n\n| Card Title | API Field |\n| --- | --- |\n| Pending Returns | `pending` |\n| Accepted Returns | `accepted` |\n| Rejected Returns | `rejected` |\n\n---\n\n## ❌ Error Responses (ALL POSSIBLE CASES)\n\n---\n\n### 1️⃣ Missing Authentication Header\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n---\n\n### 2️⃣ Invalid or Expired Token\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n---\n\n### 3️⃣ Permission Denied\n\nIf user is authenticated but not allowed (future RBAC):\n\n**Response –** **`403 Forbidden`**\n\n```\n{\n  \"detail\": \"You do not have permission to perform this action.\"\n}\n\n ```\n\n---\n\n### 4️⃣ Internal Server Error (Rare)\n\nIf an unexpected backend error occurs:\n\n**Response –** **`500 Internal Server Error`**\n\n```\n{\n  \"detail\": \"Internal Server Error\"\n}\n\n ```\n\n> &lt;p &gt;Frontend should show a generic error state and allow retry.&lt;/p&gt; \n  \n\n---\n\n## 🧪 Empty State Behavior\n\nIf **no return requests exist**, the API will still respond with:\n\n```\n{\n  \"pending\": 0,\n  \"accepted\": 0,\n  \"rejected\": 0\n}\n\n ```\n\n⚠️ This is **NOT an error**.  \n  \nFrontend should render cards with `0`.\n\n---\n\n## ⚠️ Frontend Integration Guidelines\n\n### ✅ Best Practices\n\n- Call this endpoint **once per dashboard load**\n    \n- Do **not** compute counts from list APIs\n    \n- Handle all fields defensively (always expect numbers)\n    \n- Show loading skeleton while fetching\n    \n\n---\n\n### ❌ Avoid\n\n- Polling frequently\n    \n- Using this API for tables\n    \n- Combining this with list endpoints unnecessarily\n    \n\n---\n\n## Performance Notes\n\n- This endpoint performs **simple DB count queries**\n    \n- Safe to call frequently\n    \n- Response size is minimal\n    \n\n---\n\n## ✅ Integration Status\n\n✔ cURL tested  \n  \n✔ Stable response contract  \n  \n✔ UI-safe  \n  \n✔ Production-ready\n\nEndFragment"
+              },
+              "response": []
+            },
+            {
+              "name": "Recent Return Requests",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4ODg0ODgwLCJpYXQiOjE3Njg3OTg0ODAsImp0aSI6ImJjODFhZGRmNWMwMjRhNGY4YjA5NmNlYjU3MWUxMGFhIiwidXNlcl9pZCI6IjMifQ.-8-Y03LsEZHb-sZEyzpFsVHRLYV122gTdVeFxwPPTvg"
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:8000/api/return-requests/recent/",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "return-requests",
+                    "recent",
+                    ""
+                  ]
+                },
+                "description": "StartFragment\n\n# 📘 Return Requests – Recent API\n\n_(Dashboard “Recent Returns” Integration Documentation)_\n\n---\n\n## Overview\n\nThis API returns the **most recent Return Requests** (latest records, limited by backend logic).\n\nIt is designed for:\n\n- 🧾 **Dashboard “Recent Return Requests” table**\n    \n- ⚡ Quick overview without pagination\n    \n- 📊 Lightweight summary data\n    \n\n---\n\n## Base URL\n\n```\nhttp://localhost:8000/api\n\n ```\n\n---\n\n## Authentication\n\n🔐 **JWT Authentication Required**\n\n### Required Headers\n\n```\nAuthorization: Bearer <ACCESS_TOKEN>\nContent-Type: application/json\n\n ```\n\n---\n\n## Endpoint\n\n```\nGET /return-requests/recent/\n\n ```\n\n---\n\n## Purpose\n\n- Fetch **recently created return requests**\n    \n- Ordered by most recent date (backend-controlled)\n    \n- Optimized for dashboard usage\n    \n\n---\n\n## Example cURL (Verified)\n\n```\ncurl --location 'http://localhost:8000/api/return-requests/recent/' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27;\n\n ```\n\n---\n\n## ✅ Success Response – `200 OK`\n\n```\n[\n  {\n    \"id\": 1,\n    \"return_number\": \"RR-1001\",\n    \"date\": \"2024-09-10\",\n    \"items\": \"2 items\",\n    \"reason\": \"Damaged product\",\n    \"amount\": \"1500.00\",\n    \"status\": \"pending\",\n    \"created_at\": \"2026-01-19T08:41:25.202171Z\",\n    \"updated_at\": \"2026-01-19T08:41:25.202188Z\",\n    \"created_by_username\": \"Vaibhav\"\n  }\n]\n\n ```\n\n---\n\n## Response Structure\n\n⚠️ **Important:**\n\nThis endpoint returns a **plain array**, **not paginated data**.\n\n---\n\n### Response Item Fields\n\n| Field | Type | Description |\n| --- | --- | --- |\n| id | number | Return request ID |\n| return_number | string | Unique return reference |\n| date | string (YYYY-MM-DD) | Return date |\n| items | string | Items summary |\n| reason | string | Reason for return |\n| amount | string | Return amount |\n| status | string | `pending` |\n| created_at | ISO datetime | Record creation timestamp |\n| updated_at | ISO datetime | Last update timestamp |\n| created_by_username | string | User who created the return |\n\n---\n\n## How Frontend Should Use This API\n\n### Typical Dashboard Flow\n\n1. Load dashboard\n    \n2. GET /return-requests/recent/\n    \n3. Render table using response array\n    \n4. Do **not** apply pagination\n    \n\n---\n\n## ❌ Error Responses (ALL POSSIBLE CASES)\n\n---\n\n### 1️⃣ Missing Authentication\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n---\n\n### 2️⃣ Invalid or Expired Token\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n---\n\n### 3️⃣ Permission Denied (Future RBAC)\n\nIf role-based access is added later:\n\n**Response –** **`403 Forbidden`**\n\n```\n{\n  \"detail\": \"You do not have permission to perform this action.\"\n}\n\n ```\n\n---\n\n### 4️⃣ Internal Server Error (Rare)\n\n**Response –** **`500 Internal Server Error`**\n\n```\n{\n  \"detail\": \"Internal Server Error\"\n}\n\n ```\n\nFrontend should:\n\n- Show generic error message\n    \n- Allow retry\n    \n\n---\n\n## 🧪 Empty State Example\n\nIf no recent return requests exist:\n\n```\n[]\n\n ```\n\nFrontend should display:\n\n**“No recent return requests found”**\n\n---\n\n## ⚠️ Frontend Integration Guidelines\n\n### ✅ Best Practices\n\n- Use this endpoint **only for dashboard previews**\n    \n- Always treat response as an **array**\n    \n- Handle empty array safely\n    \n- Do not assume a fixed number of records\n    \n\n---\n\n### ❌ Avoid\n\n- Using this API for full listing pages\n    \n- Adding pagination logic\n    \n- Computing status counts from this response\n    \n\n---\n\n## Comparison with Other APIs\n\n| API | Purpose | Pagination |\n| --- | --- | --- |\n| `/return-requests/` | Full list | ✅ Yes |\n| `/return-requests/?status=pending` | Filtered list | ✅ Yes |\n| `/return-requests/counts/` | Dashboard cards | ❌ No |\n| `/return-requests/recent/` | Recent preview | ❌ No |\n\n---\n\n## ✅ Integration Status\n\n✔ cURL verified\n\n✔ Response structure confirmed\n\n✔ UI-compatible\n\n✔ Production-safe\n\nEndFragment"
+              },
+              "response": []
+            },
+            {
+              "name": "Change Return Request Status",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4ODg0ODgwLCJpYXQiOjE3Njg3OTg0ODAsImp0aSI6ImJjODFhZGRmNWMwMjRhNGY4YjA5NmNlYjU3MWUxMGFhIiwidXNlcl9pZCI6IjMifQ.-8-Y03LsEZHb-sZEyzpFsVHRLYV122gTdVeFxwPPTvg"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"status\": \"accepted\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:8000/api/return-requests/1/change_status/",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "return-requests",
+                    "1",
+                    "change_status",
+                    ""
+                  ]
+                },
+                "description": "StartFragment\n\n# 📘 Return Requests – Change Status API\n\n_(Approve / Reject Return Request)_\n\n---\n\n## Overview\n\nThis API updates the **status of an existing Return Request**.  \n  \nIt is used when a user (admin / operations / vendor flow) **accepts or rejects** a return.\n\n---\n\n## Base URL\n\n```\nhttp://localhost:8000/api\n\n ```\n\n---\n\n## Authentication\n\n🔐 **JWT Authentication Required**\n\n### Required Headers\n\n```\nAuthorization: Bearer <ACCESS_TOKEN>\nContent-Type: application/json\n\n ```\n\n---\n\n## Endpoint\n\n```\nPATCH /return-requests/{id}/change_status/\n\n ```\n\n---\n\n## Purpose\n\n- Change the status of a return request\n    \n- Supported transitions:\n    \n    - `pending → accepted`\n        \n    - `pending → rejected`\n        \n    - (Can also set back to `pending` if allowed)\n        \n\n---\n\n## Example cURL (Verified)\n\n```\ncurl --location --request PATCH \\\n'http://localhost:8000/api/return-requests/1/change_status/' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27; \\\n--header 'Content-Type: application/json' \\\n--data '{\n  \"status\": \"accepted\"\n}'\n\n ```\n\n---\n\n## Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| id | number | ✅ | Return request ID |\n\n---\n\n## Request Body\n\n```\n{\n  \"status\": \"accepted\"\n}\n\n ```\n\n### Allowed Status Values\n\n- `pending`\n    \n- `accepted`\n    \n- `rejected`\n    \n\n---\n\n## ✅ Success Response – `200 OK`\n\n```\n{\n  \"message\": \"Return status updated to accepted\",\n  \"return_request\": {\n    \"id\": 1,\n    \"return_number\": \"RR-1001\",\n    \"date\": \"2024-09-10\",\n    \"items\": \"2 items\",\n    \"reason\": \"Damaged product\",\n    \"amount\": \"1500.00\",\n    \"status\": \"accepted\",\n    \"created_at\": \"2026-01-19T08:41:25.202171Z\",\n    \"updated_at\": \"2026-01-19T09:39:15.578662Z\",\n    \"created_by_username\": \"Vaibhav\"\n  }\n}\n\n ```\n\n---\n\n## What Changed After Status Update\n\n| Field | Change |\n| --- | --- |\n| status | Updated to new value |\n| updated_at | Updated automatically |\n| Other fields | Remain unchanged |\n\n---\n\n## ❌ Error Responses (ALL POSSIBLE CASES)\n\n---\n\n### 1️⃣ Missing Authentication\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n---\n\n### 2️⃣ Invalid or Expired Token\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n---\n\n### 3️⃣ Invalid Status Value\n\n```\n{\n  \"status\": \"approved\"\n}\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"error\": \"Invalid status. Must be pending, accepted, or rejected\"\n}\n\n ```\n\n---\n\n### 4️⃣ Missing Status Field\n\n```\n{}\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"error\": \"Invalid status. Must be pending, accepted, or rejected\"\n}\n\n ```\n\n---\n\n### 5️⃣ Invalid Return Request ID\n\n```\nPATCH /return-requests/999/change_status/\n\n ```\n\n**Response –** **`404 Not Found`**\n\n```\n{\n  \"detail\": \"Not found.\"\n}\n\n ```\n\n---\n\n### 6️⃣ Permission Denied (Future RBAC)\n\nIf role-based permissions are added:\n\n**Response –** **`403 Forbidden`**\n\n```\n{\n  \"detail\": \"You do not have permission to perform this action.\"\n}\n\n ```\n\n---\n\n### 7️⃣ Method Not Allowed\n\n```\nPOST /return-requests/1/change_status/\n\n ```\n\n**Response –** **`405 Method Not Allowed`**\n\n```\n{\n  \"detail\": \"Method \\\"POST\\\" not allowed.\"\n}\n\n ```\n\n---\n\n## 🧪 Edge Case Behavior\n\n### Updating to Same Status\n\n```\n{\n  \"status\": \"accepted\"\n}\n\n ```\n\nIf already accepted:\n\n- API still responds with success\n    \n- `updated_at` is refreshed\n    \n\n---\n\n## ⚠️ Frontend Integration Guidelines\n\n### ✅ Best Practices\n\n- Show confirmation modal before changing status\n    \n- Disable action buttons while request is in progress\n    \n- Refresh list or update row locally after success\n    \n- Display success message using `message` field\n    \n\n---\n\n### ❌ Avoid\n\n- Changing status via regular PATCH `/return-requests/{id}/`\n    \n- Sending unsupported status values\n    \n- Ignoring `400` and `401` responses\n    \n\n---\n\n## UI Flow Recommendation\n\n1. User clicks **Accept / Reject**\n    \n2. Frontend calls `change_status`\n    \n3. On success:\n    \n    - Update row status\n        \n    - Refresh counts (`/counts/`)\n        \n    - Update recent list if needed\n        \n\n---\n\n## ✅ Integration Status\n\n✔ cURL tested  \n  \n✔ Response verified  \n  \n✔ Error cases documented  \n  \n✔ UI-safe and production-ready\n\nEndFragment"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "REPAIR RECORD APIs",
+          "item": [
+            {
+              "name": "Create Repair Record",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4ODg0ODgwLCJpYXQiOjE3Njg3OTg0ODAsImp0aSI6ImJjODFhZGRmNWMwMjRhNGY4YjA5NmNlYjU3MWUxMGFhIiwidXNlcl9pZCI6IjMifQ.-8-Y03LsEZHb-sZEyzpFsVHRLYV122gTdVeFxwPPTvg"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"product_id\": \"PRD-101\",\r\n  \"product_name\": \"GPS Tracker\",\r\n  \"vendor\": \"Vendor A\",\r\n  \"mrn_number\": \"MRN-2024-001\",\r\n  \"failed_qty\": 10,\r\n  \"repaired_qty\": 5,\r\n  \"rejected_qty\": 2,\r\n  \"repair_pending\": 3,\r\n  \"repair_type\": \"PCB Repair\",\r\n  \"repair_center\": \"Bangalore Center\",\r\n  \"status\": \"in_progress\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:8000/api/repair-records/",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "repair-records",
+                    ""
+                  ]
+                },
+                "description": "StartFragment\n\n# 📘 Repair Records – Create API\n\n_(Create a Repair Record)_\n\n---\n\n## Overview\n\nThis API creates a **Repair Record** for a product received via MRN.  \n  \nIt is used when failed items are sent for repair and their repair lifecycle needs to be tracked.\n\n---\n\n## Base URL\n\n```\nhttp://localhost:8000/api\n\n ```\n\n---\n\n## Authentication\n\n🔐 **JWT Authentication Required**\n\n### Required Headers\n\n```\nAuthorization: Bearer <ACCESS_TOKEN>\nContent-Type: application/json\n\n ```\n\n---\n\n## Endpoint\n\n```\nPOST /repair-records/\n\n ```\n\n---\n\n## Purpose\n\n- Create a new repair record\n    \n- Track failed, repaired, rejected, and pending quantities\n    \n- Capture repair type and repair center\n    \n\n---\n\n## Example cURL (Verified)\n\n```\ncurl --location 'http://localhost:8000/api/repair-records/' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27; \\\n--header 'Content-Type: application/json' \\\n--data '{\n  \"product_id\": \"PRD-101\",\n  \"product_name\": \"GPS Tracker\",\n  \"vendor\": \"Vendor A\",\n  \"mrn_number\": \"MRN-2024-001\",\n  \"failed_qty\": 10,\n  \"repaired_qty\": 5,\n  \"rejected_qty\": 2,\n  \"repair_pending\": 3,\n  \"repair_type\": \"PCB Repair\",\n  \"repair_center\": \"Bangalore Center\",\n  \"status\": \"in_progress\"\n}'\n\n ```\n\n---\n\n## Request Body Fields\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| product_id | string | ✅ | Product identifier |\n| product_name | string | ✅ | Product name |\n| vendor | string | ✅ | Vendor name |\n| mrn_number | string | ✅ | MRN reference |\n| failed_qty | number | ✅ | Total failed quantity |\n| repaired_qty | number | ❌ | Quantity repaired |\n| rejected_qty | number | ❌ | Quantity rejected |\n| repair_pending | number | ❌ | Quantity pending |\n| repair_type | string | ✅ | Type of repair |\n| repair_center | string | ✅ | Repair center |\n| status | string | ❌ | `pending` | `in_progress` | `completed` | `failed` |\n\n---\n\n## Quantity Validation Rules (IMPORTANT)\n\nBackend enforces:\n\n```\nrepaired_qty + rejected_qty <= failed_qty\nrepair_pending >= 0\n\n ```\n\n---\n\n## ✅ Success Response – `201 Created`\n\n```\n{\n  \"id\": 1,\n  \"product_id\": \"PRD-101\",\n  \"product_name\": \"GPS Tracker\",\n  \"vendor\": \"Vendor A\",\n  \"mrn_number\": \"MRN-2024-001\",\n  \"failed_qty\": 10,\n  \"repaired_qty\": 5,\n  \"rejected_qty\": 2,\n  \"repair_pending\": 3,\n  \"repair_type\": \"PCB Repair\",\n  \"repair_center\": \"Bangalore Center\",\n  \"status\": \"in_progress\",\n  \"created_at\": \"2026-01-19T08:53:01.489270Z\",\n  \"updated_at\": \"2026-01-19T08:53:01.489285Z\",\n  \"created_by_username\": \"Vaibhav\"\n}\n\n ```\n\n---\n\n## ❌ Error Responses (ALL POSSIBLE CASES)\n\n---\n\n### 1️⃣ Missing Authentication\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n---\n\n### 2️⃣ Invalid or Expired Token\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n---\n\n### 3️⃣ Missing Required Fields\n\n```\n{\n  \"product_id\": \"PRD-101\"\n}\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"product_name\": [\"This field is required.\"],\n  \"vendor\": [\"This field is required.\"],\n  \"mrn_number\": [\"This field is required.\"],\n  \"failed_qty\": [\"This field is required.\"],\n  \"repair_type\": [\"This field is required.\"],\n  \"repair_center\": [\"This field is required.\"]\n}\n\n ```\n\n---\n\n### 4️⃣ Quantity Validation Failure\n\n```\n{\n  \"failed_qty\": 5,\n  \"repaired_qty\": 4,\n  \"rejected_qty\": 3\n}\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"non_field_errors\": [\n    \"Repaired Qty + Rejected Qty cannot exceed Failed Qty\"\n  ]\n}\n\n ```\n\n---\n\n### 5️⃣ Negative Repair Pending\n\n```\n{\n  \"repair_pending\": -1\n}\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"non_field_errors\": [\n    \"Repair Pending cannot be negative\"\n  ]\n}\n\n ```\n\n---\n\n### 6️⃣ Invalid Status Value\n\n```\n{\n  \"status\": \"approved\"\n}\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"status\": [\n    \"\\\"approved\\\" is not a valid choice.\"\n  ]\n}\n\n ```\n\n---\n\n### 7️⃣ Invalid Data Type\n\n```\n{\n  \"failed_qty\": \"ten\"\n}\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"failed_qty\": [\n    \"A valid integer is required.\"\n  ]\n}\n\n ```\n\n---\n\n### 8️⃣ Permission Denied (Future RBAC)\n\n**Response –** **`403 Forbidden`**\n\n```\n{\n  \"detail\": \"You do not have permission to perform this action.\"\n}\n\n ```\n\n---\n\n### 9️⃣ Method Not Allowed\n\n```\nPUT /repair-records/\n\n ```\n\n**Response –** **`405 Method Not Allowed`**\n\n```\n{\n  \"detail\": \"Method \\\"PUT\\\" not allowed.\"\n}\n\n ```\n\n---\n\n## 🧪 Edge Case Behavior\n\n- If `status` is omitted → defaults to `pending`\n    \n- If `repaired_qty`, `rejected_qty`, `repair_pending` omitted → default to `0`\n    \n\n---\n\n## ⚠️ Frontend Integration Guidelines\n\n### ✅ Best Practices\n\n- Validate quantities on frontend before submit\n    \n- Disable submit button during request\n    \n- Display backend validation messages verbatim\n    \n- Refresh list after successful creation\n    \n\n---\n\n### ❌ Avoid\n\n- Sending invalid status values\n    \n- Calculating totals on frontend\n    \n- Ignoring validation errors\n    \n\n---\n\n## ✅ Integration Status\n\n✔ cURL verified  \n  \n✔ Validation rules confirmed  \n  \n✔ Error cases documented  \n  \n✔ Production-ready\n\nEndFragment"
+              },
+              "response": []
+            },
+            {
+              "name": "List Repair Records",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4ODg0ODgwLCJpYXQiOjE3Njg3OTg0ODAsImp0aSI6ImJjODFhZGRmNWMwMjRhNGY4YjA5NmNlYjU3MWUxMGFhIiwidXNlcl9pZCI6IjMifQ.-8-Y03LsEZHb-sZEyzpFsVHRLYV122gTdVeFxwPPTvg"
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:8000/api/repair-records/",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "repair-records",
+                    ""
+                  ]
+                },
+                "description": "StartFragment\n\n# 📘 Repair Records – List API\n\n_(Fetch Repair Records for Tables & Dashboards)_\n\n---\n\n## Overview\n\nThis API retrieves a **paginated list of Repair Records**.  \n  \nIt is used for:\n\n- 🧾 **Repair Data table**\n    \n- 🔍 **Search & filter**\n    \n- 📊 **Operational tracking dashboards**\n    \n\n---\n\n## Base URL\n\n```\nhttp://localhost:8000/api\n\n ```\n\n---\n\n## Authentication\n\n🔐 **JWT Authentication Required**\n\n### Required Headers\n\n```\nAuthorization: Bearer <ACCESS_TOKEN>\nContent-Type: application/json\n\n ```\n\n---\n\n## Endpoint\n\n```\nGET /repair-records/\n\n ```\n\n---\n\n## Purpose\n\n- Fetch all repair records\n    \n- Supports pagination, search, filtering, and ordering\n    \n\n---\n\n## Example cURL (Verified)\n\n```\ncurl --location 'http://localhost:8000/api/repair-records/' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27;\n\n ```\n\n---\n\n## ✅ Success Response – `200 OK`\n\n```\n{\n  \"count\": 1,\n  \"next\": null,\n  \"previous\": null,\n  \"results\": [\n    {\n      \"id\": 1,\n      \"product_id\": \"PRD-101\",\n      \"product_name\": \"GPS Tracker\",\n      \"vendor\": \"Vendor A\",\n      \"mrn_number\": \"MRN-2024-001\",\n      \"failed_qty\": 10,\n      \"repaired_qty\": 6,\n      \"rejected_qty\": 2,\n      \"repair_pending\": 2,\n      \"repair_type\": \"PCB Repair\",\n      \"repair_center\": \"Bangalore Center\",\n      \"status\": \"in_progress\"\n    }\n  ]\n}\n\n ```\n\n---\n\n## Response Structure\n\n### Pagination Wrapper\n\n| Field | Type | Description |\n| --- | --- | --- |\n| count | number | Total repair records |\n| next | string | null | URL for next page |\n| previous | string | null | URL for previous page |\n| results | array | Repair records list |\n\n---\n\n### `results[]` Object\n\n| Field | Type | Description |\n| --- | --- | --- |\n| id | number | Repair record ID |\n| product_id | string | Product identifier |\n| product_name | string | Product name |\n| vendor | string | Vendor name |\n| mrn_number | string | MRN reference |\n| failed_qty | number | Failed quantity |\n| repaired_qty | number | Repaired quantity |\n| rejected_qty | number | Rejected quantity |\n| repair_pending | number | Pending quantity |\n| repair_type | string | Repair type |\n| repair_center | string | Repair center |\n| status | string | `pending` | `in_progress` | `completed` | `failed` |\n\n---\n\n## 🔍 Query Parameters (Optional)\n\n### 1️⃣ Pagination\n\n```\nGET /repair-records/?page=1\n\n ```\n\n---\n\n### 2️⃣ Search\n\n```\nGET /repair-records/?search=GPS\n\n ```\n\nSearch applies to:\n\n- product_id\n    \n- product_name\n    \n- vendor\n    \n- mrn_number\n    \n- repair_type\n    \n- repair_center\n    \n\n---\n\n### 3️⃣ Filter\n\n```\nGET /repair-records/?status=in_progress\nGET /repair-records/?repair_type=PCB Repair\n\n ```\n\n---\n\n### 4️⃣ Ordering\n\n```\nGET /repair-records/?ordering=-created_at\n\n ```\n\nSupported fields:\n\n- created_at\n    \n- product_name\n    \n- status\n    \n\n---\n\n## ❌ Error Responses (ALL POSSIBLE CASES)\n\n---\n\n### 1️⃣ Missing Authentication\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n---\n\n### 2️⃣ Invalid or Expired Token\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n---\n\n### 3️⃣ Invalid Filter Value\n\n```\nGET /repair-records/?status=approved\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"status\": [\n    \"Select a valid choice. approved is not one of the available choices.\"\n  ]\n}\n\n ```\n\n---\n\n### 4️⃣ Invalid Page Number\n\n```\nGET /repair-records/?page=999\n\n ```\n\n**Response –** **`404 Not Found`**\n\n```\n{\n  \"detail\": \"Invalid page.\"\n}\n\n ```\n\n---\n\n### 5️⃣ Invalid Ordering Field\n\n```\nGET /repair-records/?ordering=invalid_field\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"detail\": \"Invalid ordering field.\"\n}\n\n ```\n\n---\n\n### 6️⃣ Permission Denied (Future RBAC)\n\n**Response –** **`403 Forbidden`**\n\n```\n{\n  \"detail\": \"You do not have permission to perform this action.\"\n}\n\n ```\n\n---\n\n## 🧪 Empty State Example\n\nIf no repair records exist:\n\n```\n{\n  \"count\": 0,\n  \"next\": null,\n  \"previous\": null,\n  \"results\": []\n}\n\n ```\n\nFrontend should display:\n\n> \n\n**“No repair records found”**\n\n \n  \n\n---\n\n## ⚠️ Frontend Integration Guidelines\n\n### ✅ Best Practices\n\n- Always read data from `results[]`\n    \n- Use `count` for pagination UI\n    \n- Use backend search & filters\n    \n- Handle empty state gracefully\n    \n\n---\n\n### ❌ Avoid\n\n- Client-side filtering on large datasets\n    \n- Assuming non-paginated response\n    \n- Ignoring pagination metadata\n    \n\n---\n\n## Performance Notes\n\n- Backend uses indexed fields for search & filter\n    \n- Safe for frequent use\n    \n\n---\n\n## ✅ Integration Status\n\n✔ cURL verified  \n  \n✔ Pagination confirmed  \n  \n✔ Search & filters validated  \n  \n✔ UI-safe and production-ready\n\nEndFragment"
+              },
+              "response": []
+            },
+            {
+              "name": "Search Repair Records",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4ODg0ODgwLCJpYXQiOjE3Njg3OTg0ODAsImp0aSI6ImJjODFhZGRmNWMwMjRhNGY4YjA5NmNlYjU3MWUxMGFhIiwidXNlcl9pZCI6IjMifQ.-8-Y03LsEZHb-sZEyzpFsVHRLYV122gTdVeFxwPPTvg"
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:8000/api/repair-records/?search=GPS",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "repair-records",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "search",
+                      "value": "GPS"
+                    }
+                  ]
+                },
+                "description": "StartFragment\n\n# 📘 Repair Records – Search API\n\n_(Search Repair Records by Keyword)_\n\n---\n\n## Overview\n\nThis API retrieves **Repair Records matching a search keyword**.  \n  \nIt is used for:\n\n- 🔍 **Search bar** in the Repair Data table\n    \n- 📊 **Quick filtering** by product, vendor, MRN, or repair details\n    \n- 🧭 **Operational lookup** in large datasets\n    \n\n---\n\n## Base URL\n\n```\nhttp://localhost:8000/api\n\n ```\n\n---\n\n## Authentication\n\n🔐 **JWT Authentication Required**\n\n### Required Headers\n\n```\nAuthorization: Bearer <ACCESS_TOKEN>\nContent-Type: application/json\n\n ```\n\n---\n\n## Endpoint\n\n```\nGET /repair-records/?search={query}\n\n ```\n\n---\n\n## Purpose\n\n- Search repair records using a keyword\n    \n- Backend performs case-insensitive partial matching\n    \n- Preserves pagination, filters, and ordering\n    \n\n---\n\n## Example cURL (Verified)\n\n```\ncurl --location 'http://localhost:8000/api/repair-records/?search=GPS' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27;\n\n ```\n\n---\n\n## Query Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| search | string | ✅ | Search keyword |\n\n### Fields Included in Search\n\nThe search term is matched against:\n\n- `product_id`\n    \n- `product_name`\n    \n- `vendor`\n    \n- `mrn_number`\n    \n- `repair_type`\n    \n- `repair_center`\n    \n\n---\n\n## ✅ Success Response – `200 OK`\n\n```\n{\n  \"count\": 1,\n  \"next\": null,\n  \"previous\": null,\n  \"results\": [\n    {\n      \"id\": 1,\n      \"product_id\": \"PRD-101\",\n      \"product_name\": \"GPS Tracker\",\n      \"vendor\": \"Vendor A\",\n      \"mrn_number\": \"MRN-2024-001\",\n      \"failed_qty\": 10,\n      \"repaired_qty\": 6,\n      \"rejected_qty\": 2,\n      \"repair_pending\": 2,\n      \"repair_type\": \"PCB Repair\",\n      \"repair_center\": \"Bangalore Center\",\n      \"status\": \"in_progress\"\n    }\n  ]\n}\n\n ```\n\n---\n\n## Response Structure\n\n### Pagination Wrapper\n\n| Field | Type | Description |\n| --- | --- | --- |\n| count | number | Total records matching search |\n| next | string | null | URL for next page |\n| previous | string | null | URL for previous page |\n| results | array | Matching repair records |\n\n---\n\n### `results[]` Object\n\n| Field | Type | Description |\n| --- | --- | --- |\n| id | number | Repair record ID |\n| product_id | string | Product identifier |\n| product_name | string | Product name |\n| vendor | string | Vendor name |\n| mrn_number | string | MRN reference |\n| failed_qty | number | Failed quantity |\n| repaired_qty | number | Repaired quantity |\n| rejected_qty | number | Rejected quantity |\n| repair_pending | number | Pending quantity |\n| repair_type | string | Repair type |\n| repair_center | string | Repair center |\n| status | string | `pending` | `in_progress` | `completed` | `failed` |\n\n---\n\n## 🔍 Combining Search with Other Parameters\n\n### Search + Status Filter\n\n```\nGET /repair-records/?search=GPS&status=in_progress\n\n ```\n\n---\n\n### Search + Repair Type\n\n```\nGET /repair-records/?search=GPS&repair_type=PCB Repair\n\n ```\n\n---\n\n### Search + Pagination\n\n```\nGET /repair-records/?search=GPS&page=1\n\n ```\n\n---\n\n### Search + Ordering\n\n```\nGET /repair-records/?search=GPS&ordering=-created_at\n\n ```\n\nSupported ordering fields:\n\n- `created_at`\n    \n- `product_name`\n    \n- `status`\n    \n\n---\n\n## ❌ Error Responses (ALL POSSIBLE CASES)\n\n---\n\n### 1️⃣ Missing Authentication\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n---\n\n### 2️⃣ Invalid or Expired Token\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n---\n\n### 3️⃣ Invalid Query Parameter Name\n\n```\nGET /repair-records/?q=GPS\n\n ```\n\n**Behavior**\n\n- Backend **ignores unknown params**\n    \n- Returns **unfiltered list**\n    \n\n⚠️ Frontend must use `search`, not `q`\n\n---\n\n### 4️⃣ Invalid Page Number\n\n```\nGET /repair-records/?search=GPS&page=999\n\n ```\n\n**Response –** **`404 Not Found`**\n\n```\n{\n  \"detail\": \"Invalid page.\"\n}\n\n ```\n\n---\n\n### 5️⃣ Invalid Ordering Field\n\n```\nGET /repair-records/?search=GPS&ordering=invalid\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"detail\": \"Invalid ordering field.\"\n}\n\n ```\n\n---\n\n### 6️⃣ Invalid Filter Value\n\n```\nGET /repair-records/?search=GPS&status=approved\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"status\": [\n    \"Select a valid choice. approved is not one of the available choices.\"\n  ]\n}\n\n ```\n\n---\n\n### 7️⃣ Permission Denied (Future RBAC)\n\n**Response –** **`403 Forbidden`**\n\n```\n{\n  \"detail\": \"You do not have permission to perform this action.\"\n}\n\n ```\n\n---\n\n## 🧪 Empty Search Result Example\n\nIf no records match the search:\n\n```\n{\n  \"count\": 0,\n  \"next\": null,\n  \"previous\": null,\n  \"results\": []\n}\n\n ```\n\nFrontend should display:\n\n> \n\n**“No repair records found for ‘GPS’”**\n\n \n  \n\n---\n\n## ⚠️ Frontend Integration Guidelines\n\n### ✅ Best Practices\n\n- Debounce search input (300–500ms)\n    \n- Reset pagination when search changes\n    \n- Always read data from `results[]`\n    \n- Handle empty states gracefully\n    \n\n---\n\n### ❌ Avoid\n\n- Client-side filtering on large datasets\n    \n- Assuming non-paginated responses\n    \n- Using unsupported query parameter names\n    \n\n---\n\n## ✅ Integration Status\n\n✔ cURL verified  \n  \n✔ Search behavior confirmed  \n  \n✔ Pagination preserved  \n  \n✔ UI-safe and production-ready\n\nEndFragment"
+              },
+              "response": []
+            },
+            {
+              "name": "Filter Repair Records",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4ODg0ODgwLCJpYXQiOjE3Njg3OTg0ODAsImp0aSI6ImJjODFhZGRmNWMwMjRhNGY4YjA5NmNlYjU3MWUxMGFhIiwidXNlcl9pZCI6IjMifQ.-8-Y03LsEZHb-sZEyzpFsVHRLYV122gTdVeFxwPPTvg"
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:8000/api/repair-records/?status=pending&repair_type=PCB Repair",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "repair-records",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "pending"
+                    },
+                    {
+                      "key": "repair_type",
+                      "value": "PCB Repair"
+                    }
+                  ]
+                },
+                "description": "StartFragment\n\n# 📘 Repair Records – Filter API\n\n_(Filter by Status & Repair Type)_\n\n---\n\n## Overview\n\nThis API retrieves **Repair Records filtered by multiple criteria**.  \n  \nIt is used for:\n\n- 🧾 **Advanced table filtering**\n    \n- 🧰 **Operational views (Pending / In-Progress repairs)**\n    \n- 📊 **Narrowing down repair data**\n    \n\n---\n\n## Base URL\n\n```\nhttp://localhost:8000/api\n\n ```\n\n---\n\n## Authentication\n\n🔐 **JWT Authentication Required**\n\n### Required Headers\n\n```\nAuthorization: Bearer <ACCESS_TOKEN>\nContent-Type: application/json\n\n ```\n\n---\n\n## Endpoint\n\n```\nGET /repair-records/?status={status}&repair_type={repair_type}\n\n ```\n\n---\n\n## Purpose\n\n- Filter repair records using **status** and **repair type**\n    \n- Works together with pagination, search, and ordering\n    \n\n---\n\n## Example cURL (Verified)\n\n```\ncurl --location \\\n'http://localhost:8000/api/repair-records/?status=pending&repair_type=PCB Repair' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27;\n\n ```\n\n---\n\n## Query Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| status | string | ❌ | Filter by repair status |\n| repair_type | string | ❌ | Filter by repair type |\n\n### Allowed Status Values\n\n- `pending`\n    \n- `in_progress`\n    \n- `completed`\n    \n- `failed`\n    \n\n> \n\n⚠️ Query parameters are **optional**, but at least one must be provided for filtering.\n\n \n  \n\n---\n\n## ✅ Success Response – `200 OK`\n\n### When no records match the filter:\n\n```\n{\n  \"count\": 0,\n  \"next\": null,\n  \"previous\": null,\n  \"results\": []\n}\n\n ```\n\nThis is a **valid response**, not an error.\n\n---\n\n## Response Structure\n\n| Field | Type | Description |\n| --- | --- | --- |\n| count | number | Total records matching filters |\n| next | string | null | Next page URL |\n| previous | string | null | Previous page URL |\n| results | array | Filtered repair records |\n\n---\n\n## 🧪 Empty State Handling (IMPORTANT)\n\nFrontend should:\n\n- Display **“No repair records found”**\n    \n- Allow users to modify filters\n    \n- NOT show an error message\n    \n\n---\n\n## 🔍 Combining Filters with Other Parameters\n\n### Filter + Search\n\n```\nGET /repair-records/?status=pending&repair_type=PCB Repair&search=GPS\n\n ```\n\n---\n\n### Filter + Pagination\n\n```\nGET /repair-records/?status=pending&repair_type=PCB Repair&page=1\n\n ```\n\n---\n\n### Filter + Ordering\n\n```\nGET /repair-records/?status=pending&repair_type=PCB Repair&ordering=-created_at\n\n ```\n\n---\n\n## ❌ Error Responses (ALL POSSIBLE CASES)\n\n---\n\n### 1️⃣ Missing Authentication\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n---\n\n### 2️⃣ Invalid or Expired Token\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n---\n\n### 3️⃣ Invalid Status Value\n\n```\nGET /repair-records/?status=approved\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"status\": [\n    \"Select a valid choice. approved is not one of the available choices.\"\n  ]\n}\n\n ```\n\n---\n\n### 4️⃣ Invalid Ordering Field\n\n```\nGET /repair-records/?status=pending&ordering=invalid\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"detail\": \"Invalid ordering field.\"\n}\n\n ```\n\n---\n\n### 5️⃣ Invalid Page Number\n\n```\nGET /repair-records/?status=pending&page=999\n\n ```\n\n**Response –** **`404 Not Found`**\n\n```\n{\n  \"detail\": \"Invalid page.\"\n}\n\n ```\n\n---\n\n### 6️⃣ Permission Denied (Future RBAC)\n\n**Response –** **`403 Forbidden`**\n\n```\n{\n  \"detail\": \"You do not have permission to perform this action.\"\n}\n\n ```\n\n---\n\n## ⚠️ Frontend Integration Guidelines\n\n### ✅ Best Practices\n\n- Always read from `results[]`\n    \n- Treat empty results as a valid state\n    \n- Combine filters gradually (one at a time)\n    \n- Encode spaces in query params (`PCB Repair`)\n    \n\n---\n\n### ❌ Avoid\n\n- Hard-coding status values\n    \n- Assuming records always exist\n    \n- Ignoring pagination metadata\n    \n\n---\n\n## Performance Notes\n\n- Backend uses indexed fields for filtering\n    \n- Safe to combine multiple filters\n    \n- Optimized for large datasets\n    \n\n---\n\n## ✅ Integration Status\n\n✔ cURL verified  \n  \n✔ Empty state handled  \n  \n✔ Filters validated  \n  \n✔ Production-ready\n\nEndFragment"
+              },
+              "response": []
+            },
+            {
+              "name": "Repair Statistics (Dashboard)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4ODg0ODgwLCJpYXQiOjE3Njg3OTg0ODAsImp0aSI6ImJjODFhZGRmNWMwMjRhNGY4YjA5NmNlYjU3MWUxMGFhIiwidXNlcl9pZCI6IjMifQ.-8-Y03LsEZHb-sZEyzpFsVHRLYV122gTdVeFxwPPTvg"
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:8000/api/repair-records/statistics/",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "repair-records",
+                    "statistics",
+                    ""
+                  ]
+                },
+                "description": "StartFragment\n\n# 📘 Repair Records – Statistics API\n\n_(Dashboard Repair Summary)_\n\n---\n\n## Overview\n\nThis API returns **aggregated repair statistics** across all repair records.  \n  \nIt is designed for:\n\n- 📊 **Dashboard summary cards**\n    \n- 📈 **Repair progress analytics**\n    \n- 🧮 **Operational health monitoring**\n    \n\n---\n\n## Base URL\n\n```\nhttp://localhost:8000/api\n\n ```\n\n---\n\n## Authentication\n\n🔐 **JWT Authentication Required**\n\n### Required Headers\n\n```\nAuthorization: Bearer <ACCESS_TOKEN>\nContent-Type: application/json\n\n ```\n\n---\n\n## Endpoint\n\n```\nGET /repair-records/statistics/\n\n ```\n\n---\n\n## Purpose\n\n- Fetch total quantities for:\n    \n    - Failed\n        \n    - Repaired\n        \n    - Rejected\n        \n    - Pending\n        \n- Fetch record counts grouped by status\n    \n\n---\n\n## Example cURL (Verified)\n\n```\ncurl --location 'http://localhost:8000/api/repair-records/statistics/' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27;\n\n ```\n\n---\n\n## ✅ Success Response – `200 OK`\n\n```\n{\n  \"total_failed\": 10,\n  \"total_repaired\": 6,\n  \"total_rejected\": 2,\n  \"total_pending\": 2,\n  \"by_status\": {\n    \"pending\": 0,\n    \"in_progress\": 1,\n    \"completed\": 0,\n    \"failed\": 0\n  }\n}\n\n ```\n\n---\n\n## Response Fields\n\n### Quantity Totals\n\n| Field | Type | Description |\n| --- | --- | --- |\n| total_failed | number | Sum of all failed quantities |\n| total_repaired | number | Sum of all repaired quantities |\n| total_rejected | number | Sum of all rejected quantities |\n| total_pending | number | Sum of all pending quantities |\n\n---\n\n### `by_status` Breakdown\n\n| Status | Description |\n| --- | --- |\n| pending | Count of pending repair records |\n| in_progress | Count of in-progress repair records |\n| completed | Count of completed repair records |\n| failed | Count of failed repair records |\n\n---\n\n## How Frontend Should Use This API\n\n### Dashboard Example\n\n| UI Element | API Field |\n| --- | --- |\n| Total Failed | `total_failed` |\n| Total Repaired | `total_repaired` |\n| Total Rejected | `total_rejected` |\n| Repair Pending | `total_pending` |\n| Status Chart | `by_status` |\n\n---\n\n## ❌ Error Responses (ALL POSSIBLE CASES)\n\n---\n\n### 1️⃣ Missing Authentication\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n---\n\n### 2️⃣ Invalid or Expired Token\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n---\n\n### 3️⃣ Permission Denied (Future RBAC)\n\n**Response –** **`403 Forbidden`**\n\n```\n{\n  \"detail\": \"You do not have permission to perform this action.\"\n}\n\n ```\n\n---\n\n### 4️⃣ Method Not Allowed\n\n```\nPOST /repair-records/statistics/\n\n ```\n\n**Response –** **`405 Method Not Allowed`**\n\n```\n{\n  \"detail\": \"Method \\\"POST\\\" not allowed.\"\n}\n\n ```\n\n---\n\n### 5️⃣ Internal Server Error (Rare)\n\n**Response –** **`500 Internal Server Error`**\n\n```\n{\n  \"detail\": \"Internal Server Error\"\n}\n\n ```\n\nFrontend should:\n\n- Show fallback UI\n    \n- Allow retry\n    \n\n---\n\n## 🧪 Empty Data Behavior\n\nIf **no repair records exist**, response will be:\n\n```\n{\n  \"total_failed\": 0,\n  \"total_repaired\": 0,\n  \"total_rejected\": 0,\n  \"total_pending\": 0,\n  \"by_status\": {\n    \"pending\": 0,\n    \"in_progress\": 0,\n    \"completed\": 0,\n    \"failed\": 0\n  }\n}\n\n ```\n\n⚠️ This is **not an error**.\n\n---\n\n## ⚠️ Frontend Integration Guidelines\n\n### ✅ Best Practices\n\n- Call this API **once per dashboard load**\n    \n- Do not recompute totals on frontend\n    \n- Handle missing or zero values gracefully\n    \n- Use this API for charts & summary cards only\n    \n\n---\n\n### ❌ Avoid\n\n- Polling excessively\n    \n- Mixing with list APIs for counts\n    \n- Assuming non-zero values\n    \n\n---\n\n## Performance Notes\n\n- Uses database-level aggregation\n    \n- Safe for frequent reads\n    \n- Low payload size\n    \n\n---\n\n## ✅ Integration Status\n\n✔ cURL verified  \n  \n✔ Response structure confirmed  \n  \n✔ Dashboard-ready  \n  \n✔ Production-safe\n\nEndFragment"
+              },
+              "response": []
+            },
+            {
+              "name": "Update Repair Quantities",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4ODg0ODgwLCJpYXQiOjE3Njg3OTg0ODAsImp0aSI6ImJjODFhZGRmNWMwMjRhNGY4YjA5NmNlYjU3MWUxMGFhIiwidXNlcl9pZCI6IjMifQ.-8-Y03LsEZHb-sZEyzpFsVHRLYV122gTdVeFxwPPTvg"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"repaired_qty\": 6,\r\n  \"rejected_qty\": 2,\r\n  \"repair_pending\": 2\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:8000/api/repair-records/1/update_quantities/",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "repair-records",
+                    "1",
+                    "update_quantities",
+                    ""
+                  ]
+                },
+                "description": "StartFragment\n\n# 📘 Repair Records – Update Quantities API\n\n_(Update Repair Progress Quantities)_\n\n---\n\n## Overview\n\nThis API updates **quantity-related fields** of an existing Repair Record during the repair lifecycle.\n\nTypical use cases:\n\n- Updating repaired quantity after work completion\n    \n- Recording rejected items\n    \n- Adjusting pending repair quantity\n    \n\n---\n\n## Base URL\n\n```\nhttp://localhost:8000/api\n\n ```\n\n---\n\n## Authentication\n\n🔐 **JWT Authentication Required**\n\n### Required Headers\n\n```\nAuthorization: Bearer <ACCESS_TOKEN>\nContent-Type: application/json\n\n ```\n\n---\n\n## Endpoint\n\n```\nPATCH /repair-records/{id}/update_quantities/\n\n ```\n\n---\n\n## Purpose\n\n- Update any of the following fields:\n    \n    - `repaired_qty`\n        \n    - `rejected_qty`\n        \n    - `repair_pending`\n        \n- Backend validates quantity consistency before saving\n    \n\n---\n\n## Example cURL (Verified)\n\n```\ncurl --location --request PATCH \\\n'http://localhost:8000/api/repair-records/1/update_quantities/' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27; \\\n--header 'Content-Type: application/json' \\\n--data '{\n  \"repaired_qty\": 6,\n  \"rejected_qty\": 2,\n  \"repair_pending\": 2\n}'\n\n ```\n\n---\n\n## Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| id | number | ✅ | Repair record ID |\n\n---\n\n## Request Body\n\n```\n{\n  \"repaired_qty\": 6,\n  \"rejected_qty\": 2,\n  \"repair_pending\": 2\n}\n\n ```\n\n### Field Rules (IMPORTANT)\n\n| Field | Rule |\n| --- | --- |\n| repaired_qty | Must be ≥ 0 |\n| rejected_qty | Must be ≥ 0 |\n| repair_pending | Must be ≥ 0 |\n| repaired_qty + rejected_qty | Must be ≤ `failed_qty` |\n\n> \n\n`failed_qty` is fixed at record creation and **cannot be changed here**.\n\n \n  \n\n---\n\n## ✅ Success Response – `200 OK`\n\n```\n{\n  \"id\": 1,\n  \"product_id\": \"PRD-101\",\n  \"product_name\": \"GPS Tracker\",\n  \"vendor\": \"Vendor A\",\n  \"mrn_number\": \"MRN-2024-001\",\n  \"failed_qty\": 10,\n  \"repaired_qty\": 6,\n  \"rejected_qty\": 2,\n  \"repair_pending\": 2,\n  \"repair_type\": \"PCB Repair\",\n  \"repair_center\": \"Bangalore Center\",\n  \"status\": \"in_progress\",\n  \"created_at\": \"2026-01-19T08:53:01.489270Z\",\n  \"updated_at\": \"2026-01-19T09:54:59.585876Z\",\n  \"created_by_username\": \"Vaibhav\"\n}\n\n ```\n\n---\n\n## What Changes After Update\n\n| Field | Behavior |\n| --- | --- |\n| repaired_qty | Updated |\n| rejected_qty | Updated |\n| repair_pending | Updated |\n| updated_at | Auto-updated |\n| status | **Not auto-changed** |\n| Other fields | Remain unchanged |\n\n---\n\n## ❌ Error Responses (ALL POSSIBLE CASES)\n\n---\n\n### 1️⃣ Missing Authentication\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n---\n\n### 2️⃣ Invalid or Expired Token\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n---\n\n### 3️⃣ Invalid Repair Record ID\n\n```\nPATCH /repair-records/999/update_quantities/\n\n ```\n\n**Response –** **`404 Not Found`**\n\n```\n{\n  \"detail\": \"Not found.\"\n}\n\n ```\n\n---\n\n### 4️⃣ Quantity Exceeds Failed Quantity\n\n```\n{\n  \"repaired_qty\": 8,\n  \"rejected_qty\": 5\n}\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"error\": \"Repaired Qty + Rejected Qty cannot exceed Failed Qty\"\n}\n\n ```\n\n---\n\n### 5️⃣ Negative Quantity Value\n\n```\n{\n  \"repair_pending\": -1\n}\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"error\": \"Repair Pending cannot be negative\"\n}\n\n ```\n\n---\n\n### 6️⃣ Invalid Data Type\n\n```\n{\n  \"repaired_qty\": \"six\"\n}\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"repaired_qty\": [\n    \"A valid integer is required.\"\n  ]\n}\n\n ```\n\n---\n\n### 7️⃣ Method Not Allowed\n\n```\nPUT /repair-records/1/update_quantities/\n\n ```\n\n**Response –** **`405 Method Not Allowed`**\n\n```\n{\n  \"detail\": \"Method \\\"PUT\\\" not allowed.\"\n}\n\n ```\n\n---\n\n### 8️⃣ Permission Denied (Future Role-Based Access)\n\n**Response –** **`403 Forbidden`**\n\n```\n{\n  \"detail\": \"You do not have permission to perform this action.\"\n}\n\n ```\n\n---\n\n## 🧪 Edge Case Behavior\n\n- Sending **partial data** updates only provided fields\n    \n- Omitting a field keeps its previous value\n    \n- Re-sending the same values is allowed (idempotent behavior)\n    \n\n---\n\n## ⚠️ Frontend Integration Guidelines\n\n### ✅ Best Practices\n\n- Validate quantity totals on frontend before submit\n    \n- Disable save button while request is in progress\n    \n- Show backend validation messages directly to users\n    \n- Refresh repair statistics after successful update\n    \n\n---\n\n### ❌ Avoid\n\n- Using standard PATCH `/repair-records/{id}/`\n    \n- Allowing repaired + rejected > failed\n    \n- Ignoring backend validation responses\n    \n\n---\n\n## Recommended UI Flow\n\n1. User edits quantities\n    \n2. Frontend performs basic validation\n    \n3. Call `update_quantities`\n    \n4. On success:\n    \n    - Update row values\n        \n    - Refresh `/repair-records/statistics/`\n        \n\n---\n\n## ✅ Integration Status\n\n✔ cURL verified  \n  \n✔ Validation rules confirmed  \n  \n✔ Error cases fully documented  \n  \n✔ Production-ready\n\nEndFragment"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "REJECTED ITEM APIs",
+          "item": [
+            {
+              "name": "Create Rejected Item",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4ODg0ODgwLCJpYXQiOjE3Njg3OTg0ODAsImp0aSI6ImJjODFhZGRmNWMwMjRhNGY4YjA5NmNlYjU3MWUxMGFhIiwidXNlcl9pZCI6IjMifQ.-8-Y03LsEZHb-sZEyzpFsVHRLYV122gTdVeFxwPPTvg"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"product_id\": \"PRD-101\",\r\n  \"product_name\": \"GPS Tracker\",\r\n  \"vendor\": \"Vendor A\",\r\n  \"mrn_number\": \"MRN-2024-001\",\r\n  \"rejected_qty\": 3,\r\n  \"qc_date\": \"2024-09-12\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:8000/api/rejected-items/",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "rejected-items",
+                    ""
+                  ]
+                },
+                "description": "StartFragment\n\n# 📘 Rejected Items – Create API\n\n_(Create a Rejected Item Record)_\n\n---\n\n## Overview\n\nThis API creates a **Rejected Item record** after QC inspection.\n\nIt is used when items are rejected during quality control and must be tracked separately.\n\n---\n\n## Base URL\n\n```\nhttp://localhost:8000/api\n\n ```\n\n---\n\n## Authentication\n\n🔐 **JWT Authentication Required**\n\n### Required Headers\n\n```\nAuthorization: Bearer <ACCESS_TOKEN>\nContent-Type: application/json\n\n ```\n\n---\n\n## Endpoint\n\n```\nPOST /rejected-items/\n\n ```\n\n---\n\n## Purpose\n\n- Record rejected items after QC\n    \n- Track rejected quantity per product, vendor, and MRN\n    \n- Store QC inspection date\n    \n\n---\n\n## Example cURL (Verified)\n\n```\ncurl --location 'http://localhost:8000/api/rejected-items/' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27; \\\n--header 'Content-Type: application/json' \\\n--data '{\n  \"product_id\": \"PRD-101\",\n  \"product_name\": \"GPS Tracker\",\n  \"vendor\": \"Vendor A\",\n  \"mrn_number\": \"MRN-2024-001\",\n  \"rejected_qty\": 3,\n  \"qc_date\": \"2024-09-12\"\n}'\n\n ```\n\n---\n\n## Request Body Fields\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| product_id | string | ✅ | Product identifier |\n| product_name | string | ✅ | Product name |\n| vendor | string | ✅ | Vendor name |\n| mrn_number | string | ✅ | MRN reference |\n| rejected_qty | number | ✅ | Rejected quantity |\n| qc_date | string (YYYY-MM-DD) | ✅ | QC inspection date |\n\n---\n\n## Field Validation Rules (IMPORTANT)\n\n| Field | Rule |\n| --- | --- |\n| rejected_qty | Must be **greater than 0** |\n| qc_date | Cannot be in the future |\n| product_id | Required |\n| vendor | Required |\n\n---\n\n## ✅ Success Response – `201 Created`\n\n```\n{\n  \"id\": 2,\n  \"product_id\": \"PRD-101\",\n  \"product_name\": \"GPS Tracker\",\n  \"vendor\": \"Vendor A\",\n  \"mrn_number\": \"MRN-2024-001\",\n  \"rejected_qty\": 3,\n  \"qc_date\": \"2024-09-12\",\n  \"created_at\": \"2026-01-19T10:34:54.885324Z\",\n  \"updated_at\": \"2026-01-19T10:34:54.885335Z\",\n  \"created_by_username\": \"Vaibhav\"\n}\n\n ```\n\n---\n\n## What Happens After Creation\n\n- `created_by` is automatically set from the authenticated user\n    \n- `created_at` and `updated_at` are auto-generated\n    \n- Record becomes available in:\n    \n    - Rejected Items list\n        \n    - Rejected Items statistics\n        \n\n---\n\n## ❌ Error Responses (ALL POSSIBLE CASES)\n\n---\n\n### 1️⃣ Missing Authentication\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n---\n\n### 2️⃣ Invalid or Expired Token\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n---\n\n### 3️⃣ Missing Required Fields\n\n```\n{\n  \"product_id\": \"PRD-101\"\n}\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"product_name\": [\"This field is required.\"],\n  \"vendor\": [\"This field is required.\"],\n  \"mrn_number\": [\"This field is required.\"],\n  \"rejected_qty\": [\"This field is required.\"],\n  \"qc_date\": [\"This field is required.\"]\n}\n\n ```\n\n---\n\n### 4️⃣ Rejected Quantity ≤ 0\n\n```\n{\n  \"rejected_qty\": 0\n}\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"rejected_qty\": [\n    \"Rejected Qty must be greater than 0\"\n  ]\n}\n\n ```\n\n---\n\n### 5️⃣ QC Date in the Future\n\n```\n{\n  \"qc_date\": \"2030-01-01\"\n}\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"qc_date\": [\n    \"QC date cannot be in the future\"\n  ]\n}\n\n ```\n\n---\n\n### 6️⃣ Invalid Date Format\n\n```\n{\n  \"qc_date\": \"12-09-2024\"\n}\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"qc_date\": [\n    \"Date has wrong format. Use one of these formats instead: YYYY-MM-DD.\"\n  ]\n}\n\n ```\n\n---\n\n### 7️⃣ Invalid Data Type\n\n```\n{\n  \"rejected_qty\": \"three\"\n}\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"rejected_qty\": [\n    \"A valid integer is required.\"\n  ]\n}\n\n ```\n\n---\n\n### 8️⃣ Permission Denied (Future RBAC)\n\n**Response –** **`403 Forbidden`**\n\n```\n{\n  \"detail\": \"You do not have permission to perform this action.\"\n}\n\n ```\n\n---\n\n### 9️⃣ Method Not Allowed\n\n```\nPUT /rejected-items/\n\n ```\n\n**Response –** **`405 Method Not Allowed`**\n\n```\n{\n  \"detail\": \"Method \\\"PUT\\\" not allowed.\"\n}\n\n ```\n\n---\n\n## 🧪 Edge Case Behavior\n\n- `created_by` cannot be set manually\n    \n- Duplicate rejected items **are allowed** (no unique constraint)\n    \n- Partial payloads are **not allowed** on create\n    \n\n---\n\n## ⚠️ Frontend Integration Guidelines\n\n### ✅ Best Practices\n\n- Validate rejected quantity on frontend\n    \n- Prevent future dates in date picker\n    \n- Show backend error messages verbatim\n    \n- Refresh rejected items list after creation\n    \n\n---\n\n### ❌ Avoid\n\n- Sending future QC dates\n    \n- Allowing rejected quantity ≤ 0\n    \n- Bypassing backend validation\n    \n\n---\n\n## Recommended UI Flow\n\n1. User fills rejected item form\n    \n2. Frontend validates basic rules\n    \n3. Submit to `POST /rejected-items/`\n    \n4. On success:\n    \n    - Close modal\n        \n    - Refresh list\n        \n    - Refresh statistics\n        \n\n---\n\n## ✅ Integration Status\n\n✔ cURL verified\n\n✔ Validations confirmed\n\n✔ Error cases fully documented\n\n✔ Production-ready\n\nEndFragment"
+              },
+              "response": []
+            },
+            {
+              "name": "List Rejected Items",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4ODg0ODgwLCJpYXQiOjE3Njg3OTg0ODAsImp0aSI6ImJjODFhZGRmNWMwMjRhNGY4YjA5NmNlYjU3MWUxMGFhIiwidXNlcl9pZCI6IjMifQ.-8-Y03LsEZHb-sZEyzpFsVHRLYV122gTdVeFxwPPTvg"
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:8000/api/rejected-items/",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "rejected-items",
+                    ""
+                  ]
+                },
+                "description": "StartFragment\n\n# 📘 Rejected Items – List API\n\n_(View Rejected Items Table)_\n\n---\n\n## Overview\n\nThis API retrieves a **paginated list of Rejected Items** recorded after QC inspection.\n\nIt is used for:\n\n- 🧾 **Rejected Items table**\n    \n- 🔍 **Search & filtering**\n    \n- 📊 **Operational review and audits**\n    \n\n---\n\n## Base URL\n\n```\nhttp://localhost:8000/api\n\n ```\n\n---\n\n## Authentication\n\n🔐 **JWT Authentication Required**\n\n### Required Headers\n\n```\nAuthorization: Bearer <ACCESS_TOKEN>\nContent-Type: application/json\n\n ```\n\n---\n\n## Endpoint\n\n```\nGET /rejected-items/\n\n ```\n\n---\n\n## Purpose\n\n- Fetch all rejected item records\n    \n- Supports pagination, search, filtering, and ordering\n    \n\n---\n\n## Example cURL (Verified)\n\n```\ncurl --location 'http://localhost:8000/api/rejected-items/' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27;\n\n ```\n\n---\n\n## ✅ Success Response – `200 OK`\n\n```\n{\n  \"count\": 2,\n  \"next\": null,\n  \"previous\": null,\n  \"results\": [\n    {\n      \"id\": 2,\n      \"product_id\": \"PRD-101\",\n      \"product_name\": \"GPS Tracker\",\n      \"vendor\": \"Vendor A\",\n      \"mrn_number\": \"MRN-2024-001\",\n      \"rejected_qty\": 3,\n      \"qc_date\": \"2024-09-12\"\n    },\n    {\n      \"id\": 1,\n      \"product_id\": \"PRD-101\",\n      \"product_name\": \"GPS Tracker\",\n      \"vendor\": \"Vendor A\",\n      \"mrn_number\": \"MRN-2024-001\",\n      \"rejected_qty\": 3,\n      \"qc_date\": \"2024-09-12\"\n    }\n  ]\n}\n\n ```\n\n---\n\n## Response Structure\n\n### Pagination Wrapper\n\n| Field | Type | Description |\n| --- | --- | --- |\n| count | number | Total rejected items |\n| next | string | null | URL for next page |\n| previous | string | null | URL for previous page |\n| results | array | Rejected items list |\n\n---\n\n### `results[]` Object\n\n| Field | Type | Description |\n| --- | --- | --- |\n| id | number | Rejected item ID |\n| product_id | string | Product identifier |\n| product_name | string | Product name |\n| vendor | string | Vendor name |\n| mrn_number | string | MRN reference |\n| rejected_qty | number | Rejected quantity |\n| qc_date | string (YYYY-MM-DD) | QC inspection date |\n\n---\n\n## 🔍 Query Parameters (Optional)\n\n### 1️⃣ Pagination\n\n```\nGET /rejected-items/?page=1\n\n ```\n\n---\n\n### 2️⃣ Search\n\n```\nGET /rejected-items/?search=Vendor A\n\n ```\n\nSearch applies to:\n\n- `product_id`\n    \n- `product_name`\n    \n- `vendor`\n    \n- `mrn_number`\n    \n\n---\n\n### 3️⃣ Filter\n\n```\nGET /rejected-items/?vendor=Vendor A\nGET /rejected-items/?qc_date=2024-09-12\n\n ```\n\n---\n\n### 4️⃣ Ordering\n\n```\nGET /rejected-items/?ordering=-qc_date\n\n ```\n\nSupported ordering fields:\n\n- `qc_date`\n    \n- `product_name`\n    \n- `rejected_qty`\n    \n\n---\n\n## ❌ Error Responses (ALL POSSIBLE CASES)\n\n---\n\n### 1️⃣ Missing Authentication\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n---\n\n### 2️⃣ Invalid or Expired Token\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n---\n\n### 3️⃣ Invalid Filter Value\n\n```\nGET /rejected-items/?qc_date=12-09-2024\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"qc_date\": [\n    \"Date has wrong format. Use one of these formats instead: YYYY-MM-DD.\"\n  ]\n}\n\n ```\n\n---\n\n### 4️⃣ Invalid Page Number\n\n```\nGET /rejected-items/?page=999\n\n ```\n\n**Response –** **`404 Not Found`**\n\n```\n{\n  \"detail\": \"Invalid page.\"\n}\n\n ```\n\n---\n\n### 5️⃣ Invalid Ordering Field\n\n```\nGET /rejected-items/?ordering=invalid_field\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"detail\": \"Invalid ordering field.\"\n}\n\n ```\n\n---\n\n### 6️⃣ Permission Denied (Future RBAC)\n\n**Response –** **`403 Forbidden`**\n\n```\n{\n  \"detail\": \"You do not have permission to perform this action.\"\n}\n\n ```\n\n---\n\n## 🧪 Empty State Example\n\nIf no rejected items exist:\n\n```\n{\n  \"count\": 0,\n  \"next\": null,\n  \"previous\": null,\n  \"results\": []\n}\n\n ```\n\nFrontend should display:\n\n> \n\n**“No rejected items found”**\n\n \n  \n\n---\n\n## ⚠️ Frontend Integration Guidelines\n\n### ✅ Best Practices\n\n- Always read data from `results[]`\n    \n- Use `count` for pagination UI\n    \n- Handle empty lists gracefully\n    \n- Use backend search & filters (do not filter client-side)\n    \n\n---\n\n### ❌ Avoid\n\n- Assuming non-paginated responses\n    \n- Hard-coding vendor names\n    \n- Ignoring pagination metadata\n    \n\n---\n\n## Performance Notes\n\n- Indexed fields used for filtering and ordering\n    \n- Safe for large datasets\n    \n- Lightweight response payload\n    \n\n---\n\n## ✅ Integration Status\n\n✔ cURL verified  \n  \n✔ Pagination confirmed  \n  \n✔ Search & filters validated  \n  \n✔ UI-safe and production-ready\n\nEndFragment"
+              },
+              "response": []
+            },
+            {
+              "name": "Search Rejected Items",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4ODg0ODgwLCJpYXQiOjE3Njg3OTg0ODAsImp0aSI6ImJjODFhZGRmNWMwMjRhNGY4YjA5NmNlYjU3MWUxMGFhIiwidXNlcl9pZCI6IjMifQ.-8-Y03LsEZHb-sZEyzpFsVHRLYV122gTdVeFxwPPTvg"
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:8000/api/rejected-items/?search=Vendor A",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "rejected-items",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "search",
+                      "value": "Vendor A"
+                    }
+                  ]
+                },
+                "description": "StartFragment\n\n# 📘 Rejected Items – Search API\n\n_(Search Rejected Items by Keyword)_\n\n---\n\n## Overview\n\nThis API retrieves **Rejected Items that match a search keyword**.  \n  \nIt is primarily used for:\n\n- 🔍 **Search bar** in the Rejected Items table\n    \n- 📊 **Quick lookup** by vendor, product, or MRN\n    \n- 🧭 **Filtering large datasets**\n    \n\n---\n\n## Base URL\n\n```\nhttp://localhost:8000/api\n\n ```\n\n---\n\n## Authentication\n\n🔐 **JWT Authentication Required**\n\n### Required Headers\n\n```\nAuthorization: Bearer <ACCESS_TOKEN>\nContent-Type: application/json\n\n ```\n\n---\n\n## Endpoint\n\n```\nGET /rejected-items/?search={query}\n\n ```\n\n---\n\n## Purpose\n\n- Search rejected items using a keyword\n    \n- Backend performs case-insensitive partial matching\n    \n- Pagination, filtering, and ordering remain available\n    \n\n---\n\n## Example cURL (Verified)\n\n```\ncurl --location \\\n'http://localhost:8000/api/rejected-items/?search=Vendor A' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27;\n\n ```\n\n---\n\n## Query Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| search | string | ✅ | Search keyword |\n\n### Fields Included in Search\n\nThe `search` parameter is applied to:\n\n- `product_id`\n    \n- `product_name`\n    \n- `vendor`\n    \n- `mrn_number`\n    \n\n---\n\n## ✅ Success Response – `200 OK`\n\n```\n{\n  \"count\": 2,\n  \"next\": null,\n  \"previous\": null,\n  \"results\": [\n    {\n      \"id\": 1,\n      \"product_id\": \"PRD-101\",\n      \"product_name\": \"GPS Tracker\",\n      \"vendor\": \"Vendor A\",\n      \"mrn_number\": \"MRN-2024-001\",\n      \"rejected_qty\": 3,\n      \"qc_date\": \"2024-09-12\"\n    },\n    {\n      \"id\": 2,\n      \"product_id\": \"PRD-101\",\n      \"product_name\": \"GPS Tracker\",\n      \"vendor\": \"Vendor A\",\n      \"mrn_number\": \"MRN-2024-001\",\n      \"rejected_qty\": 3,\n      \"qc_date\": \"2024-09-12\"\n    }\n  ]\n}\n\n ```\n\n---\n\n## Response Structure\n\n### Pagination Wrapper\n\n| Field | Type | Description |\n| --- | --- | --- |\n| count | number | Total records matching search |\n| next | string | null | Next page URL |\n| previous | string | null | Previous page URL |\n| results | array | Matching rejected items |\n\n---\n\n### `results[]` Object\n\n| Field | Type | Description |\n| --- | --- | --- |\n| id | number | Rejected item ID |\n| product_id | string | Product identifier |\n| product_name | string | Product name |\n| vendor | string | Vendor name |\n| mrn_number | string | MRN reference |\n| rejected_qty | number | Rejected quantity |\n| qc_date | string (YYYY-MM-DD) | QC inspection date |\n\n---\n\n## 🔍 Combining Search with Other Parameters\n\n### Search + Vendor Filter\n\n```\nGET /rejected-items/?search=Vendor A&vendor=Vendor A\n\n ```\n\n---\n\n### Search + Pagination\n\n```\nGET /rejected-items/?search=Vendor A&page=1\n\n ```\n\n---\n\n### Search + Ordering\n\n```\nGET /rejected-items/?search=Vendor A&ordering=-qc_date\n\n ```\n\nSupported ordering fields:\n\n- `qc_date`\n    \n- `product_name`\n    \n- `rejected_qty`\n    \n\n---\n\n## ❌ Error Responses (ALL POSSIBLE CASES)\n\n---\n\n### 1️⃣ Missing Authentication\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n---\n\n### 2️⃣ Invalid or Expired Token\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n---\n\n### 3️⃣ Invalid Query Parameter Name\n\n```\nGET /rejected-items/?q=Vendor A\n\n ```\n\n**Behavior**\n\n- Backend ignores unknown params\n    \n- Returns **unfiltered list**\n    \n\n⚠️ Frontend must use `search`, not `q`\n\n---\n\n### 4️⃣ Invalid Page Number\n\n```\nGET /rejected-items/?search=Vendor A&page=999\n\n ```\n\n**Response –** **`404 Not Found`**\n\n```\n{\n  \"detail\": \"Invalid page.\"\n}\n\n ```\n\n---\n\n### 5️⃣ Invalid Ordering Field\n\n```\nGET /rejected-items/?search=Vendor A&ordering=invalid\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"detail\": \"Invalid ordering field.\"\n}\n\n ```\n\n---\n\n### 6️⃣ Permission Denied (Future RBAC)\n\n**Response –** **`403 Forbidden`**\n\n```\n{\n  \"detail\": \"You do not have permission to perform this action.\"\n}\n\n ```\n\n---\n\n## 🧪 Empty Search Result Example\n\nIf no rejected items match the search:\n\n```\n{\n  \"count\": 0,\n  \"next\": null,\n  \"previous\": null,\n  \"results\": []\n}\n\n ```\n\nFrontend should display:\n\n> \n\n**“No rejected items found for ‘Vendor A’”**\n\n \n  \n\n---\n\n## ⚠️ Frontend Integration Guidelines\n\n### ✅ Best Practices\n\n- Debounce search input (300–500ms)\n    \n- Reset pagination when search changes\n    \n- Always read data from `results[]`\n    \n- Handle empty state gracefully\n    \n\n---\n\n### ❌ Avoid\n\n- Client-side filtering for large datasets\n    \n- Assuming non-paginated responses\n    \n- Using unsupported query parameters\n    \n\n---\n\n## Performance Notes\n\n- Indexed fields used for search\n    \n- Optimized for large datasets\n    \n- Safe for frequent queries\n    \n\n---\n\n## ✅ Integration Status\n\n✔ cURL verified  \n  \n✔ Search behavior confirmed  \n  \n✔ Pagination preserved  \n  \n✔ UI-safe and production-ready\n\nEndFragment"
+              },
+              "response": []
+            },
+            {
+              "name": "Rejected Items Statistics",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4ODg0ODgwLCJpYXQiOjE3Njg3OTg0ODAsImp0aSI6ImJjODFhZGRmNWMwMjRhNGY4YjA5NmNlYjU3MWUxMGFhIiwidXNlcl9pZCI6IjMifQ.-8-Y03LsEZHb-sZEyzpFsVHRLYV122gTdVeFxwPPTvg"
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:8000/api/rejected-items/statistics/",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "rejected-items",
+                    "statistics",
+                    ""
+                  ]
+                },
+                "description": "StartFragment\n\n# 📘 Rejected Items – Statistics API\n\n_(Dashboard Rejected Items Summary)_\n\n---\n\n## Overview\n\nThis API returns **aggregated statistics for Rejected Items**.  \n  \nIt is designed for:\n\n- 📊 **Dashboard summary cards**\n    \n- 📈 **Vendor-wise rejected quantity analysis**\n    \n- 🧮 **Quality control monitoring**\n    \n\n---\n\n## Base URL\n\n```\nhttp://localhost:8000/api\n\n ```\n\n---\n\n## Authentication\n\n🔐 **JWT Authentication Required**\n\n### Required Headers\n\n```\nAuthorization: Bearer <ACCESS_TOKEN>\nContent-Type: application/json\n\n ```\n\n---\n\n## Endpoint\n\n```\nGET /rejected-items/statistics/\n\n ```\n\n---\n\n## Purpose\n\n- Fetch overall rejected items count\n    \n- Fetch total rejected quantity\n    \n- Fetch rejected quantity grouped by vendor\n    \n\n---\n\n## Example cURL (Verified)\n\n```\ncurl --location \\\n'http://localhost:8000/api/rejected-items/statistics/' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27;\n\n ```\n\n---\n\n## ✅ Success Response – `200 OK`\n\n```\n{\n  \"total_rejected_items\": 2,\n  \"total_rejected_qty\": 6,\n  \"by_vendor\": {\n    \"Vendor A\": 6\n  }\n}\n\n ```\n\n---\n\n## Response Fields\n\n### Overall Totals\n\n| Field | Type | Description |\n| --- | --- | --- |\n| total_rejected_items | number | Total rejected item records |\n| total_rejected_qty | number | Sum of all rejected quantities |\n\n---\n\n### Vendor-wise Breakdown\n\n`by_vendor` is a key–value object:\n\n```\n{\n  \"Vendor Name\": total_rejected_quantity\n}\n\n ```\n\nExample:\n\n```\n{\n  \"Vendor A\": 6,\n  \"Vendor B\": 12\n}\n\n ```\n\n---\n\n## How Frontend Should Use This API\n\n### Dashboard Mapping Example\n\n| UI Element | API Field |\n| --- | --- |\n| Total Rejected Items | `total_rejected_items` |\n| Total Rejected Qty | `total_rejected_qty` |\n| Vendor-wise Chart | `by_vendor` |\n\n---\n\n## ❌ Error Responses (ALL POSSIBLE CASES)\n\n---\n\n### 1️⃣ Missing Authentication\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n---\n\n### 2️⃣ Invalid or Expired Token\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n---\n\n### 3️⃣ Permission Denied (Future RBAC)\n\n**Response –** **`403 Forbidden`**\n\n```\n{\n  \"detail\": \"You do not have permission to perform this action.\"\n}\n\n ```\n\n---\n\n### 4️⃣ Method Not Allowed\n\n```\nPOST /rejected-items/statistics/\n\n ```\n\n**Response –** **`405 Method Not Allowed`**\n\n```\n{\n  \"detail\": \"Method \\\"POST\\\" not allowed.\"\n}\n\n ```\n\n---\n\n### 5️⃣ Internal Server Error (Rare)\n\n**Response –** **`500 Internal Server Error`**\n\n```\n{\n  \"detail\": \"Internal Server Error\"\n}\n\n ```\n\nFrontend should:\n\n- Show generic error message\n    \n- Allow retry\n    \n\n---\n\n## 🧪 Empty Data Behavior\n\nIf **no rejected items exist**, response will be:\n\n```\n{\n  \"total_rejected_items\": 0,\n  \"total_rejected_qty\": 0,\n  \"by_vendor\": {}\n}\n\n ```\n\n⚠️ This is **not an error**.\n\n---\n\n## ⚠️ Frontend Integration Guidelines\n\n### ✅ Best Practices\n\n- Call this API once per dashboard load\n    \n- Use for charts and summary cards only\n    \n- Handle empty `by_vendor` object gracefully\n    \n- Do not recompute totals on frontend\n    \n\n---\n\n### ❌ Avoid\n\n- Polling excessively\n    \n- Combining with list APIs for counts\n    \n- Assuming vendors always exist\n    \n\n---\n\n## Performance Notes\n\n- Uses database-level aggregation\n    \n- Optimized for large datasets\n    \n- Very small response payload\n    \n\n---\n\n## ✅ Integration Status\n\n✔ cURL verified  \n  \n✔ Aggregation logic confirmed  \n  \n✔ UI-safe response contract  \n  \n✔ Production-ready\n\nEndFragment"
+              },
+              "response": []
+            },
+            {
+              "name": "Rejected Items by Vendor",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4ODg0ODgwLCJpYXQiOjE3Njg3OTg0ODAsImp0aSI6ImJjODFhZGRmNWMwMjRhNGY4YjA5NmNlYjU3MWUxMGFhIiwidXNlcl9pZCI6IjMifQ.-8-Y03LsEZHb-sZEyzpFsVHRLYV122gTdVeFxwPPTvg"
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:8000/api/rejected-items/by_vendor/?vendor=Vendor A",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "rejected-items",
+                    "by_vendor",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "vendor",
+                      "value": "Vendor A"
+                    }
+                  ]
+                },
+                "description": "# 📘 Rejected Items – By Vendor API\n\n_(View Rejected Items Grouped by Vendor)_\n\n---\n\n## Overview\n\nThis API retrieves **all rejected items for a specific vendor**, along with the **total rejected quantity** for that vendor.\n\nIt is typically used for:\n\n- 🧾 **Vendor-specific rejected items view**\n    \n- 📊 **Vendor drill-down from dashboard**\n    \n- 🧮 **QC/vendor performance analysis**\n    \n\n---\n\n## Base URL\n\n```\nhttp://localhost:8000/api\n\n ```\n\n---\n\n## Authentication\n\n🔐 **JWT Authentication Required**\n\n### Required Headers\n\n```\nAuthorization: Bearer <ACCESS_TOKEN>\nContent-Type: application/json\n\n ```\n\n---\n\n## Endpoint\n\n```\nGET /rejected-items/by_vendor/?vendor={vendor_name}\n\n ```\n\n---\n\n## Purpose\n\n- Fetch rejected items **only for one vendor**\n    \n- Calculate **total rejected quantity** for that vendor\n    \n- Return full rejected item details (not list serializer)\n    \n\n---\n\n## Example cURL (Verified)\n\n```\ncurl --location \\\n'http://localhost:8000/api/rejected-items/by_vendor/?vendor=Vendor A' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27;\n\n ```\n\n---\n\n## Query Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| vendor | string | ✅ | Vendor name (URL-encoded if needed) |\n\n---\n\n## ✅ Success Response – `200 OK`\n\n```\n{\n  \"vendor\": \"Vendor A\",\n  \"total_rejected_qty\": 6,\n  \"items\": [\n    {\n      \"id\": 1,\n      \"product_id\": \"PRD-101\",\n      \"product_name\": \"GPS Tracker\",\n      \"vendor\": \"Vendor A\",\n      \"mrn_number\": \"MRN-2024-001\",\n      \"rejected_qty\": 3,\n      \"qc_date\": \"2024-09-12\",\n      \"created_at\": \"2026-01-19T09:11:49.281916Z\",\n      \"updated_at\": \"2026-01-19T09:11:49.281928Z\",\n      \"created_by_username\": \"Vaibhav\"\n    },\n    {\n      \"id\": 2,\n      \"product_id\": \"PRD-101\",\n      \"product_name\": \"GPS Tracker\",\n      \"vendor\": \"Vendor A\",\n      \"mrn_number\": \"MRN-2024-001\",\n      \"rejected_qty\": 3,\n      \"qc_date\": \"2024-09-12\",\n      \"created_at\": \"2026-01-19T10:34:54.885324Z\",\n      \"updated_at\": \"2026-01-19T10:34:54.885335Z\",\n      \"created_by_username\": \"Vaibhav\"\n    }\n  ]\n}\n\n ```\n\n---\n\n## Response Structure\n\n### Top-Level Fields\n\n| Field | Type | Description |\n| --- | --- | --- |\n| vendor | string | Vendor name used for filtering |\n| total_rejected_qty | number | Sum of rejected quantities for vendor |\n| items | array | Rejected items belonging to the vendor |\n\n---\n\n### `items[]` Object\n\n| Field | Type | Description |\n| --- | --- | --- |\n| id | number | Rejected item ID |\n| product_id | string | Product identifier |\n| product_name | string | Product name |\n| vendor | string | Vendor name |\n| mrn_number | string | MRN reference |\n| rejected_qty | number | Rejected quantity |\n| qc_date | string | QC date |\n| created_at | datetime | Record creation timestamp |\n| updated_at | datetime | Last update timestamp |\n| created_by_username | string | User who created record |\n\n---\n\n## ❌ Error Responses (ALL POSSIBLE CASES)\n\n---\n\n### 1️⃣ Missing Authentication\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n---\n\n### 2️⃣ Invalid or Expired Token\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n---\n\n### 3️⃣ Missing Vendor Query Parameter\n\n```\nGET /rejected-items/by_vendor/\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"error\": \"vendor parameter is required\"\n}\n\n ```\n\n---\n\n### 4️⃣ Vendor Does Not Exist\n\n```\nGET /rejected-items/by_vendor/?vendor=Vendor X\n\n ```\n\n**Response –** **`200 OK`**\n\n```\n{\n  \"vendor\": \"Vendor X\",\n  \"total_rejected_qty\": 0,\n  \"items\": []\n}\n\n ```\n\n⚠️ This is **not an error**.\n\n---\n\n### 5 Invalid Page / Pagination (Not Supported Here)\n\n- Pagination is **not applied** in this endpoint\n    \n- Entire vendor dataset is returned\n    \n\n---\n\n### 6️⃣ Method Not Allowed\n\n```\nPOST /rejected-items/by_vendor/\n\n ```\n\n**Response –** **`405 Method Not Allowed`**\n\n```\n{\n  \"detail\": \"Method \\\"POST\\\" not allowed.\"\n}\n\n ```\n\n---\n\n### 7️⃣ Permission Denied (Future RBAC)\n\n**Response –** **`403 Forbidden`**\n\n```\n{\n  \"detail\": \"You do not have permission to perform this action.\"\n}\n\n ```\n\n---\n\n## 🧪 Edge Case Behavior\n\n- Vendor name comparison is **exact match**\n    \n- URL encoding is required for spaces\n    \n- Duplicate rejected items are returned individually\n    \n- Order is based on default queryset ordering (`-qc_date`)\n    \n\n---\n\n## ⚠️ Frontend Integration Guidelines\n\n### ✅ Best Practices\n\n- Always URL-encode vendor names\n    \n- Use this API for **vendor drill-down**, not table listing\n    \n- Display `total_rejected_qty` prominently\n    \n- Handle empty items array gracefully\n    \n\n---\n\n### ❌ Avoid\n\n- Using this endpoint for pagination\n    \n- Calling without vendor param\n    \n- Client-side aggregation for totals\n    \n\n---\n\n## Recommended UI Flow\n\n1. User clicks vendor name in dashboard\n    \n2. Frontend calls `/rejected-items/by_vendor/`\n    \n3. Display:\n    \n    - Vendor name\n        \n    - Total rejected quantity\n        \n    - Item-level breakdown\n        \n\n---\n\n## Performance Notes\n\n- Uses database aggregation\n    \n- Suitable for moderate dataset per vendor\n    \n- Optimized query path\n    \n\n---\n\n## ✅ Integration Status\n\n✔ cURL verified\n\n✔ Vendor aggregation confirmed\n\n✔ Error handling documented\n\n✔ Production-ready"
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
     }
   ]
 }

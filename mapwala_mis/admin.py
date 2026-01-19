@@ -1710,3 +1710,148 @@ class CreditNoteAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
+# ------------------------- Return Request Admin --------------------------
+@admin.register(ReturnRequest)
+class ReturnRequestAdmin(admin.ModelAdmin):
+    """
+    Admin configuration for Return Requests
+    """
+
+    # Columns shown in admin list view
+    list_display = ("return_number","date","items","reason","status","amount","created_by","created_at")
+
+    # Sidebar filters
+    list_filter = ("status","date","created_at")
+
+    # Search box fields
+    search_fields = ("return_number","reason","items","created_by__username")
+
+    # Default ordering
+    ordering = ("-date",)
+
+    # Read-only fields (system managed)
+    readonly_fields = ("created_at","updated_at","created_by")
+
+    # Group fields nicely in admin form
+    fieldsets = (
+        ("Return Information", {
+            "fields": (
+                "return_number",
+                "date",
+                "status",
+            )
+        }),
+        ("Return Details", {
+            "fields": (
+                "items",
+                "reason",
+                "amount",
+            )
+        }),
+        ("Audit Information", {
+            "fields": (
+                "created_by",
+                "created_at",
+                "updated_at",
+            )
+        }),
+    )
+
+    # Performance optimization
+    list_select_related = ("created_by",)
+
+
+# ---------------------------- Repair Record Admin ----------------------------
+@admin.register(RepairRecord)
+class RepairRecordAdmin(admin.ModelAdmin):
+    """
+    Admin configuration for Repair Records
+    """
+
+    list_display = ("product_id","product_name","vendor","mrn_number","failed_qty","repaired_qty","rejected_qty","repair_pending", "repair_type","repair_center", "status", "created_by","created_at")
+    list_filter = ("status","repair_type","vendor","created_at")
+    search_fields = ("product_id","product_name","vendor","mrn_number","repair_type","repair_center","created_by__username")
+    ordering = ("-created_at",)
+    readonly_fields = ("created_at","updated_at","created_by")
+
+    fieldsets = (
+        ("Product Information", {
+            "fields": (
+                "product_id",
+                "product_name",
+            )
+        }),
+        ("Vendor & MRN", {
+            "fields": (
+                "vendor",
+                "mrn_number",
+            )
+        }),
+        ("Repair Quantities", {
+            "fields": (
+                "failed_qty",
+                "repaired_qty",
+                "rejected_qty",
+                "repair_pending",
+            )
+        }),
+        ("Repair Details", {
+            "fields": (
+                "repair_type",
+                "repair_center",
+                "status",
+            )
+        }),
+        ("Audit Information", {
+            "fields": (
+                "created_by",
+                "created_at",
+                "updated_at",
+            )
+        }),
+    )
+
+    list_select_related = ("created_by",)
+
+
+# --------------------------- Repair Type Admin ----------------------------
+@admin.register(RejectedItem)
+class RejectedItemAdmin(admin.ModelAdmin):
+    """
+    Admin configuration for Rejected Items
+    """
+    list_display = ("product_id","product_name","vendor","mrn_number","rejected_qty","qc_date","created_by")
+    list_filter = ("vendor","qc_date","created_at")
+    search_fields = ("product_id","product_name","vendor","mrn_number","created_by__username")
+    ordering = ("-qc_date",)
+    readonly_fields = ("created_at","updated_at","created_by")
+    fieldsets = (
+        ("Product Information", {
+            "fields": (
+                "product_id",
+                "product_name",
+            )
+        }),
+        ("Vendor & MRN", {
+            "fields": (
+                "vendor",
+                "mrn_number",
+            )
+        }),
+        ("Rejection Details", {
+            "fields": (
+                "rejected_qty",
+                "qc_date",
+            )
+        }),
+        ("Audit Information", {
+            "fields": (
+                "created_by",
+                "created_at",
+                "updated_at",
+            )
+        }),
+    )
+
+    list_select_related = ("created_by",)
+
