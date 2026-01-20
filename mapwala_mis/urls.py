@@ -16,6 +16,7 @@ router.register("credit-notes", CreditNoteViewSet, basename="credit-notes")
 router.register('return-requests', ReturnRequestViewSet, basename='return-request')
 router.register('repair-records', RepairRecordViewSet, basename='repair-record')
 router.register('rejected-items', RejectedItemViewSet, basename='rejected-item')
+router.register("devices", DeviceViewSet, basename="devices")
 
 urlpatterns = [
     path("auth/login/", LoginAPIView.as_view(), name="login"),
@@ -128,6 +129,30 @@ urlpatterns = [
     path("qc-inspectors/register/", QCInspectorRegistrationCreateAPIView.as_view()),
     path("purchase-departments/register/", PurchaseDepartmentRegistrationCreateAPIView.as_view()),
     path("store-managers/register/", StoreManagerRegistrationCreateAPIView.as_view()),
+    
+    # ============================================================
+    # SELF ORDER
+    # ============================================================
+    path("self-orders/create/", SelfOrderCreateAPIView.as_view(), name="self-order-create"),
+    path("self-orders/", SelfOrderListAPIView.as_view(), name="self-order-list"),
+    path("self-orders/<int:pk>/", SelfOrderDetailAPIView.as_view(), name="self-order-detail"),
+    path("self-orders/devices/", SelfOrderDeviceDropdownAPIView.as_view()),
+    path("self-orders/states/", StateDropdownAPIView.as_view()),
+    path("self-orders/gst-rates/",GSTRateDropdownAPIView.as_view(),name="self-order-gst-rates"),
+    
+    # ============================================================
+    # RFQ MANAGEMENT - LIST & FILTERING
+    # ============================================================
+    path("rfq/list/", RFQListAPIView.as_view()),
+    path("rfq/<int:rfq_id>/detail/", RFQDetailAPIView.as_view()),
+    path("rfq/filters/", RFQFiltersAPIView.as_view()),
+    path("rfq/vendors/", RFQVendorDropdownAPIView.as_view()),
+    
+    # ============================================================
+    # QUOTATION MANAGEMENT
+    # ============================================================
+    path("quotation/form-data/", QuotationFormDataAPIView.as_view()),
+    path("quotation/create/", QuotationEntryAPIView.as_view()),
 ]
 
 urlpatterns += router.urls

@@ -1,9 +1,10 @@
 {
   "info": {
-    "_postman_id": "cf129c48-78ad-471f-a461-d13566f74b2b",
+    "_postman_id": "59dd3eec-6399-4fdc-b27a-ed1a7e1c9dd5",
     "name": "Mapwala_MIS_Backend",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "40770139"
+    "_exporter_id": "51337293",
+    "_collection_link": "https://go.postman.co/collection/51337293-59dd3eec-6399-4fdc-b27a-ed1a7e1c9dd5?source=collection_link"
   },
   "item": [
     {
@@ -5066,7 +5067,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\r\n  \"return_number\": \"RR-1001\",\r\n  \"date\": \"2024-09-10\",\r\n  \"items\": \"2 items\",\r\n  \"reason\": \"Damaged product\",\r\n  \"amount\": 1500.00\r\n}",
+                  "raw": "{\r\n  \"return_number\": \"RR-1002\",\r\n  \"date\": \"2024-09-10\",\r\n  \"items\": \"2 items\",\r\n  \"reason\": \"Damaged product\",\r\n  \"amount\": 1500.00\r\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -5086,7 +5087,7 @@
                     ""
                   ]
                 },
-                "description": "Generated from cURL: curl -X POST BASE_URL/return-requests/ \\\r\n-H \"Authorization: Bearer YOUR_TOKEN_HERE\" \\\r\n-H \"Content-Type: application/json\" \\\r\n-d '{\r\n  \"return_number\": \"RR-1001\",\r\n  \"date\": \"2024-09-10\",\r\n  \"items\": \"2 items\",\r\n  \"reason\": \"Damaged product\",\r\n  \"amount\": 1500.00\r\n}'\r\n"
+                "description": "StartFragment\n\n# 📘 Return Requests – Create API\n\n_(Create a New Return Request)_\n\n---\n\n## Overview\n\nThis API creates a **new Return Request** in the system.  \n  \nIt is typically used when a vendor or internal user submits a request to return items due to damage, mismatch, or other reasons.\n\n---\n\n## Base URL\n\n```\nhttp://localhost:8000/api\n\n ```\n\n---\n\n## Authentication\n\n🔐 **JWT Authentication Required**\n\n### Required Headers\n\n```\nAuthorization: Bearer <ACCESS_TOKEN>\nContent-Type: application/json\n\n ```\n\n---\n\n## Endpoint\n\n```\nPOST /return-requests/\n\n ```\n\n---\n\n## Purpose\n\n- Create a new return request\n    \n- Automatically assigns:\n    \n    - `status = pending`\n        \n    - `created_by` from the authenticated user\n        \n    - `created_at` and `updated_at` timestamps\n        \n\n---\n\n## Example Request (Verified)\n\n```\nPOST http://localhost:8000/api/return-requests/\n\n ```\n\n### Request Headers\n\n```\nAuthorization: Bearer <ACCESS_TOKEN>\nContent-Type: application/json\n\n ```\n\n### Request Body\n\n```\n{\n  \"return_number\": \"RR-1002\",\n  \"date\": \"2024-09-10\",\n  \"items\": \"2 items\",\n  \"reason\": \"Damaged product\",\n  \"amount\": 1500.00\n}\n\n ```\n\n---\n\n## Request Body Fields\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| return_number | string | ✅ | Unique return reference number |\n| date | string (YYYY-MM-DD) | ✅ | Return request date |\n| items | string | ✅ | Description or count of returned items |\n| reason | string | ✅ | Reason for return |\n| amount | number | ✅ | Return amount (must be > 0) |\n\n---\n\n## Validation Rules (IMPORTANT)\n\n| Field | Rule |\n| --- | --- |\n| return_number | Must be **unique** |\n| date | Cannot be in the future |\n| amount | Must be **greater than 0** |\n| items | Cannot be empty |\n| reason | Cannot be empty |\n\n---\n\n## ✅ Success Response – `201 Created`\n\n```\n{\n  \"id\": 2,\n  \"return_number\": \"RR-1002\",\n  \"date\": \"2024-09-10\",\n  \"items\": \"2 items\",\n  \"reason\": \"Damaged product\",\n  \"amount\": \"1500.00\",\n  \"status\": \"pending\",\n  \"created_at\": \"2026-01-19T12:23:11.321799Z\",\n  \"updated_at\": \"2026-01-19T12:23:11.321812Z\",\n  \"created_by_username\": \"Vaibhav\"\n}\n\n ```\n\n---\n\n## What Happens After Creation\n\n- `status` is automatically set to **pending**\n    \n- `created_by_username` is derived from JWT token\n    \n- Record becomes available in:\n    \n    - Return Requests list\n        \n    - Return Requests counts\n        \n    - Recent return requests\n        \n\n---\n\n## ❌ Error Responses (ALL POSSIBLE CASES)\n\n---\n\n### 1️⃣ Missing Authentication\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n---\n\n### 2️⃣ Invalid or Expired Token\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n---\n\n### 3️⃣ Missing Required Fields\n\n```\n{\n  \"return_number\": \"RR-1003\"\n}\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"date\": [\"This field is required.\"],\n  \"items\": [\"This field is required.\"],\n  \"reason\": [\"This field is required.\"],\n  \"amount\": [\"This field is required.\"]\n}\n\n ```\n\n---\n\n### 4️⃣ Duplicate Return Number\n\n```\n{\n  \"return_number\": \"RR-1002\",\n  \"date\": \"2024-09-10\",\n  \"items\": \"2 items\",\n  \"reason\": \"Damaged product\",\n  \"amount\": 1500\n}\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"return_number\": [\n    \"return request with this Return Number already exists.\"\n  ]\n}\n\n ```\n\n---\n\n### 5️⃣ Future Date Not Allowed\n\n```\n{\n  \"date\": \"2030-01-01\"\n}\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"date\": [\n    \"Return date cannot be in the future\"\n  ]\n}\n\n ```\n\n---\n\n### 6️⃣ Invalid Amount (≤ 0)\n\n```\n{\n  \"amount\": 0\n}\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"amount\": [\n    \"Amount must be greater than 0\"\n  ]\n}\n\n ```\n\n---\n\n### 7️⃣ Invalid Date Format\n\n```\n{\n  \"date\": \"10-09-2024\"\n}\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"date\": [\n    \"Date has wrong format. Use one of these formats instead: YYYY-MM-DD.\"\n  ]\n}\n\n ```\n\n---\n\n### 8️⃣ Invalid Data Type\n\n```\n{\n  \"amount\": \"fifteen hundred\"\n}\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"amount\": [\n    \"A valid number is required.\"\n  ]\n}\n\n ```\n\n---\n\n### 9️⃣ Method Not Allowed\n\n```\nPUT /return-requests/\n\n ```\n\n**Response –** **`405 Method Not Allowed`**\n\n```\n{\n  \"detail\": \"Method \\\"PUT\\\" not allowed.\"\n}\n\n ```\n\n---\n\n### 🔟 Permission Denied (Future RBAC)\n\n**Response –** **`403 Forbidden`**\n\n```\n{\n  \"detail\": \"You do not have permission to perform this action.\"\n}\n\n ```\n\n---\n\n## 🧪 Edge Case Behavior\n\n- `status` **cannot** be set during creation\n    \n- `created_by_username` is **read-only**\n    \n- Duplicate payload submission will fail due to unique constraint\n    \n\n---\n\n## ⚠️ Frontend Integration Guidelines\n\n### ✅ Best Practices\n\n- Validate form fields before submit\n    \n- Prevent future dates in date picker\n    \n- Handle duplicate return number errors clearly\n    \n- Redirect or refresh list after successful creation\n    \n\n---\n\n### ❌ Avoid\n\n- Allowing users to set `status`\n    \n- Reusing return numbers\n    \n- Ignoring backend validation messages\n    \n\n---\n\n## Recommended UI Flow\n\n1. User fills **Create Return Request** form\n    \n2. Frontend validates required fields\n    \n3. Submit `POST /return-requests/`\n    \n4. On success:\n    \n    - Show success toast\n        \n    - Redirect to return list\n        \n    - Refresh counts widget\n        \n\n---\n\n## ✅ Integration Status\n\n✔ Request tested  \n  \n✔ Response verified  \n  \n✔ Validation rules confirmed  \n  \n✔ Production-ready\n\nEndFragment"
               },
               "response": []
             },
@@ -5657,6 +5658,571 @@
                   ]
                 },
                 "description": "# 📘 Rejected Items – By Vendor API\n\n_(View Rejected Items Grouped by Vendor)_\n\n---\n\n## Overview\n\nThis API retrieves **all rejected items for a specific vendor**, along with the **total rejected quantity** for that vendor.\n\nIt is typically used for:\n\n- 🧾 **Vendor-specific rejected items view**\n    \n- 📊 **Vendor drill-down from dashboard**\n    \n- 🧮 **QC/vendor performance analysis**\n    \n\n---\n\n## Base URL\n\n```\nhttp://localhost:8000/api\n\n ```\n\n---\n\n## Authentication\n\n🔐 **JWT Authentication Required**\n\n### Required Headers\n\n```\nAuthorization: Bearer <ACCESS_TOKEN>\nContent-Type: application/json\n\n ```\n\n---\n\n## Endpoint\n\n```\nGET /rejected-items/by_vendor/?vendor={vendor_name}\n\n ```\n\n---\n\n## Purpose\n\n- Fetch rejected items **only for one vendor**\n    \n- Calculate **total rejected quantity** for that vendor\n    \n- Return full rejected item details (not list serializer)\n    \n\n---\n\n## Example cURL (Verified)\n\n```\ncurl --location \\\n'http://localhost:8000/api/rejected-items/by_vendor/?vendor=Vendor A' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27;\n\n ```\n\n---\n\n## Query Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| vendor | string | ✅ | Vendor name (URL-encoded if needed) |\n\n---\n\n## ✅ Success Response – `200 OK`\n\n```\n{\n  \"vendor\": \"Vendor A\",\n  \"total_rejected_qty\": 6,\n  \"items\": [\n    {\n      \"id\": 1,\n      \"product_id\": \"PRD-101\",\n      \"product_name\": \"GPS Tracker\",\n      \"vendor\": \"Vendor A\",\n      \"mrn_number\": \"MRN-2024-001\",\n      \"rejected_qty\": 3,\n      \"qc_date\": \"2024-09-12\",\n      \"created_at\": \"2026-01-19T09:11:49.281916Z\",\n      \"updated_at\": \"2026-01-19T09:11:49.281928Z\",\n      \"created_by_username\": \"Vaibhav\"\n    },\n    {\n      \"id\": 2,\n      \"product_id\": \"PRD-101\",\n      \"product_name\": \"GPS Tracker\",\n      \"vendor\": \"Vendor A\",\n      \"mrn_number\": \"MRN-2024-001\",\n      \"rejected_qty\": 3,\n      \"qc_date\": \"2024-09-12\",\n      \"created_at\": \"2026-01-19T10:34:54.885324Z\",\n      \"updated_at\": \"2026-01-19T10:34:54.885335Z\",\n      \"created_by_username\": \"Vaibhav\"\n    }\n  ]\n}\n\n ```\n\n---\n\n## Response Structure\n\n### Top-Level Fields\n\n| Field | Type | Description |\n| --- | --- | --- |\n| vendor | string | Vendor name used for filtering |\n| total_rejected_qty | number | Sum of rejected quantities for vendor |\n| items | array | Rejected items belonging to the vendor |\n\n---\n\n### `items[]` Object\n\n| Field | Type | Description |\n| --- | --- | --- |\n| id | number | Rejected item ID |\n| product_id | string | Product identifier |\n| product_name | string | Product name |\n| vendor | string | Vendor name |\n| mrn_number | string | MRN reference |\n| rejected_qty | number | Rejected quantity |\n| qc_date | string | QC date |\n| created_at | datetime | Record creation timestamp |\n| updated_at | datetime | Last update timestamp |\n| created_by_username | string | User who created record |\n\n---\n\n## ❌ Error Responses (ALL POSSIBLE CASES)\n\n---\n\n### 1️⃣ Missing Authentication\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n---\n\n### 2️⃣ Invalid or Expired Token\n\n**Response –** **`401 Unauthorized`**\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n---\n\n### 3️⃣ Missing Vendor Query Parameter\n\n```\nGET /rejected-items/by_vendor/\n\n ```\n\n**Response –** **`400 Bad Request`**\n\n```\n{\n  \"error\": \"vendor parameter is required\"\n}\n\n ```\n\n---\n\n### 4️⃣ Vendor Does Not Exist\n\n```\nGET /rejected-items/by_vendor/?vendor=Vendor X\n\n ```\n\n**Response –** **`200 OK`**\n\n```\n{\n  \"vendor\": \"Vendor X\",\n  \"total_rejected_qty\": 0,\n  \"items\": []\n}\n\n ```\n\n⚠️ This is **not an error**.\n\n---\n\n### 5 Invalid Page / Pagination (Not Supported Here)\n\n- Pagination is **not applied** in this endpoint\n    \n- Entire vendor dataset is returned\n    \n\n---\n\n### 6️⃣ Method Not Allowed\n\n```\nPOST /rejected-items/by_vendor/\n\n ```\n\n**Response –** **`405 Method Not Allowed`**\n\n```\n{\n  \"detail\": \"Method \\\"POST\\\" not allowed.\"\n}\n\n ```\n\n---\n\n### 7️⃣ Permission Denied (Future RBAC)\n\n**Response –** **`403 Forbidden`**\n\n```\n{\n  \"detail\": \"You do not have permission to perform this action.\"\n}\n\n ```\n\n---\n\n## 🧪 Edge Case Behavior\n\n- Vendor name comparison is **exact match**\n    \n- URL encoding is required for spaces\n    \n- Duplicate rejected items are returned individually\n    \n- Order is based on default queryset ordering (`-qc_date`)\n    \n\n---\n\n## ⚠️ Frontend Integration Guidelines\n\n### ✅ Best Practices\n\n- Always URL-encode vendor names\n    \n- Use this API for **vendor drill-down**, not table listing\n    \n- Display `total_rejected_qty` prominently\n    \n- Handle empty items array gracefully\n    \n\n---\n\n### ❌ Avoid\n\n- Using this endpoint for pagination\n    \n- Calling without vendor param\n    \n- Client-side aggregation for totals\n    \n\n---\n\n## Recommended UI Flow\n\n1. User clicks vendor name in dashboard\n    \n2. Frontend calls `/rejected-items/by_vendor/`\n    \n3. Display:\n    \n    - Vendor name\n        \n    - Total rejected quantity\n        \n    - Item-level breakdown\n        \n\n---\n\n## Performance Notes\n\n- Uses database aggregation\n    \n- Suitable for moderate dataset per vendor\n    \n- Optimized query path\n    \n\n---\n\n## ✅ Integration Status\n\n✔ cURL verified\n\n✔ Vendor aggregation confirmed\n\n✔ Error handling documented\n\n✔ Production-ready"
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "All Devices",
+          "item": [
+            {
+              "name": "SEARCH — By Device Name or Model",
+              "item": [
+                {
+                  "name": "Search by Name (info.make)",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4OTcyNzIwLCJpYXQiOjE3Njg4ODYzMjAsImp0aSI6IjEzN2RiYjY2ODliMzQ2YWQ5MzFjOGE1NzBlZDc0MDRlIiwidXNlcl9pZCI6IjMifQ.e2KI_75t9SwLtjgdLg0T7HM_BniLws0RgW5M-GEx1ZE"
+                      }
+                    ],
+                    "url": {
+                      "raw": "http://localhost:8000/api/devices/?search=ABC",
+                      "protocol": "http",
+                      "host": [
+                        "localhost"
+                      ],
+                      "port": "8000",
+                      "path": [
+                        "api",
+                        "devices",
+                        ""
+                      ],
+                      "query": [
+                        {
+                          "key": "search",
+                          "value": "ABC"
+                        }
+                      ]
+                    },
+                    "description": "Generated from cURL: curl -X GET \"http://localhost:8000/api/devices/?search=ABC\" \\\r\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\"\r\n"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Search by Model (info.model)",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4OTcyNzIwLCJpYXQiOjE3Njg4ODYzMjAsImp0aSI6IjEzN2RiYjY2ODliMzQ2YWQ5MzFjOGE1NzBlZDc0MDRlIiwidXNlcl9pZCI6IjMifQ.e2KI_75t9SwLtjgdLg0T7HM_BniLws0RgW5M-GEx1ZE"
+                      }
+                    ],
+                    "url": {
+                      "raw": "http://localhost:8000/api/devices/?search=XYZ-100",
+                      "protocol": "http",
+                      "host": [
+                        "localhost"
+                      ],
+                      "port": "8000",
+                      "path": [
+                        "api",
+                        "devices",
+                        ""
+                      ],
+                      "query": [
+                        {
+                          "key": "search",
+                          "value": "XYZ-100"
+                        }
+                      ]
+                    },
+                    "description": "Generated from cURL: curl -X GET \"http://localhost:8000/api/devices/?search=XYZ-100\" \\\r\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\"\r\n"
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "ORDERING — Devices",
+              "item": [
+                {
+                  "name": "Order by latest created (default)",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4OTcyNzIwLCJpYXQiOjE3Njg4ODYzMjAsImp0aSI6IjEzN2RiYjY2ODliMzQ2YWQ5MzFjOGE1NzBlZDc0MDRlIiwidXNlcl9pZCI6IjMifQ.e2KI_75t9SwLtjgdLg0T7HM_BniLws0RgW5M-GEx1ZE"
+                      }
+                    ],
+                    "url": {
+                      "raw": "http://localhost:8000/api/devices/?ordering=-created_at",
+                      "protocol": "http",
+                      "host": [
+                        "localhost"
+                      ],
+                      "port": "8000",
+                      "path": [
+                        "api",
+                        "devices",
+                        ""
+                      ],
+                      "query": [
+                        {
+                          "key": "ordering",
+                          "value": "-created_at"
+                        }
+                      ]
+                    },
+                    "description": "Generated from cURL: curl -X GET \"http://localhost:8000/api/devices/?ordering=-created_at\" \\\r\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\"\r\n"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Order by status",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4OTcyNzIwLCJpYXQiOjE3Njg4ODYzMjAsImp0aSI6IjEzN2RiYjY2ODliMzQ2YWQ5MzFjOGE1NzBlZDc0MDRlIiwidXNlcl9pZCI6IjMifQ.e2KI_75t9SwLtjgdLg0T7HM_BniLws0RgW5M-GEx1ZE"
+                      }
+                    ],
+                    "url": {
+                      "raw": "http://localhost:8000/api/devices/?ordering=status",
+                      "protocol": "http",
+                      "host": [
+                        "localhost"
+                      ],
+                      "port": "8000",
+                      "path": [
+                        "api",
+                        "devices",
+                        ""
+                      ],
+                      "query": [
+                        {
+                          "key": "ordering",
+                          "value": "status"
+                        }
+                      ]
+                    },
+                    "description": "Generated from cURL: curl -X GET \"http://localhost:8000/api/devices/?ordering=status\" \\\r\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\"\r\n"
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "PAGINATION — Page Control (IMPORTANT)",
+              "item": [
+                {
+                  "name": "Page 1",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4OTcyNzIwLCJpYXQiOjE3Njg4ODYzMjAsImp0aSI6IjEzN2RiYjY2ODliMzQ2YWQ5MzFjOGE1NzBlZDc0MDRlIiwidXNlcl9pZCI6IjMifQ.e2KI_75t9SwLtjgdLg0T7HM_BniLws0RgW5M-GEx1ZE"
+                      }
+                    ],
+                    "url": {
+                      "raw": "http://localhost:8000/api/devices/?page=1",
+                      "protocol": "http",
+                      "host": [
+                        "localhost"
+                      ],
+                      "port": "8000",
+                      "path": [
+                        "api",
+                        "devices",
+                        ""
+                      ],
+                      "query": [
+                        {
+                          "key": "page",
+                          "value": "1"
+                        }
+                      ]
+                    },
+                    "description": "Generated from cURL: curl -X GET \"http://localhost:8000/api/devices/?page=1\" \\\r\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\"\r\n"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Page 2",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4OTcyNzIwLCJpYXQiOjE3Njg4ODYzMjAsImp0aSI6IjEzN2RiYjY2ODliMzQ2YWQ5MzFjOGE1NzBlZDc0MDRlIiwidXNlcl9pZCI6IjMifQ.e2KI_75t9SwLtjgdLg0T7HM_BniLws0RgW5M-GEx1ZE"
+                      }
+                    ],
+                    "url": {
+                      "raw": "http://localhost:8000/api/devices/?page=2",
+                      "protocol": "http",
+                      "host": [
+                        "localhost"
+                      ],
+                      "port": "8000",
+                      "path": [
+                        "api",
+                        "devices",
+                        ""
+                      ],
+                      "query": [
+                        {
+                          "key": "page",
+                          "value": "2"
+                        }
+                      ]
+                    },
+                    "description": "Generated from cURL: curl -X GET \"http://localhost:8000/api/devices/?page=2\" \\\r\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\"\r\n"
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "LIST — All Devices (ALL DEVICES table)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4OTcyNzIwLCJpYXQiOjE3Njg4ODYzMjAsImp0aSI6IjEzN2RiYjY2ODliMzQ2YWQ5MzFjOGE1NzBlZDc0MDRlIiwidXNlcl9pZCI6IjMifQ.e2KI_75t9SwLtjgdLg0T7HM_BniLws0RgW5M-GEx1ZE"
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:8000/api/devices/",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "devices",
+                    ""
+                  ]
+                },
+                "description": "Generated from cURL: curl -X GET \"http://localhost:8000/api/devices/\" \\\r\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\"\r\n"
+              },
+              "response": []
+            },
+            {
+              "name": "FILTER — Devices by Status",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4OTcyNzIwLCJpYXQiOjE3Njg4ODYzMjAsImp0aSI6IjEzN2RiYjY2ODliMzQ2YWQ5MzFjOGE1NzBlZDc0MDRlIiwidXNlcl9pZCI6IjMifQ.e2KI_75t9SwLtjgdLg0T7HM_BniLws0RgW5M-GEx1ZE"
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:8000/api/devices/?status=completed",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "devices",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "completed"
+                    }
+                  ]
+                },
+                "description": "StartFragment\n\n# 📘 Devices List API — Filter by Status\n\n**(Frontend Integration Guide)**\n\n---\n\n## 🎯 API Purpose\n\nFetch a **paginated list of devices filtered by status** for the **“All Devices”** screen.\n\nThis endpoint is used for:\n\n- Status tabs (Completed / Active / In Production / Inactive)\n    \n- Dropdown-based filtering\n    \n- Dashboard device lists\n    \n\n---\n\n## 🔗 Endpoint\n\n```\nGET /api/devices/\n\n ```\n\n---\n\n## 🔐 Authentication (Required)\n\nThis API is **protected** and requires a valid **JWT access token**.\n\n### Headers\n\n| Key | Value |\n| --- | --- |\n| Authorization | Bearer |\n| Content-Type | application/json |\n\n---\n\n## 🧪 cURL Example (Reference)\n\n```\ncurl -X GET \"http://localhost:8000/api/devices/?status=completed\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\"\n\n ```\n\n---\n\n## 🔎 Query Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| `status` | string | No | Filter devices by status |\n\n### Supported Status Values\n\n- `completed`\n    \n- `in_production`\n    \n- `active`\n    \n- `inactive`\n    \n\n⚠️ Invalid values will return an **empty result set**, not an error.\n\n---\n\n## ✅ Success Response (200 OK)\n\n### Example Response\n\n```\n{\n  \"count\": 1,\n  \"next\": null,\n  \"previous\": null,\n  \"results\": [\n    {\n      \"device_id\": \"DEV-0001\",\n      \"name\": \"ABC\",\n      \"model\": \"XYZ-100\",\n      \"status\": \"completed\",\n      \"updated\": \"2026-01-09\"\n    }\n  ]\n}\n\n ```\n\n---\n\n## 📦 Response Field Definitions\n\n### Pagination Fields\n\n| Field | Description |\n| --- | --- |\n| `count` | Total number of matching devices |\n| `next` | URL for next page (null if none) |\n| `previous` | URL for previous page (null if none) |\n\n### Device Object\n\n| Field | Description |\n| --- | --- |\n| `device_id` | Formatted ID (DEV-0001) |\n| `name` | Device name |\n| `model` | Device model |\n| `status` | Current status |\n| `updated` | Device created date (YYYY-MM-DD) |\n\n---\n\n## 🧩 Frontend Integration Guidelines\n\n### UI Mapping\n\n| UI Column | API Field |\n| --- | --- |\n| Device ID | `device_id` |\n| Name | `name` |\n| Model | `model` |\n| Status Badge | `status` |\n| Updated Date | `updated` |\n\n---\n\n### Safe Rendering Rules\n\n- `results` may be an **empty array**\n    \n- Always check `count` before rendering pagination\n    \n- Use `next` and `previous` for page navigation\n    \n\n---\n\n## 📄 Pagination Support\n\n### Page 1\n\n```\nGET /api/devices/?status=completed&page=1\n\n ```\n\n### Page 2\n\n```\nGET /api/devices/?status=completed&page=2\n\n ```\n\n⚠️ If the page number exceeds available pages, API may return **404 (DRF default)**.\n\n---\n\n## ⚠️ Error Handling (ALL CASES)\n\n---\n\n### 🔴 401 — Unauthorized\n\n**Cause**\n\n- Missing token\n    \n- Expired token\n    \n- Invalid token\n    \n\n**Response**\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n**Frontend Action**\n\n- Redirect to login\n    \n- Refresh token if applicable\n    \n\n---\n\n### 🔴 403 — Forbidden\n\n**Cause**\n\n- User lacks permission to view devices\n    \n\n**Response**\n\n```\n{\n  \"detail\": \"You do not have permission to perform this action.\"\n}\n\n ```\n\n**Frontend Action**\n\n- Show access denied page\n    \n\n---\n\n### 🔴 404 — Page Not Found\n\n**Cause**\n\n- Requested page does not exist\n    \n\n**Response**\n\n```\n{\n  \"detail\": \"Not found.\"\n}\n\n ```\n\n**Frontend Action**\n\n- Disable “Next” button\n    \n- Reset to page 1\n    \n\n---\n\n### 🔴 500 — Internal Server Error\n\n**Cause**\n\n- Unexpected backend failure (should not occur in production)\n    \n\n**Response**\n\n```\n{\n  \"detail\": \"Internal server error\"\n}\n\n ```\n\n**Frontend Action**\n\n- Show generic error toast\n    \n- Log error for support\n    \n\n---\n\n## 🧪 Postman Collection Setup (Recommended)\n\n### Request Name\n\n```\nGet Devices by Status\n\n ```\n\n### Environment Variables\n\n| Variable | Example |\n| --- | --- |\n| `base_url` | `http://localhost:8000` |\n| `token` | JWT access token |\n\n### Request URL\n\n```\n{{base_url}}/api/devices/?status=completed\n\n ```\n\n### Headers\n\n```\nAuthorization: Bearer {{token}}\nContent-Type: application/json\n\n ```\n\n---\n\n## ✅ Summary for Frontend Developers\n\n✔ JWT-protected endpoint\n\n✔ Pagination enabled\n\n✔ Filterable by status\n\n✔ Safe empty responses\n\n✔ Stable response contract\n\n✔ UI-ready fields"
+              },
+              "response": []
+            },
+            {
+              "name": "RETRIEVE — Single Device (VIEW DEVICE page)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4OTcyNzIwLCJpYXQiOjE3Njg4ODYzMjAsImp0aSI6IjEzN2RiYjY2ODliMzQ2YWQ5MzFjOGE1NzBlZDc0MDRlIiwidXNlcl9pZCI6IjMifQ.e2KI_75t9SwLtjgdLg0T7HM_BniLws0RgW5M-GEx1ZE"
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:8000/api/devices/1/",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "devices",
+                    "1",
+                    ""
+                  ]
+                },
+                "description": "StartFragment\n\n# 📘 Device Detail API – Frontend Integration Guide\n\n## API Purpose\n\nFetch **complete device details** for the **“View Device”** screen, including:\n\n- Device basic info\n    \n- BOM\n    \n- Enclosure\n    \n- Wire harness\n    \n- Battery\n    \n- SOS button\n    \n- Stickers\n    \n- User manual\n    \n- Accessories\n    \n\n---\n\n## 🔗 Endpoint\n\n```\nGET /api/devices/{device_id}/\n\n ```\n\n### Example\n\n```\nGET http://localhost:8000/api/devices/1/\n\n ```\n\n---\n\n## 🔐 Authentication (MANDATORY)\n\nThis API is **protected** and requires a valid JWT access token.\n\n### Headers\n\n| Key | Value |\n| --- | --- |\n| Authorization | Bearer |\n| Content-Type | application/json |\n\n### Example Header\n\n```\nAuthorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\n\n ```\n\n---\n\n## 🧪 cURL Example (Reference)\n\n```\ncurl -X GET \"http://localhost:8000/api/devices/1/\" \\\n  -H \"Authorization: Bearer YOUR_JWT_TOKEN\"\n\n ```\n\n---\n\n## ✅ Success Response (200 OK)\n\n### Response Structure\n\n```\n{\n  \"device_id\": \"DEV-0001\",\n  \"id\": 1,\n  \"name\": \"ABC\",\n  \"model\": \"XYZ-100\",\n  \"status\": \"completed\",\n  \"created_date\": \"2026-01-09\",\n  \"info\": {\n    \"id\": 1,\n    \"make\": \"ABC\",\n    \"model\": \"XYZ-100\",\n    \"mrp\": \"200.00\",\n    \"unit_of_measure\": \"Kilograms (KG)\",\n    \"version\": \"v1\",\n    \"variant\": \"standard\",\n    \"state_of_supply\": \"Raw Material\"\n  },\n  \"bom\": {\n    \"upload_type\": \"individual\",\n    \"items\": [\n      {\n        \"sr\": 1,\n        \"item\": \"ORANGE LED\",\n        \"type\": \"Individually purchase\",\n        \"qty\": 1\n      }\n    ],\n    \"bom_file\": null\n  },\n  \"enclosure\": {\n    \"dimensions\": \"12.00 × 12.00 × 12.00 mm\",\n    \"color\": \"Black\",\n    \"material\": \"Plastic\",\n    \"quantity\": 1\n  },\n  \"wire_harness\": {\n    \"number_of_wires\": 12,\n    \"color\": null,\n    \"length\": null,\n    \"pin_type\": null,\n    \"no_of_connectors\": 2,\n    \"connectors\": [\n      {\n        \"connector_name\": \"Connector A\",\n        \"number_of_pins\": 2,\n        \"wire_colors\": \"Red,Black\"\n      }\n    ]\n  },\n  \"battery\": {\n    \"capacity\": \"850 mAh\",\n    \"dimensions\": \"132.00 × 123.00 × 123.00 mm\"\n  },\n  \"sos_button\": {\n    \"total_length\": \"1243.00\",\n    \"quantity_per_set\": 1\n  },\n  \"stickers\": [\n    {\n      \"name\": \"Main Label\",\n      \"dimensions\": \"123.00 × 45.00 mm\",\n      \"quantity\": 1,\n      \"file_name\": \"label.png\"\n    }\n  ],\n  \"user_manual\": {\n    \"file_name\": \"git_cheat_sheet.pdf\",\n    \"file_url\": \"http://localhost:8000/media/documents/device/manuals/git_cheat_sheet.pdf\"\n  },\n  \"accessories\": [\n    {\n      \"name\": \"Charging Cable\",\n      \"description\": \"Fast charging cable\",\n      \"quantity\": 1,\n      \"specifications\": \"USB Type-C\"\n    }\n  ]\n}\n\n ```\n\n---\n\n## 🧩 Frontend Rendering Guidelines\n\n### Safe Rendering Rules\n\n- `null` values **ARE VALID** (do not crash UI)\n    \n- Arrays may be empty (`[]`)\n    \n- Nested objects may be `null` if that step is not completed\n    \n\n### Recommended UI Logic\n\n| Field | Handling |\n| --- | --- |\n| `bom.bom_file` | Show “No file uploaded” if null |\n| `wire_harness.color` | Hide row if null |\n| `stickers[]` | Loop safely (can be empty) |\n| `user_manual.file_url` | Show download button only if exists |\n\n---\n\n## ⚠️ Error Handling (ALL CASES)\n\n### 🔴 401 – Unauthorized\n\n**Cause**\n\n- Missing token\n    \n- Expired token\n    \n- Invalid token\n    \n\n**Response**\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n**Frontend Action**\n\n- Redirect to login\n    \n- Refresh token if supported\n    \n\n---\n\n### 🔴 403 – Forbidden\n\n**Cause**\n\n- User does not have permission to view devices\n    \n\n**Response**\n\n```\n{\n  \"detail\": \"You do not have permission to perform this action.\"\n}\n\n ```\n\n**Frontend Action**\n\n- Show access denied screen\n    \n\n---\n\n### 🔴 404 – Device Not Found\n\n**Cause**\n\n- Device ID does not exist\n    \n\n**Response**\n\n```\n{\n  \"detail\": \"Not found.\"\n}\n\n ```\n\n**Frontend Action**\n\n- Show “Device not found”\n    \n- Redirect to device list\n    \n\n---\n\n### 🔴 500 – Internal Server Error\n\n**Cause**\n\n- Backend misconfiguration (should not happen in prod)\n    \n\n**Response**\n\n```\n{\n  \"detail\": \"Internal server error\"\n}\n\n ```\n\n**Frontend Action**\n\n- Show generic error toast\n    \n- Log error for support\n    \n\n---\n\n## 🧪 Postman Collection Setup (Recommended)\n\n### Request Name\n\n```\nGet Device Details\n\n ```\n\n### Variables\n\n| Variable | Example |\n| --- | --- |\n| `base_url` | `http://localhost:8000` |\n| `device_id` | `1` |\n| `token` | JWT token |\n\n### URL\n\n```\n{{base_url}}/api/devices/{{device_id}}/\n\n ```\n\n### Headers\n\n```\nAuthorization: Bearer {{token}}\nContent-Type: application/json\n\n ```\n\n---\n\n## ✅ Summary for Frontend Developers\n\n✔ Auth required\n\n✔ Read-only endpoint\n\n✔ Safe null handling\n\n✔ Nested data ready for UI\n\n✔ Stable response contract\n\n✔ Pagination NOT applicable here\n\nEndFragment"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Self Order Report",
+          "item": [
+            {
+              "name": "CREATE SELF ORDER",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4OTcyNzIwLCJpYXQiOjE3Njg4ODYzMjAsImp0aSI6IjEzN2RiYjY2ODliMzQ2YWQ5MzFjOGE1NzBlZDc0MDRlIiwidXNlcl9pZCI6IjMifQ.e2KI_75t9SwLtjgdLg0T7HM_BniLws0RgW5M-GEx1ZE"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"device\": 1,\r\n    \"quantity\": 10,\r\n    \"supply_state\": 5,\r\n    \"rate\": \"1500.00\",\r\n    \"gst_rate\": \"18.00\",\r\n    \"delivery_date\": \"2026-02-10\",\r\n    \"delivery_address\": \"Flat 301, ABC Apartments, Hyderabad, 500081\",\r\n    \"purpose_remark\": \"Internal testing order\"\r\n  }",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:8000/api/self-orders/create/",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "self-orders",
+                    "create",
+                    ""
+                  ]
+                },
+                "description": "Generated from cURL: curl -X POST \"http://localhost:8000/api/self-orders/create/\" \\\r\n  -H \"Authorization: Bearer YOUR_ACCESS_TOKEN\" \\\r\n  -H \"Content-Type: application/json\" \\\r\n  -d '{\r\n    \"device\": 1,\r\n    \"quantity\": 10,\r\n    \"supply_state\": 5,\r\n    \"rate\": \"1500.00\",\r\n    \"gst_rate\": \"18.00\",\r\n    \"delivery_date\": \"2026-02-10\",\r\n    \"delivery_address\": \"Flat 301, ABC Apartments, Hyderabad, 500081\",\r\n    \"purpose_remark\": \"Internal testing order\"\r\n  }'\r\n"
+              },
+              "response": []
+            },
+            {
+              "name": "LIST SELF ORDERS (Self Order Report page)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4OTcyNzIwLCJpYXQiOjE3Njg4ODYzMjAsImp0aSI6IjEzN2RiYjY2ODliMzQ2YWQ5MzFjOGE1NzBlZDc0MDRlIiwidXNlcl9pZCI6IjMifQ.e2KI_75t9SwLtjgdLg0T7HM_BniLws0RgW5M-GEx1ZE"
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:8000/api/self-orders/",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "self-orders",
+                    ""
+                  ]
+                },
+                "description": "Generated from cURL: curl -X GET \"http://localhost:8000/api/self-orders/\" \\\r\n  -H \"Authorization: Bearer YOUR_ACCESS_TOKEN\"\r\n"
+              },
+              "response": []
+            },
+            {
+              "name": "GET SINGLE SELF ORDER (View Order)",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4OTcyNzIwLCJpYXQiOjE3Njg4ODYzMjAsImp0aSI6IjEzN2RiYjY2ODliMzQ2YWQ5MzFjOGE1NzBlZDc0MDRlIiwidXNlcl9pZCI6IjMifQ.e2KI_75t9SwLtjgdLg0T7HM_BniLws0RgW5M-GEx1ZE"
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:8000/api/self-orders/2/",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "self-orders",
+                    "2",
+                    ""
+                  ]
+                },
+                "description": "Generated from cURL: curl -X GET \"http://localhost:8000/api/self-orders/1/\" \\\r\n  -H \"Authorization: Bearer YOUR_ACCESS_TOKEN\"\r\n"
+              },
+              "response": []
+            },
+            {
+              "name": "UPDATE SELF ORDER (Edit Order)",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4OTcyNzIwLCJpYXQiOjE3Njg4ODYzMjAsImp0aSI6IjEzN2RiYjY2ODliMzQ2YWQ5MzFjOGE1NzBlZDc0MDRlIiwidXNlcl9pZCI6IjMifQ.e2KI_75t9SwLtjgdLg0T7HM_BniLws0RgW5M-GEx1ZE"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"quantity\": 15,\r\n    \"rate\": \"1600.00\",\r\n    \"gst_rate\": \"12.00\"\r\n  }",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost:8000/api/self-orders/2/",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "self-orders",
+                    "2",
+                    ""
+                  ]
+                },
+                "description": "Generated from cURL: curl -X PUT \"http://localhost:8000/api/self-orders/1/\" \\\r\n  -H \"Authorization: Bearer YOUR_ACCESS_TOKEN\" \\\r\n  -H \"Content-Type: application/json\" \\\r\n  -d '{\r\n    \"quantity\": 15,\r\n    \"rate\": \"1600.00\",\r\n    \"gst_rate\": \"12.00\"\r\n  }'\r\n"
+              },
+              "response": []
+            },
+            {
+              "name": "DELETE SELF ORDER",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4OTcyNzIwLCJpYXQiOjE3Njg4ODYzMjAsImp0aSI6IjEzN2RiYjY2ODliMzQ2YWQ5MzFjOGE1NzBlZDc0MDRlIiwidXNlcl9pZCI6IjMifQ.e2KI_75t9SwLtjgdLg0T7HM_BniLws0RgW5M-GEx1ZE"
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:8000/api/self-orders/1/",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "self-orders",
+                    "1",
+                    ""
+                  ]
+                },
+                "description": "Generated from cURL: curl -X DELETE \"http://localhost:8000/api/self-orders/1/\" \\\r\n  -H \"Authorization: Bearer YOUR_ACCESS_TOKEN\"\r\n"
+              },
+              "response": []
+            },
+            {
+              "name": "DEVICE DROPDOWN",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4OTcyNzIwLCJpYXQiOjE3Njg4ODYzMjAsImp0aSI6IjEzN2RiYjY2ODliMzQ2YWQ5MzFjOGE1NzBlZDc0MDRlIiwidXNlcl9pZCI6IjMifQ.e2KI_75t9SwLtjgdLg0T7HM_BniLws0RgW5M-GEx1ZE"
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:8000/api/self-orders/devices/",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "self-orders",
+                    "devices",
+                    ""
+                  ]
+                },
+                "description": "Generated from cURL: curl -X GET \"http://localhost:8000/api/self-orders/devices/\" \\\r\n  -H \"Authorization: Bearer YOUR_ACCESS_TOKEN\"\r\n"
+              },
+              "response": []
+            },
+            {
+              "name": "SUPPLY STATE DROPDOWN",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4OTcyNzIwLCJpYXQiOjE3Njg4ODYzMjAsImp0aSI6IjEzN2RiYjY2ODliMzQ2YWQ5MzFjOGE1NzBlZDc0MDRlIiwidXNlcl9pZCI6IjMifQ.e2KI_75t9SwLtjgdLg0T7HM_BniLws0RgW5M-GEx1ZE"
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:8000/api/self-orders/states/",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "self-orders",
+                    "states",
+                    ""
+                  ]
+                },
+                "description": "Generated from cURL: curl -X GET \"http://localhost:8000/api/self-orders/states/\" \\\r\n  -H \"Authorization: Bearer YOUR_ACCESS_TOKEN\"\r\n"
+              },
+              "response": []
+            },
+            {
+              "name": "GST RATE DROPDOWN",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4OTcyNzIwLCJpYXQiOjE3Njg4ODYzMjAsImp0aSI6IjEzN2RiYjY2ODliMzQ2YWQ5MzFjOGE1NzBlZDc0MDRlIiwidXNlcl9pZCI6IjMifQ.e2KI_75t9SwLtjgdLg0T7HM_BniLws0RgW5M-GEx1ZE"
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:8000/api/self-orders/gst-rates/",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "self-orders",
+                    "gst-rates",
+                    ""
+                  ]
+                },
+                "description": "Generated from cURL: curl -X GET \"http://localhost:8000/api/self-orders/gst-rates/\" \\\r\n  -H \"Authorization: Bearer YOUR_ACCESS_TOKEN\"\r\n"
               },
               "response": []
             }

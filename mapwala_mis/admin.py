@@ -1855,3 +1855,71 @@ class RejectedItemAdmin(admin.ModelAdmin):
 
     list_select_related = ("created_by",)
 
+# ================== Self Order ==================
+@admin.register(SelfOrder)
+class SelfOrderAdmin(admin.ModelAdmin):
+    list_display = ("id", "device_info", "quantity", "supply_state", "rate_display", "gst_rate_display", "gross_amount_display", "delivery_date", "user", "created_at")
+    list_display_links = ("id",)
+    search_fields = ("user__username", "delivery_address", "device__info__model")
+    list_filter = ("supply_state", "gst_rate", "created_at", "user")
+    readonly_fields = ("user", "created_at", "updated_at")
+    ordering = ("-created_at",)
+    
+    fieldsets = (
+        ("Order Information", {
+            "fields": (
+                "device",
+                "quantity",
+            )
+        }),
+        ("Pricing & Taxes", {
+            "fields": (
+                "rate",
+                "gst_rate",
+                "gross_amount",
+            )
+        }),
+        ("Delivery Details", {
+            "fields": (
+                "supply_state",
+                "delivery_date",
+                "delivery_address",
+            )
+        }),
+        ("Additional Information", {
+            "fields": (
+                "purpose_remark",
+            )
+        }),
+        ("Audit Information", {
+            "fields": (
+                "user",
+                "created_at",
+                "updated_at",
+            ),
+            "classes": ("collapse",)
+        }),
+    )
+    list_select_related = ("device", "supply_state", "user")
+
+    def device_info(self, obj):
+        """Display device model name"""
+        return obj.device.info.model if obj.device.info else f"Device {obj.device.id}"
+    device_info.short_description = "Device"
+
+    def rate_display(self, obj):
+        """Display rate with currency"""
+        return f"₹{obj.rate:,.2f}"
+    rate_display.short_description = "Rate"
+
+    def gst_rate_display(self, obj):
+        """Display GST rate as percentage"""
+        return f"{obj.gst_rate}%"
+    gst_rate_display.short_description = "GST Rate"
+
+    def gross_amount_display(self, obj):
+        """Display gross amount with currency"""
+        return f"₹{obj.gross_amount:,.2f}"
+    gross_amount_display.short_description = "Gross Amount"
+
+

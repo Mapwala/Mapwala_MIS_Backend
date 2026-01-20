@@ -86,28 +86,63 @@ class ParentCompany(models.Model):
 
 # ---------------- Vendor ----------------
 class Vendor(models.Model):
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name="vendor",
+        null=False,
+        blank=False
+    )
+
     name = models.CharField(max_length=255)
-    phone_number = models.CharField(max_length=15)
-    email = models.EmailField()
+    phone_number = models.CharField(max_length=15, unique=True)
+    email = models.EmailField(unique=True)
+
     address = models.TextField()
     state = models.ForeignKey(State, on_delete=models.PROTECT)
     district = models.ForeignKey(District, on_delete=models.PROTECT)
+
     bank_name = models.CharField(max_length=255)
     account_holder_name = models.CharField(max_length=255)
     account_number = models.CharField(max_length=50)
     ifsc_code = models.CharField(max_length=20)
-    gst_number = models.CharField(max_length=20)
-    gst_document = models.FileField(upload_to="documents/vendor/gst/")
-    tan_number = models.CharField(max_length=20)
-    tan_document = models.FileField(upload_to="documents/vendor/tan/")
-    pan_number = models.CharField(max_length=20)
-    pan_document = models.FileField(upload_to="documents/vendor/pan/")
+
+    gst_number = models.CharField(max_length=20, unique=True)
+    gst_document = models.FileField(
+        upload_to="documents/vendor/gst/",
+        null=True,
+        blank=True
+    )
+
+    pan_number = models.CharField(max_length=20, unique=True)
+    pan_document = models.FileField(
+        upload_to="documents/vendor/pan/",
+        null=True,
+        blank=True
+    )
+
+    tan_number = models.CharField(max_length=20, unique=True)
+    tan_document = models.FileField(
+        upload_to="documents/vendor/tan/",
+        null=True,
+        blank=True
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
     class Meta:
         ordering = ["-id"]
+        indexes = [
+            models.Index(fields=["user"]),
+            models.Index(fields=["email"]),
+            models.Index(fields=["phone_number"]),
+            models.Index(fields=["gst_number"]),
+        ]
 
     def __str__(self):
         return self.name
+
 
 
 # ---------------- B2C Customer ----------------
@@ -1333,5 +1368,107 @@ class RejectedItem(models.Model):
 
     def __str__(self):
         return f"{self.product_id} - {self.mrn_number}"
+
+
+# ================== Self Order ==================
+class SelfOrder(models.Model):
+    GST_RATE_CHOICES = (
+        (Decimal("0.00"), "0%"),
+        (Decimal("5.00"), "5%"),
+        (Decimal("12.00"), "12%"),
+        (Decimal("18.00"), "18%"),
+        (Decimal("28.00"), "28%"),
+    )
+
+    device = models.ForeignKey(Device, on_delete=models.PROTECT, related_name="self_orders")
+    quantity = models.IntegerField(validators=[MinValueValidator(1)])
+    supply_state = models.ForeignKey(State, on_delete=models.PROTECT, related_name="self_orders")
+    rate = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(Decimal("0.00"))])
+    gst_rate = models.DecimalField(max_digits=5, decimal_places=2, choices=GST_RATE_CHOICES)
+    gross_amount = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(Decimal("0.00"))])
+    delivery_date = models.DateField()
+    delivery_address = models.TextField()
+    purpose_remark = models.TextField(blank=True, null=True)
+    user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="self_orders")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["user", "-created_at"]),
+            models.Index(fields=["device"]),
+            models.Index(fields=["supply_state"]),
+        ]
+
+    def __str__(self):
+        return f"SelfOrder-{self.id} ({self.device.id})"
+
+
+# ============================================================
+# QUOTATION MANAGEMENT
+# ============================================================
+
+class Quotation(models.Model):
+    """
+    Main quotation record - created when vendor submits pricing for an RFQ
+    """
+    STATUS_CHOICES = (
+        ("draft", "Draft"),
+        ("submitted", "Submitted"),
+        ("accepted", "Accepted"),
+        ("rejected", "Rejected"),
+    )
+    
+    rfq = models.ForeignKey(RequestForQuote, on_delete=models.CASCADE, related_name="quotations")
+    vendor = models.ForeignKey(Vendor, on_delete=models.PROTECT, related_name="quotations")
+    quotation_number = models.CharField(max_length=100, unique=True)
+    
+    subtotal_excl_gst = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    total_gst = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    grand_total_incl_gst = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ('rfq', 'vendor')
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.quotation_number} - {self.vendor.name}"
+
+
+class QuotationItem(models.Model):
+    """
+    Line items in quotation - stores pricing for each item from RFQ
+    """
+    ITEM_TYPE_CHOICES = (
+        ("bom", "BOM Part"),
+        ("component", "Component"),
+    )
+    
+    quotation = models.ForeignKey(Quotation, on_delete=models.CASCADE, related_name="items")
+    item_id = models.CharField(max_length=100)  # PCB-001, GPS-001, etc.
+    item_name = models.CharField(max_length=255)
+    description = models.TextField()
+    item_type = models.CharField(max_length=20, choices=ITEM_TYPE_CHOICES)
+    
+    quantity = models.PositiveIntegerField(default=1)
+    net_unit_price = models.DecimalField(max_digits=12, decimal_places=2)
+    gst_rate = models.DecimalField(max_digits=5, decimal_places=2, default=18)
+    gst_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    total_price = models.DecimalField(max_digits=12, decimal_places=2)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ('quotation', 'item_id')
+        ordering = ['item_id']
+    
+    def __str__(self):
+        return f"{self.quotation.quotation_number} - {self.item_id}"
 
 

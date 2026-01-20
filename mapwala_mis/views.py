@@ -17,6 +17,9 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.exceptions import ValidationError
+import uuid
 
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework_simplejwt.tokens import AccessToken
@@ -130,9 +133,15 @@ class ParentCompanyViewSet(ModelViewSet):
 
 # ---------------- Vendor ViewSet ----------------
 class VendorViewSet(ModelViewSet):
-    queryset = Vendor.objects.select_related("state", "district").all()
+    queryset = Vendor.objects.select_related("state", "district")
     serializer_class = VendorSerializer
     permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        if hasattr(self.request.user, "vendor"):
+            raise ValidationError("Vendor already exists for this user")
+
+        serializer.save(user=self.request.user)
 
 
 # ---------------- Registrations ----------------
@@ -474,8 +483,6 @@ class SalesOrderCreateAPIView(APIView):
 
         order = serializer.save()
         batch = OrderBatch.objects.select_for_update().get(id=order.batch.id)
-
-
         batch.available_stock -= order.quantity
         batch.save(update_fields=["available_stock"])
 
@@ -879,11 +886,11 @@ class Step2APIView(APIView):
 
         po.items.all().delete()
 
-        for item in serializer.validated_data["items"]:
-            PurchaseOrderItem.objects.create(
-                purchase_order=po,
-                **item
-            )
+        items_list = [
+            PurchaseOrderItem(purchase_order=po, **item)
+            for item in serializer.validated_data["items"]
+        ]
+        PurchaseOrderItem.objects.bulk_create(items_list, batch_size=500)
 
         return Response(
             {"message": "Purchase Order created successfully"},
@@ -1432,16 +1439,6 @@ class RepairTechnicianRegistrationCreateAPIView(APIView):
 
 # ---------------- Store Transfer ViewSet ----------------
 class StoreTransferViewSet(ModelViewSet):
-    """
-    ViewSet for Store Transfer (Inventory Data) Management.
-    
-    Supports:
-    - LIST: Get all store transfers with search and filtering
-    - RETRIEVE: Get detailed information about a specific transfer
-    - CREATE: Create a new store transfer
-    - UPDATE/PARTIAL_UPDATE: Update store transfer information
-    - DESTROY: Delete a store transfer
-    """
     queryset = StoreTransfer.objects.select_related('product', 'category', 'vendor', 'created_by').all()
     permission_classes = [IsAuthenticated]
     filter_backends = [SearchFilter]
@@ -1453,7 +1450,7 @@ class StoreTransferViewSet(ModelViewSet):
         'transfer_id',            # Search by transfer ID
         'mrn_number',             # Search by MRN number
     ]
-    pagination_class = None  # Optional: can be configured with settings
+    pagination_class = PageNumberPagination
     
     def get_serializer_class(self):
         """Choose serializer based on action"""
@@ -1829,18 +1826,6 @@ class ReturnRequestViewSet(viewsets.ModelViewSet):
 
 # ------------------------------ REPAIR RECORD VIEWSET -------------------------------
 class RepairRecordViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for managing Repair Records
-    
-    Features:
-    - List all repair records with search and filter
-    - Search by product ID, product name, vendor, MRN number, repair type, or repair center
-    - Filter by status or repair type
-    - Get repair statistics
-    - Create new repair record
-    - Update repair record
-    - Delete repair record
-    """
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     search_fields = [
@@ -1888,8 +1873,6 @@ class RepairRecordViewSet(viewsets.ModelViewSet):
         }
         """
         queryset = self.get_queryset()
-
-        # ✅ Database-level aggregation (FAST & SAFE)
         totals = queryset.aggregate(
             total_failed=Sum('failed_qty'),
             total_repaired=Sum('repaired_qty'),
@@ -1900,10 +1883,12 @@ class RepairRecordViewSet(viewsets.ModelViewSet):
         # Replace None with 0 (important when table is empty)
         totals = {k: v or 0 for k, v in totals.items()}
 
-        by_status = {
-            status: queryset.filter(status=status).count()
-            for status in ['pending', 'in_progress', 'completed', 'failed']
-        }
+        by_status = queryset.aggregate(
+            pending=Count('id', filter=Q(status='pending')),
+            in_progress=Count('id', filter=Q(status='in_progress')),
+            completed=Count('id', filter=Q(status='completed')),
+            failed=Count('id', filter=Q(status='failed'))
+        )
 
         return Response({
             **totals,
@@ -2042,4 +2027,450 @@ class RejectedItemViewSet(viewsets.ModelViewSet):
             'total_rejected_qty': total_rejected_qty,
             'items': serializer.data
         })
+
+
+# ============================================================
+# DEVICE MANAGEMENT APIs
+# ============================================================
+
+class DeviceViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet for viewing devices
+    
+    Features:
+    - LIST: Get all devices (ALL DEVICES table)
+    - RETRIEVE: Get device details (VIEW DEVICE page)
+    - FILTER by status
+    - SEARCH by name/model
+    """
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    search_fields = ['info__make', 'info__model']
+    ordering_fields = ['created_at', 'status']
+    ordering = ['-created_at']
+    filterset_fields = ['status']
+    
+    def get_queryset(self):
+        return Device.objects.select_related(
+            'created_by',
+            'info',
+            'bom',
+            'enclosure',
+            'wireharness',
+            'battery',
+            'sosbutton',
+            'usermanual'
+        ).prefetch_related(
+            'sticker_set',
+            'accessories',
+            'bom__components',
+            'wireharness__connectors'
+        )
+
+    def get_serializer_class(self):
+        """
+        Choose serializer based on action:
+        - LIST: DeviceListSerializer (minimal fields)
+        - RETRIEVE: DeviceDetailSerializer (all fields)
+        """
+        if self.action == 'retrieve':
+            return DeviceDetailSerializer
+        return DeviceListSerializer
+    
+    def get_serializer_context(self):
+        """Add request to serializer context for URL generation"""
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+
+
+# ================== Self Order API ==================
+class SelfOrderCreateAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        """Create a new self order"""
+        serializer = SelfOrderSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            try:
+                # Set the user to the authenticated user
+                serializer.save(user=request.user)
+                return Response(
+                    {
+                        "message": "Self order created successfully",
+                        "data": serializer.data,
+                    },
+                    status=status.HTTP_201_CREATED,
+                )
+            except Exception as e:
+                return Response(
+                    {
+                        "error": "Failed to create self order",
+                        "details": str(e),
+                    },
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+        
+        return Response(
+            {
+                "error": "Invalid data provided",
+                "details": serializer.errors,
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+class SelfOrderListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """Get all self orders for the authenticated user"""
+        try:
+            self_orders = SelfOrder.objects.filter(user=request.user).select_related(
+                'device', 'supply_state'
+            ).prefetch_related('device__info')
+            
+            serializer = SelfOrderSerializer(self_orders, many=True)
+            
+            return Response(
+                {
+                    "message": "Self orders retrieved successfully",
+                    "count": self_orders.count(),
+                    "data": serializer.data,
+                },
+                status=status.HTTP_200_OK,
+            )
+        except Exception as e:
+            return Response(
+                {
+                    "error": "Failed to retrieve self orders",
+                    "details": str(e),
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class SelfOrderDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        """Get details of a specific self order"""
+        try:
+            self_order = get_object_or_404(SelfOrder, pk=pk, user=request.user)
+            serializer = SelfOrderSerializer(self_order)
+            
+            return Response(
+                {
+                    "message": "Self order retrieved successfully",
+                    "data": serializer.data,
+                },
+                status=status.HTTP_200_OK,
+            )
+        except Exception as e:
+            return Response(
+                {
+                    "error": "Failed to retrieve self order",
+                    "details": str(e),
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+    def put(self, request, pk):
+        """Update a self order"""
+        try:
+            self_order = get_object_or_404(SelfOrder, pk=pk, user=request.user)
+            serializer = SelfOrderSerializer(self_order, data=request.data, partial=True)
+            
+            if serializer.is_valid():
+                serializer.save()
+                return Response(
+                    {
+                        "message": "Self order updated successfully",
+                        "data": serializer.data,
+                    },
+                    status=status.HTTP_200_OK,
+                )
+            
+            return Response(
+                {
+                    "error": "Invalid data provided",
+                    "details": serializer.errors,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except Exception as e:
+            return Response(
+                {
+                    "error": "Failed to update self order",
+                    "details": str(e),
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    def delete(self, request, pk):
+        """Delete a self order"""
+        try:
+            self_order = get_object_or_404(SelfOrder, pk=pk, user=request.user)
+            self_order.delete()
+            
+            return Response(
+                {
+                    "message": "Self order deleted successfully",
+                },
+                status=status.HTTP_204_NO_CONTENT,
+            )
+        except Exception as e:
+            return Response(
+                {
+                    "error": "Failed to delete self order",
+                    "details": str(e),
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+class SelfOrderDeviceDropdownAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        devices = Device.objects.filter(status="completed").select_related("info")
+        data = [
+            {
+                "id": d.id,
+                "name": d.info.make,
+                "model": d.info.model
+            }
+            for d in devices
+        ]
+        return Response(data, status=200)
+
+class StateDropdownAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        states = State.objects.filter(status="active").order_by("name")
+        return Response(
+            [{"id": s.id, "name": s.name} for s in states],
+            status=200
+        )
+
+
+class GSTRateDropdownAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response(
+            [
+                {"value": "0.00", "label": "0%"},
+                {"value": "5.00", "label": "5%"},
+                {"value": "12.00", "label": "12%"},
+                {"value": "18.00", "label": "18%"},
+                {"value": "28.00", "label": "28%"},
+            ],
+            status=200
+        )
+
+# ============================================================
+class RFQListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    """
+    GET /rfq/list/
+    List all RFQs with search and filter capabilities
+    """
+    def get(self, request):
+        # Get query parameters
+        search_query = request.query_params.get('search', '').strip()
+        status_filter = request.query_params.get('status', 'all')
+        vendor_filter = request.query_params.get('vendor', 'all')
+        
+        # Start with all RFQs
+        rfqs = RequestForQuote.objects.all().prefetch_related('selections')
+        
+        # Apply status filter
+        if status_filter != 'all':
+            rfqs = rfqs.filter(status=status_filter.lower())
+        
+        # Apply vendor filter - RFQSelection links vendors to RFQs by reference
+        if vendor_filter != 'all':
+            rfqs = rfqs.filter(selections__reference__icontains=vendor_filter)
+        
+        # Apply search filter
+        if search_query:
+            rfqs = rfqs.filter(
+                Q(order_reference__icontains=search_query) |
+                Q(device_name__icontains=search_query) |
+                Q(selections__reference__icontains=search_query)
+            )
+        
+        rfqs = rfqs.distinct()
+        
+        # Serialize the results
+        serializer = RFQListSerializer(rfqs, many=True)
+        
+        return Response({
+            'found': rfqs.count(),
+            'total': RequestForQuote.objects.count(),
+            'results': serializer.data
+        }, status=status.HTTP_200_OK)
+
+
+class RFQDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, rfq_id):
+        try:
+            rfq = RequestForQuote.objects.get(id=rfq_id)
+        except RequestForQuote.DoesNotExist:
+            return Response(
+                {'error': 'RFQ not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        serializer = RFQDetailSerializer(rfq)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class QuotationEntryAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request):
+        serializer = QuotationCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        data = serializer.validated_data
+        rfq = get_object_or_404(RequestForQuote, id=data["rfq_id"])
+        vendor = get_object_or_404(Vendor, id=data["vendor_id"])
+
+        # Vendor auth check
+        if not hasattr(request.user, "vendor") or request.user.vendor.id != vendor.id:
+            return Response({"error": "Unauthorized vendor"}, status=403)
+
+        # Duplicate quotation prevention
+        if Quotation.objects.filter(rfq=rfq, vendor=vendor).exists():
+            return Response(
+                {"error": "Quotation already submitted for this vendor"},
+                status=400
+            )
+
+        quotation = Quotation.objects.create(
+            rfq=rfq,
+            vendor=vendor,
+            quotation_number=f"QT-{uuid.uuid4().hex[:10].upper()}",
+            subtotal_excl_gst=data["subtotal_excl_gst"],
+            total_gst=data["total_gst"],
+            grand_total_incl_gst=data["grand_total"],
+            status="submitted",
+            created_by=request.user,
+        )
+
+        for item in data["items"]:
+            QuotationItem.objects.create(
+                quotation=quotation,
+                item_id=item["item_id"],
+                item_name=item["item_name"],
+                description=item["description"],
+                item_type=item["item_type"],
+                quantity=item["quantity"],
+                net_unit_price=item["net_unit_price"],
+                gst_rate=item["gst_rate"],
+                gst_amount=item["gst_amount"],
+                total_price=item["total_price"],
+            )
+
+        rfq.status = "quoted"
+        rfq.save(update_fields=["status"])
+
+        return Response(
+            {
+                "message": "Quotation created successfully",
+                "quotation_id": quotation.id,
+                "quotation_number": quotation.quotation_number,
+            },
+            status=201,
+        )
+
+
+
+class QuotationFormDataAPIView(APIView):
+    """
+    GET /quotation/form-data/?rfq_id=1
+    Get RFQ details with all items for quotation entry form
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        rfq_id = request.query_params.get('rfq_id')
+        
+        if not rfq_id:
+            return Response({'error': 'rfq_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            rfq = RequestForQuote.objects.get(id=rfq_id)
+        except RequestForQuote.DoesNotExist:
+            return Response({'error': 'RFQ not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Generate RFQ number
+        rfq_number = f"RFQ-{rfq.created_at.year}-{rfq.id:03d}"
+        
+        # Get vendors from RFQSelection
+        vendors = rfq.selections.values_list('reference', flat=True).distinct()
+        
+        # Mock items data based on RFQSelection
+        items = []
+        for sel in rfq.selections.all():
+            items.append({
+                'item_id': sel.id,
+                'item_name': sel.reference,
+                'description': f'{sel.get_item_type_display()} - {sel.reference}',
+                'item_type': sel.item_type,
+                'quantity': 1,
+                'net_unit_price': 0.00,
+                'gst_rate': 18.00,
+                'gst_amount': 0.00,
+                'total_price': 0.00
+            })
+        
+        return Response({
+            'rfq_number': rfq_number,
+            'rfq_id': rfq.id,
+            'vendors': [{'id': i, 'name': v} for i, v in enumerate(vendors, 1)],
+            'items': items
+        }, status=status.HTTP_200_OK)
+
+
+class RFQFiltersAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response({
+            "statuses": [
+                {"value": "all", "label": "All Status"},
+                {"value": "pending", "label": "Pending"},
+                {"value": "quoted", "label": "Quoted"},
+                {"value": "rejected", "label": "Rejected"},
+            ],
+            "vendors": [
+                {"id": v.id, "name": v.name}
+                for v in Vendor.objects.all().order_by("name")
+            ]
+        }, status=200)
+
+
+
+class RFQVendorDropdownAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        vendors = Vendor.objects.all().order_by("name")
+        return Response(
+            [
+                {
+                    "id": v.id,
+                    "label": f"{v.name}"
+                }
+                for v in vendors
+            ],
+            status=200
+        )
+
 

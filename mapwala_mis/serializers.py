@@ -76,7 +76,7 @@ class ParentCompanySerializer(serializers.ModelSerializer):
 class VendorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vendor
-        fields = "__all__"
+        exclude = ("user",)
 
     def validate(self, data):
         if data["district"].state_id != data["state"].id:
@@ -1162,4 +1162,472 @@ class RejectedItemListSerializer(serializers.ModelSerializer):
         model = RejectedItem
         fields = ['id','product_id','product_name','vendor','mrn_number','rejected_qty','qc_date']
 
+
+# ============================================================
+# DEVICE LIST & DETAIL SERIALIZERS
+# ============================================================
+class DeviceListSerializer(serializers.ModelSerializer):
+    device_id = serializers.SerializerMethodField()
+    name = serializers.CharField(source="info.make", read_only=True)
+    model = serializers.CharField(source="info.model", read_only=True)
+    updated = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Device
+        fields = [
+            'device_id',
+            'name',
+            'model',
+            'status',
+            'updated'
+        ]
+
+    def get_device_id(self, obj):
+        return f"DEV-{obj.id:04d}"
+
+    def get_updated(self, obj):
+        return obj.created_at.strftime('%Y-%m-%d') if obj.created_at else None
+
+
+class EnclosureDetailSerializer(serializers.ModelSerializer):
+    """Enclosure details for device view"""
+    dimensions = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Enclosure
+        fields = ['dimensions', 'color', 'material', 'quantity']
+        read_only_fields = fields
+    
+    def get_dimensions(self, obj):
+        """Format dimensions as 'L × B × H mm'"""
+        return f"{obj.length} × {obj.breadth} × {obj.height} mm"
+
+
+class WireConnectorDetailSerializer(serializers.ModelSerializer):
+    """Individual wire connector details"""
+    class Meta:
+        model = WireConnector
+        fields = ['connector_name', 'number_of_pins', 'wire_colors']
+        read_only_fields = fields
+
+
+class WireHarnessDetailSerializer(serializers.ModelSerializer):
+    connectors = WireConnectorDetailSerializer(many=True, read_only=True)
+    color = serializers.SerializerMethodField()
+    length = serializers.SerializerMethodField()
+    pin_type = serializers.SerializerMethodField()
+    no_of_connectors = serializers.SerializerMethodField()
+
+    class Meta:
+        model = WireHarness
+        fields = [
+            'number_of_wires',
+            'color',
+            'length',
+            'pin_type',
+            'no_of_connectors',
+            'connectors',
+        ]
+        read_only_fields = fields
+
+    def _parse_specification(self, obj):
+        """
+        Expected specification format example:
+        'Color: Multicolor, Length: 220 mm, Pin type: 4 pin'
+        """
+        result = {}
+        if not obj.specification:
+            return result
+
+        parts = [p.strip() for p in obj.specification.split(',')]
+        for part in parts:
+            if ':' in part:
+                key, value = part.split(':', 1)
+                result[key.strip().lower()] = value.strip()
+        return result
+
+    def get_color(self, obj):
+        return self._parse_specification(obj).get('color')
+
+    def get_length(self, obj):
+        return self._parse_specification(obj).get('length')
+
+    def get_pin_type(self, obj):
+        return self._parse_specification(obj).get('pin type')
+
+    def get_no_of_connectors(self, obj):
+        return obj.connectors.count()
+
+
+class BatteryDetailSerializer(serializers.ModelSerializer):
+    """Battery details for device view"""
+    dimensions = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Battery
+        fields = ['capacity', 'dimensions']
+        read_only_fields = fields
+    
+    def get_dimensions(self, obj):
+        return f"{obj.length} × {obj.breadth} × {obj.height} mm"
+
+
+class SOSButtonDetailSerializer(serializers.ModelSerializer):
+    """SOS Button details for device view"""
+    class Meta:
+        model = SOSButton
+        fields = ['total_length', 'quantity_per_set']
+        read_only_fields = fields
+
+
+class StickerDetailSerializer(serializers.ModelSerializer):
+    dimensions = serializers.SerializerMethodField()
+    file_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Sticker
+        fields = [
+            'name',
+            'dimensions',
+            'quantity',
+            'file_name',
+        ]
+        read_only_fields = fields
+
+    def get_dimensions(self, obj):
+        return f"{obj.length} × {obj.breadth} mm"
+
+    def get_file_name(self, obj):
+        if obj.file:
+            return obj.file.name.split('/')[-1]
+        return None
+
+
+class BOMComponentDetailSerializer(serializers.ModelSerializer):
+    """BOM component/item details"""
+    class Meta:
+        model = BOMComponent
+        fields = ['identification_mark', 'description', 'per_device_quantity']
+        read_only_fields = fields
+
+
+class BOMDetailSerializer(serializers.ModelSerializer):
+    """BOM with components for device view"""
+    items = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = BOM
+        fields = ['upload_type', 'items', 'bom_file']
+        read_only_fields = fields
+    
+    def get_items(self, obj):
+        """Return BOM components as items list"""
+        components = obj.components.all()
+        
+        # Map components to item types based on upload_type
+        items_list = []
+        for idx, component in enumerate(components, 1):
+            items_list.append({
+                'sr': idx,
+                'item': component.description,
+                'type': (
+                    "Bulk upload" if obj.upload_type == "bulk"
+                    else "Individually purchase"
+                ),
+                'qty': component.per_device_quantity
+            })
+        return items_list
+
+
+class UserManualDetailSerializer(serializers.ModelSerializer):
+    """User manual details"""
+    file_name = serializers.SerializerMethodField()
+    file_url = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = UserManual
+        fields = ['file_name', 'file_url']
+        read_only_fields = fields
+    
+    def get_file_name(self, obj):
+        """Extract filename from file field"""
+        if obj.file:
+            return obj.file.name.split('/')[-1]
+        return None
+    
+    def get_file_url(self, obj):
+        """Return file URL"""
+        if obj.file:
+            return self.context.get('request').build_absolute_uri(obj.file.url)
+        return None
+
+
+class AccessoryDetailSerializer(serializers.ModelSerializer):
+    """Accessory details"""
+    class Meta:
+        model = Accessory
+        fields = ['name', 'description', 'quantity', 'specifications']
+        read_only_fields = fields
+
+
+class DeviceDetailSerializer(serializers.ModelSerializer):
+    device_id = serializers.SerializerMethodField()
+    name = serializers.CharField(source="info.make", read_only=True)
+    model = serializers.CharField(source="info.model", read_only=True)
+    created_date = serializers.SerializerMethodField()
+
+    info = DeviceInformationSerializer(read_only=True)
+    bom = BOMDetailSerializer(read_only=True)
+    enclosure = EnclosureDetailSerializer(read_only=True)
+    wire_harness = WireHarnessDetailSerializer(source='wireharness', read_only=True)
+    battery = BatteryDetailSerializer(read_only=True)
+    sos_button = SOSButtonDetailSerializer(source='sosbutton', read_only=True)
+    stickers = StickerDetailSerializer(source='sticker_set', many=True, read_only=True)
+    user_manual = UserManualDetailSerializer(source='usermanual', read_only=True)
+    accessories = AccessoryDetailSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Device
+        fields = [
+            'device_id',
+            'id',
+            'name',
+            'model',
+            'status',
+            'created_date',
+            'info',
+            'bom',
+            'enclosure',
+            'wire_harness',
+            'battery',
+            'sos_button',
+            'stickers',
+            'user_manual',
+            'accessories'
+        ]
+        read_only_fields = fields
+
+    def get_device_id(self, obj):
+        return f"DEV-{obj.id:04d}"
+
+    def get_created_date(self, obj):
+        return obj.created_at.strftime('%Y-%m-%d') if obj.created_at else None
+
+
+# ================== Self Order ==================
+class SelfOrderSerializer(serializers.ModelSerializer):
+    device_name = serializers.CharField(source='device.info.model', read_only=True)
+    state_name = serializers.CharField(source='supply_state.name', read_only=True)
+
+    class Meta:
+        model = SelfOrder
+        fields = [
+            'id',
+            'device',
+            'device_name',
+            'quantity',
+            'supply_state',
+            'state_name',
+            'rate',
+            'gst_rate',
+            'gross_amount',
+            'delivery_date',
+            'delivery_address',
+            'purpose_remark',
+            'created_at',
+            'updated_at'
+        ]
+        read_only_fields = [
+            'id',
+            'device_name',
+            'state_name',
+            'gross_amount',
+            'created_at',
+            'updated_at'
+        ]
+
+    def validate(self, attrs):
+        quantity = attrs.get("quantity", getattr(self.instance, "quantity", None))
+        rate = attrs.get("rate", getattr(self.instance, "rate", None))
+        gst_rate = attrs.get("gst_rate", getattr(self.instance, "gst_rate", None))
+
+        if quantity is not None and rate is not None and gst_rate is not None:
+            base_amount = quantity * rate
+            gst_amount = (base_amount * gst_rate) / Decimal("100")
+            attrs["gross_amount"] = (base_amount + gst_amount).quantize(Decimal("0.01"))
+
+        return attrs
+
+    def validate_quantity(self, value):
+        if value < 1:
+            raise serializers.ValidationError("Quantity must be at least 1.")
+        return value
+
+    def validate_rate(self, value):
+        if value < 0:
+            raise serializers.ValidationError("Rate cannot be negative.")
+        return value
+
+    def validate_delivery_date(self, value):
+        from django.utils import timezone
+        if value < timezone.now().date():
+            raise serializers.ValidationError("Delivery date cannot be in the past.")
+        return value
+
+
+class QuotationItemSerializer(serializers.Serializer):
+    item_id = serializers.CharField()
+    item_name = serializers.CharField()
+    description = serializers.CharField()
+    item_type = serializers.ChoiceField(choices=['bom', 'component'])
+    quantity = serializers.IntegerField(min_value=1)
+    net_unit_price = serializers.DecimalField(max_digits=10, decimal_places=2)
+    gst_rate = serializers.DecimalField(max_digits=5, decimal_places=2)
+    gst_amount = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    total_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+
+
+class RFQListSerializer(serializers.ModelSerializer):
+    """
+    Serializer for RFQ list view - includes all card display fields
+    """
+    rfq_number = serializers.SerializerMethodField()
+    vendor_names = serializers.SerializerMethodField()
+    bom_parts_count = serializers.SerializerMethodField()
+    components_count = serializers.SerializerMethodField()
+    customer = serializers.CharField(source='order_reference', read_only=True)
+    submitted_date = serializers.DateTimeField(source='created_at', read_only=True)
+    
+    class Meta:
+        model = RequestForQuote
+        fields = [
+            'id',
+            'rfq_number',
+            'status',
+            'customer',
+            'device_name',
+            'quantity',
+            'vendor_names',
+            'assembly_type',
+            'delivery_date',
+            'submitted_date',
+            'bom_parts_count',
+            'components_count'
+        ]
+    
+    def get_rfq_number(self, obj):
+        """Generate RFQ number from ID"""
+        return f"RFQ-{obj.created_at.year}-{obj.id:03d}"
+    
+    def get_vendor_names(self, obj):
+        """Get list of vendor names for this RFQ"""
+        vendors = obj.selections.values_list('reference', flat=True)
+        return list(vendors) if vendors else []
+    
+    def get_bom_parts_count(self, obj):
+        """Count selected BOM parts"""
+        bom_count = obj.selections.filter(item_type='bom').count()
+        return bom_count
+    
+    def get_components_count(self, obj):
+        """Count selected components"""
+        component_count = obj.selections.filter(item_type='component').count()
+        return component_count
+
+
+class RFQDetailSerializer(serializers.ModelSerializer):
+    """
+    Serializer for RFQ detail view - includes all nested information
+    """
+    rfq_number = serializers.SerializerMethodField()
+    customer = serializers.CharField(source='order_reference', read_only=True)
+    vendor_details = serializers.SerializerMethodField()
+    selected_components = serializers.SerializerMethodField()
+    submitted_date = serializers.DateTimeField(source='created_at', read_only=True)
+    
+    class Meta:
+        model = RequestForQuote
+        fields = [
+            'id',
+            'rfq_number',
+            'status',
+            'customer',
+            'device_name',
+            'quantity',
+            'delivery_date',
+            'delivery_address',
+            'submitted_date',
+            'additional_requirements',
+            'vendor_details',
+            'assembly_type',
+            'selected_components'
+        ]
+    
+    def get_rfq_number(self, obj):
+        """Generate RFQ number from ID"""
+        return f"RFQ-{obj.created_at.year}-{obj.id:03d}"
+    
+    def get_vendor_details(self, obj):
+        """Get vendor details from RFQ selections"""
+        selections = obj.selections.all()
+        return [
+            {
+                'vendor_id': sel.id,
+                'vendor_name': sel.reference,
+                'location': 'N/A'
+            }
+            for sel in selections
+        ]
+    
+    def get_selected_components(self, obj):
+        """Get selected BOM parts and components from RFQSelection"""
+        bom_parts = obj.selections.filter(item_type='bom').values_list('reference', flat=True)
+        components = obj.selections.filter(item_type='component').values_list('reference', flat=True)
+        
+        return {
+            'bom_parts': [{'part_name': p} for p in bom_parts],
+            'other_components': [{'component_name': c} for c in components]
+        }
+
+
+class QuotationItemInputSerializer(serializers.Serializer):
+    item_id = serializers.CharField()
+    item_name = serializers.CharField()
+    description = serializers.CharField()
+    item_type = serializers.CharField()
+    quantity = serializers.IntegerField(default=1)
+    net_unit_price = serializers.DecimalField(max_digits=10, decimal_places=2)
+    gst_rate = serializers.DecimalField(max_digits=5, decimal_places=2, default=18)
+
+
+
+class QuotationCreateSerializer(serializers.Serializer):
+    rfq_id = serializers.IntegerField()
+    vendor_id = serializers.IntegerField()
+    items = QuotationItemInputSerializer(many=True)
+
+    def validate(self, data):
+        subtotal = Decimal("0.00")
+        total_gst = Decimal("0.00")
+
+        for item in data["items"]:
+            qty = Decimal(item.get("quantity", 1))
+            rate = Decimal(item["net_unit_price"])
+            gst_rate = Decimal(item["gst_rate"])
+
+            base = qty * rate
+            gst_amount = (base * gst_rate) / Decimal("100")
+            total = base + gst_amount
+
+            item["gst_amount"] = gst_amount.quantize(Decimal("0.01"))
+            item["total_price"] = total.quantize(Decimal("0.01"))
+
+            subtotal += base
+            total_gst += gst_amount
+
+        data["subtotal_excl_gst"] = subtotal.quantize(Decimal("0.01"))
+        data["total_gst"] = total_gst.quantize(Decimal("0.01"))
+        data["grand_total"] = (subtotal + total_gst).quantize(Decimal("0.01"))
+
+        return data
 
