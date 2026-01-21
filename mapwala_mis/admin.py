@@ -120,7 +120,14 @@ class StateAdmin(admin.ModelAdmin):
 # ------------------ District ------------------
 @admin.register(District)
 class DistrictAdmin(admin.ModelAdmin):
-    list_display = ("id","name","code","state_link","status_badge","created_at_formatted")
+    list_display = (
+        "id",
+        "name",
+        "code",
+        "state_link",
+        "status_badge",
+        "created_at_formatted",
+    )
     list_display_links = ("name",)
     search_fields = ("name", "code", "state__name")
     list_filter = ("status", "state", "created_at")
@@ -154,7 +161,9 @@ class DistrictAdmin(admin.ModelAdmin):
         """Link to the related State's admin change page."""
         if obj.state:
             url = reverse("admin:mapwala_mis_state_change", args=[obj.state.id])
-            return format_html('<a href="{}"><strong>{}</strong></a>', url, obj.state.name)
+            return format_html(
+                '<a href="{}"><strong>{}</strong></a>', url, obj.state.name
+            )
         return "—"
 
     state_link.short_description = "State"
@@ -223,14 +232,32 @@ class DistrictAdmin(admin.ModelAdmin):
 # ------------------ Parent Company ------------------
 @admin.register(ParentCompany)
 class ParentCompanyAdmin(admin.ModelAdmin):
-    list_display = ("id","name","email","phone_number_formatted","state_link","district_link","gst_number","pan_number","created_at_formatted","has_all_documents")
+    list_display = (
+        "id",
+        "name",
+        "email",
+        "phone_number_formatted",
+        "state_link",
+        "district_link",
+        "gst_number",
+        "pan_number",
+        "created_at_formatted",
+        "has_all_documents",
+    )
     list_display_links = ("name",)
     search_fields = ("name", "phone_number", "email", "gst_number", "pan_number")
     list_filter = ("state", "district", "created_at")
     ordering = ("-id",)
 
     # Make critical identifiers read-only after creation
-    readonly_fields = ("created_at","id_display","gst_document_link","tan_document_link","pan_document_link","account_number_masked")
+    readonly_fields = (
+        "created_at",
+        "id_display",
+        "gst_document_link",
+        "tan_document_link",
+        "pan_document_link",
+        "account_number_masked",
+    )
 
     fieldsets = (
         (
@@ -250,7 +277,13 @@ class ParentCompanyAdmin(admin.ModelAdmin):
         (
             "Bank Details",
             {
-                "fields": ("bank_name","account_holder_name","account_number_masked","account_number","ifsc_code"),
+                "fields": (
+                    "bank_name",
+                    "account_holder_name",
+                    "account_number_masked",
+                    "account_number",
+                    "ifsc_code",
+                ),
                 "classes": ("collapse",),
             },
         ),
@@ -378,12 +411,30 @@ class ParentCompanyAdmin(admin.ModelAdmin):
 # ------------------ Vendor ------------------
 @admin.register(Vendor)
 class VendorAdmin(admin.ModelAdmin):
-    list_display = ("id","name","email","phone_number_formatted","state_link","district_link","gst_number","pan_number","created_at_formatted","has_all_documents")
+    list_display = (
+        "id",
+        "name",
+        "email",
+        "phone_number_formatted",
+        "state_link",
+        "district_link",
+        "gst_number",
+        "pan_number",
+        "created_at_formatted",
+        "has_all_documents",
+    )
     list_display_links = ("name",)
     search_fields = ("name", "phone_number", "email", "gst_number", "pan_number")
     list_filter = ("state", "district", "created_at")
     ordering = ("-id",)
-    readonly_fields = ("created_at","id_display","gst_document_link","tan_document_link","pan_document_link","account_number_masked")
+    readonly_fields = (
+        "created_at",
+        "id_display",
+        "gst_document_link",
+        "tan_document_link",
+        "pan_document_link",
+        "account_number_masked",
+    )
     fieldsets = (
         (
             "Vendor Details",
@@ -547,7 +598,17 @@ class VendorAdmin(admin.ModelAdmin):
 # ------------------ B2C Customer ------------------
 @admin.register(B2CCustomer)
 class B2CCustomerAdmin(admin.ModelAdmin):
-    list_display = ("id","name","phone_number","email","state","district","gst_number","pan_number","created_at")
+    list_display = (
+        "id",
+        "name",
+        "phone_number",
+        "email",
+        "state",
+        "district",
+        "gst_number",
+        "pan_number",
+        "created_at",
+    )
     search_fields = ("name", "phone_number", "email", "gst_number", "pan_number")
     list_filter = ("state", "district", "created_at")
     ordering = ("-id",)
@@ -560,7 +621,12 @@ class B2CCustomerAdmin(admin.ModelAdmin):
         (
             "Bank Details",
             {
-                "fields": ("bank_name","account_holder_name","account_number","ifsc_code")
+                "fields": (
+                    "bank_name",
+                    "account_holder_name",
+                    "account_number",
+                    "ifsc_code",
+                )
             },
         ),
         ("GST Details", {"fields": ("gst_number", "gst_document")}),
@@ -573,8 +639,24 @@ class B2CCustomerAdmin(admin.ModelAdmin):
 # ------------------ B2B Partner ------------------
 @admin.register(B2BPartner)
 class B2BPartnerAdmin(admin.ModelAdmin):
-    list_display = ("id","partner_name","phone_number","email","state","district","gst_number","pan_number","created_at")
-    search_fields = ("partner_name","phone_number","email","gst_number","pan_number")
+    list_display = (
+        "id",
+        "partner_name",
+        "phone_number",
+        "email",
+        "state",
+        "district",
+        "gst_number",
+        "pan_number",
+        "created_at",
+    )
+    search_fields = (
+        "partner_name",
+        "phone_number",
+        "email",
+        "gst_number",
+        "pan_number",
+    )
     list_filter = ("state", "district", "created_at")
     ordering = ("-id",)
     readonly_fields = ("created_at",)
@@ -588,7 +670,12 @@ class B2BPartnerAdmin(admin.ModelAdmin):
         (
             "Bank Details",
             {
-                "fields": ("bank_name","account_holder_name","account_number","ifsc_code")
+                "fields": (
+                    "bank_name",
+                    "account_holder_name",
+                    "account_number",
+                    "ifsc_code",
+                )
             },
         ),
         ("GST Details", {"fields": ("gst_number", "gst_document")}),
@@ -609,12 +696,27 @@ class ManufacturerAdmin(admin.ModelAdmin):
 # ------------------ Distributor ------------------
 @admin.register(Distributor)
 class DistributorAdmin(admin.ModelAdmin):
-    list_display = ("id","name","phone_number","email","linked_to","manufacturer","created_at")
-    search_fields = ("name","phone_number","email","gst_number","pan_number","manufacturer__name")
-    list_filter = ("linked_to","state","district","created_at")
+    list_display = (
+        "id",
+        "name",
+        "phone_number",
+        "email",
+        "linked_to",
+        "manufacturer",
+        "created_at",
+    )
+    search_fields = (
+        "name",
+        "phone_number",
+        "email",
+        "gst_number",
+        "pan_number",
+        "manufacturer__name",
+    )
+    list_filter = ("linked_to", "state", "district", "created_at")
     ordering = ("-id",)
     readonly_fields = ("created_at",)
-    filter_horizontal = ("authorised_states","authorised_districts")
+    filter_horizontal = ("authorised_states", "authorised_districts")
     fieldsets = (
         ("Basic Information", {"fields": ("name", "phone_number", "email", "address")}),
         ("Address Location", {"fields": ("state", "district")}),
@@ -623,7 +725,12 @@ class DistributorAdmin(admin.ModelAdmin):
         (
             "Bank Details",
             {
-                "fields": ("bank_name","account_holder_name","account_number","ifsc_code")
+                "fields": (
+                    "bank_name",
+                    "account_holder_name",
+                    "account_number",
+                    "ifsc_code",
+                )
             },
         ),
         ("GST Details", {"fields": ("gst_number", "gst_document")}),
@@ -636,33 +743,61 @@ class DistributorAdmin(admin.ModelAdmin):
 # ------------------ Dealer ------------------
 @admin.register(Dealer)
 class DealerAdmin(admin.ModelAdmin):
-    list_display = ("id","name","phone_number","email","linked_to","manufacturer","distributor","state","district","created_at")
+    list_display = (
+        "id",
+        "name",
+        "phone_number",
+        "email",
+        "linked_to",
+        "manufacturer",
+        "distributor",
+        "state",
+        "district",
+        "created_at",
+    )
     search_fields = ("name", "phone_number", "email", "gst_number", "pan_number")
-    list_filter = ("linked_to","state","district","manufacturer","distributor","created_at")
+    list_filter = (
+        "linked_to",
+        "state",
+        "district",
+        "manufacturer",
+        "distributor",
+        "created_at",
+    )
     ordering = ("-id",)
     readonly_fields = ("created_at",)
-    filter_horizontal = ("authorised_states","authorised_districts")
+    filter_horizontal = ("authorised_states", "authorised_districts")
     fieldsets = (
         ("Basic Information", {"fields": ("name", "phone_number", "email", "address")}),
         ("Address Location", {"fields": ("state", "district")}),
         (
             "Bank Details",
             {
-                "fields": ("bank_name","account_holder_name","account_number","ifsc_code")
+                "fields": (
+                    "bank_name",
+                    "account_holder_name",
+                    "account_number",
+                    "ifsc_code",
+                )
             },
         ),
         (
             "Tax Documents",
             {
-                "fields": ("gst_number","gst_document","tan_number","tan_document","pan_number","pan_document")
+                "fields": (
+                    "gst_number",
+                    "gst_document",
+                    "tan_number",
+                    "tan_document",
+                    "pan_number",
+                    "pan_document",
+                )
             },
         ),
         ("Business Linking", {"fields": ("linked_to", "manufacturer", "distributor")}),
         (
             "Authorised Area",
-            {
-                "fields": ("authorised_states","authorised_districts")
-            },
+            {"fields": ("authorised_states", "authorised_districts")},
         ),
         ("System Info", {"fields": ("created_at",)}),
     )
@@ -774,7 +909,13 @@ class BOMAdmin(admin.ModelAdmin):
 # ------------------ BOM Component ------------------
 @admin.register(BOMComponent)
 class BOMComponentAdmin(admin.ModelAdmin):
-    list_display = ("bom","identification_mark","part_no","part_make","per_device_quantity")
+    list_display = (
+        "bom",
+        "identification_mark",
+        "part_no",
+        "part_make",
+        "per_device_quantity",
+    )
     search_fields = ("identification_mark", "part_no", "part_make")
     list_filter = ("part_make",)
     fieldsets = (
@@ -782,7 +923,13 @@ class BOMComponentAdmin(admin.ModelAdmin):
         (
             "Component Details",
             {
-                "fields": ("identification_mark","description","designator","footprint","volt")
+                "fields": (
+                    "identification_mark",
+                    "description",
+                    "designator",
+                    "footprint",
+                    "volt",
+                )
             },
         ),
         (
@@ -795,7 +942,15 @@ class BOMComponentAdmin(admin.ModelAdmin):
 # ------------------ Enclosure ------------------
 @admin.register(Enclosure)
 class EnclosureAdmin(admin.ModelAdmin):
-    list_display = ("device","length","breadth","height","material","color","quantity")
+    list_display = (
+        "device",
+        "length",
+        "breadth",
+        "height",
+        "material",
+        "color",
+        "quantity",
+    )
     fieldsets = (
         ("Device", {"fields": ("device",)}),
         ("Dimensions", {"fields": ("length", "breadth", "height")}),
@@ -902,22 +1057,59 @@ class AccessoryAdmin(admin.ModelAdmin):
 # ------------------ Proforma Invoice ------------------
 @admin.register(ProformaInvoice)
 class ProformaInvoiceAdmin(admin.ModelAdmin):
-    list_display = ("id","party_type","product","quantity","selling_price","discount_percent","grand_total","payment_terms","delivery_date","state","created_at")
-    search_fields = ("id","product__product_id","contact_person_name","mobile_no","gstn")
-    list_filter = ("party_type","payment_terms","state","delivery_date","created_at")
+    list_display = (
+        "id",
+        "party_type",
+        "product",
+        "quantity",
+        "selling_price",
+        "discount_percent",
+        "grand_total",
+        "payment_terms",
+        "delivery_date",
+        "state",
+        "created_at",
+    )
+    search_fields = (
+        "id",
+        "product__product_id",
+        "contact_person_name",
+        "mobile_no",
+        "gstn",
+    )
+    list_filter = (
+        "party_type",
+        "payment_terms",
+        "state",
+        "delivery_date",
+        "created_at",
+    )
     ordering = ("-id",)
     readonly_fields = ("created_at",)
     fieldsets = (
         (
             "Party Information",
             {
-                "fields": ("party_type","b2b_partner","b2c_customer","dealer","distributor")
+                "fields": (
+                    "party_type",
+                    "b2b_partner",
+                    "b2c_customer",
+                    "dealer",
+                    "distributor",
+                )
             },
         ),
         (
             "Product & Pricing",
             {
-                "fields": ("product","selling_price","discount_percent","quantity","shipping_charges","grand_total")
+                "fields": (
+                    "product",
+                    "selling_price",
+                    "discount_percent",
+                    "quantity",
+                    "shipping_charges",
+                    "grand_total",
+                )
             },
         ),
         (
@@ -1000,34 +1192,69 @@ class OrderBatchAdmin(admin.ModelAdmin):
 # ----------------------------Sales Order Admin-------------------------------
 @admin.register(SalesOrder)
 class SalesOrderAdmin(admin.ModelAdmin):
-    list_display = ("id","customer_name","customer_type","product","batch","quantity","grand_total","payment_status","delivery_date","created_at")
-    list_filter = ("customer_type","payment_mode","payment_status","delivery_date","created_at")
-    search_fields = ("id","customer_name","contact_person","mobile_no","invoice_number","product__name","batch__batch_number")
+    list_display = (
+        "id",
+        "customer_name",
+        "customer_type",
+        "product",
+        "batch",
+        "quantity",
+        "grand_total",
+        "payment_status",
+        "delivery_date",
+        "created_at",
+    )
+    list_filter = (
+        "customer_type",
+        "payment_mode",
+        "payment_status",
+        "delivery_date",
+        "created_at",
+    )
+    search_fields = (
+        "id",
+        "customer_name",
+        "contact_person",
+        "mobile_no",
+        "invoice_number",
+        "product__name",
+        "batch__batch_number",
+    )
     ordering = ("-created_at",)
     readonly_fields = ("created_at",)
     fieldsets = (
         (
             "Customer Information",
             {
-                "fields": ("customer_name","customer_type","contact_person","mobile_no"),
+                "fields": (
+                    "customer_name",
+                    "customer_type",
+                    "contact_person",
+                    "mobile_no",
+                ),
             },
         ),
         (
             "Product & Batch",
             {
-                "fields": ("product","batch","quantity","unit_price"),
+                "fields": ("product", "batch", "quantity", "unit_price"),
             },
         ),
         (
             "Pricing & Taxes",
             {
-                "fields": ("discount_percent","gst_percent","shipping_charges","grand_total"),
+                "fields": (
+                    "discount_percent",
+                    "gst_percent",
+                    "shipping_charges",
+                    "grand_total",
+                ),
             },
         ),
         (
             "Delivery Information",
             {
-                "fields": ("delivery_date","delivery_address"),
+                "fields": ("delivery_date", "delivery_address"),
             },
         ),
         (
@@ -1063,9 +1290,33 @@ class SupplierVendorAdmin(admin.ModelAdmin):
 # -----------------------Production Order Admin--------------------------
 @admin.register(ProductionOrder)
 class ProductionOrderAdmin(admin.ModelAdmin):
-    list_display = ("id","production_type","product","product_category","quantity_added","total_value","supplier_vendor","purchase_date","manufacturing_date","batch","created_at")
-    list_filter = ("production_type","product_category","purchase_date","manufacturing_date","supplier_vendor","created_at")
-    search_fields = ("id","product__name","supplier_vendor__name","batch__batch_number")
+    list_display = (
+        "id",
+        "production_type",
+        "product",
+        "product_category",
+        "quantity_added",
+        "total_value",
+        "supplier_vendor",
+        "purchase_date",
+        "manufacturing_date",
+        "batch",
+        "created_at",
+    )
+    list_filter = (
+        "production_type",
+        "product_category",
+        "purchase_date",
+        "manufacturing_date",
+        "supplier_vendor",
+        "created_at",
+    )
+    search_fields = (
+        "id",
+        "product__name",
+        "supplier_vendor__name",
+        "batch__batch_number",
+    )
     ordering = ("-created_at",)
     readonly_fields = ("created_at",)
     fieldsets = (
@@ -1085,9 +1336,34 @@ class ProductionOrderAdmin(admin.ModelAdmin):
 # ----------------------- Make To Order Admin --------------------------
 @admin.register(OrderEntryMakeToOrder)
 class OrderEntryMakeToOrderAdmin(admin.ModelAdmin):
-    list_display = ("id","order_entry","customer_name","customer_type","product","quantity","grand_total","payment_terms","order_priority","expected_delivery_date","created_at")
-    list_filter = ("customer_type","payment_terms","order_priority","expected_delivery_date","created_at")
-    search_fields = ("id","order_entry__id","customer_name","contact_person","mobile_no","product__name")
+    list_display = (
+        "id",
+        "order_entry",
+        "customer_name",
+        "customer_type",
+        "product",
+        "quantity",
+        "grand_total",
+        "payment_terms",
+        "order_priority",
+        "expected_delivery_date",
+        "created_at",
+    )
+    list_filter = (
+        "customer_type",
+        "payment_terms",
+        "order_priority",
+        "expected_delivery_date",
+        "created_at",
+    )
+    search_fields = (
+        "id",
+        "order_entry__id",
+        "customer_name",
+        "contact_person",
+        "mobile_no",
+        "product__name",
+    )
     ordering = ("-created_at",)
     readonly_fields = ("created_at",)
     fieldsets = (
@@ -1095,7 +1371,12 @@ class OrderEntryMakeToOrderAdmin(admin.ModelAdmin):
         (
             "Customer Information",
             {
-                "fields": ("customer_name","customer_type","contact_person","mobile_no")
+                "fields": (
+                    "customer_name",
+                    "customer_type",
+                    "contact_person",
+                    "mobile_no",
+                )
             },
         ),
         (
@@ -1106,7 +1387,14 @@ class OrderEntryMakeToOrderAdmin(admin.ModelAdmin):
         (
             "Pricing",
             {
-                "fields": ("unit_price","discount_percent","gst_percent","shipping_charges","grand_total","advance_payment")
+                "fields": (
+                    "unit_price",
+                    "discount_percent",
+                    "gst_percent",
+                    "shipping_charges",
+                    "grand_total",
+                    "advance_payment",
+                )
             },
         ),
         ("Payment & Priority", {"fields": ("payment_terms", "order_priority")}),
@@ -1127,7 +1415,18 @@ class RFQSelectionInline(admin.TabularInline):
 # ===================== REQUEST FOR QUOTE ADMIN =====================
 @admin.register(RequestForQuote)
 class RequestForQuoteAdmin(admin.ModelAdmin):
-    list_display = ("id","order_reference","device_name","assembly_type","quantity","srn_no","delivery_date","status","created_by","created_at")
+    list_display = (
+        "id",
+        "order_reference",
+        "device_name",
+        "assembly_type",
+        "quantity",
+        "srn_no",
+        "delivery_date",
+        "status",
+        "created_by",
+        "created_at",
+    )
     list_filter = ("assembly_type", "srn_no", "status", "delivery_date", "created_by")
     search_fields = ("order_reference", "device_name", "created_by__username")
     ordering = ("-created_at",)
@@ -1136,19 +1435,23 @@ class RequestForQuoteAdmin(admin.ModelAdmin):
     fieldsets = (
         (
             "STEP 1 — Order Selection (UI Driven)",
-            {
-                "fields": ("order_reference","device_name","assembly_type","quantity")
-            },
+            {"fields": ("order_reference", "device_name", "assembly_type", "quantity")},
         ),
         (
             "STEP 3 — Quote Details (UI Driven)",
             {
-                "fields": ("srn_no","delivery_date","delivery_address","additional_requirements")
+                "fields": (
+                    "srn_no",
+                    "delivery_date",
+                    "delivery_address",
+                    "additional_requirements",
+                )
             },
         ),
         ("System Status", {"fields": ("status",)}),
         ("Audit Fields", {"fields": ("created_by", "created_at")}),
     )
+
     def save_model(self, request, obj, form, change):
         """
         Automatically assign logged-in admin user
@@ -1182,29 +1485,60 @@ class PurchaseOrderTypeInline(admin.TabularInline):
 class PurchaseOrderItemInline(admin.TabularInline):
     model = PurchaseOrderItem
     extra = 1
-    fields = ("item_code","item_type","vendor_id","vendor_name","unit_price","gst_amount","total_price","delivery_days")
+    fields = (
+        "item_code",
+        "item_type",
+        "vendor_id",
+        "vendor_name",
+        "unit_price",
+        "gst_amount",
+        "total_price",
+        "delivery_days",
+    )
     show_change_link = True
 
 
 # -------------------- Purchase Order Admin --------------------
 @admin.register(PurchaseOrder)
 class PurchaseOrderAdmin(admin.ModelAdmin):
-    list_display = ("id","order_id","buyer_name","rfq_id","assembly_type","delivery_date","payment_terms","created_by","created_at")
-    list_filter = ("assembly_type","payment_terms","delivery_date","created_at")
-    search_fields = ("order_id","rfq_id","buyer_name","created_by__username",)
+    list_display = (
+        "id",
+        "order_id",
+        "buyer_name",
+        "rfq_id",
+        "assembly_type",
+        "delivery_date",
+        "payment_terms",
+        "created_by",
+        "created_at",
+    )
+    list_filter = ("assembly_type", "payment_terms", "delivery_date", "created_at")
+    search_fields = (
+        "order_id",
+        "rfq_id",
+        "buyer_name",
+        "created_by__username",
+    )
     ordering = ("-created_at",)
     readonly_fields = ("created_at",)
     inlines = [PurchaseOrderTypeInline, PurchaseOrderItemInline]
     fieldsets = (
-        ("Step 1 — Order Details", {
-            "fields": ("buyer_name","order_id","rfq_id","assembly_type")
-        }),
-        ("Step 2 — Vendor & Delivery", {
-            "fields": ("wastage_percentage","selected_vendor_id","delivery_date","payment_terms")
-        }),
-        ("System Information", {
-            "fields": ("created_by", "created_at")
-        }),
+        (
+            "Step 1 — Order Details",
+            {"fields": ("buyer_name", "order_id", "rfq_id", "assembly_type")},
+        ),
+        (
+            "Step 2 — Vendor & Delivery",
+            {
+                "fields": (
+                    "wastage_percentage",
+                    "selected_vendor_id",
+                    "delivery_date",
+                    "payment_terms",
+                )
+            },
+        ),
+        ("System Information", {"fields": ("created_by", "created_at")}),
     )
 
 
@@ -1216,36 +1550,36 @@ class PurchaseOrderTypeAdmin(admin.ModelAdmin):
     search_fields = ("purchase_order__order_id",)
 
     fieldsets = (
-        ("Purchase Order", {
-            "fields": ("purchase_order",)
-        }),
-        ("Order Type", {
-            "fields": ("order_type",)
-        }),
+        ("Purchase Order", {"fields": ("purchase_order",)}),
+        ("Order Type", {"fields": ("order_type",)}),
     )
 
 
 # -------------------- Purchase Order Item Admin --------------------
 @admin.register(PurchaseOrderItem)
 class PurchaseOrderItemAdmin(admin.ModelAdmin):
-    list_display = ("purchase_order","item_code","item_type","quantity","vendor_name","unit_price","total_price","delivery_days")
+    list_display = (
+        "purchase_order",
+        "item_code",
+        "item_type",
+        "quantity",
+        "vendor_name",
+        "unit_price",
+        "total_price",
+        "delivery_days",
+    )
 
     list_filter = ("item_type",)
-    search_fields = ("item_code","vendor_name","purchase_order__order_id")
+    search_fields = ("item_code", "vendor_name", "purchase_order__order_id")
 
     fieldsets = (
-        ("Purchase Order", {
-            "fields": ("purchase_order",)
-        }),
-        ("Item Details", {
-            "fields": ("item_code","item_type","quantity","delivery_days")
-        }),
-        ("Vendor", {
-            "fields": ("vendor_id", "vendor_name")
-        }),
-        ("Pricing", {
-            "fields": ("unit_price", "gst_amount", "total_price")
-        }),
+        ("Purchase Order", {"fields": ("purchase_order",)}),
+        (
+            "Item Details",
+            {"fields": ("item_code", "item_type", "quantity", "delivery_days")},
+        ),
+        ("Vendor", {"fields": ("vendor_id", "vendor_name")}),
+        ("Pricing", {"fields": ("unit_price", "gst_amount", "total_price")}),
     )
 
 
@@ -1262,68 +1596,114 @@ class MaterialReceiptItemInline(admin.TabularInline):
 # -----------------------Material Receipt Note Admin--------------------------
 @admin.register(MaterialReceiptNote)
 class MaterialReceiptNoteAdmin(admin.ModelAdmin):
-    list_display = ("id","purchase_order","vendor","inward_type","receipt_date","batch_number","created_at")
+    list_display = (
+        "id",
+        "purchase_order",
+        "vendor",
+        "inward_type",
+        "receipt_date",
+        "batch_number",
+        "created_at",
+    )
     list_filter = ("inward_type", "receipt_date", "vendor")
-    search_fields = ("batch_number", "invoice_number", "purchase_order__order_id", "vendor__name")
+    search_fields = (
+        "batch_number",
+        "invoice_number",
+        "purchase_order__order_id",
+        "vendor__name",
+    )
     autocomplete_fields = ("purchase_order", "vendor")
     readonly_fields = ("created_at",)
     inlines = [MaterialReceiptItemInline]
     fieldsets = (
-        ("Order & Vendor", {
-            "fields": ("purchase_order", "po_date", "vendor", "inward_type")
-        }),
-        ("Receipt", {
-            "fields": ("receipt_date", "batch_number")
-        }),
-        ("Documents", {
-            "fields": ("invoice_number", "invoice_file", "delivery_challan_number", "challan_file", "eway_bill_number", "eway_bill_file")
-        }),
-        ("Additional Info", {
-            "fields": ("remarks",)
-        }),
-        ("System", {
-            "fields": ("created_by", "created_at")
-        }),
+        (
+            "Order & Vendor",
+            {"fields": ("purchase_order", "po_date", "vendor", "inward_type")},
+        ),
+        ("Receipt", {"fields": ("receipt_date", "batch_number")}),
+        (
+            "Documents",
+            {
+                "fields": (
+                    "invoice_number",
+                    "invoice_file",
+                    "delivery_challan_number",
+                    "challan_file",
+                    "eway_bill_number",
+                    "eway_bill_file",
+                )
+            },
+        ),
+        ("Additional Info", {"fields": ("remarks",)}),
+        ("System", {"fields": ("created_by", "created_at")}),
     )
 
 
 # -----------------------Dispatch Admin--------------------------
 @admin.register(Dispatch)
 class DispatchAdmin(admin.ModelAdmin):
-    list_display = ("id","sales_order","order_type","product","batch","dispatch_quantity","dispatch_date","created_by","created_at")
-    list_filter = ("order_type","dispatch_date","urgent_delivery_required","insurance_required")
-    search_fields = ("sales_order__id","customer_name","customer_contact","customer_email")
-    readonly_fields = ("created_by","created_at")
+    list_display = (
+        "id",
+        "sales_order",
+        "order_type",
+        "product",
+        "batch",
+        "dispatch_quantity",
+        "dispatch_date",
+        "created_by",
+        "created_at",
+    )
+    list_filter = (
+        "order_type",
+        "dispatch_date",
+        "urgent_delivery_required",
+        "insurance_required",
+    )
+    search_fields = (
+        "sales_order__id",
+        "customer_name",
+        "customer_contact",
+        "customer_email",
+    )
+    readonly_fields = ("created_by", "created_at")
     fieldsets = (
         (
             "STEP 1: Sales Order Selection",
-            {
-                "fields": ("sales_order","order_type")
-            },
+            {"fields": ("sales_order", "order_type")},
         ),
         (
             "STEP 2: Stock Verification",
             {
-                "fields": ("product","batch","dispatch_quantity","imei_number","serial_number","iccid_number")
+                "fields": (
+                    "product",
+                    "batch",
+                    "dispatch_quantity",
+                    "imei_number",
+                    "serial_number",
+                    "iccid_number",
+                )
             },
         ),
         (
             "STEP 3: Dispatch Details",
-            {
-                "fields": ("dispatch_date","dispatch_remarks")
-            },
+            {"fields": ("dispatch_date", "dispatch_remarks")},
         ),
         (
             "STEP 4: Customer Details & Review",
             {
-                "fields": ("customer_name","customer_contact","customer_email","customer_address","urgent_delivery_required","insurance_required")
+                "fields": (
+                    "customer_name",
+                    "customer_contact",
+                    "customer_email",
+                    "customer_address",
+                    "urgent_delivery_required",
+                    "insurance_required",
+                )
             },
         ),
         (
             "System Information",
-            {
-                "fields": ("created_by","created_at")
-            },
+            {"fields": ("created_by", "created_at")},
         ),
     )
 
@@ -1356,14 +1736,10 @@ class PostDispatchReturnItemInlineFormset(BaseInlineFormSet):
             unit_price = form.cleaned_data.get("unit_price")
 
             if return_qty > dispatched_qty:
-                raise ValueError(
-                    "Return quantity cannot exceed dispatched quantity."
-                )
+                raise ValueError("Return quantity cannot exceed dispatched quantity.")
 
             # Auto-calculate return_amount
-            form.instance.return_amount = (
-                Decimal(return_qty) * unit_price
-            )
+            form.instance.return_amount = Decimal(return_qty) * unit_price
 
 
 # --------------------------- Post Dispatch Return Item Inline --------------------------
@@ -1372,7 +1748,14 @@ class PostDispatchReturnItemInline(admin.TabularInline):
     formset = PostDispatchReturnItemInlineFormset
     extra = 1
     readonly_fields = ("return_amount",)
-    fields = ("product_id", "description", "dispatched_qty", "unit_price", "return_qty", "return_amount")
+    fields = (
+        "product_id",
+        "description",
+        "dispatched_qty",
+        "unit_price",
+        "return_qty",
+        "return_amount",
+    )
 
 
 # -----------------------Post Dispatch Return Admin--------------------------
@@ -1382,9 +1765,20 @@ class PostDispatchReturnAdmin(admin.ModelAdmin):
     Admin panel for Post-Dispatch Returns
     Allows controlled raw data insertion.
     """
+
     inlines = [PostDispatchReturnItemInline]
     # ---------------- List View ----------------
-    list_display = ("id","dispatch_id","invoice_no","customer_name","return_type","return_reason","total_return_amount","created_by","created_at")
+    list_display = (
+        "id",
+        "dispatch_id",
+        "invoice_no",
+        "customer_name",
+        "return_type",
+        "return_reason",
+        "total_return_amount",
+        "created_by",
+        "created_at",
+    )
     list_filter = ("return_type", "return_reason", "created_at")
     search_fields = ("dispatch_id", "invoice_no", "customer_name")
     ordering = ("-id",)
@@ -1394,20 +1788,28 @@ class PostDispatchReturnAdmin(admin.ModelAdmin):
         (
             "Dispatch Information",
             {
-                "fields": ("dispatch_id","invoice_no","customer_name","dispatch_total_value")
+                "fields": (
+                    "dispatch_id",
+                    "invoice_no",
+                    "customer_name",
+                    "dispatch_total_value",
+                )
             },
         ),
         (
             "Return Details",
             {
-                "fields": ("return_type","return_reason","return_date","return_remarks")
+                "fields": (
+                    "return_type",
+                    "return_reason",
+                    "return_date",
+                    "return_remarks",
+                )
             },
         ),
         (
             "System Information",
-            {
-                "fields": ("total_return_amount","created_by")
-            },
+            {"fields": ("total_return_amount", "created_by")},
         ),
     )
 
@@ -1459,85 +1861,112 @@ class BaseRegistrationAdmin(admin.ModelAdmin):
     autocomplete_fields = ("state", "district")
 
     fieldsets = (
-        ("Basic Information", {
-            "fields": ("phone_number", "email", "address")
-        }),
-        ("Location Details", {
-            "fields": ("state", "district")
-        }),
-        ("Identity Details", {
-            "fields": ("aadhar_number", "aadhar_document", "pan_number", "pan_document")
-        }),
-        ("System Information", {
-            "fields": ("created_at",)
-        }),
+        ("Basic Information", {"fields": ("phone_number", "email", "address")}),
+        ("Location Details", {"fields": ("state", "district")}),
+        (
+            "Identity Details",
+            {
+                "fields": (
+                    "aadhar_number",
+                    "aadhar_document",
+                    "pan_number",
+                    "pan_document",
+                )
+            },
+        ),
+        ("System Information", {"fields": ("created_at",)}),
     )
 
 
 # --------------------------------- Account Registration ---------------------------------
 @admin.register(AccountRegistration)
 class AccountRegistrationAdmin(BaseRegistrationAdmin):
-    list_display = ("account_name","phone_number","email","state","district","created_at")
+    list_display = (
+        "account_name",
+        "phone_number",
+        "email",
+        "state",
+        "district",
+        "created_at",
+    )
     search_fields = BaseRegistrationAdmin.search_fields + ("account_name",)
     fieldsets = (
-        ("Account Information", {
-            "fields": ("account_name",)
-        }),
+        ("Account Information", {"fields": ("account_name",)}),
     ) + BaseRegistrationAdmin.fieldsets
 
 
 # ----------------------- QC Inspector Registration ---------------------------
 @admin.register(QCInspectorRegistration)
 class QCInspectorRegistrationAdmin(BaseRegistrationAdmin):
-    list_display = ("qc_inspector_name","phone_number","email","state","district","created_at")
+    list_display = (
+        "qc_inspector_name",
+        "phone_number",
+        "email",
+        "state",
+        "district",
+        "created_at",
+    )
     search_fields = BaseRegistrationAdmin.search_fields + ("qc_inspector_name",)
     fieldsets = (
-        ("QC Inspector Information", {
-            "fields": ("qc_inspector_name",)
-        }),
+        ("QC Inspector Information", {"fields": ("qc_inspector_name",)}),
     ) + BaseRegistrationAdmin.fieldsets
 
 
 # ---------------------------- Purchase Department Registration ----------------------------
 @admin.register(PurchaseDepartmentRegistration)
 class PurchaseDepartmentRegistrationAdmin(BaseRegistrationAdmin):
-    list_display = ("purchase_department_name","phone_number","email","state","district","created_at")
+    list_display = (
+        "purchase_department_name",
+        "phone_number",
+        "email",
+        "state",
+        "district",
+        "created_at",
+    )
     search_fields = BaseRegistrationAdmin.search_fields + ("purchase_department_name",)
     fieldsets = (
-        ("Purchase Department Information", {
-            "fields": ("purchase_department_name",)
-        }),
+        ("Purchase Department Information", {"fields": ("purchase_department_name",)}),
     ) + BaseRegistrationAdmin.fieldsets
 
 
 # ------------------------- Store Manager Registration --------------------------
 @admin.register(StoreManagerRegistration)
 class StoreManagerRegistrationAdmin(BaseRegistrationAdmin):
-    list_display = ("store_manager_name","phone_number","email","state","district","created_at")
+    list_display = (
+        "store_manager_name",
+        "phone_number",
+        "email",
+        "state",
+        "district",
+        "created_at",
+    )
     search_fields = BaseRegistrationAdmin.search_fields + ("store_manager_name",)
     fieldsets = (
-        ("Store Manager Information", {
-            "fields": ("store_manager_name",)
-        }),
+        ("Store Manager Information", {"fields": ("store_manager_name",)}),
     ) + BaseRegistrationAdmin.fieldsets
 
 
 # ------------------------- Repair Technician Registration --------------------------
 @admin.register(RepairTechnicianRegistration)
 class RepairTechnicianRegistrationAdmin(BaseRegistrationAdmin):
-    list_display = ("repair_technician_name","phone_number","email","state","district","created_at")
+    list_display = (
+        "repair_technician_name",
+        "phone_number",
+        "email",
+        "state",
+        "district",
+        "created_at",
+    )
     search_fields = BaseRegistrationAdmin.search_fields + ("repair_technician_name",)
     fieldsets = (
-        ("Repair Technician Information", {
-            "fields": ("repair_technician_name",)
-        }),
+        ("Repair Technician Information", {"fields": ("repair_technician_name",)}),
     ) + BaseRegistrationAdmin.fieldsets
 
 
 # ------------------ Product Category ------------------
 @admin.register(ProductCategory)
 class ProductCategoryAdmin(admin.ModelAdmin):
-    list_display = ("id","name","created_at")
+    list_display = ("id", "name", "created_at")
     search_fields = ("name",)
     ordering = ("name",)
     readonly_fields = ("created_at",)
@@ -1546,27 +1975,44 @@ class ProductCategoryAdmin(admin.ModelAdmin):
 # ------------------ Store Transfer ------------------
 @admin.register(StoreTransfer)
 class StoreTransferAdmin(admin.ModelAdmin):
-    list_display = ("transfer_id","product_name","product","category","vendor","quantity","total_value","dispatch_status","transfer_date","created_at")
-    search_fields = ("transfer_id","product_name","batch_number","mrn_number","vendor__name","product__product_id")
-    list_filter = ("dispatch_status","transfer_date","category","vendor","created_at")
+    list_display = (
+        "transfer_id",
+        "product_name",
+        "product",
+        "category",
+        "vendor",
+        "quantity",
+        "total_value",
+        "dispatch_status",
+        "transfer_date",
+        "created_at",
+    )
+    search_fields = (
+        "transfer_id",
+        "product_name",
+        "batch_number",
+        "mrn_number",
+        "vendor__name",
+        "product__product_id",
+    )
+    list_filter = (
+        "dispatch_status",
+        "transfer_date",
+        "category",
+        "vendor",
+        "created_at",
+    )
     ordering = ("-created_at",)
-    readonly_fields = ("created_at","updated_at")
+    readonly_fields = ("created_at", "updated_at")
     fieldsets = (
-        ("Product Information", {
-            "fields": ("product","product_name","category")
-        }),
-        ("Transfer Details", {
-            "fields": ("transfer_id","mrn_number","batch_number")
-        }),
-        ("Vendor & Quantity", {
-            "fields": ("vendor","quantity","unit_price","total_value")
-        }),
-        ("Dates & Status", {
-            "fields": ("transfer_date","dispatch_status")
-        }),
-        ("System Info", {
-            "fields": ("created_by","created_at","updated_at")
-        }),
+        ("Product Information", {"fields": ("product", "product_name", "category")}),
+        ("Transfer Details", {"fields": ("transfer_id", "mrn_number", "batch_number")}),
+        (
+            "Vendor & Quantity",
+            {"fields": ("vendor", "quantity", "unit_price", "total_value")},
+        ),
+        ("Dates & Status", {"fields": ("transfer_date", "dispatch_status")}),
+        ("System Info", {"fields": ("created_by", "created_at", "updated_at")}),
     )
 
 
@@ -1574,10 +2020,20 @@ class StoreTransferAdmin(admin.ModelAdmin):
 # DEBIT NOTES & CREDIT NOTES - ACCOUNT MANAGEMENT
 # ============================================================
 
+
 # ------------------ Debit Note ------------------
 @admin.register(DebitNote)
 class DebitNoteAdmin(admin.ModelAdmin):
-    list_display = ("number","date","vendor","get_reason_display","amount_formatted","status_badge","created_by","created_at_formatted")
+    list_display = (
+        "number",
+        "date",
+        "vendor",
+        "get_reason_display",
+        "amount_formatted",
+        "status_badge",
+        "created_by",
+        "created_at_formatted",
+    )
     list_display_links = ("number",)
     search_fields = ("number", "vendor", "reference_document")
     list_filter = ("status", "reason", "date", "created_at")
@@ -1616,6 +2072,7 @@ class DebitNoteAdmin(admin.ModelAdmin):
 
     def amount_formatted(self, obj):
         return f"₹{obj.amount:,.2f}"
+
     amount_formatted.short_description = "Amount"
 
     def status_badge(self, obj):
@@ -1630,10 +2087,12 @@ class DebitNoteAdmin(admin.ModelAdmin):
             colors.get(obj.status, "#6c757d"),
             obj.get_status_display(),
         )
+
     status_badge.short_description = "Status"
 
     def created_at_formatted(self, obj):
         return obj.created_at.strftime("%d-%m-%Y %H:%M")
+
     created_at_formatted.short_description = "Created At"
 
     def save_model(self, request, obj, form, change):
@@ -1645,7 +2104,16 @@ class DebitNoteAdmin(admin.ModelAdmin):
 # ------------------------- Credit Notes --------------------------
 @admin.register(CreditNote)
 class CreditNoteAdmin(admin.ModelAdmin):
-    list_display = ("number","date","customer","get_reason_display","amount_formatted","status_badge","created_by","created_at_formatted")
+    list_display = (
+        "number",
+        "date",
+        "customer",
+        "get_reason_display",
+        "amount_formatted",
+        "status_badge",
+        "created_by",
+        "created_at_formatted",
+    )
     list_display_links = ("number",)
     search_fields = ("number", "customer", "reference_document")
     list_filter = ("status", "reason", "date", "created_at")
@@ -1684,6 +2152,7 @@ class CreditNoteAdmin(admin.ModelAdmin):
 
     def amount_formatted(self, obj):
         return f"₹{obj.amount:,.2f}"
+
     amount_formatted.short_description = "Amount"
 
     def status_badge(self, obj):
@@ -1698,10 +2167,12 @@ class CreditNoteAdmin(admin.ModelAdmin):
             colors.get(obj.status, "#6c757d"),
             obj.get_status_display(),
         )
+
     status_badge.short_description = "Status"
 
     def created_at_formatted(self, obj):
         return obj.created_at.strftime("%d-%m-%Y %H:%M")
+
     created_at_formatted.short_description = "Created At"
 
     def save_model(self, request, obj, form, change):
@@ -1718,43 +2189,61 @@ class ReturnRequestAdmin(admin.ModelAdmin):
     """
 
     # Columns shown in admin list view
-    list_display = ("return_number","date","items","reason","status","amount","created_by","created_at")
+    list_display = (
+        "return_number",
+        "date",
+        "items",
+        "reason",
+        "status",
+        "amount",
+        "created_by",
+        "created_at",
+    )
 
     # Sidebar filters
-    list_filter = ("status","date","created_at")
+    list_filter = ("status", "date", "created_at")
 
     # Search box fields
-    search_fields = ("return_number","reason","items","created_by__username")
+    search_fields = ("return_number", "reason", "items", "created_by__username")
 
     # Default ordering
     ordering = ("-date",)
 
     # Read-only fields (system managed)
-    readonly_fields = ("created_at","updated_at","created_by")
+    readonly_fields = ("created_at", "updated_at", "created_by")
 
     # Group fields nicely in admin form
     fieldsets = (
-        ("Return Information", {
-            "fields": (
-                "return_number",
-                "date",
-                "status",
-            )
-        }),
-        ("Return Details", {
-            "fields": (
-                "items",
-                "reason",
-                "amount",
-            )
-        }),
-        ("Audit Information", {
-            "fields": (
-                "created_by",
-                "created_at",
-                "updated_at",
-            )
-        }),
+        (
+            "Return Information",
+            {
+                "fields": (
+                    "return_number",
+                    "date",
+                    "status",
+                )
+            },
+        ),
+        (
+            "Return Details",
+            {
+                "fields": (
+                    "items",
+                    "reason",
+                    "amount",
+                )
+            },
+        ),
+        (
+            "Audit Information",
+            {
+                "fields": (
+                    "created_by",
+                    "created_at",
+                    "updated_at",
+                )
+            },
+        ),
     )
 
     # Performance optimization
@@ -1768,47 +2257,84 @@ class RepairRecordAdmin(admin.ModelAdmin):
     Admin configuration for Repair Records
     """
 
-    list_display = ("product_id","product_name","vendor","mrn_number","failed_qty","repaired_qty","rejected_qty","repair_pending", "repair_type","repair_center", "status", "created_by","created_at")
-    list_filter = ("status","repair_type","vendor","created_at")
-    search_fields = ("product_id","product_name","vendor","mrn_number","repair_type","repair_center","created_by__username")
+    list_display = (
+        "product_id",
+        "product_name",
+        "vendor",
+        "mrn_number",
+        "failed_qty",
+        "repaired_qty",
+        "rejected_qty",
+        "repair_pending",
+        "repair_type",
+        "repair_center",
+        "status",
+        "created_by",
+        "created_at",
+    )
+    list_filter = ("status", "repair_type", "vendor", "created_at")
+    search_fields = (
+        "product_id",
+        "product_name",
+        "vendor",
+        "mrn_number",
+        "repair_type",
+        "repair_center",
+        "created_by__username",
+    )
     ordering = ("-created_at",)
-    readonly_fields = ("created_at","updated_at","created_by")
+    readonly_fields = ("created_at", "updated_at", "created_by")
 
     fieldsets = (
-        ("Product Information", {
-            "fields": (
-                "product_id",
-                "product_name",
-            )
-        }),
-        ("Vendor & MRN", {
-            "fields": (
-                "vendor",
-                "mrn_number",
-            )
-        }),
-        ("Repair Quantities", {
-            "fields": (
-                "failed_qty",
-                "repaired_qty",
-                "rejected_qty",
-                "repair_pending",
-            )
-        }),
-        ("Repair Details", {
-            "fields": (
-                "repair_type",
-                "repair_center",
-                "status",
-            )
-        }),
-        ("Audit Information", {
-            "fields": (
-                "created_by",
-                "created_at",
-                "updated_at",
-            )
-        }),
+        (
+            "Product Information",
+            {
+                "fields": (
+                    "product_id",
+                    "product_name",
+                )
+            },
+        ),
+        (
+            "Vendor & MRN",
+            {
+                "fields": (
+                    "vendor",
+                    "mrn_number",
+                )
+            },
+        ),
+        (
+            "Repair Quantities",
+            {
+                "fields": (
+                    "failed_qty",
+                    "repaired_qty",
+                    "rejected_qty",
+                    "repair_pending",
+                )
+            },
+        ),
+        (
+            "Repair Details",
+            {
+                "fields": (
+                    "repair_type",
+                    "repair_center",
+                    "status",
+                )
+            },
+        ),
+        (
+            "Audit Information",
+            {
+                "fields": (
+                    "created_by",
+                    "created_at",
+                    "updated_at",
+                )
+            },
+        ),
     )
 
     list_select_related = ("created_by",)
@@ -1820,106 +2346,155 @@ class RejectedItemAdmin(admin.ModelAdmin):
     """
     Admin configuration for Rejected Items
     """
-    list_display = ("product_id","product_name","vendor","mrn_number","rejected_qty","qc_date","created_by")
-    list_filter = ("vendor","qc_date","created_at")
-    search_fields = ("product_id","product_name","vendor","mrn_number","created_by__username")
+
+    list_display = (
+        "product_id",
+        "product_name",
+        "vendor",
+        "mrn_number",
+        "rejected_qty",
+        "qc_date",
+        "created_by",
+    )
+    list_filter = ("vendor", "qc_date", "created_at")
+    search_fields = (
+        "product_id",
+        "product_name",
+        "vendor",
+        "mrn_number",
+        "created_by__username",
+    )
     ordering = ("-qc_date",)
-    readonly_fields = ("created_at","updated_at","created_by")
+    readonly_fields = ("created_at", "updated_at", "created_by")
     fieldsets = (
-        ("Product Information", {
-            "fields": (
-                "product_id",
-                "product_name",
-            )
-        }),
-        ("Vendor & MRN", {
-            "fields": (
-                "vendor",
-                "mrn_number",
-            )
-        }),
-        ("Rejection Details", {
-            "fields": (
-                "rejected_qty",
-                "qc_date",
-            )
-        }),
-        ("Audit Information", {
-            "fields": (
-                "created_by",
-                "created_at",
-                "updated_at",
-            )
-        }),
+        (
+            "Product Information",
+            {
+                "fields": (
+                    "product_id",
+                    "product_name",
+                )
+            },
+        ),
+        (
+            "Vendor & MRN",
+            {
+                "fields": (
+                    "vendor",
+                    "mrn_number",
+                )
+            },
+        ),
+        (
+            "Rejection Details",
+            {
+                "fields": (
+                    "rejected_qty",
+                    "qc_date",
+                )
+            },
+        ),
+        (
+            "Audit Information",
+            {
+                "fields": (
+                    "created_by",
+                    "created_at",
+                    "updated_at",
+                )
+            },
+        ),
     )
 
     list_select_related = ("created_by",)
 
+
 # ================== Self Order ==================
 @admin.register(SelfOrder)
 class SelfOrderAdmin(admin.ModelAdmin):
-    list_display = ("id", "device_info", "quantity", "supply_state", "rate_display", "gst_rate_display", "gross_amount_display", "delivery_date", "user", "created_at")
+    list_display = (
+        "id",
+        "device_info",
+        "quantity",
+        "supply_state",
+        "rate_display",
+        "gst_rate_display",
+        "gross_amount_display",
+        "delivery_date",
+        "user",
+        "created_at",
+    )
     list_display_links = ("id",)
     search_fields = ("user__username", "delivery_address", "device__info__model")
     list_filter = ("supply_state", "gst_rate", "created_at", "user")
     readonly_fields = ("user", "created_at", "updated_at")
     ordering = ("-created_at",)
-    
+
     fieldsets = (
-        ("Order Information", {
-            "fields": (
-                "device",
-                "quantity",
-            )
-        }),
-        ("Pricing & Taxes", {
-            "fields": (
-                "rate",
-                "gst_rate",
-                "gross_amount",
-            )
-        }),
-        ("Delivery Details", {
-            "fields": (
-                "supply_state",
-                "delivery_date",
-                "delivery_address",
-            )
-        }),
-        ("Additional Information", {
-            "fields": (
-                "purpose_remark",
-            )
-        }),
-        ("Audit Information", {
-            "fields": (
-                "user",
-                "created_at",
-                "updated_at",
-            ),
-            "classes": ("collapse",)
-        }),
+        (
+            "Order Information",
+            {
+                "fields": (
+                    "device",
+                    "quantity",
+                )
+            },
+        ),
+        (
+            "Pricing & Taxes",
+            {
+                "fields": (
+                    "rate",
+                    "gst_rate",
+                    "gross_amount",
+                )
+            },
+        ),
+        (
+            "Delivery Details",
+            {
+                "fields": (
+                    "supply_state",
+                    "delivery_date",
+                    "delivery_address",
+                )
+            },
+        ),
+        ("Additional Information", {"fields": ("purpose_remark",)}),
+        (
+            "Audit Information",
+            {
+                "fields": (
+                    "user",
+                    "created_at",
+                    "updated_at",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
     )
     list_select_related = ("device", "supply_state", "user")
 
     def device_info(self, obj):
         """Display device model name"""
         return obj.device.info.model if obj.device.info else f"Device {obj.device.id}"
+
     device_info.short_description = "Device"
 
     def rate_display(self, obj):
         """Display rate with currency"""
         return f"₹{obj.rate:,.2f}"
+
     rate_display.short_description = "Rate"
 
     def gst_rate_display(self, obj):
         """Display GST rate as percentage"""
         return f"{obj.gst_rate}%"
+
     gst_rate_display.short_description = "GST Rate"
 
     def gross_amount_display(self, obj):
         """Display gross amount with currency"""
         return f"₹{obj.gross_amount:,.2f}"
+
     gross_amount_display.short_description = "Gross Amount"
-
-

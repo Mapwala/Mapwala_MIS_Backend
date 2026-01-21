@@ -19,6 +19,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.exceptions import ValidationError
+from django.db import IntegrityError
 import uuid
 
 from django_filters.rest_framework import DjangoFilterBackend
@@ -33,7 +34,7 @@ from .utils import generate_note_number
 class LoginAPIView(APIView):
     permission_classes = [AllowAny]
     throttle_classes = [ScopedRateThrottle]  # ← ADD THIS
-    throttle_scope = "login" 
+    throttle_scope = "login"
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
@@ -65,9 +66,11 @@ class LoginAPIView(APIView):
             status=status.HTTP_200_OK,
         )
 
+
 # ======================================================================
 # ============================ Settings APIs ===========================
 # ======================================================================
+
 
 # ---------------- State ViewSet ----------------
 class StateViewSet(ModelViewSet):
@@ -92,7 +95,7 @@ class StateViewSet(ModelViewSet):
             return Response(
                 {
                     "success": False,
-                    "message": f"State '{state_name}' cannot be deleted because it has linked districts."
+                    "message": f"State '{state_name}' cannot be deleted because it has linked districts.",
                 },
                 status=status.HTTP_409_CONFLICT,
             )
@@ -100,10 +103,7 @@ class StateViewSet(ModelViewSet):
         self.perform_destroy(state)
 
         return Response(
-            {
-                "success": True,
-                "message": f"State '{state_name}' deleted successfully."
-            },
+            {"success": True, "message": f"State '{state_name}' deleted successfully."},
             status=status.HTTP_200_OK,
         )
 
@@ -138,10 +138,12 @@ class VendorViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
-        if hasattr(self.request.user, "vendor"):
-            raise ValidationError("Vendor already exists for this user")
-
-        serializer.save(user=self.request.user)
+        try:
+            serializer.save(user=self.request.user)
+        except IntegrityError:
+            raise ValidationError(
+                {"detail": "Vendor with this GST number already exists for this user."}
+            )
 
 
 # ---------------- Registrations ----------------
@@ -239,9 +241,11 @@ class DealerRegistrationAPIView(APIView):
             status=status.HTTP_201_CREATED,
         )
 
+
 # ======================================================================
 # ====================== Sales & Production APIs =======================
 # ======================================================================
+
 
 # ---------------- Proforma Invoice Create ----------------
 class ProformaInvoiceCreateAPIView(APIView):
@@ -261,6 +265,7 @@ class ProformaInvoiceCreateAPIView(APIView):
             status=status.HTTP_201_CREATED,
         )
 
+
 # ================================= Order Entry APIs ==================================
 # ---------------- STEP 1 ----------------
 class DeviceStep1APIView(APIView):
@@ -272,10 +277,9 @@ class DeviceStep1APIView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save(device=device)
 
-        return Response({
-            "device_id": device.id,
-            "message": "Step 1 completed"
-        }, status=201)
+        return Response(
+            {"device_id": device.id, "message": "Step 1 completed"}, status=201
+        )
 
 
 # ---------------- STEP 2 ----------------
@@ -297,10 +301,7 @@ class DeviceStep3APIView(APIView):
 
     def post(self, request):
         bom = get_object_or_404(BOM, device_id=request.data["device_id"])
-        serializer = BOMComponentSerializer(
-            data=request.data["components"],
-            many=True
-        )
+        serializer = BOMComponentSerializer(data=request.data["components"], many=True)
         serializer.is_valid(raise_exception=True)
         serializer.save(bom=bom)
 
@@ -321,6 +322,7 @@ class DeviceStep4APIView(APIView):
 
 
 # ---------------- STEP 5 ----------------
+
 
 class DeviceStep5APIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -406,10 +408,7 @@ class DeviceAccessoryAPIView(APIView):
 
     def post(self, request):
         device = get_object_or_404(Device, id=request.data["device_id"])
-        serializer = AccessorySerializer(
-            data=request.data["accessories"],
-            many=True
-        )
+        serializer = AccessorySerializer(data=request.data["accessories"], many=True)
         serializer.is_valid(raise_exception=True)
         serializer.save(device=device)
 
@@ -425,19 +424,14 @@ class OrderEntryStep1APIView(APIView):
 
     def post(self, request):
         entry, _ = OrderEntry.objects.get_or_create(
-            user=request.user,
-            is_step2_complete=False
+            user=request.user, is_step2_complete=False
         )
-
 
         serializer = OrderEntryStep1Serializer(entry, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(is_step1_complete=True)
 
-        return Response(
-            {"entry_id": entry.id},
-            status=status.HTTP_200_OK
-        )
+        return Response({"entry_id": entry.id}, status=status.HTTP_200_OK)
 
 
 # ---------------- Order Products, Batches, Sales Order ----------------
@@ -445,6 +439,7 @@ class OrderProductListAPIView(APIView):
     """
     UI: Product / Device Model dropdown
     """
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -457,6 +452,7 @@ class OrderBatchListAPIView(APIView):
     """
     UI: Batch dropdown depends on selected product
     """
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -465,7 +461,7 @@ class OrderBatchListAPIView(APIView):
         if not product_id:
             return Response(
                 {"product_id": "product_id query param is required"},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         batches = OrderBatch.objects.filter(product_id=product_id)
@@ -490,17 +486,14 @@ class SalesOrderCreateAPIView(APIView):
             {
                 "message": "Sales order created successfully",
                 "order_id": order.id,
-
                 "product": {
                     "id": order.product.id,
                     "name": order.product.name,
                 },
-
                 "batch": {
                     "id": order.batch.id,
                     "batch_number": order.batch.batch_number,
                 },
-
                 "remaining_stock": batch.available_stock,
                 "grand_total": float(order.grand_total),
             },
@@ -513,6 +506,7 @@ class ProductionOrderCreateAPIView(APIView):
     """
     Production Order – Add to Stock
     """
+
     permission_classes = [IsAuthenticated]
 
     @transaction.atomic
@@ -523,9 +517,7 @@ class ProductionOrderCreateAPIView(APIView):
         order = serializer.save()
 
         # Increase stock safely
-        batch = OrderBatch.objects.select_for_update().get(
-            id=order.batch.id
-        )
+        batch = OrderBatch.objects.select_for_update().get(id=order.batch.id)
         batch.available_stock += order.quantity_added
         batch.save(update_fields=["available_stock"])
 
@@ -554,10 +546,9 @@ class ProductDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response([
-            {"id": p.id, "name": p.name}
-            for p in OrderProduct.objects.all()
-        ])
+        return Response(
+            [{"id": p.id, "name": p.name} for p in OrderProduct.objects.all()]
+        )
 
 
 # ---------------- SupplierVendor Dropdown APIView ----------------
@@ -565,10 +556,9 @@ class SupplierVendorDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response([
-            {"id": v.id, "name": v.name}
-            for v in SupplierVendor.objects.all()
-        ])
+        return Response(
+            [{"id": v.id, "name": v.name} for v in SupplierVendor.objects.all()]
+        )
 
 
 # ---------------- ProductCategory Dropdown APIView ----------------
@@ -576,13 +566,15 @@ class ProductCategoryDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response([
-            {"key": "gps_devices", "label": "GPS Devices"},
-            {"key": "tracking_devices", "label": "Tracking Devices"},
-            {"key": "iot_devices", "label": "IoT Devices"},
-            {"key": "accessories", "label": "Accessories"},
-            {"key": "components", "label": "Components"},
-        ])
+        return Response(
+            [
+                {"key": "gps_devices", "label": "GPS Devices"},
+                {"key": "tracking_devices", "label": "Tracking Devices"},
+                {"key": "iot_devices", "label": "IoT Devices"},
+                {"key": "accessories", "label": "Accessories"},
+                {"key": "components", "label": "Components"},
+            ]
+        )
 
 
 # ---------------- Order Entry Step 2 (Make To Order) ----------------
@@ -596,13 +588,12 @@ class OrderEntryStep2APIView(APIView):
             id=request.data.get("entry_id"),
             user=request.user,
             is_step1_complete=True,
-            production_type="make_to_order"
+            production_type="make_to_order",
         )
 
         if hasattr(order_entry, "make_to_order"):
             return Response(
-                {"detail": "Step 2 already completed"},
-                status=status.HTTP_409_CONFLICT
+                {"detail": "Step 2 already completed"}, status=status.HTTP_409_CONFLICT
             )
 
         serializer = OrderEntryStep2MakeToOrderSerializer(data=request.data)
@@ -614,7 +605,6 @@ class OrderEntryStep2APIView(APIView):
         return Response(
             {
                 "message": "Order Entry completed successfully",
-
                 "order_entry": {
                     "id": order_entry.id,
                     "order_type": order_entry.order_type,
@@ -624,19 +614,16 @@ class OrderEntryStep2APIView(APIView):
                     "is_step2_complete": order_entry.is_step2_complete,
                     "created_at": order_entry.created_at,
                 },
-
                 "customer": {
                     "name": make_to_order.customer_name,
                     "type": make_to_order.customer_type,
                     "contact_person": make_to_order.contact_person,
                     "mobile_no": make_to_order.mobile_no,
                 },
-
                 "product": {
                     "id": make_to_order.product.id,
                     "name": make_to_order.product.name,
                 },
-
                 "order_summary": {
                     "quantity": make_to_order.quantity,
                     "unit_price": float(make_to_order.unit_price),
@@ -646,13 +633,12 @@ class OrderEntryStep2APIView(APIView):
                     "grand_total": float(make_to_order.grand_total),
                     "advance_payment": float(make_to_order.advance_payment),
                 },
-
                 "delivery": {
                     "expected_delivery_date": make_to_order.expected_delivery_date,
                     "priority": make_to_order.order_priority,
-                }
+                },
             },
-            status=status.HTTP_201_CREATED
+            status=status.HTTP_201_CREATED,
         )
 
 
@@ -661,12 +647,14 @@ class CustomerTypeDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response([
-            {"key": "b2b", "label": "B2B Partner"},
-            {"key": "b2c", "label": "B2C Customer"},
-            {"key": "distributor", "label": "Distributor"},
-            {"key": "dealer", "label": "Dealer"},
-        ])
+        return Response(
+            [
+                {"key": "b2b", "label": "B2B Partner"},
+                {"key": "b2c", "label": "B2C Customer"},
+                {"key": "distributor", "label": "Distributor"},
+                {"key": "dealer", "label": "Dealer"},
+            ]
+        )
 
 
 # ---------------- Payment Terms Dropdown APIView ----------------
@@ -674,14 +662,16 @@ class PaymentTermsDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response([
-            {"key": "100_advance", "label": "100% Advance"},
-            {"key": "50_50", "label": "50% Advance, 50% on Delivery"},
-            {"key": "30_70", "label": "30% Advance, 70% on Delivery"},
-            {"key": "net_30", "label": "Net 30 Days"},
-            {"key": "net_60", "label": "Net 60 Days"},
-            {"key": "custom", "label": "Custom Terms"},
-        ])
+        return Response(
+            [
+                {"key": "100_advance", "label": "100% Advance"},
+                {"key": "50_50", "label": "50% Advance, 50% on Delivery"},
+                {"key": "30_70", "label": "30% Advance, 70% on Delivery"},
+                {"key": "net_30", "label": "Net 30 Days"},
+                {"key": "net_60", "label": "Net 60 Days"},
+                {"key": "custom", "label": "Custom Terms"},
+            ]
+        )
 
 
 # ---------------- Order Priority Dropdown APIView ----------------
@@ -689,12 +679,15 @@ class OrderPriorityDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response([
-            {"key": "low", "label": "Low"},
-            {"key": "medium", "label": "Medium"},
-            {"key": "high", "label": "High"},
-            {"key": "urgent", "label": "Urgent"},
-        ])
+        return Response(
+            [
+                {"key": "low", "label": "Low"},
+                {"key": "medium", "label": "Medium"},
+                {"key": "high", "label": "High"},
+                {"key": "urgent", "label": "Urgent"},
+            ]
+        )
+
 
 # ========================= Request for Quote =============================
 # ---------------- RFQ Step 1 ----------------
@@ -707,10 +700,7 @@ class RFQStep1APIView(APIView):
 
         rfq = serializer.save(created_by=request.user)
 
-        return Response(
-            {"rfq_id": rfq.id, "message": "Step 1 completed"},
-            status=201
-        )
+        return Response({"rfq_id": rfq.id, "message": "Step 1 completed"}, status=201)
 
 
 # ---------------- RFQ Step 2 ----------------
@@ -720,9 +710,7 @@ class RFQStep2APIView(APIView):
     @transaction.atomic
     def post(self, request):
         rfq = get_object_or_404(
-            RequestForQuote,
-            id=request.data.get("rfq_id"),
-            status="draft"
+            RequestForQuote, id=request.data.get("rfq_id"), status="draft"
         )
 
         serializer = RFQStep2Serializer(data=request.data)
@@ -731,25 +719,13 @@ class RFQStep2APIView(APIView):
         rfq.selections.all().delete()
 
         for ref in serializer.validated_data.get("bom_parts", []):
-            RFQSelection.objects.create(
-                rfq=rfq,
-                item_type="bom",
-                reference=ref
-            )
+            RFQSelection.objects.create(rfq=rfq, item_type="bom", reference=ref)
 
         for ref in serializer.validated_data.get("components", []):
-            RFQSelection.objects.create(
-                rfq=rfq,
-                item_type="component",
-                reference=ref
-            )
+            RFQSelection.objects.create(rfq=rfq, item_type="component", reference=ref)
 
         for ref in serializer.validated_data.get("services", []):
-            RFQSelection.objects.create(
-                rfq=rfq,
-                item_type="service",
-                reference=ref
-            )
+            RFQSelection.objects.create(rfq=rfq, item_type="service", reference=ref)
 
         return Response({"message": "Step 2 completed"})
 
@@ -761,9 +737,7 @@ class RFQStep3APIView(APIView):
     @transaction.atomic
     def post(self, request):
         rfq = get_object_or_404(
-            RequestForQuote,
-            id=request.data.get("rfq_id"),
-            status="draft"
+            RequestForQuote, id=request.data.get("rfq_id"), status="draft"
         )
 
         serializer = RFQStep3Serializer(data=request.data)
@@ -778,10 +752,7 @@ class RFQStep3APIView(APIView):
         rfq.status = "submitted"
         rfq.save()
 
-        return Response(
-            {"message": "RFQ submitted successfully"},
-            status=201
-        )
+        return Response({"message": "RFQ submitted successfully"}, status=201)
 
 
 # ---------------- Dropdowns for RFQ ----------------
@@ -789,11 +760,13 @@ class QuoteTypeDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response([
-            {"key": "components", "label": "Components"},
-            {"key": "bom", "label": "Items (BOM Parts)"},
-            {"key": "services", "label": "Services"},
-        ])
+        return Response(
+            [
+                {"key": "components", "label": "Components"},
+                {"key": "bom", "label": "Items (BOM Parts)"},
+                {"key": "services", "label": "Services"},
+            ]
+        )
 
 
 # ---------------- Assembly Type Dropdown APIView ----------------
@@ -801,10 +774,12 @@ class AssemblyTypeDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response([
-            {"key": "pcb_assembly", "label": "PCB Assembly"},
-            {"key": "device_assembly", "label": "Device Assembly"},
-        ])
+        return Response(
+            [
+                {"key": "pcb_assembly", "label": "PCB Assembly"},
+                {"key": "device_assembly", "label": "Device Assembly"},
+            ]
+        )
 
 
 # ---------------- SRN Dropdown APIView ----------------
@@ -812,10 +787,9 @@ class SRNDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response([
-            {"key": k, "label": v}
-            for k, v in RequestForQuote.SRN_CHOICES
-        ])
+        return Response(
+            [{"key": k, "label": v} for k, v in RequestForQuote.SRN_CHOICES]
+        )
 
 
 # ---------------- Vendor Dropdown APIView ----------------
@@ -823,13 +797,15 @@ class VendorDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response([
-            {
-                "id": v.id,
-                "label": f"{v.name} ({v.city})" if hasattr(v, "city") else v.name
-            }
-            for v in Vendor.objects.all()
-        ])
+        return Response(
+            [
+                {
+                    "id": v.id,
+                    "label": f"{v.name} ({v.city})" if hasattr(v, "city") else v.name,
+                }
+                for v in Vendor.objects.all()
+            ]
+        )
 
 
 # ---------------- Create Purchase Order STEP 1 ----------------
@@ -846,22 +822,16 @@ class Step1APIView(APIView):
             order_id=serializer.validated_data["order_id"],
             rfq_id=serializer.validated_data["rfq_id"],
             assembly_type=serializer.validated_data["assembly_type"],
-            created_by=request.user
+            created_by=request.user,
         )
 
         for ot in serializer.validated_data["order_types"]:
-            PurchaseOrderType.objects.create(
-                purchase_order=po,
-                order_type=ot
-            )
+            PurchaseOrderType.objects.create(purchase_order=po, order_type=ot)
 
         return Response(
-            {
-                "purchase_order_id": po.id,
-                "message": "Step 1 completed"
-            },
-            status=201
+            {"purchase_order_id": po.id, "message": "Step 1 completed"}, status=201
         )
+
 
 # =========================== Create Purchase Order ==========================
 # ---------------- Create Purchase Order STEP 2 ----------------
@@ -870,10 +840,7 @@ class Step2APIView(APIView):
 
     @transaction.atomic
     def post(self, request):
-        po = get_object_or_404(
-            PurchaseOrder,
-            id=request.data.get("purchase_order_id")
-        )
+        po = get_object_or_404(PurchaseOrder, id=request.data.get("purchase_order_id"))
 
         serializer = PurchaseStep2Serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -892,10 +859,7 @@ class Step2APIView(APIView):
         ]
         PurchaseOrderItem.objects.bulk_create(items_list, batch_size=500)
 
-        return Response(
-            {"message": "Purchase Order created successfully"},
-            status=201
-        )
+        return Response({"message": "Purchase Order created successfully"}, status=201)
 
 
 # ---------------- Dropdowns for Purchase Order ----------------
@@ -903,11 +867,13 @@ class OrderTypeDropdown(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response([
-            {"key": "bom", "label": "Items (BOM Parts)"},
-            {"key": "component", "label": "Components (Enclosure, Battery, etc.)"},
-            {"key": "service", "label": "Services (Assembly, Quality Check, etc.)"},
-        ])
+        return Response(
+            [
+                {"key": "bom", "label": "Items (BOM Parts)"},
+                {"key": "component", "label": "Components (Enclosure, Battery, etc.)"},
+                {"key": "service", "label": "Services (Assembly, Quality Check, etc.)"},
+            ]
+        )
 
 
 # ---------------- Assembly Type Dropdown APIView ----------------
@@ -915,10 +881,12 @@ class AssemblyTypeDropdown(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response([
-            {"key": "pcb", "label": "PCB Assembly"},
-            {"key": "device", "label": "Device Assembly"},
-        ])
+        return Response(
+            [
+                {"key": "pcb", "label": "PCB Assembly"},
+                {"key": "device", "label": "Device Assembly"},
+            ]
+        )
 
 
 # ---------------- Payment Terms Dropdown APIView ----------------
@@ -926,10 +894,10 @@ class PaymentTermsDropdown(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response([
-            {"key": k, "label": v}
-            for k, v in PurchaseOrder.PAYMENT_TERMS_CHOICES
-        ])
+        return Response(
+            [{"key": k, "label": v} for k, v in PurchaseOrder.PAYMENT_TERMS_CHOICES]
+        )
+
 
 # ============================== MRN =================================
 # ---------------- Create Material Receipt Note (MRN) ----------------
@@ -940,8 +908,10 @@ class MRNCreateAPIView(APIView):
     def post(self, request):
         serializer = MRNCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        purchase_order = get_object_or_404(PurchaseOrder,id=serializer.validated_data["purchase_order_id"])
-        vendor = get_object_or_404(Vendor,id=serializer.validated_data["vendor_id"])
+        purchase_order = get_object_or_404(
+            PurchaseOrder, id=serializer.validated_data["purchase_order_id"]
+        )
+        vendor = get_object_or_404(Vendor, id=serializer.validated_data["vendor_id"])
         batch_number = f"MRN-{datetime.now().strftime('%Y%m%d%H%M%S')}"
         mrn = MaterialReceiptNote.objects.create(
             purchase_order=purchase_order,
@@ -951,7 +921,9 @@ class MRNCreateAPIView(APIView):
             receipt_date=serializer.validated_data["receipt_date"],
             batch_number=batch_number,
             invoice_number=serializer.validated_data.get("invoice_number", ""),
-            delivery_challan_number=serializer.validated_data.get("delivery_challan_number", ""),
+            delivery_challan_number=serializer.validated_data.get(
+                "delivery_challan_number", ""
+            ),
             eway_bill_number=serializer.validated_data.get("eway_bill_number", ""),
             remarks=serializer.validated_data.get("remarks", ""),
             created_by=request.user,
@@ -964,22 +936,22 @@ class MRNCreateAPIView(APIView):
             po_item = get_object_or_404(
                 PurchaseOrderItem,
                 id=item["purchase_order_item_id"],
-                purchase_order=purchase_order
+                purchase_order=purchase_order,
             )
             MaterialReceiptItem.objects.create(
                 mrn=mrn,
                 purchase_order_item=po_item,
                 received_qty=item["received_qty"],
-                serial_numbers=item.get("serial_numbers", "")
+                serial_numbers=item.get("serial_numbers", ""),
             )
 
         return Response(
             {
                 "mrn_id": mrn.id,
                 "batch_number": mrn.batch_number,
-                "message": "Material Receipt Note created successfully"
+                "message": "Material Receipt Note created successfully",
             },
-            status=201
+            status=201,
         )
 
 
@@ -988,13 +960,15 @@ class PurchaseOrderDropdown(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response([
-            {
-                "id": po.id,
-                "label": f"{po.order_id} ({po.assembly_type.replace('_', ' ').title()})"
-            }
-            for po in PurchaseOrder.objects.all()
-        ])
+        return Response(
+            [
+                {
+                    "id": po.id,
+                    "label": f"{po.order_id} ({po.assembly_type.replace('_', ' ').title()})",
+                }
+                for po in PurchaseOrder.objects.all()
+            ]
+        )
 
 
 # ---------------- Inward Type Dropdown APIView ----------------
@@ -1002,12 +976,14 @@ class InwardTypeDropdown(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response([
-            {"key": "bom_items", "label": "BOM Items"},
-            {"key": "materials", "label": "Materials"},
-            {"key": "assembled_pcb", "label": "Assembled PCB"},
-            {"key": "assembled_device", "label": "Assembled Device"},
-        ])
+        return Response(
+            [
+                {"key": "bom_items", "label": "BOM Items"},
+                {"key": "materials", "label": "Materials"},
+                {"key": "assembled_pcb", "label": "Assembled PCB"},
+                {"key": "assembled_device", "label": "Assembled Device"},
+            ]
+        )
 
 
 # ---------------- Purchase Order Items APIView ----------------
@@ -1017,17 +993,19 @@ class PurchaseOrderItemsAPIView(APIView):
     def get(self, request, po_id):
         po = get_object_or_404(PurchaseOrder, id=po_id)
 
-        return Response([
-            {
-                "id": item.id,
-                "product_id": item.item_code,
-                "item_type": item.item_type,
-                "vendor_name": item.vendor_name,
-                "unit_price": str(item.unit_price),
-                "delivery_days": item.delivery_days
-            }
-            for item in po.items.all()
-        ])
+        return Response(
+            [
+                {
+                    "id": item.id,
+                    "product_id": item.item_code,
+                    "item_type": item.item_type,
+                    "vendor_name": item.vendor_name,
+                    "unit_price": str(item.unit_price),
+                    "delivery_days": item.delivery_days,
+                }
+                for item in po.items.all()
+            ]
+        )
 
 
 # ===================================== Dispatch Workflow APIs ========================================
@@ -1040,14 +1018,10 @@ class DispatchStep1APIView(APIView):
         serializer.is_valid(raise_exception=True)
 
         dispatch = Dispatch.objects.create(
-            **serializer.validated_data,
-            created_by=request.user
+            **serializer.validated_data, created_by=request.user
         )
 
-        return Response(
-            {"dispatch_id": dispatch.id},
-            status=status.HTTP_201_CREATED
-        )
+        return Response({"dispatch_id": dispatch.id}, status=status.HTTP_201_CREATED)
 
 
 # ---------------- STEP 2 ----------------
@@ -1057,23 +1031,14 @@ class DispatchStep2APIView(APIView):
     def post(self, request, dispatch_id):
         dispatch = get_object_or_404(Dispatch, id=dispatch_id)
 
-        serializer = DispatchStep2Serializer(
-            dispatch,
-            data=request.data,
-            partial=True
-        )
+        serializer = DispatchStep2Serializer(dispatch, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        remaining_stock = (
-            dispatch.batch.available_stock - dispatch.dispatch_quantity
-        )
+        remaining_stock = dispatch.batch.available_stock - dispatch.dispatch_quantity
 
         return Response(
-            {
-                "message": "Stock verified",
-                "remaining_stock": remaining_stock
-            }
+            {"message": "Stock verified", "remaining_stock": remaining_stock}
         )
 
 
@@ -1085,23 +1050,13 @@ class DispatchStep3APIView(APIView):
         dispatch = get_object_or_404(Dispatch, id=dispatch_id)
 
         # Block if Step-2 not completed
-        if not all([
-            dispatch.product,
-            dispatch.batch,
-            dispatch.dispatch_quantity
-        ]):
+        if not all([dispatch.product, dispatch.batch, dispatch.dispatch_quantity]):
             return Response(
-                {
-                    "error": "Step-2 (Stock Verification) must be completed first."
-                },
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "Step-2 (Stock Verification) must be completed first."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-        serializer = DispatchStep3Serializer(
-            dispatch,
-            data=request.data,
-            partial=True
-        )
+        serializer = DispatchStep3Serializer(dispatch, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
@@ -1119,17 +1074,11 @@ class DispatchStep4APIView(APIView):
         # Block if Step-3 not completed
         if not dispatch.dispatch_date:
             return Response(
-                {
-                    "error": "Step-3 (Dispatch Details) must be completed first."
-                },
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "Step-3 (Dispatch Details) must be completed first."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-        serializer = DispatchStep4Serializer(
-            dispatch,
-            data=request.data,
-            partial=True
-        )
+        serializer = DispatchStep4Serializer(dispatch, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
@@ -1139,10 +1088,8 @@ class DispatchStep4APIView(APIView):
 
             if dispatch.dispatch_quantity > batch.available_stock:
                 return Response(
-                    {
-                        "error": "Insufficient stock at final dispatch."
-                    },
-                    status=status.HTTP_400_BAD_REQUEST
+                    {"error": "Insufficient stock at final dispatch."},
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
 
             batch.available_stock -= dispatch.dispatch_quantity
@@ -1155,11 +1102,8 @@ class DispatchStep4APIView(APIView):
         dispatch.save(update_fields=["status", "stock_deducted"])
 
         return Response(
-            {
-                "message": "Dispatch completed successfully",
-                "dispatch_id": dispatch.id
-            },
-            status=status.HTTP_200_OK
+            {"message": "Dispatch completed successfully", "dispatch_id": dispatch.id},
+            status=status.HTTP_200_OK,
         )
 
 
@@ -1168,10 +1112,12 @@ class SalesOrderDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response([
-            {"id": so.id, "label": f"SO-{so.id}"}
-            for so in SalesOrder.objects.all().order_by("-id")
-        ])
+        return Response(
+            [
+                {"id": so.id, "label": f"SO-{so.id}"}
+                for so in SalesOrder.objects.all().order_by("-id")
+            ]
+        )
 
 
 # ---------------- Dispatch Order Type Dropdown APIView ----------------
@@ -1179,11 +1125,13 @@ class DispatchOrderTypeDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response([
-            {"key": "distributor", "label": "Distributor"},
-            {"key": "dealer", "label": "Dealer"},
-            {"key": "b2c", "label": "B2C Customer"},
-        ])
+        return Response(
+            [
+                {"key": "distributor", "label": "Distributor"},
+                {"key": "dealer", "label": "Dealer"},
+                {"key": "b2c", "label": "B2C Customer"},
+            ]
+        )
 
 
 # ---------------- Dispatch Product Dropdown APIView ----------------
@@ -1191,10 +1139,12 @@ class DispatchProductDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response([
-            {"id": p.id, "label": p.name}
-            for p in OrderProduct.objects.all().order_by("name")
-        ])
+        return Response(
+            [
+                {"id": p.id, "label": p.name}
+                for p in OrderProduct.objects.all().order_by("name")
+            ]
+        )
 
 
 # ---------------- Dispatch Batch Dropdown APIView ----------------
@@ -1206,18 +1156,19 @@ class DispatchBatchDropdownAPIView(APIView):
 
         if not product_id:
             return Response(
-                {"error": "product_id is required"},
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "product_id is required"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        return Response([
-            {
-                "id": b.id,
-                "label": b.batch_number,
-                "available_stock": b.available_stock
-            }
-            for b in OrderBatch.objects.filter(product_id=product_id)
-        ])
+        return Response(
+            [
+                {
+                    "id": b.id,
+                    "label": b.batch_number,
+                    "available_stock": b.available_stock,
+                }
+                for b in OrderBatch.objects.filter(product_id=product_id)
+            ]
+        )
 
 
 # ======================================= Post-Dispatch Returns APIs =========================================
@@ -1227,9 +1178,7 @@ class PostDispatchReturnCreateAPIView(APIView):
 
     @transaction.atomic
     def post(self, request):
-        serializer = PostDispatchReturnCreateSerializer(
-            data=request.data
-        )
+        serializer = PostDispatchReturnCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         header_data = serializer.validated_data["header"]
@@ -1237,17 +1186,14 @@ class PostDispatchReturnCreateAPIView(APIView):
 
         # Create main return record
         return_obj = PostDispatchReturn.objects.create(
-            **header_data,
-            created_by=request.user
+            **header_data, created_by=request.user
         )
 
         total_amount = Decimal("0.00")
 
         # Create item records
         for item in items_data:
-            item_amount = (
-                Decimal(item["return_qty"]) * item["unit_price"]
-            )
+            item_amount = Decimal(item["return_qty"]) * item["unit_price"]
 
             total_amount += item_amount
 
@@ -1269,9 +1215,9 @@ class PostDispatchReturnCreateAPIView(APIView):
             {
                 "return_id": return_obj.id,
                 "total_return_amount": total_amount,
-                "message": "Return created and credit note initiated"
+                "message": "Return created and credit note initiated",
             },
-            status=status.HTTP_201_CREATED
+            status=status.HTTP_201_CREATED,
         )
 
 
@@ -1280,11 +1226,13 @@ class ReturnTypeDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response([
-            {"key": "full", "label": "Full Return (All Items)"},
-            {"key": "partial", "label": "Partial Return (Some Items)"},
-            {"key": "replacement", "label": "Return for Replacement"},
-        ])
+        return Response(
+            [
+                {"key": "full", "label": "Full Return (All Items)"},
+                {"key": "partial", "label": "Partial Return (Some Items)"},
+                {"key": "replacement", "label": "Return for Replacement"},
+            ]
+        )
 
 
 # ---------------------- Return Reason Dropdown API View ----------------
@@ -1292,15 +1240,17 @@ class ReturnReasonDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response([
-            {"key": "damaged", "label": "Damaged in Transit"},
-            {"key": "defective", "label": "Defective Product"},
-            {"key": "wrong_item", "label": "Wrong Item Delivered"},
-            {"key": "rejected", "label": "Customer Rejection"},
-            {"key": "quality", "label": "Quality Issues"},
-            {"key": "spec_mismatch", "label": "Specification Mismatch"},
-            {"key": "other", "label": "Other"},
-        ])
+        return Response(
+            [
+                {"key": "damaged", "label": "Damaged in Transit"},
+                {"key": "defective", "label": "Defective Product"},
+                {"key": "wrong_item", "label": "Wrong Item Delivered"},
+                {"key": "rejected", "label": "Customer Rejection"},
+                {"key": "quality", "label": "Quality Issues"},
+                {"key": "spec_mismatch", "label": "Specification Mismatch"},
+                {"key": "other", "label": "Other"},
+            ]
+        )
 
 
 # ---------------- State Dropdown APIView ----------------
@@ -1308,14 +1258,10 @@ class StateDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        states = State.objects.all().order_by("name")
-        return Response([
-            {
-                "id": state.id,
-                "label": state.name
-            }
-            for state in states
-        ])
+        states = State.objects.filter(status="active").order_by("name")
+        return Response(
+            [{"id": state.id, "label": state.name} for state in states], status=200
+        )
 
 
 # ---------------- District Dropdown APIView ----------------
@@ -1328,18 +1274,17 @@ class DistrictDropdownAPIView(APIView):
         if not state_id:
             return Response(
                 {"state_id": "state_id query param is required"},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-        districts = District.objects.filter(state_id=state_id)
+        districts = District.objects.filter(
+            state_id=state_id, status="active"
+        ).order_by("name")
 
-        return Response([
-            {
-                "id": district.id,
-                "label": district.name
-            }
-            for district in districts
-        ])
+        return Response(
+            [{"id": district.id, "label": district.name} for district in districts],
+            status=200,
+        )
 
 
 # ---------------- Module Management Account Registration ----------------
@@ -1353,11 +1298,8 @@ class AccountRegistrationCreateAPIView(APIView):
         account = serializer.save()
 
         return Response(
-            {
-                "message": "Account created successfully",
-                "account_id": account.id
-            },
-            status=status.HTTP_201_CREATED
+            {"message": "Account created successfully", "account_id": account.id},
+            status=status.HTTP_201_CREATED,
         )
 
 
@@ -1374,9 +1316,9 @@ class QCInspectorRegistrationCreateAPIView(APIView):
         return Response(
             {
                 "message": "QC Inspector registered successfully",
-                "qc_inspector_id": qc_inspector.id
+                "qc_inspector_id": qc_inspector.id,
             },
-            status=status.HTTP_201_CREATED
+            status=status.HTTP_201_CREATED,
         )
 
 
@@ -1393,9 +1335,9 @@ class PurchaseDepartmentRegistrationCreateAPIView(APIView):
         return Response(
             {
                 "message": "Purchase Department registered successfully",
-                "purchase_department_id": purchase_department.id
+                "purchase_department_id": purchase_department.id,
             },
-            status=status.HTTP_201_CREATED
+            status=status.HTTP_201_CREATED,
         )
 
 
@@ -1412,9 +1354,9 @@ class StoreManagerRegistrationCreateAPIView(APIView):
         return Response(
             {
                 "message": "Store Manager registered successfully",
-                "store_manager_id": store_manager.id
+                "store_manager_id": store_manager.id,
             },
-            status=status.HTTP_201_CREATED
+            status=status.HTTP_201_CREATED,
         )
 
 
@@ -1431,98 +1373,104 @@ class RepairTechnicianRegistrationCreateAPIView(APIView):
         return Response(
             {
                 "message": "Repair Technician registered successfully",
-                "repair_technician_id": repair_technician.id
+                "repair_technician_id": repair_technician.id,
             },
-            status=status.HTTP_201_CREATED
+            status=status.HTTP_201_CREATED,
         )
 
 
 # ---------------- Store Transfer ViewSet ----------------
 class StoreTransferViewSet(ModelViewSet):
-    queryset = StoreTransfer.objects.select_related('product', 'category', 'vendor', 'created_by').all()
+    queryset = StoreTransfer.objects.select_related(
+        "product", "category", "vendor", "created_by"
+    ).all()
     permission_classes = [IsAuthenticated]
     filter_backends = [SearchFilter]
     search_fields = [
-        'product_name',           # Search by product name
-        'batch_number',           # Search by batch number
-        'vendor__name',           # Search by vendor name
-        'category__name',         # Search by category name
-        'transfer_id',            # Search by transfer ID
-        'mrn_number',             # Search by MRN number
+        "product_name",  # Search by product name
+        "batch_number",  # Search by batch number
+        "vendor__name",  # Search by vendor name
+        "category__name",  # Search by category name
+        "transfer_id",  # Search by transfer ID
+        "mrn_number",  # Search by MRN number
     ]
     pagination_class = PageNumberPagination
-    
+
     def get_serializer_class(self):
         """Choose serializer based on action"""
-        if self.action == 'retrieve':
+        if self.action == "retrieve":
             return StoreTransferDetailSerializer
-        elif self.action in ['create', 'update', 'partial_update']:
+        elif self.action in ["create", "update", "partial_update"]:
             return StoreTransferCreateUpdateSerializer
         return StoreTransferListSerializer
-    
+
     def get_queryset(self):
         """Filter by dispatch_status if provided in query params"""
         queryset = super().get_queryset()
-        
+
         # Filter by dispatch status if provided
-        dispatch_status = self.request.query_params.get('dispatch_status')
+        dispatch_status = self.request.query_params.get("dispatch_status")
         if dispatch_status:
             queryset = queryset.filter(dispatch_status=dispatch_status)
-        
+
         # Filter by category if provided
-        category_id = self.request.query_params.get('category_id')
+        category_id = self.request.query_params.get("category_id")
         if category_id:
             queryset = queryset.filter(category_id=category_id)
-        
+
         # Filter by date range if provided
-        transfer_date_from = self.request.query_params.get('transfer_date_from')
+        transfer_date_from = self.request.query_params.get("transfer_date_from")
         if transfer_date_from:
             queryset = queryset.filter(transfer_date__gte=transfer_date_from)
-        
-        transfer_date_to = self.request.query_params.get('transfer_date_to')
+
+        transfer_date_to = self.request.query_params.get("transfer_date_to")
         if transfer_date_to:
             queryset = queryset.filter(transfer_date__lte=transfer_date_to)
-        
+
         return queryset
-    
+
     def perform_create(self, serializer):
         """Set the created_by field to the current user"""
         serializer.save(created_by=self.request.user)
-    
-    @action(detail=False, methods=['get'])
+
+    @action(detail=False, methods=["get"])
     def filter_options(self, request):
         """Get available filter options for the UI"""
         dispatch_statuses = StoreTransfer.DISPATCH_STATUS_CHOICES
         categories = ProductCategory.objects.all()
-        
-        return Response({
-            'dispatch_statuses': [
-                {'value': choice[0], 'label': choice[1]} 
-                for choice in dispatch_statuses
-            ],
-            'categories': ProductCategorySerializer(categories, many=True).data
-        })
+
+        return Response(
+            {
+                "dispatch_statuses": [
+                    {"value": choice[0], "label": choice[1]}
+                    for choice in dispatch_statuses
+                ],
+                "categories": ProductCategorySerializer(categories, many=True).data,
+            }
+        )
 
 
 # ---------------- Product Category ViewSet ----------------
 class ProductCategoryViewSet(ModelViewSet):
     """ViewSet for Product Categories"""
+
     queryset = ProductCategory.objects.all()
     serializer_class = ProductCategorySerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [SearchFilter]
-    search_fields = ['name', 'description']
+    search_fields = ["name", "description"]
 
 
 # ============================================================
 # ===================== ACCOUNT MANAGEMENT ===================
 # ============================================================
 
+
 # ---------------- Debit Note ViewSet ----------------
 class DebitNoteViewSet(ModelViewSet):
     """
     ViewSet for managing Debit Notes.
-    
+
     Supports:
     - LIST: Get all debit notes with search and status filtering
     - RETRIEVE: Get detailed information about a specific debit note
@@ -1531,29 +1479,30 @@ class DebitNoteViewSet(ModelViewSet):
     - DESTROY: Delete a debit note
     - SUMMARY: Get dashboard summary (pending amount, total amount)
     """
-    queryset = DebitNote.objects.select_related('created_by').all()
+
+    queryset = DebitNote.objects.select_related("created_by").all()
     permission_classes = [IsAuthenticated]
     filter_backends = [SearchFilter]
-    search_fields = ['number', 'vendor', 'reference_document']
+    search_fields = ["number", "vendor", "reference_document"]
     pagination_class = None
-    
+
     def get_serializer_class(self):
-        if self.action == 'retrieve':
+        if self.action == "retrieve":
             return DebitNoteDetailSerializer
-        elif self.action == 'list':
+        elif self.action == "list":
             return DebitNoteListSerializer
         return DebitNoteCreateUpdateSerializer
-    
+
     def get_queryset(self):
         queryset = super().get_queryset()
-        
+
         # Filter by status if provided
-        status = self.request.query_params.get('status')
-        if status and status != 'all':
+        status = self.request.query_params.get("status")
+        if status and status != "all":
             queryset = queryset.filter(status=status)
-        
-        return queryset.order_by('-created_at')
-    
+
+        return queryset.order_by("-created_at")
+
     def perform_create(self, serializer):
         number = generate_note_number("debit")
 
@@ -1562,33 +1511,35 @@ class DebitNoteViewSet(ModelViewSet):
             number=number,
             date=timezone.now().date(),
         )
-    
-    @action(detail=False, methods=['get'])
+
+    @action(detail=False, methods=["get"])
     def summary(self, request):
         """Get dashboard summary for debit notes"""
         all_notes = self.get_queryset()
-        
-        pending_amount = all_notes.filter(status='pending').aggregate(
-            total=models.Sum('amount')
-        )['total'] or Decimal('0')
-        
-        total_amount = all_notes.aggregate(
-            total=models.Sum('amount')
-        )['total'] or Decimal('0')
-        
-        return Response({
-            "pending_amount": float(pending_amount),
-            "total_amount": float(total_amount),
-            "pending_count": all_notes.filter(status='pending').count(),
-            "total_count": all_notes.count(),
-        })
+
+        pending_amount = all_notes.filter(status="pending").aggregate(
+            total=models.Sum("amount")
+        )["total"] or Decimal("0")
+
+        total_amount = all_notes.aggregate(total=models.Sum("amount"))[
+            "total"
+        ] or Decimal("0")
+
+        return Response(
+            {
+                "pending_amount": float(pending_amount),
+                "total_amount": float(total_amount),
+                "pending_count": all_notes.filter(status="pending").count(),
+                "total_count": all_notes.count(),
+            }
+        )
 
 
 # ---------------- Credit Note ViewSet ----------------
 class CreditNoteViewSet(ModelViewSet):
     """
     ViewSet for managing Credit Notes.
-    
+
     Supports:
     - LIST: Get all credit notes with search and status filtering
     - RETRIEVE: Get detailed information about a specific credit note
@@ -1597,29 +1548,30 @@ class CreditNoteViewSet(ModelViewSet):
     - DESTROY: Delete a credit note
     - SUMMARY: Get dashboard summary (pending amount, total amount)
     """
-    queryset = CreditNote.objects.select_related('created_by').all()
+
+    queryset = CreditNote.objects.select_related("created_by").all()
     permission_classes = [IsAuthenticated]
     filter_backends = [SearchFilter]
-    search_fields = ['number', 'customer', 'reference_document']
+    search_fields = ["number", "customer", "reference_document"]
     pagination_class = None
-    
+
     def get_serializer_class(self):
-        if self.action == 'retrieve':
+        if self.action == "retrieve":
             return CreditNoteDetailSerializer
-        elif self.action == 'list':
+        elif self.action == "list":
             return CreditNoteListSerializer
         return CreditNoteCreateUpdateSerializer
-    
+
     def get_queryset(self):
         queryset = super().get_queryset()
-        
+
         # Filter by status if provided
-        status = self.request.query_params.get('status')
-        if status and status != 'all':
+        status = self.request.query_params.get("status")
+        if status and status != "all":
             queryset = queryset.filter(status=status)
-        
-        return queryset.order_by('-created_at')
-    
+
+        return queryset.order_by("-created_at")
+
     def perform_create(self, serializer):
         number = generate_note_number("credit")
 
@@ -1628,26 +1580,28 @@ class CreditNoteViewSet(ModelViewSet):
             number=number,
             date=timezone.now().date(),
         )
-    
-    @action(detail=False, methods=['get'])
+
+    @action(detail=False, methods=["get"])
     def summary(self, request):
         """Get dashboard summary for credit notes"""
         all_notes = self.get_queryset()
-        
-        pending_amount = all_notes.filter(status='pending').aggregate(
-            total=models.Sum('amount')
-        )['total'] or Decimal('0')
-        
-        total_amount = all_notes.aggregate(
-            total=models.Sum('amount')
-        )['total'] or Decimal('0')
-        
-        return Response({
-            "pending_amount": float(pending_amount),
-            "total_amount": float(total_amount),
-            "pending_count": all_notes.filter(status='pending').count(),
-            "total_count": all_notes.count(),
-        })
+
+        pending_amount = all_notes.filter(status="pending").aggregate(
+            total=models.Sum("amount")
+        )["total"] or Decimal("0")
+
+        total_amount = all_notes.aggregate(total=models.Sum("amount"))[
+            "total"
+        ] or Decimal("0")
+
+        return Response(
+            {
+                "pending_amount": float(pending_amount),
+                "total_amount": float(total_amount),
+                "pending_count": all_notes.filter(status="pending").count(),
+                "total_count": all_notes.count(),
+            }
+        )
 
 
 # ---------------- Account Management Dashboard API ----------------
@@ -1656,36 +1610,40 @@ class AccountManagementDashboardAPIView(APIView):
     Dashboard view for Account Management.
     Returns summary of debit notes and credit notes.
     """
+
     permission_classes = [IsAuthenticated]
-    
+
     def get(self, request):
         debit_summary = DebitNote.objects.aggregate(
-            pending=models.Sum('amount', filter=models.Q(status='pending')),
-            total=models.Sum('amount')
+            pending=models.Sum("amount", filter=models.Q(status="pending")),
+            total=models.Sum("amount"),
         )
-        
+
         credit_summary = CreditNote.objects.aggregate(
-            pending=models.Sum('amount', filter=models.Q(status='pending')),
-            total=models.Sum('amount')
+            pending=models.Sum("amount", filter=models.Q(status="pending")),
+            total=models.Sum("amount"),
         )
-        
-        return Response({
-            "debit_notes": {
-                "pending_amount": float(debit_summary['pending'] or 0),
-                "total_amount": float(debit_summary['total'] or 0),
-            },
-            "credit_notes": {
-                "pending_amount": float(credit_summary['pending'] or 0),
-                "total_amount": float(credit_summary['total'] or 0),
-            },
-        })
+
+        return Response(
+            {
+                "debit_notes": {
+                    "pending_amount": float(debit_summary["pending"] or 0),
+                    "total_amount": float(debit_summary["total"] or 0),
+                },
+                "credit_notes": {
+                    "pending_amount": float(credit_summary["pending"] or 0),
+                    "total_amount": float(credit_summary["total"] or 0),
+                },
+            }
+        )
 
 
 # ---------------- Dropdown APIs for Debit/Credit Notes ----------------
 class DebitNoteReasonsAPIView(APIView):
     """Get available debit note reason choices"""
+
     permission_classes = [IsAuthenticated]
-    
+
     def get(self, request):
         reasons = [
             {"key": choice[0], "label": choice[1]}
@@ -1697,8 +1655,9 @@ class DebitNoteReasonsAPIView(APIView):
 # ---------------- Dropdown APIs for Debit/Credit Notes ----------------
 class CreditNoteReasonsAPIView(APIView):
     """Get available credit note reason choices"""
+
     permission_classes = [IsAuthenticated]
-    
+
     def get(self, request):
         reasons = [
             {"key": choice[0], "label": choice[1]}
@@ -1710,8 +1669,9 @@ class CreditNoteReasonsAPIView(APIView):
 # ---------------- Dropdown APIs for Debit/Credit Notes ----------------
 class NoteStatusChoicesAPIView(APIView):
     """Get available note status choices"""
+
     permission_classes = [IsAuthenticated]
-    
+
     def get(self, request):
         statuses = [
             {"key": choice[0], "label": choice[1]}
@@ -1727,7 +1687,7 @@ class NoteStatusChoicesAPIView(APIView):
 class ReturnRequestViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing Return Requests
-    
+
     Features:
     - List all return requests with pagination
     - Filter by status (pending, accepted, rejected)
@@ -1738,20 +1698,21 @@ class ReturnRequestViewSet(viewsets.ModelViewSet):
     - Update return request status
     - Delete return request
     """
+
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    search_fields = ['return_number', 'reason', 'items']
-    ordering_fields = ['date', 'amount', 'status', 'created_at']
-    ordering = ['-date']
-    filterset_fields = ['status']
+    search_fields = ["return_number", "reason", "items"]
+    ordering_fields = ["date", "amount", "status", "created_at"]
+    ordering = ["-date"]
+    filterset_fields = ["status"]
 
     def get_queryset(self):
-        return ReturnRequest.objects.select_related('created_by')
+        return ReturnRequest.objects.select_related("created_by")
 
     def get_serializer_class(self):
-        if self.action == 'list':
+        if self.action == "list":
             return ReturnRequestListSerializer
-        elif self.action == 'counts':
+        elif self.action == "counts":
             return ReturnRequestCountSerializer
         return ReturnRequestSerializer
 
@@ -1761,11 +1722,11 @@ class ReturnRequestViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         serializer.save()
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=["get"])
     def counts(self, request):
         """
         Get count of returns by status
-        
+
         Returns:
         {
             "pending": 5,
@@ -1775,15 +1736,15 @@ class ReturnRequestViewSet(viewsets.ModelViewSet):
         """
         queryset = self.get_queryset()
         counts = {
-            'pending': queryset.filter(status='pending').count(),
-            'accepted': queryset.filter(status='accepted').count(),
-            'rejected': queryset.filter(status='rejected').count(),
+            "pending": queryset.filter(status="pending").count(),
+            "accepted": queryset.filter(status="accepted").count(),
+            "rejected": queryset.filter(status="rejected").count(),
         }
         # serializer = self.get_serializer(counts)
         serializer = ReturnRequestCountSerializer(counts)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=["get"])
     def recent(self, request):
         """
         Get recent return requests (last 10 by date)
@@ -1792,23 +1753,23 @@ class ReturnRequestViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['patch'])
+    @action(detail=True, methods=["patch"])
     def change_status(self, request, pk=None):
         """
         Change return request status
-        
+
         Request:
         {
             "status": "accepted"  // or "rejected"
         }
         """
         return_request = self.get_object()
-        new_status = request.data.get('status')
+        new_status = request.data.get("status")
 
-        if new_status not in ['pending', 'accepted', 'rejected']:
+        if new_status not in ["pending", "accepted", "rejected"]:
             return Response(
-                {'error': 'Invalid status. Must be pending, accepted, or rejected'},
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "Invalid status. Must be pending, accepted, or rejected"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         return_request.status = new_status
@@ -1817,10 +1778,10 @@ class ReturnRequestViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(return_request)
         return Response(
             {
-                'message': f'Return status updated to {new_status}',
-                'return_request': serializer.data
+                "message": f"Return status updated to {new_status}",
+                "return_request": serializer.data,
             },
-            status=status.HTTP_200_OK
+            status=status.HTTP_200_OK,
         )
 
 
@@ -1829,22 +1790,22 @@ class RepairRecordViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     search_fields = [
-        'product_id',
-        'product_name',
-        'vendor',
-        'mrn_number',
-        'repair_type',
-        'repair_center'
+        "product_id",
+        "product_name",
+        "vendor",
+        "mrn_number",
+        "repair_type",
+        "repair_center",
     ]
-    ordering_fields = ['created_at', 'product_name', 'status']
-    ordering = ['-created_at']
-    filterset_fields = ['status', 'repair_type']
+    ordering_fields = ["created_at", "product_name", "status"]
+    ordering = ["-created_at"]
+    filterset_fields = ["status", "repair_type"]
 
     def get_queryset(self):
-        return RepairRecord.objects.select_related('created_by')
+        return RepairRecord.objects.select_related("created_by")
 
     def get_serializer_class(self):
-        if self.action == 'list':
+        if self.action == "list":
             return RepairRecordListSerializer
         return RepairRecordSerializer
 
@@ -1853,7 +1814,8 @@ class RepairRecordViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         serializer.save()
-    @action(detail=False, methods=['get'])
+
+    @action(detail=False, methods=["get"])
     def statistics(self, request):
         """
         Get repair statistics
@@ -1874,32 +1836,29 @@ class RepairRecordViewSet(viewsets.ModelViewSet):
         """
         queryset = self.get_queryset()
         totals = queryset.aggregate(
-            total_failed=Sum('failed_qty'),
-            total_repaired=Sum('repaired_qty'),
-            total_rejected=Sum('rejected_qty'),
-            total_pending=Sum('repair_pending'),
+            total_failed=Sum("failed_qty"),
+            total_repaired=Sum("repaired_qty"),
+            total_rejected=Sum("rejected_qty"),
+            total_pending=Sum("repair_pending"),
         )
 
         # Replace None with 0 (important when table is empty)
         totals = {k: v or 0 for k, v in totals.items()}
 
         by_status = queryset.aggregate(
-            pending=Count('id', filter=Q(status='pending')),
-            in_progress=Count('id', filter=Q(status='in_progress')),
-            completed=Count('id', filter=Q(status='completed')),
-            failed=Count('id', filter=Q(status='failed'))
+            pending=Count("id", filter=Q(status="pending")),
+            in_progress=Count("id", filter=Q(status="in_progress")),
+            completed=Count("id", filter=Q(status="completed")),
+            failed=Count("id", filter=Q(status="failed")),
         )
 
-        return Response({
-            **totals,
-            "by_status": by_status
-        })
-    
-    @action(detail=True, methods=['patch'])
+        return Response({**totals, "by_status": by_status})
+
+    @action(detail=True, methods=["patch"])
     def update_quantities(self, request, pk=None):
         """
         Update repair quantities
-        
+
         Request:
         {
             "repaired_qty": 10,
@@ -1908,16 +1867,18 @@ class RepairRecordViewSet(viewsets.ModelViewSet):
         }
         """
         repair_record = self.get_object()
-        
-        repaired_qty = request.data.get('repaired_qty', repair_record.repaired_qty)
-        rejected_qty = request.data.get('rejected_qty', repair_record.rejected_qty)
-        repair_pending = request.data.get('repair_pending', repair_record.repair_pending)
+
+        repaired_qty = request.data.get("repaired_qty", repair_record.repaired_qty)
+        rejected_qty = request.data.get("rejected_qty", repair_record.rejected_qty)
+        repair_pending = request.data.get(
+            "repair_pending", repair_record.repair_pending
+        )
 
         # Validate quantities
         if repaired_qty + rejected_qty > repair_record.failed_qty:
             return Response(
-                {'error': 'Repaired Qty + Rejected Qty cannot exceed Failed Qty'},
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "Repaired Qty + Rejected Qty cannot exceed Failed Qty"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         repair_record.repaired_qty = repaired_qty
@@ -1933,7 +1894,7 @@ class RepairRecordViewSet(viewsets.ModelViewSet):
 class RejectedItemViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing Rejected Items
-    
+
     Features:
     - List all rejected items with search and filter
     - Search by product ID, product name, vendor, MRN number, or reason
@@ -1943,18 +1904,24 @@ class RejectedItemViewSet(viewsets.ModelViewSet):
     - Update rejected item
     - Delete rejected item
     """
+
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    search_fields = ['product_id','product_name','vendor','mrn_number',]
-    ordering_fields = ['qc_date', 'product_name', 'rejected_qty']
-    ordering = ['-qc_date']
-    filterset_fields = ['vendor', 'qc_date']
+    search_fields = [
+        "product_id",
+        "product_name",
+        "vendor",
+        "mrn_number",
+    ]
+    ordering_fields = ["qc_date", "product_name", "rejected_qty"]
+    ordering = ["-qc_date"]
+    filterset_fields = ["vendor", "qc_date"]
 
     def get_queryset(self):
-        return RejectedItem.objects.select_related('created_by')
+        return RejectedItem.objects.select_related("created_by")
 
     def get_serializer_class(self):
-        if self.action == 'list':
+        if self.action == "list":
             return RejectedItemListSerializer
         return RejectedItemSerializer
 
@@ -1964,7 +1931,7 @@ class RejectedItemViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         serializer.save()
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=["get"])
     def statistics(self, request):
         """
         Get rejected items statistics
@@ -1981,90 +1948,87 @@ class RejectedItemViewSet(viewsets.ModelViewSet):
         """
         queryset = self.get_queryset()
 
-        total_rejected_qty = (queryset.aggregate(total=Sum('rejected_qty'))['total'] or 0)
+        total_rejected_qty = queryset.aggregate(total=Sum("rejected_qty"))["total"] or 0
 
         vendor_stats = (
-            queryset
-            .values('vendor')
-            .annotate(total=Sum('rejected_qty'))
-            .order_by('-total')
+            queryset.values("vendor")
+            .annotate(total=Sum("rejected_qty"))
+            .order_by("-total")
         )
 
-        by_vendor = {
-            row['vendor']: row['total']
-            for row in vendor_stats
-        }
+        by_vendor = {row["vendor"]: row["total"] for row in vendor_stats}
 
-        return Response({
-            'total_rejected_items': queryset.count(),
-            'total_rejected_qty': total_rejected_qty,
-            'by_vendor': by_vendor
-        })
+        return Response(
+            {
+                "total_rejected_items": queryset.count(),
+                "total_rejected_qty": total_rejected_qty,
+                "by_vendor": by_vendor,
+            }
+        )
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=["get"])
     def by_vendor(self, request):
         """
         Get rejected items grouped by vendor
         """
-        vendor = request.query_params.get('vendor')
+        vendor = request.query_params.get("vendor")
 
         if not vendor:
             return Response(
-                {'error': 'vendor parameter is required'},
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "vendor parameter is required"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         queryset = self.get_queryset().filter(vendor=vendor)
 
-        total_rejected_qty = (
-            queryset.aggregate(total=Sum('rejected_qty'))['total'] or 0
-        )
+        total_rejected_qty = queryset.aggregate(total=Sum("rejected_qty"))["total"] or 0
 
         serializer = self.get_serializer(queryset, many=True)
 
-        return Response({
-            'vendor': vendor,
-            'total_rejected_qty': total_rejected_qty,
-            'items': serializer.data
-        })
+        return Response(
+            {
+                "vendor": vendor,
+                "total_rejected_qty": total_rejected_qty,
+                "items": serializer.data,
+            }
+        )
 
 
 # ============================================================
 # DEVICE MANAGEMENT APIs
 # ============================================================
 
+
 class DeviceViewSet(viewsets.ReadOnlyModelViewSet):
     """
     ViewSet for viewing devices
-    
+
     Features:
     - LIST: Get all devices (ALL DEVICES table)
     - RETRIEVE: Get device details (VIEW DEVICE page)
     - FILTER by status
     - SEARCH by name/model
     """
+
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    search_fields = ['info__make', 'info__model']
-    ordering_fields = ['created_at', 'status']
-    ordering = ['-created_at']
-    filterset_fields = ['status']
-    
+    search_fields = ["info__make", "info__model"]
+    ordering_fields = ["created_at", "status"]
+    ordering = ["-created_at"]
+    filterset_fields = ["status"]
+
     def get_queryset(self):
         return Device.objects.select_related(
-            'created_by',
-            'info',
-            'bom',
-            'enclosure',
-            'wireharness',
-            'battery',
-            'sosbutton',
-            'usermanual'
+            "created_by",
+            "info",
+            "bom",
+            "enclosure",
+            "wireharness",
+            "battery",
+            "sosbutton",
+            "usermanual",
         ).prefetch_related(
-            'sticker_set',
-            'accessories',
-            'bom__components',
-            'wireharness__connectors'
+            "sticker_set", "accessories", "bom__components", "wireharness__connectors"
         )
 
     def get_serializer_class(self):
@@ -2073,14 +2037,14 @@ class DeviceViewSet(viewsets.ReadOnlyModelViewSet):
         - LIST: DeviceListSerializer (minimal fields)
         - RETRIEVE: DeviceDetailSerializer (all fields)
         """
-        if self.action == 'retrieve':
+        if self.action == "retrieve":
             return DeviceDetailSerializer
         return DeviceListSerializer
-    
+
     def get_serializer_context(self):
         """Add request to serializer context for URL generation"""
         context = super().get_serializer_context()
-        context['request'] = self.request
+        context["request"] = self.request
         return context
 
 
@@ -2091,7 +2055,7 @@ class SelfOrderCreateAPIView(APIView):
     def post(self, request):
         """Create a new self order"""
         serializer = SelfOrderSerializer(data=request.data)
-        
+
         if serializer.is_valid():
             try:
                 # Set the user to the authenticated user
@@ -2111,7 +2075,7 @@ class SelfOrderCreateAPIView(APIView):
                     },
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
-        
+
         return Response(
             {
                 "error": "Invalid data provided",
@@ -2120,18 +2084,21 @@ class SelfOrderCreateAPIView(APIView):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
+
 class SelfOrderListAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         """Get all self orders for the authenticated user"""
         try:
-            self_orders = SelfOrder.objects.filter(user=request.user).select_related(
-                'device', 'supply_state'
-            ).prefetch_related('device__info')
-            
+            self_orders = (
+                SelfOrder.objects.filter(user=request.user)
+                .select_related("device", "supply_state")
+                .prefetch_related("device__info")
+            )
+
             serializer = SelfOrderSerializer(self_orders, many=True)
-            
+
             return Response(
                 {
                     "message": "Self orders retrieved successfully",
@@ -2158,7 +2125,7 @@ class SelfOrderDetailAPIView(APIView):
         try:
             self_order = get_object_or_404(SelfOrder, pk=pk, user=request.user)
             serializer = SelfOrderSerializer(self_order)
-            
+
             return Response(
                 {
                     "message": "Self order retrieved successfully",
@@ -2179,8 +2146,10 @@ class SelfOrderDetailAPIView(APIView):
         """Update a self order"""
         try:
             self_order = get_object_or_404(SelfOrder, pk=pk, user=request.user)
-            serializer = SelfOrderSerializer(self_order, data=request.data, partial=True)
-            
+            serializer = SelfOrderSerializer(
+                self_order, data=request.data, partial=True
+            )
+
             if serializer.is_valid():
                 serializer.save()
                 return Response(
@@ -2190,7 +2159,7 @@ class SelfOrderDetailAPIView(APIView):
                     },
                     status=status.HTTP_200_OK,
                 )
-            
+
             return Response(
                 {
                     "error": "Invalid data provided",
@@ -2212,7 +2181,7 @@ class SelfOrderDetailAPIView(APIView):
         try:
             self_order = get_object_or_404(SelfOrder, pk=pk, user=request.user)
             self_order.delete()
-            
+
             return Response(
                 {
                     "message": "Self order deleted successfully",
@@ -2228,30 +2197,16 @@ class SelfOrderDetailAPIView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
+
 class SelfOrderDeviceDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         devices = Device.objects.filter(status="completed").select_related("info")
         data = [
-            {
-                "id": d.id,
-                "name": d.info.make,
-                "model": d.info.model
-            }
-            for d in devices
+            {"id": d.id, "name": d.info.make, "model": d.info.model} for d in devices
         ]
         return Response(data, status=200)
-
-class StateDropdownAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        states = State.objects.filter(status="active").order_by("name")
-        return Response(
-            [{"id": s.id, "name": s.name} for s in states],
-            status=200
-        )
 
 
 class GSTRateDropdownAPIView(APIView):
@@ -2266,8 +2221,9 @@ class GSTRateDropdownAPIView(APIView):
                 {"value": "18.00", "label": "18%"},
                 {"value": "28.00", "label": "28%"},
             ],
-            status=200
+            status=200,
         )
+
 
 # ============================================================
 class RFQListAPIView(APIView):
@@ -2276,41 +2232,45 @@ class RFQListAPIView(APIView):
     GET /rfq/list/
     List all RFQs with search and filter capabilities
     """
+
     def get(self, request):
         # Get query parameters
-        search_query = request.query_params.get('search', '').strip()
-        status_filter = request.query_params.get('status', 'all')
-        vendor_filter = request.query_params.get('vendor', 'all')
-        
+        search_query = request.query_params.get("search", "").strip()
+        status_filter = request.query_params.get("status", "all")
+        vendor_filter = request.query_params.get("vendor", "all")
+
         # Start with all RFQs
-        rfqs = RequestForQuote.objects.all().prefetch_related('selections')
-        
+        rfqs = RequestForQuote.objects.all().prefetch_related("selections")
+
         # Apply status filter
-        if status_filter != 'all':
+        if status_filter != "all":
             rfqs = rfqs.filter(status=status_filter.lower())
-        
+
         # Apply vendor filter - RFQSelection links vendors to RFQs by reference
-        if vendor_filter != 'all':
-            rfqs = rfqs.filter(selections__reference__icontains=vendor_filter)
-        
+        if vendor_filter != "all":
+            rfqs = rfqs.filter(quotations__vendor__name__icontains=vendor_filter)
+
         # Apply search filter
         if search_query:
             rfqs = rfqs.filter(
-                Q(order_reference__icontains=search_query) |
-                Q(device_name__icontains=search_query) |
-                Q(selections__reference__icontains=search_query)
+                Q(order_reference__icontains=search_query)
+                | Q(device_name__icontains=search_query)
+                | Q(selections__reference__icontains=search_query)
             )
-        
+
         rfqs = rfqs.distinct()
-        
+
         # Serialize the results
         serializer = RFQListSerializer(rfqs, many=True)
-        
-        return Response({
-            'found': rfqs.count(),
-            'total': RequestForQuote.objects.count(),
-            'results': serializer.data
-        }, status=status.HTTP_200_OK)
+
+        return Response(
+            {
+                "found": rfqs.count(),
+                "total": RequestForQuote.objects.count(),
+                "results": serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class RFQDetailAPIView(APIView):
@@ -2321,10 +2281,9 @@ class RFQDetailAPIView(APIView):
             rfq = RequestForQuote.objects.get(id=rfq_id)
         except RequestForQuote.DoesNotExist:
             return Response(
-                {'error': 'RFQ not found'},
-                status=status.HTTP_404_NOT_FOUND
+                {"error": "RFQ not found"}, status=status.HTTP_404_NOT_FOUND
             )
-        
+
         serializer = RFQDetailSerializer(rfq)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -2338,18 +2297,20 @@ class QuotationEntryAPIView(APIView):
         serializer.is_valid(raise_exception=True)
 
         data = serializer.validated_data
+
         rfq = get_object_or_404(RequestForQuote, id=data["rfq_id"])
         vendor = get_object_or_404(Vendor, id=data["vendor_id"])
 
-        # Vendor auth check
-        if not hasattr(request.user, "vendor") or request.user.vendor.id != vendor.id:
-            return Response({"error": "Unauthorized vendor"}, status=403)
+        if not request.user.vendors.filter(id=vendor.id).exists():
+            return Response(
+                {"error": "Only vendors owned by you can submit quotations"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
-        # Duplicate quotation prevention
         if Quotation.objects.filter(rfq=rfq, vendor=vendor).exists():
             return Response(
                 {"error": "Quotation already submitted for this vendor"},
-                status=400
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         quotation = Quotation.objects.create(
@@ -2386,75 +2347,74 @@ class QuotationEntryAPIView(APIView):
                 "quotation_id": quotation.id,
                 "quotation_number": quotation.quotation_number,
             },
-            status=201,
+            status=status.HTTP_201_CREATED,
         )
 
 
-
 class QuotationFormDataAPIView(APIView):
-    """
-    GET /quotation/form-data/?rfq_id=1
-    Get RFQ details with all items for quotation entry form
-    """
     permission_classes = [IsAuthenticated]
-    
+
     def get(self, request):
-        rfq_id = request.query_params.get('rfq_id')
-        
+        rfq_id = request.query_params.get("rfq_id")
         if not rfq_id:
-            return Response({'error': 'rfq_id is required'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            rfq = RequestForQuote.objects.get(id=rfq_id)
-        except RequestForQuote.DoesNotExist:
-            return Response({'error': 'RFQ not found'}, status=status.HTTP_404_NOT_FOUND)
-        
-        # Generate RFQ number
+            return Response(
+                {"error": "rfq_id query param is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        rfq = get_object_or_404(RequestForQuote, id=rfq_id)
+
         rfq_number = f"RFQ-{rfq.created_at.year}-{rfq.id:03d}"
-        
-        # Get vendors from RFQSelection
-        vendors = rfq.selections.values_list('reference', flat=True).distinct()
-        
-        # Mock items data based on RFQSelection
-        items = []
-        for sel in rfq.selections.all():
-            items.append({
-                'item_id': sel.id,
-                'item_name': sel.reference,
-                'description': f'{sel.get_item_type_display()} - {sel.reference}',
-                'item_type': sel.item_type,
-                'quantity': 1,
-                'net_unit_price': 0.00,
-                'gst_rate': 18.00,
-                'gst_amount': 0.00,
-                'total_price': 0.00
-            })
-        
-        return Response({
-            'rfq_number': rfq_number,
-            'rfq_id': rfq.id,
-            'vendors': [{'id': i, 'name': v} for i, v in enumerate(vendors, 1)],
-            'items': items
-        }, status=status.HTTP_200_OK)
+
+        vendors = Vendor.objects.filter(quotations__rfq=rfq).distinct()
+
+        vendor_dropdown = [{"id": v.id, "label": v.name} for v in vendors]
+
+        items = [
+            {
+                "item_id": sel.reference,
+                "item_name": sel.reference,
+                "description": f"{sel.get_item_type_display()} - {sel.reference}",
+                "item_type": sel.item_type,
+                "quantity": 1,
+                "net_unit_price": "0.00",
+                "gst_rate": "18.00",
+                "gst_amount": "0.00",
+                "total_price": "0.00",
+            }
+            for sel in rfq.selections.all()
+        ]
+
+        return Response(
+            {
+                "rfq_id": rfq.id,
+                "rfq_number": rfq_number,
+                "vendors": vendor_dropdown,
+                "items": items,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class RFQFiltersAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response({
-            "statuses": [
-                {"value": "all", "label": "All Status"},
-                {"value": "pending", "label": "Pending"},
-                {"value": "quoted", "label": "Quoted"},
-                {"value": "rejected", "label": "Rejected"},
-            ],
-            "vendors": [
-                {"id": v.id, "name": v.name}
-                for v in Vendor.objects.all().order_by("name")
-            ]
-        }, status=200)
-
+        return Response(
+            {
+                "statuses": [
+                    {"value": "all", "label": "All Status"},
+                    {"value": "pending", "label": "Pending"},
+                    {"value": "quoted", "label": "Quoted"},
+                    {"value": "rejected", "label": "Rejected"},
+                ],
+                "vendors": [
+                    {"id": v.id, "name": v.name}
+                    for v in Vendor.objects.all().order_by("name")
+                ],
+            },
+            status=200,
+        )
 
 
 class RFQVendorDropdownAPIView(APIView):
@@ -2463,14 +2423,5 @@ class RFQVendorDropdownAPIView(APIView):
     def get(self, request):
         vendors = Vendor.objects.all().order_by("name")
         return Response(
-            [
-                {
-                    "id": v.id,
-                    "label": f"{v.name}"
-                }
-                for v in vendors
-            ],
-            status=200
+            [{"id": v.id, "label": f"{v.name}"} for v in vendors], status=200
         )
-
-

@@ -10,29 +10,49 @@ router.register("districts", DistrictViewSet, basename="districts")
 router.register("parent-companies", ParentCompanyViewSet, basename="parent-companies")
 router.register("vendors", VendorViewSet, basename="vendors")
 router.register("store-transfers", StoreTransferViewSet, basename="store-transfers")
-router.register("product-categories", ProductCategoryViewSet, basename="product-categories")
+router.register(
+    "product-categories", ProductCategoryViewSet, basename="product-categories"
+)
 router.register("debit-notes", DebitNoteViewSet, basename="debit-notes")
 router.register("credit-notes", CreditNoteViewSet, basename="credit-notes")
-router.register('return-requests', ReturnRequestViewSet, basename='return-request')
-router.register('repair-records', RepairRecordViewSet, basename='repair-record')
-router.register('rejected-items', RejectedItemViewSet, basename='rejected-item')
+router.register("return-requests", ReturnRequestViewSet, basename="return-request")
+router.register("repair-records", RepairRecordViewSet, basename="repair-record")
+router.register("rejected-items", RejectedItemViewSet, basename="rejected-item")
 router.register("devices", DeviceViewSet, basename="devices")
 
 urlpatterns = [
     path("auth/login/", LoginAPIView.as_view(), name="login"),
-    path("b2c/register/", B2CCustomerRegistrationAPIView.as_view(), name="b2c-register"),
+    path(
+        "b2c/register/", B2CCustomerRegistrationAPIView.as_view(), name="b2c-register"
+    ),
     path("b2b/register/", B2BPartnerRegistrationAPIView.as_view(), name="b2b-register"),
-    path("distributor/register/", DistributorRegistrationAPIView.as_view(), name="distributor-register"),
-    path("dealer/register/",DealerRegistrationAPIView.as_view(),name="dealer-register"),
-    
+    path(
+        "distributor/register/",
+        DistributorRegistrationAPIView.as_view(),
+        name="distributor-register",
+    ),
+    path(
+        "dealer/register/", DealerRegistrationAPIView.as_view(), name="dealer-register"
+    ),
     # ============================================================
     # ACCOUNT MANAGEMENT - DEBIT & CREDIT NOTES
     # ============================================================
-    path("account-management/dashboard/", AccountManagementDashboardAPIView.as_view(), name="account-dashboard"),
-    path("debit-notes/reasons/", DebitNoteReasonsAPIView.as_view(), name="debit-note-reasons"),
-    path("credit-notes/reasons/", CreditNoteReasonsAPIView.as_view(), name="credit-note-reasons"),
+    path(
+        "account-management/dashboard/",
+        AccountManagementDashboardAPIView.as_view(),
+        name="account-dashboard",
+    ),
+    path(
+        "debit-notes/reasons/",
+        DebitNoteReasonsAPIView.as_view(),
+        name="debit-note-reasons",
+    ),
+    path(
+        "credit-notes/reasons/",
+        CreditNoteReasonsAPIView.as_view(),
+        name="credit-note-reasons",
+    ),
     path("notes/statuses/", NoteStatusChoicesAPIView.as_view(), name="note-statuses"),
-    
     # ============================================================
     # DEVICE CREATION
     # ============================================================
@@ -46,12 +66,10 @@ urlpatterns = [
     path("devices/step-8/", DeviceStep8APIView.as_view()),
     path("devices/step-9/", DeviceStep9APIView.as_view()),
     path("devices/step-10/", DeviceAccessoryAPIView.as_view()),
-    
     # ============================================================
     # PROFORMA INVOICE
     # ============================================================
     path("pi/create/", ProformaInvoiceCreateAPIView.as_view(), name="create-pi"),
-    
     # ============================================================
     # ORDER MANAGEMENT
     # ============================================================
@@ -63,16 +81,13 @@ urlpatterns = [
     path("dropdowns/products/", ProductDropdownAPIView.as_view()),
     path("dropdowns/suppliers/", SupplierVendorDropdownAPIView.as_view()),
     path("dropdowns/product-categories/", ProductCategoryDropdownAPIView.as_view()),
-
     path("order-entry/step-2/", OrderEntryStep2APIView.as_view()),
-    
     # ============================================================
     # DROPDOWNS
     # ============================================================
     path("dropdowns/customer-types/", CustomerTypeDropdownAPIView.as_view()),
     path("dropdowns/payment-terms/", PaymentTermsDropdownAPIView.as_view()),
     path("dropdowns/order-priority/", OrderPriorityDropdownAPIView.as_view()),
-    
     # ============================================================
     # RFQ MANAGEMENT
     # ============================================================
@@ -83,7 +98,6 @@ urlpatterns = [
     path("dropdowns/assembly-types/", AssemblyTypeDropdownAPIView.as_view()),
     path("dropdowns/srn/", SRNDropdownAPIView.as_view()),
     path("dropdowns/vendors/", VendorDropdownAPIView.as_view()),
-    
     # ============================================================
     # PURCHASE ORDER
     # ============================================================
@@ -92,22 +106,43 @@ urlpatterns = [
     path("dropdowns/order-types/", OrderTypeDropdown.as_view()),
     path("dropdowns/assembly-types/", AssemblyTypeDropdown.as_view()),
     path("dropdowns/payment-terms/", PaymentTermsDropdown.as_view()),
-    
     # ============================================================
     # MRN (MATERIAL RECEIPT NOTE)
     # ============================================================
     path("mrn/create/", MRNCreateAPIView.as_view()),
-    path("dropdowns/purchase-orders/", PurchaseOrderDropdown.as_view(), name="purchase-order-dropdown"),
-    path("dropdowns/inward-types/", InwardTypeDropdown.as_view(), name="inward-type-dropdown"),
-    path("purchase/<int:po_id>/items/", PurchaseOrderItemsAPIView.as_view(), name="purchase-order-items"),
-    
+    path(
+        "dropdowns/purchase-orders/",
+        PurchaseOrderDropdown.as_view(),
+        name="purchase-order-dropdown",
+    ),
+    path(
+        "dropdowns/inward-types/",
+        InwardTypeDropdown.as_view(),
+        name="inward-type-dropdown",
+    ),
+    path(
+        "purchase/<int:po_id>/items/",
+        PurchaseOrderItemsAPIView.as_view(),
+        name="purchase-order-items",
+    ),
     # ============================================================
     # POST-DISPATCH RETURNS
     # ============================================================
-    path("returns/post-dispatch/create/", PostDispatchReturnCreateAPIView.as_view(), name="post-dispatch-return-create"),
-    path("dropdowns/return-types/", ReturnTypeDropdownAPIView.as_view(), name="return-type-dropdown"),
-    path("dropdowns/return-reasons/", ReturnReasonDropdownAPIView.as_view(), name="return-reason-dropdown"),
-    
+    path(
+        "returns/post-dispatch/create/",
+        PostDispatchReturnCreateAPIView.as_view(),
+        name="post-dispatch-return-create",
+    ),
+    path(
+        "dropdowns/return-types/",
+        ReturnTypeDropdownAPIView.as_view(),
+        name="return-type-dropdown",
+    ),
+    path(
+        "dropdowns/return-reasons/",
+        ReturnReasonDropdownAPIView.as_view(),
+        name="return-reason-dropdown",
+    ),
     # ============================================================
     # DISPATCH WORKFLOW
     # ============================================================
@@ -119,7 +154,6 @@ urlpatterns = [
     path("dropdowns/dispatch-order-types/", DispatchOrderTypeDropdownAPIView.as_view()),
     path("dropdowns/dispatch-products/", DispatchProductDropdownAPIView.as_view()),
     path("dropdowns/dispatch-batches/", DispatchBatchDropdownAPIView.as_view()),
-    
     # ============================================================
     # MODULE MANAGEMENT REGISTRATIONS
     # ============================================================
@@ -127,19 +161,31 @@ urlpatterns = [
     path("dropdowns/districts/", DistrictDropdownAPIView.as_view()),
     path("account/register/", AccountRegistrationCreateAPIView.as_view()),
     path("qc-inspectors/register/", QCInspectorRegistrationCreateAPIView.as_view()),
-    path("purchase-departments/register/", PurchaseDepartmentRegistrationCreateAPIView.as_view()),
+    path(
+        "purchase-departments/register/",
+        PurchaseDepartmentRegistrationCreateAPIView.as_view(),
+    ),
     path("store-managers/register/", StoreManagerRegistrationCreateAPIView.as_view()),
-    
     # ============================================================
     # SELF ORDER
     # ============================================================
-    path("self-orders/create/", SelfOrderCreateAPIView.as_view(), name="self-order-create"),
+    path(
+        "self-orders/create/",
+        SelfOrderCreateAPIView.as_view(),
+        name="self-order-create",
+    ),
     path("self-orders/", SelfOrderListAPIView.as_view(), name="self-order-list"),
-    path("self-orders/<int:pk>/", SelfOrderDetailAPIView.as_view(), name="self-order-detail"),
+    path(
+        "self-orders/<int:pk>/",
+        SelfOrderDetailAPIView.as_view(),
+        name="self-order-detail",
+    ),
     path("self-orders/devices/", SelfOrderDeviceDropdownAPIView.as_view()),
-    path("self-orders/states/", StateDropdownAPIView.as_view()),
-    path("self-orders/gst-rates/",GSTRateDropdownAPIView.as_view(),name="self-order-gst-rates"),
-    
+    path(
+        "self-orders/gst-rates/",
+        GSTRateDropdownAPIView.as_view(),
+        name="self-order-gst-rates",
+    ),
     # ============================================================
     # RFQ MANAGEMENT - LIST & FILTERING
     # ============================================================
@@ -147,7 +193,6 @@ urlpatterns = [
     path("rfq/<int:rfq_id>/detail/", RFQDetailAPIView.as_view()),
     path("rfq/filters/", RFQFiltersAPIView.as_view()),
     path("rfq/vendors/", RFQVendorDropdownAPIView.as_view()),
-    
     # ============================================================
     # QUOTATION MANAGEMENT
     # ============================================================

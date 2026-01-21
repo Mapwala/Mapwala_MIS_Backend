@@ -1,4 +1,5 @@
 from django.db import models
+
 # from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
 from decimal import Decimal
@@ -27,6 +28,7 @@ class State(models.Model):
     name = models.CharField(max_length=100, unique=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES)
     created_at = models.DateTimeField(auto_now_add=True)
+
     class Meta:
         ordering = ["id"]
 
@@ -74,6 +76,7 @@ class ParentCompany(models.Model):
     pan_number = models.CharField(max_length=20)
     pan_document = models.FileField(upload_to="documents/pan/")
     created_at = models.DateTimeField(auto_now_add=True)
+
     class Meta:
         indexes = [
             models.Index(fields=["gst_number"]),
@@ -86,63 +89,41 @@ class ParentCompany(models.Model):
 
 # ---------------- Vendor ----------------
 class Vendor(models.Model):
-    user = models.OneToOneField(
-        User,
-        on_delete=models.CASCADE,
-        related_name="vendor",
-        null=False,
-        blank=False
-    )
-
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="vendors")
     name = models.CharField(max_length=255)
-    phone_number = models.CharField(max_length=15, unique=True)
-    email = models.EmailField(unique=True)
-
+    phone_number = models.CharField(max_length=15)
+    email = models.EmailField()
     address = models.TextField()
     state = models.ForeignKey(State, on_delete=models.PROTECT)
     district = models.ForeignKey(District, on_delete=models.PROTECT)
-
     bank_name = models.CharField(max_length=255)
     account_holder_name = models.CharField(max_length=255)
     account_number = models.CharField(max_length=50)
     ifsc_code = models.CharField(max_length=20)
-
-    gst_number = models.CharField(max_length=20, unique=True)
+    gst_number = models.CharField(max_length=20)
     gst_document = models.FileField(
-        upload_to="documents/vendor/gst/",
-        null=True,
-        blank=True
+        upload_to="documents/vendor/gst/", null=True, blank=True
     )
-
-    pan_number = models.CharField(max_length=20, unique=True)
+    pan_number = models.CharField(max_length=20)
     pan_document = models.FileField(
-        upload_to="documents/vendor/pan/",
-        null=True,
-        blank=True
+        upload_to="documents/vendor/pan/", null=True, blank=True
     )
-
-    tan_number = models.CharField(max_length=20, unique=True)
+    tan_number = models.CharField(max_length=20)
     tan_document = models.FileField(
-        upload_to="documents/vendor/tan/",
-        null=True,
-        blank=True
+        upload_to="documents/vendor/tan/", null=True, blank=True
     )
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["-id"]
-        indexes = [
-            models.Index(fields=["user"]),
-            models.Index(fields=["email"]),
-            models.Index(fields=["phone_number"]),
-            models.Index(fields=["gst_number"]),
-        ]
+        unique_together = (
+            "user",
+            "gst_number",
+        )
 
     def __str__(self):
-        return self.name
-
+        return f"{self.name} ({self.gst_number})"
 
 
 # ---------------- B2C Customer ----------------
@@ -164,6 +145,7 @@ class B2CCustomer(models.Model):
     pan_number = models.CharField(max_length=20)
     pan_document = models.FileField(upload_to="documents/b2c/pan/")
     created_at = models.DateTimeField(auto_now_add=True)
+
     class Meta:
         ordering = ["-id"]
         indexes = [
@@ -195,6 +177,7 @@ class B2BPartner(models.Model):
     pan_number = models.CharField(max_length=20)
     pan_document = models.FileField(upload_to="documents/b2b/pan/")
     created_at = models.DateTimeField(auto_now_add=True)
+
     class Meta:
         ordering = ["-id"]
         indexes = [
@@ -217,40 +200,83 @@ class Manufacturer(models.Model):
 
 # ---------------- Distributor ----------------
 class Distributor(models.Model):
-    LINKED_TO_CHOICES = (
-        ("manufacturer", "Manufacturer"),
-    )
+    LINKED_TO_CHOICES = (("manufacturer", "Manufacturer"),)
     # Basic details
-    name = models.CharField(max_length=255,verbose_name="Distributor Name")
-    phone_number = models.CharField(max_length=15,verbose_name="Phone Number")
+    name = models.CharField(max_length=255, verbose_name="Distributor Name")
+    phone_number = models.CharField(max_length=15, verbose_name="Phone Number")
     email = models.EmailField(verbose_name="Email Address")
     address = models.TextField(verbose_name="Address")
     # Physical location (single)
-    state = models.ForeignKey(State,on_delete=models.PROTECT,related_name="distributors",verbose_name="Registered State",help_text="State where the distributor is officially registered.")
-    district = models.ForeignKey(District,on_delete=models.PROTECT,related_name="distributors",verbose_name="Registered District",help_text="District where the distributor is officially registered.")
+    state = models.ForeignKey(
+        State,
+        on_delete=models.PROTECT,
+        related_name="distributors",
+        verbose_name="Registered State",
+        help_text="State where the distributor is officially registered.",
+    )
+    district = models.ForeignKey(
+        District,
+        on_delete=models.PROTECT,
+        related_name="distributors",
+        verbose_name="Registered District",
+        help_text="District where the distributor is officially registered.",
+    )
     # Bank details
     bank_name = models.CharField(max_length=255, verbose_name="Bank Name")
-    account_holder_name = models.CharField(max_length=255, verbose_name="Account Holder Name")
+    account_holder_name = models.CharField(
+        max_length=255, verbose_name="Account Holder Name"
+    )
     account_number = models.CharField(max_length=50, verbose_name="Bank Account Number")
     ifsc_code = models.CharField(max_length=20, verbose_name="IFSC Code")
     # Tax details
-    gst_number = models.CharField(max_length=20,verbose_name="GST Number")
-    gst_document = models.FileField(upload_to="documents/distributor/gst/",verbose_name="GST Document")
-    tan_number = models.CharField(max_length=20,verbose_name="TAN Number")
-    tan_document = models.FileField(upload_to="documents/distributor/tan/",verbose_name="TAN Document")
-    pan_number = models.CharField(max_length=20,verbose_name="PAN Number")
-    pan_document = models.FileField(upload_to="documents/distributor/pan/",verbose_name="PAN Document")
+    gst_number = models.CharField(max_length=20, verbose_name="GST Number")
+    gst_document = models.FileField(
+        upload_to="documents/distributor/gst/", verbose_name="GST Document"
+    )
+    tan_number = models.CharField(max_length=20, verbose_name="TAN Number")
+    tan_document = models.FileField(
+        upload_to="documents/distributor/tan/", verbose_name="TAN Document"
+    )
+    pan_number = models.CharField(max_length=20, verbose_name="PAN Number")
+    pan_document = models.FileField(
+        upload_to="documents/distributor/pan/", verbose_name="PAN Document"
+    )
     # Business linking
-    linked_to = models.CharField(max_length=50,choices=LINKED_TO_CHOICES,verbose_name="Linked To",help_text="Defines the entity this distributor is linked to.")
-    manufacturer = models.ForeignKey(Manufacturer,on_delete=models.PROTECT,null=True,blank=True,related_name="distributors",verbose_name="Linked Manufacturer",help_text="Required when Linked To is Manufacturer.")
+    linked_to = models.CharField(
+        max_length=50,
+        choices=LINKED_TO_CHOICES,
+        verbose_name="Linked To",
+        help_text="Defines the entity this distributor is linked to.",
+    )
+    manufacturer = models.ForeignKey(
+        Manufacturer,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="distributors",
+        verbose_name="Linked Manufacturer",
+        help_text="Required when Linked To is Manufacturer.",
+    )
     # Authorised operating area (MULTI-SELECT)
-    authorised_states = models.ManyToManyField(State,related_name="authorised_distributors",blank=True,verbose_name="Authorised Operating States",help_text="States where this distributor is allowed to operate.")
-    authorised_districts = models.ManyToManyField(District,related_name="authorised_distributors",blank=True,verbose_name="Authorised Operating Districts",help_text=(
+    authorised_states = models.ManyToManyField(
+        State,
+        related_name="authorised_distributors",
+        blank=True,
+        verbose_name="Authorised Operating States",
+        help_text="States where this distributor is allowed to operate.",
+    )
+    authorised_districts = models.ManyToManyField(
+        District,
+        related_name="authorised_distributors",
+        blank=True,
+        verbose_name="Authorised Operating Districts",
+        help_text=(
             "Districts where this distributor is allowed to operate. "
             "Each district must belong to one of the selected authorised states."
-        ))
+        ),
+    )
     # System info
-    created_at = models.DateTimeField(auto_now_add=True,verbose_name="Created At")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
 
     def __str__(self):
         return self.name
@@ -263,38 +289,91 @@ class Dealer(models.Model):
         ("distributor", "Distributor"),
     )
     # Basic details
-    name = models.CharField(max_length=255,verbose_name="Dealer Name")
-    phone_number = models.CharField(max_length=15,verbose_name="Phone Number")
+    name = models.CharField(max_length=255, verbose_name="Dealer Name")
+    phone_number = models.CharField(max_length=15, verbose_name="Phone Number")
     email = models.EmailField(verbose_name="Email Address")
     address = models.TextField(verbose_name="Address")
     # Physical location (single)
-    state = models.ForeignKey(State,on_delete=models.PROTECT,related_name="dealers",verbose_name="Registered State",help_text="State where the dealer is officially registered.")
-    district = models.ForeignKey(District,on_delete=models.PROTECT,related_name="dealers",verbose_name="Registered District",help_text="District where the dealer is officially registered.")
+    state = models.ForeignKey(
+        State,
+        on_delete=models.PROTECT,
+        related_name="dealers",
+        verbose_name="Registered State",
+        help_text="State where the dealer is officially registered.",
+    )
+    district = models.ForeignKey(
+        District,
+        on_delete=models.PROTECT,
+        related_name="dealers",
+        verbose_name="Registered District",
+        help_text="District where the dealer is officially registered.",
+    )
     # Bank details
-    bank_name = models.CharField(max_length=255,verbose_name="Bank Name")
-    account_holder_name = models.CharField(max_length=255,verbose_name="Account Holder Name")
-    account_number = models.CharField(max_length=50,verbose_name="Bank Account Number")
-    ifsc_code = models.CharField(max_length=20,verbose_name="IFSC Code")
+    bank_name = models.CharField(max_length=255, verbose_name="Bank Name")
+    account_holder_name = models.CharField(
+        max_length=255, verbose_name="Account Holder Name"
+    )
+    account_number = models.CharField(max_length=50, verbose_name="Bank Account Number")
+    ifsc_code = models.CharField(max_length=20, verbose_name="IFSC Code")
     # Tax details
-    gst_number = models.CharField(max_length=20,verbose_name="GST Number")
-    gst_document = models.FileField(upload_to="documents/dealer/gst/",verbose_name="GST Document")
-    tan_number = models.CharField(max_length=20,verbose_name="TAN Number")
-    tan_document = models.FileField(upload_to="documents/dealer/tan/",verbose_name="TAN Document")
-    pan_number = models.CharField(max_length=20,verbose_name="PAN Number")
-    pan_document = models.FileField(upload_to="documents/dealer/pan/",verbose_name="PAN Document")
+    gst_number = models.CharField(max_length=20, verbose_name="GST Number")
+    gst_document = models.FileField(
+        upload_to="documents/dealer/gst/", verbose_name="GST Document"
+    )
+    tan_number = models.CharField(max_length=20, verbose_name="TAN Number")
+    tan_document = models.FileField(
+        upload_to="documents/dealer/tan/", verbose_name="TAN Document"
+    )
+    pan_number = models.CharField(max_length=20, verbose_name="PAN Number")
+    pan_document = models.FileField(
+        upload_to="documents/dealer/pan/", verbose_name="PAN Document"
+    )
     # Business linking
-    linked_to = models.CharField(max_length=20,choices=LINKED_TO_CHOICES,verbose_name="Linked To",help_text="Choose whether this dealer is linked to a Manufacturer or Distributor.")
-    manufacturer = models.ForeignKey(Manufacturer,on_delete=models.PROTECT,null=True,blank=True,related_name="dealers",verbose_name="Linked Manufacturer",help_text="Required when Linked To is Manufacturer.")
-    distributor = models.ForeignKey(Distributor,on_delete=models.PROTECT,null=True,blank=True,related_name="dealers",verbose_name="Linked Distributor",help_text="Required when Linked To is Distributor.")
+    linked_to = models.CharField(
+        max_length=20,
+        choices=LINKED_TO_CHOICES,
+        verbose_name="Linked To",
+        help_text="Choose whether this dealer is linked to a Manufacturer or Distributor.",
+    )
+    manufacturer = models.ForeignKey(
+        Manufacturer,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="dealers",
+        verbose_name="Linked Manufacturer",
+        help_text="Required when Linked To is Manufacturer.",
+    )
+    distributor = models.ForeignKey(
+        Distributor,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="dealers",
+        verbose_name="Linked Distributor",
+        help_text="Required when Linked To is Distributor.",
+    )
     # Authorised operating area (MULTI)
-    authorised_states = models.ManyToManyField(State,related_name="authorised_dealers",blank=True,verbose_name="Authorised Operating States",help_text="States where this dealer is allowed to operate.")
-    authorised_districts = models.ManyToManyField(District,related_name="authorised_dealers",blank=True,verbose_name="Authorised Operating Districts",
+    authorised_states = models.ManyToManyField(
+        State,
+        related_name="authorised_dealers",
+        blank=True,
+        verbose_name="Authorised Operating States",
+        help_text="States where this dealer is allowed to operate.",
+    )
+    authorised_districts = models.ManyToManyField(
+        District,
+        related_name="authorised_dealers",
+        blank=True,
+        verbose_name="Authorised Operating Districts",
         help_text=(
             "Districts where this dealer is allowed to operate. "
             "Each district must belong to one of the selected authorised states."
-        ))
+        ),
+    )
     # System info
-    created_at = models.DateTimeField(auto_now_add=True,verbose_name="Created At")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
+
     class Meta:
         ordering = ["-id"]
         verbose_name = "Dealer"
@@ -307,8 +386,14 @@ class Dealer(models.Model):
 # ---------------- Product ----------------
 class Product(models.Model):
     # product_id = models.PositiveIntegerField(unique=True,verbose_name="Product ID",help_text="Numeric Product ID shown in PI screen (e.g. 101, 102)")
-    product_id = models.CharField(max_length=20,unique=True,verbose_name="Product ID",help_text="Numeric Product ID shown in PI screen (e.g. 101, 102)")
+    product_id = models.CharField(
+        max_length=20,
+        unique=True,
+        verbose_name="Product ID",
+        help_text="Numeric Product ID shown in PI screen (e.g. 101, 102)",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
+
     class Meta:
         ordering = ["product_id"]
         verbose_name = "Product"
@@ -353,7 +438,7 @@ class BOM(models.Model):
     )
     device = models.OneToOneField(Device, on_delete=models.CASCADE, related_name="bom")
     upload_type = models.CharField(max_length=20, choices=UPLOAD_TYPE_CHOICES)
-    bom_file = models.FileField(upload_to="bom/excel/",null=True,blank=True)
+    bom_file = models.FileField(upload_to="bom/excel/", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
 
@@ -396,7 +481,9 @@ class WireHarness(models.Model):
 
 # ---------------- Wire Connector ----------------
 class WireConnector(models.Model):
-    wire_harness = models.ForeignKey(WireHarness,on_delete=models.CASCADE,related_name="connectors")
+    wire_harness = models.ForeignKey(
+        WireHarness, on_delete=models.CASCADE, related_name="connectors"
+    )
     connector_name = models.CharField(max_length=100)
     number_of_pins = models.PositiveIntegerField()
     wire_colors = models.CharField(max_length=255)
@@ -411,6 +498,7 @@ class Battery(models.Model):
     height = models.DecimalField(max_digits=8, decimal_places=2)
     make = models.CharField(max_length=100)
     part_number = models.CharField(max_length=100)
+
 
 # ---------------- SOS Button ----------------
 class SOSButton(models.Model):
@@ -441,7 +529,9 @@ class UserManual(models.Model):
 
 # ---------------- Accessories ----------------
 class Accessory(models.Model):
-    device = models.ForeignKey(Device, on_delete=models.CASCADE, related_name="accessories")
+    device = models.ForeignKey(
+        Device, on_delete=models.CASCADE, related_name="accessories"
+    )
     name = models.CharField(max_length=255)
     quantity = models.PositiveIntegerField()
     specifications = models.CharField(max_length=255)
@@ -466,19 +556,32 @@ class ProformaInvoice(models.Model):
 
     # Party selection
     party_type = models.CharField(max_length=20, choices=PARTY_TYPE_CHOICES)
-    b2b_partner = models.ForeignKey("B2BPartner",on_delete=models.PROTECT,null=True,blank=True)
-    b2c_customer = models.ForeignKey("B2CCustomer",on_delete=models.PROTECT,null=True,blank=True)
-    dealer = models.ForeignKey("Dealer",on_delete=models.PROTECT,null=True,blank=True)
-    distributor = models.ForeignKey("Distributor",on_delete=models.PROTECT,null=True,blank=True)
+    b2b_partner = models.ForeignKey(
+        "B2BPartner", on_delete=models.PROTECT, null=True, blank=True
+    )
+    b2c_customer = models.ForeignKey(
+        "B2CCustomer", on_delete=models.PROTECT, null=True, blank=True
+    )
+    dealer = models.ForeignKey(
+        "Dealer", on_delete=models.PROTECT, null=True, blank=True
+    )
+    distributor = models.ForeignKey(
+        "Distributor", on_delete=models.PROTECT, null=True, blank=True
+    )
     # Product
-    product = models.ForeignKey("Product",on_delete=models.PROTECT)
-    selling_price = models.DecimalField(max_digits=10,decimal_places=2)
-    discount_percent = models.DecimalField(max_digits=5,decimal_places=2,validators=[MinValueValidator(0), MaxValueValidator(100)],default=0)
+    product = models.ForeignKey("Product", on_delete=models.PROTECT)
+    selling_price = models.DecimalField(max_digits=10, decimal_places=2)
+    discount_percent = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        default=0,
+    )
     quantity = models.PositiveIntegerField()
-    shipping_charges = models.DecimalField(max_digits=10,decimal_places=2,default=0)
-    grand_total = models.DecimalField(max_digits=12,decimal_places=2)
+    shipping_charges = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    grand_total = models.DecimalField(max_digits=12, decimal_places=2)
     # Delivery & payment
-    payment_terms = models.CharField(max_length=20,choices=PAYMENT_TERMS_CHOICES)
+    payment_terms = models.CharField(max_length=20, choices=PAYMENT_TERMS_CHOICES)
     delivery_date = models.DateField()
     delivery_address = models.TextField()
     state = models.ForeignKey(State, on_delete=models.PROTECT)
@@ -487,6 +590,7 @@ class ProformaInvoice(models.Model):
     mobile_no = models.CharField(max_length=15)
     gstn = models.CharField(max_length=20, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
     class Meta:
         ordering = ["-id"]
 
@@ -514,8 +618,12 @@ class OrderEntry(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     order_type = models.CharField(max_length=20, choices=ORDER_TYPE_CHOICES)
-    production_type = models.CharField(max_length=20, choices=PRODUCTION_TYPE_CHOICES, null=True, blank=True)
-    assembly_type = models.CharField(max_length=30, choices=ASSEMBLY_TYPE_CHOICES, null=True, blank=True)
+    production_type = models.CharField(
+        max_length=20, choices=PRODUCTION_TYPE_CHOICES, null=True, blank=True
+    )
+    assembly_type = models.CharField(
+        max_length=30, choices=ASSEMBLY_TYPE_CHOICES, null=True, blank=True
+    )
     is_step1_complete = models.BooleanField(default=False)
     is_step2_complete = models.BooleanField(default=False)
 
@@ -528,7 +636,11 @@ class OrderProduct(models.Model):
     Product / Device Model shown in UI
     Example: GPS Tracker Pro, GPS Tracker Standard
     """
-    name = models.CharField(max_length=100,unique=True,verbose_name="Product / Device Model")
+
+    name = models.CharField(
+        max_length=100, unique=True, verbose_name="Product / Device Model"
+    )
+
     class Meta:
         ordering = ["name"]
         verbose_name = "Order Product"
@@ -544,9 +656,13 @@ class OrderBatch(models.Model):
     Each product can have MULTIPLE batches.
     Each batch maintains ITS OWN stock.
     """
-    product = models.ForeignKey(OrderProduct,on_delete=models.PROTECT,related_name="batches")
+
+    product = models.ForeignKey(
+        OrderProduct, on_delete=models.PROTECT, related_name="batches"
+    )
     batch_number = models.CharField(max_length=50)
     available_stock = models.PositiveIntegerField()
+
     class Meta:
         unique_together = ("product", "batch_number")
         ordering = ["batch_number"]
@@ -588,8 +704,17 @@ class SalesOrder(models.Model):
     batch = models.ForeignKey(OrderBatch, on_delete=models.PROTECT)
     quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
-    discount_percent = models.DecimalField(max_digits=5,decimal_places=2,validators=[MinValueValidator(0), MaxValueValidator(100)],default=0)
-    gst_percent = models.DecimalField(max_digits=5,decimal_places=2,validators=[MinValueValidator(0), MaxValueValidator(100)])
+    discount_percent = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        default=0,
+    )
+    gst_percent = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+    )
     shipping_charges = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     grand_total = models.DecimalField(max_digits=12, decimal_places=2)
     delivery_date = models.DateField()
@@ -599,6 +724,7 @@ class SalesOrder(models.Model):
     invoice_number = models.CharField(max_length=100, blank=True)
     remarks = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
     def calculate_grand_total(self):
         base = Decimal(self.quantity) * self.unit_price
         discount = (base * self.discount_percent) / Decimal("100")
@@ -615,7 +741,9 @@ class SupplierVendor(models.Model):
     """
     Supplier / Vendor dropdown
     """
+
     name = models.CharField(max_length=255, unique=True)
+
     class Meta:
         ordering = ["name"]
         verbose_name = "Supplier / Vendor"
@@ -627,9 +755,7 @@ class SupplierVendor(models.Model):
 
 # -----------------------------Production Order------------------------------
 class ProductionOrder(models.Model):
-    PRODUCTION_TYPE_CHOICES = (
-        ("add_to_stock", "Add to Stock"),
-    )
+    PRODUCTION_TYPE_CHOICES = (("add_to_stock", "Add to Stock"),)
 
     PRODUCT_CATEGORY_CHOICES = (
         ("gps_devices", "GPS Devices"),
@@ -638,18 +764,19 @@ class ProductionOrder(models.Model):
         ("accessories", "Accessories"),
         ("components", "Components"),
     )
-    production_type = models.CharField(max_length=20,choices=PRODUCTION_TYPE_CHOICES)
+    production_type = models.CharField(max_length=20, choices=PRODUCTION_TYPE_CHOICES)
     product = models.ForeignKey(OrderProduct, on_delete=models.PROTECT)
-    product_category = models.CharField(max_length=30,choices=PRODUCT_CATEGORY_CHOICES)
+    product_category = models.CharField(max_length=30, choices=PRODUCT_CATEGORY_CHOICES)
     quantity_added = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     total_value = models.DecimalField(max_digits=12, decimal_places=2)
-    supplier_vendor = models.ForeignKey(SupplierVendor,on_delete=models.PROTECT)
+    supplier_vendor = models.ForeignKey(SupplierVendor, on_delete=models.PROTECT)
     purchase_date = models.DateField()
     manufacturing_date = models.DateField()
     batch = models.ForeignKey(OrderBatch, on_delete=models.PROTECT)
     remarks = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
     def calculate_total_value(self):
         return Decimal(self.quantity_added) * self.unit_price
 
@@ -679,7 +806,9 @@ class OrderEntryMakeToOrder(models.Model):
         ("high", "High"),
         ("urgent", "Urgent"),
     )
-    order_entry = models.OneToOneField(OrderEntry, on_delete=models.CASCADE, related_name="make_to_order")
+    order_entry = models.OneToOneField(
+        OrderEntry, on_delete=models.CASCADE, related_name="make_to_order"
+    )
     customer_name = models.CharField(max_length=255)
     customer_type = models.CharField(max_length=20, choices=CUSTOMER_TYPE_CHOICES)
     contact_person = models.CharField(max_length=255)
@@ -744,11 +873,12 @@ class RFQSelection(models.Model):
         ("component", "Component"),
         ("service", "Service"),
     )
-    rfq = models.ForeignKey(RequestForQuote,on_delete=models.CASCADE,related_name="selections")
+    rfq = models.ForeignKey(
+        RequestForQuote, on_delete=models.CASCADE, related_name="selections"
+    )
     item_type = models.CharField(max_length=20, choices=ITEM_TYPE_CHOICES)
     reference = models.CharField(
-        max_length=255,
-        help_text="Selected BOM ID / Component name / Service name"
+        max_length=255, help_text="Selected BOM ID / Component name / Service name"
     )
 
 
@@ -757,6 +887,7 @@ class PurchaseOrder(models.Model):
     """
     Main entity: Create Purchase Order
     """
+
     ASSEMBLY_TYPE_CHOICES = (
         ("pcb", "PCB Assembly"),
         ("device", "Device Assembly"),
@@ -774,12 +905,14 @@ class PurchaseOrder(models.Model):
     buyer_name = models.CharField(max_length=255)
     order_id = models.CharField(max_length=50)
     rfq_id = models.CharField(max_length=50)
-    assembly_type = models.CharField(max_length=20,choices=ASSEMBLY_TYPE_CHOICES)
+    assembly_type = models.CharField(max_length=20, choices=ASSEMBLY_TYPE_CHOICES)
     # ---------- STEP 2 ----------
     wastage_percentage = models.PositiveIntegerField(null=True, blank=True)
     selected_vendor_id = models.CharField(max_length=50, null=True, blank=True)
     delivery_date = models.DateField(null=True, blank=True)
-    payment_terms = models.CharField(max_length=20,choices=PAYMENT_TERMS_CHOICES,null=True,blank=True)
+    payment_terms = models.CharField(
+        max_length=20, choices=PAYMENT_TERMS_CHOICES, null=True, blank=True
+    )
     created_by = models.ForeignKey(User, on_delete=models.PROTECT)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -798,8 +931,10 @@ class PurchaseOrderType(models.Model):
         ("component", "Components (Enclosure, Battery, etc.)"),
         ("service", "Services (Assembly, Quality Check, etc.)"),
     )
-    purchase_order = models.ForeignKey(PurchaseOrder,on_delete=models.CASCADE,related_name="order_types")
-    order_type = models.CharField(max_length=20,choices=ORDER_TYPE_CHOICES)
+    purchase_order = models.ForeignKey(
+        PurchaseOrder, on_delete=models.CASCADE, related_name="order_types"
+    )
+    order_type = models.CharField(max_length=20, choices=ORDER_TYPE_CHOICES)
 
     class Meta:
         unique_together = ("purchase_order", "order_type")
@@ -810,12 +945,15 @@ class PurchaseOrderItem(models.Model):
     """
     Selected items / components / services
     """
+
     ITEM_TYPE_CHOICES = (
         ("bom", "BOM Item"),
         ("component", "Component"),
         ("service", "Service"),
     )
-    purchase_order = models.ForeignKey(PurchaseOrder,on_delete=models.CASCADE,related_name="items")
+    purchase_order = models.ForeignKey(
+        PurchaseOrder, on_delete=models.CASCADE, related_name="items"
+    )
     item_code = models.CharField(max_length=50)
     item_type = models.CharField(max_length=20, choices=ITEM_TYPE_CHOICES)
     vendor_id = models.CharField(max_length=50)
@@ -835,10 +973,12 @@ class MaterialReceiptNote(models.Model):
         ("assembled_pcb", "Assembled PCB"),
         ("assembled_device", "Assembled Device"),
     )
-    purchase_order = models.ForeignKey("PurchaseOrder",on_delete=models.PROTECT,related_name="mrns")
+    purchase_order = models.ForeignKey(
+        "PurchaseOrder", on_delete=models.PROTECT, related_name="mrns"
+    )
     po_date = models.DateField()
-    vendor = models.ForeignKey(Vendor,on_delete=models.PROTECT,related_name="mrns")
-    inward_type = models.CharField(max_length=30,choices=INWARD_TYPE_CHOICES)
+    vendor = models.ForeignKey(Vendor, on_delete=models.PROTECT, related_name="mrns")
+    inward_type = models.CharField(max_length=30, choices=INWARD_TYPE_CHOICES)
     receipt_date = models.DateField()
     batch_number = models.CharField(max_length=50, unique=True)
     invoice_number = models.CharField(max_length=50, blank=True)
@@ -857,21 +997,30 @@ class MaterialReceiptNote(models.Model):
 
 # ---------------- Material Receipt Item ----------------
 class MaterialReceiptItem(models.Model):
-    mrn = models.ForeignKey(MaterialReceiptNote,on_delete=models.CASCADE,related_name="items")
-    purchase_order_item = models.ForeignKey("PurchaseOrderItem",on_delete=models.PROTECT,related_name="mrn_items")
+    mrn = models.ForeignKey(
+        MaterialReceiptNote, on_delete=models.CASCADE, related_name="items"
+    )
+    purchase_order_item = models.ForeignKey(
+        "PurchaseOrderItem", on_delete=models.PROTECT, related_name="mrn_items"
+    )
     received_qty = models.PositiveIntegerField()
-    serial_numbers = models.TextField(help_text="Comma separated serial numbers",blank=True)
+    serial_numbers = models.TextField(
+        help_text="Comma separated serial numbers", blank=True
+    )
     balance_qty = models.PositiveIntegerField()
+
     def save(self, *args, **kwargs):
         """
         Balance Qty = Ordered Qty - Total Received Qty (across all MRNs)
         """
         ordered_qty = self.purchase_order_item.quantity
         total_received = (
-            MaterialReceiptItem.objects
-            .filter(purchase_order_item=self.purchase_order_item)
+            MaterialReceiptItem.objects.filter(
+                purchase_order_item=self.purchase_order_item
+            )
             .exclude(pk=self.pk)
-            .aggregate(models.Sum("received_qty"))["received_qty__sum"] or 0
+            .aggregate(models.Sum("received_qty"))["received_qty__sum"]
+            or 0
         )
         self.balance_qty = ordered_qty - (total_received + self.received_qty)
         if self.balance_qty < 0:
@@ -884,6 +1033,7 @@ class Dispatch(models.Model):
     """
     Dispatch workflow main model.
     """
+
     STATUS_CHOICES = (
         ("draft", "Draft"),
         ("completed", "Completed"),
@@ -895,12 +1045,20 @@ class Dispatch(models.Model):
     )
 
     # ---------------- STEP 1 ----------------
-    sales_order = models.ForeignKey(SalesOrder,on_delete=models.PROTECT,related_name="dispatches")
-    order_type = models.CharField(max_length=20,choices=ORDER_TYPE_CHOICES)
+    sales_order = models.ForeignKey(
+        SalesOrder, on_delete=models.PROTECT, related_name="dispatches"
+    )
+    order_type = models.CharField(max_length=20, choices=ORDER_TYPE_CHOICES)
     # ---------------- STEP 2 ----------------
-    product = models.ForeignKey(OrderProduct,on_delete=models.PROTECT,null=True,blank=True)
-    batch = models.ForeignKey(OrderBatch,on_delete=models.PROTECT,null=True,blank=True)
-    dispatch_quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)],null=True,blank=True)
+    product = models.ForeignKey(
+        OrderProduct, on_delete=models.PROTECT, null=True, blank=True
+    )
+    batch = models.ForeignKey(
+        OrderBatch, on_delete=models.PROTECT, null=True, blank=True
+    )
+    dispatch_quantity = models.PositiveIntegerField(
+        validators=[MinValueValidator(1)], null=True, blank=True
+    )
     imei_number = models.CharField(max_length=50, blank=True)
     serial_number = models.CharField(max_length=50, blank=True)
     iccid_number = models.CharField(max_length=50, blank=True)
@@ -917,11 +1075,7 @@ class Dispatch(models.Model):
     insurance_required = models.BooleanField(default=False)
 
     # ---------------- WORKFLOW CONTROL ----------------
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default="draft"
-    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
 
     stock_deducted = models.BooleanField(default=False)
 
@@ -942,6 +1096,7 @@ class PostDispatchReturn(models.Model):
     Main model representing a post-dispatch return entry.
     One record per return request.
     """
+
     RETURN_TYPE_CHOICES = (
         ("full", "Full Return (All Items)"),
         ("partial", "Partial Return (Some Items)"),
@@ -960,16 +1115,18 @@ class PostDispatchReturn(models.Model):
     dispatch_id = models.CharField(max_length=50)
     invoice_no = models.CharField(max_length=50)
     customer_name = models.CharField(max_length=255)
-    dispatch_total_value = models.DecimalField(max_digits=12,decimal_places=2)
+    dispatch_total_value = models.DecimalField(max_digits=12, decimal_places=2)
     # Return details
-    return_type = models.CharField(max_length=20,choices=RETURN_TYPE_CHOICES)
-    return_reason = models.CharField(max_length=20,choices=RETURN_REASON_CHOICES)
+    return_type = models.CharField(max_length=20, choices=RETURN_TYPE_CHOICES)
+    return_reason = models.CharField(max_length=20, choices=RETURN_REASON_CHOICES)
     return_date = models.DateField()
     return_remarks = models.TextField(blank=True)
     # Calculated field
-    total_return_amount = models.DecimalField(max_digits=12,decimal_places=2,default=0)
+    total_return_amount = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0
+    )
     # System fields
-    created_by = models.ForeignKey(User,on_delete=models.PROTECT)
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -984,11 +1141,14 @@ class PostDispatchReturnItem(models.Model):
     """
     Line items selected for return.
     """
-    post_dispatch_return = models.ForeignKey(PostDispatchReturn,on_delete=models.CASCADE,related_name="items")
+
+    post_dispatch_return = models.ForeignKey(
+        PostDispatchReturn, on_delete=models.CASCADE, related_name="items"
+    )
     product_id = models.CharField(max_length=50)
     description = models.CharField(max_length=255)
     dispatched_qty = models.PositiveIntegerField()
-    unit_price = models.DecimalField(max_digits=10,decimal_places=2)
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     return_qty = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     return_amount = models.DecimalField(max_digits=12, decimal_places=2)
 
@@ -1002,8 +1162,12 @@ class AccountRegistration(models.Model):
     phone_number = models.CharField(max_length=15)
     email = models.EmailField()
     address = models.TextField()
-    state = models.ForeignKey(State, on_delete=models.PROTECT, related_name="account_registrations")
-    district = models.ForeignKey(District, on_delete=models.PROTECT, related_name="account_registrations")
+    state = models.ForeignKey(
+        State, on_delete=models.PROTECT, related_name="account_registrations"
+    )
+    district = models.ForeignKey(
+        District, on_delete=models.PROTECT, related_name="account_registrations"
+    )
     aadhar_number = models.CharField(max_length=20)
     aadhar_document = models.FileField(upload_to="documents/aadhar/")
     pan_number = models.CharField(max_length=20)
@@ -1020,8 +1184,12 @@ class QCInspectorRegistration(models.Model):
     phone_number = models.CharField(max_length=15)
     email = models.EmailField()
     address = models.TextField()
-    state = models.ForeignKey(State, on_delete=models.PROTECT, related_name="qc_inspectors")
-    district = models.ForeignKey(District, on_delete=models.PROTECT, related_name="qc_inspectors")
+    state = models.ForeignKey(
+        State, on_delete=models.PROTECT, related_name="qc_inspectors"
+    )
+    district = models.ForeignKey(
+        District, on_delete=models.PROTECT, related_name="qc_inspectors"
+    )
     aadhar_number = models.CharField(max_length=20)
     aadhar_document = models.FileField(upload_to="documents/qc_inspector/aadhar/")
     pan_number = models.CharField(max_length=20)
@@ -1038,10 +1206,16 @@ class PurchaseDepartmentRegistration(models.Model):
     phone_number = models.CharField(max_length=15)
     email = models.EmailField()
     address = models.TextField()
-    state = models.ForeignKey(State, on_delete=models.PROTECT, related_name="purchase_departments")
-    district = models.ForeignKey(District, on_delete=models.PROTECT, related_name="purchase_departments")
+    state = models.ForeignKey(
+        State, on_delete=models.PROTECT, related_name="purchase_departments"
+    )
+    district = models.ForeignKey(
+        District, on_delete=models.PROTECT, related_name="purchase_departments"
+    )
     aadhar_number = models.CharField(max_length=20)
-    aadhar_document = models.FileField(upload_to="documents/purchase_department/aadhar/")
+    aadhar_document = models.FileField(
+        upload_to="documents/purchase_department/aadhar/"
+    )
     pan_number = models.CharField(max_length=20)
     pan_document = models.FileField(upload_to="documents/purchase_department/pan/")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -1056,8 +1230,12 @@ class StoreManagerRegistration(models.Model):
     phone_number = models.CharField(max_length=15)
     email = models.EmailField()
     address = models.TextField()
-    state = models.ForeignKey(State, on_delete=models.PROTECT, related_name="store_managers")
-    district = models.ForeignKey(District, on_delete=models.PROTECT, related_name="store_managers")
+    state = models.ForeignKey(
+        State, on_delete=models.PROTECT, related_name="store_managers"
+    )
+    district = models.ForeignKey(
+        District, on_delete=models.PROTECT, related_name="store_managers"
+    )
     aadhar_number = models.CharField(max_length=20)
     aadhar_document = models.FileField(upload_to="documents/store_manager/aadhar/")
     pan_number = models.CharField(max_length=20)
@@ -1074,8 +1252,12 @@ class RepairTechnicianRegistration(models.Model):
     phone_number = models.CharField(max_length=15)
     email = models.EmailField()
     address = models.TextField()
-    state = models.ForeignKey(State, on_delete=models.PROTECT, related_name="repair_technicians")
-    district = models.ForeignKey(District, on_delete=models.PROTECT, related_name="repair_technicians")
+    state = models.ForeignKey(
+        State, on_delete=models.PROTECT, related_name="repair_technicians"
+    )
+    district = models.ForeignKey(
+        District, on_delete=models.PROTECT, related_name="repair_technicians"
+    )
     aadhar_number = models.CharField(max_length=20)
     aadhar_document = models.FileField(upload_to="documents/repair_technician/aadhar/")
     pan_number = models.CharField(max_length=20)
@@ -1093,37 +1275,58 @@ class StoreTransfer(models.Model):
         ("non_dispatched", "Non-dispatched"),
         ("return", "Return"),
     )
-    
+
     # Product Information
-    product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name="store_transfers")
+    product = models.ForeignKey(
+        Product, on_delete=models.PROTECT, related_name="store_transfers"
+    )
     product_name = models.CharField(max_length=255)
-    category = models.ForeignKey('ProductCategory', on_delete=models.PROTECT, null=True, blank=True, related_name="store_transfers")
+    category = models.ForeignKey(
+        "ProductCategory",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="store_transfers",
+    )
     # Transfer Details
     transfer_id = models.CharField(max_length=50, unique=True)
     mrn_number = models.CharField(max_length=50, null=True, blank=True)
     batch_number = models.CharField(max_length=50)
     # Vendor & Quantity
-    vendor = models.ForeignKey(Vendor, on_delete=models.PROTECT, related_name="store_transfers")
+    vendor = models.ForeignKey(
+        Vendor, on_delete=models.PROTECT, related_name="store_transfers"
+    )
     quantity = models.IntegerField(validators=[MinValueValidator(1)])
-    unit_price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
-    total_value = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
+    unit_price = models.DecimalField(
+        max_digits=10, decimal_places=2, validators=[MinValueValidator(0)]
+    )
+    total_value = models.DecimalField(
+        max_digits=12, decimal_places=2, validators=[MinValueValidator(0)]
+    )
     # Dates & Status
     transfer_date = models.DateField()
-    dispatch_status = models.CharField(max_length=20, choices=DISPATCH_STATUS_CHOICES, default="non_dispatched")
+    dispatch_status = models.CharField(
+        max_length=20, choices=DISPATCH_STATUS_CHOICES, default="non_dispatched"
+    )
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="created_store_transfers")
-    
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="created_store_transfers",
+    )
+
     class Meta:
         ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=['transfer_id']),
-            models.Index(fields=['batch_number']),
-            models.Index(fields=['dispatch_status']),
-            models.Index(fields=['transfer_date']),
+            models.Index(fields=["transfer_id"]),
+            models.Index(fields=["batch_number"]),
+            models.Index(fields=["dispatch_status"]),
+            models.Index(fields=["transfer_date"]),
         ]
-    
+
     def __str__(self):
         return f"Transfer {self.transfer_id} - {self.product_name}"
 
@@ -1133,11 +1336,11 @@ class ProductCategory(models.Model):
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         verbose_name_plural = "Product Categories"
-        ordering = ['name']
-    
+        ordering = ["name"]
+
     def __str__(self):
         return self.name
 
@@ -1149,6 +1352,7 @@ class DebitNote(models.Model):
     """
     Debit Note for vendor returns, disputes, penalties, etc.
     """
+
     REASON_CHOICES = (
         ("vendor_rejected_return", "Vendor Rejected Return"),
         ("quality_dispute", "Quality Dispute"),
@@ -1157,27 +1361,35 @@ class DebitNote(models.Model):
         ("warranty_claim_denied", "Warranty Claim Denied"),
         ("other", "Other"),
     )
-    
+
     STATUS_CHOICES = (
         ("pending", "Pending"),
         ("approved", "Approved"),
         ("rejected", "Rejected"),
         ("processed", "Processed"),
     )
-    
+
     # Auto-generated number in format DN-YYYY-NNN
     number = models.CharField(max_length=20, unique=True, db_index=True)
     date = models.DateField()
     vendor = models.CharField(max_length=255)
     reason = models.CharField(max_length=50, choices=REASON_CHOICES)
-    amount = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending", db_index=True)
-    reference_document = models.CharField(max_length=255, blank=True, help_text="e.g., RTN-001, PO-001")
+    amount = models.DecimalField(
+        max_digits=12, decimal_places=2, validators=[MinValueValidator(0)]
+    )
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default="pending", db_index=True
+    )
+    reference_document = models.CharField(
+        max_length=255, blank=True, help_text="e.g., RTN-001, PO-001"
+    )
     remarks = models.TextField(blank=True)
-    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="created_debit_notes")
+    created_by = models.ForeignKey(
+        User, on_delete=models.PROTECT, related_name="created_debit_notes"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         ordering = ["-created_at"]
         indexes = [
@@ -1185,7 +1397,7 @@ class DebitNote(models.Model):
             models.Index(fields=["date"]),
             models.Index(fields=["vendor"]),
         ]
-    
+
     def __str__(self):
         return f"{self.number} - {self.vendor}"
 
@@ -1195,6 +1407,7 @@ class CreditNote(models.Model):
     """
     Credit Note for customer returns, discounts, refunds, etc.
     """
+
     REASON_CHOICES = (
         ("return_accepted", "Return Accepted"),
         ("discount_adjustment", "Discount Adjustment"),
@@ -1203,27 +1416,35 @@ class CreditNote(models.Model):
         ("price_correction", "Price Correction"),
         ("other", "Other"),
     )
-    
+
     STATUS_CHOICES = (
         ("pending", "Pending"),
         ("approved", "Approved"),
         ("rejected", "Rejected"),
         ("processed", "Processed"),
     )
-    
+
     # Auto-generated number in format CN-YYYY-NNN
     number = models.CharField(max_length=20, unique=True, db_index=True)
     date = models.DateField()
     customer = models.CharField(max_length=255)
     reason = models.CharField(max_length=50, choices=REASON_CHOICES)
-    amount = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(0)])
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending", db_index=True)
-    reference_document = models.CharField(max_length=255, blank=True, help_text="e.g., INV-001, RTN-001")
+    amount = models.DecimalField(
+        max_digits=12, decimal_places=2, validators=[MinValueValidator(0)]
+    )
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default="pending", db_index=True
+    )
+    reference_document = models.CharField(
+        max_length=255, blank=True, help_text="e.g., INV-001, RTN-001"
+    )
     remarks = models.TextField(blank=True)
-    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="created_credit_notes")
+    created_by = models.ForeignKey(
+        User, on_delete=models.PROTECT, related_name="created_credit_notes"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         ordering = ["-created_at"]
         indexes = [
@@ -1231,7 +1452,7 @@ class CreditNote(models.Model):
             models.Index(fields=["date"]),
             models.Index(fields=["customer"]),
         ]
-    
+
     def __str__(self):
         return f"{self.number} - {self.customer}"
 
@@ -1241,6 +1462,7 @@ class NoteSequence(models.Model):
     """
     Maintains year-wise running sequence for Debit & Credit Notes
     """
+
     NOTE_TYPE_CHOICES = (
         ("debit", "Debit Note"),
         ("credit", "Credit Note"),
@@ -1260,6 +1482,7 @@ class NoteSequence(models.Model):
 # ========================== Vendor ==========================
 # ============================================================
 
+
 # ----------------------------- RETURN REQUEST MANAGEMENT -----------------------------
 class ReturnRequest(models.Model):
     STATUS_CHOICES = (
@@ -1268,19 +1491,37 @@ class ReturnRequest(models.Model):
         ("rejected", "Rejected"),
     )
     # Return identification
-    return_number = models.CharField(max_length=50,unique=True,db_index=True,verbose_name="Return Number")
+    return_number = models.CharField(
+        max_length=50, unique=True, db_index=True, verbose_name="Return Number"
+    )
     date = models.DateField(verbose_name="Return Date")
     # Return details
-    items = models.TextField(verbose_name="Items",help_text="Comma-separated list of returned items or item count")
-    reason = models.CharField(max_length=255,verbose_name="Reason")
-    amount = models.DecimalField(max_digits=12,decimal_places=2,validators=[MinValueValidator(0)],verbose_name="Return Amount")
+    items = models.TextField(
+        verbose_name="Items",
+        help_text="Comma-separated list of returned items or item count",
+    )
+    reason = models.CharField(max_length=255, verbose_name="Reason")
+    amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        verbose_name="Return Amount",
+    )
     # Status tracking
-    status = models.CharField(max_length=20,choices=STATUS_CHOICES,default="pending",db_index=True,verbose_name="Status")
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="pending",
+        db_index=True,
+        verbose_name="Status",
+    )
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(User,on_delete=models.PROTECT,related_name="created_return_requests")
-    
+    created_by = models.ForeignKey(
+        User, on_delete=models.PROTECT, related_name="created_return_requests"
+    )
+
     class Meta:
         ordering = ["-date"]
         verbose_name = "Return Request"
@@ -1305,25 +1546,39 @@ class RepairRecord(models.Model):
     )
 
     # Product reference
-    product_id = models.CharField(max_length=50,db_index=True,verbose_name="Product ID")
-    product_name = models.CharField(max_length=255,verbose_name="Product Name")
+    product_id = models.CharField(
+        max_length=50, db_index=True, verbose_name="Product ID"
+    )
+    product_name = models.CharField(max_length=255, verbose_name="Product Name")
     # Vendor & MRN reference
-    vendor = models.CharField(max_length=255,db_index=True,verbose_name="Vendor")
-    mrn_number = models.CharField(max_length=50,db_index=True,verbose_name="MRN Number")
+    vendor = models.CharField(max_length=255, db_index=True, verbose_name="Vendor")
+    mrn_number = models.CharField(
+        max_length=50, db_index=True, verbose_name="MRN Number"
+    )
     # Quantities
     failed_qty = models.PositiveIntegerField(verbose_name="Failed Qty")
-    repaired_qty = models.PositiveIntegerField(default=0,verbose_name="Repaired Qty")
-    rejected_qty = models.PositiveIntegerField(default=0,verbose_name="Rejected Qty")
-    repair_pending = models.PositiveIntegerField(default=0,verbose_name="Repair Pending")
+    repaired_qty = models.PositiveIntegerField(default=0, verbose_name="Repaired Qty")
+    rejected_qty = models.PositiveIntegerField(default=0, verbose_name="Rejected Qty")
+    repair_pending = models.PositiveIntegerField(
+        default=0, verbose_name="Repair Pending"
+    )
     # Repair details
-    repair_type = models.CharField(max_length=100,verbose_name="Repair Type")
-    repair_center = models.CharField(max_length=255,verbose_name="Repair Center")
+    repair_type = models.CharField(max_length=100, verbose_name="Repair Type")
+    repair_center = models.CharField(max_length=255, verbose_name="Repair Center")
     # Status
-    status = models.CharField(max_length=20,choices=STATUS_CHOICES,default="pending",db_index=True,verbose_name="Status")
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="pending",
+        db_index=True,
+        verbose_name="Status",
+    )
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(User,on_delete=models.PROTECT,related_name="created_repair_records")
+    created_by = models.ForeignKey(
+        User, on_delete=models.PROTECT, related_name="created_repair_records"
+    )
 
     class Meta:
         ordering = ["-created_at"]
@@ -1343,18 +1598,25 @@ class RepairRecord(models.Model):
 # ------------------------------ REPAIR DATA MANAGEMENT -----------------------------
 class RejectedItem(models.Model):
     # Product reference
-    product_id = models.CharField(max_length=50,db_index=True,verbose_name="Product ID")
-    product_name = models.CharField(max_length=255,verbose_name="Product Name")
+    product_id = models.CharField(
+        max_length=50, db_index=True, verbose_name="Product ID"
+    )
+    product_name = models.CharField(max_length=255, verbose_name="Product Name")
     # Vendor & MRN reference
-    vendor = models.CharField(max_length=255,db_index=True,verbose_name="Vendor")
-    mrn_number = models.CharField(max_length=50,db_index=True,verbose_name="MRN Number")
+    vendor = models.CharField(max_length=255, db_index=True, verbose_name="Vendor")
+    mrn_number = models.CharField(
+        max_length=50, db_index=True, verbose_name="MRN Number"
+    )
     # Rejection details
     rejected_qty = models.PositiveIntegerField(verbose_name="Rejected Qty")
     qc_date = models.DateField(verbose_name="QC Date")
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(User,on_delete=models.PROTECT,related_name="created_rejected_items")
+    created_by = models.ForeignKey(
+        User, on_delete=models.PROTECT, related_name="created_rejected_items"
+    )
+
     class Meta:
         ordering = ["-qc_date"]
         verbose_name = "Rejected Item"
@@ -1380,12 +1642,22 @@ class SelfOrder(models.Model):
         (Decimal("28.00"), "28%"),
     )
 
-    device = models.ForeignKey(Device, on_delete=models.PROTECT, related_name="self_orders")
+    device = models.ForeignKey(
+        Device, on_delete=models.PROTECT, related_name="self_orders"
+    )
     quantity = models.IntegerField(validators=[MinValueValidator(1)])
-    supply_state = models.ForeignKey(State, on_delete=models.PROTECT, related_name="self_orders")
-    rate = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(Decimal("0.00"))])
-    gst_rate = models.DecimalField(max_digits=5, decimal_places=2, choices=GST_RATE_CHOICES)
-    gross_amount = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(Decimal("0.00"))])
+    supply_state = models.ForeignKey(
+        State, on_delete=models.PROTECT, related_name="self_orders"
+    )
+    rate = models.DecimalField(
+        max_digits=12, decimal_places=2, validators=[MinValueValidator(Decimal("0.00"))]
+    )
+    gst_rate = models.DecimalField(
+        max_digits=5, decimal_places=2, choices=GST_RATE_CHOICES
+    )
+    gross_amount = models.DecimalField(
+        max_digits=12, decimal_places=2, validators=[MinValueValidator(Decimal("0.00"))]
+    )
     delivery_date = models.DateField()
     delivery_address = models.TextField()
     purpose_remark = models.TextField(blank=True, null=True)
@@ -1409,34 +1681,42 @@ class SelfOrder(models.Model):
 # QUOTATION MANAGEMENT
 # ============================================================
 
+
 class Quotation(models.Model):
     """
     Main quotation record - created when vendor submits pricing for an RFQ
     """
+
     STATUS_CHOICES = (
         ("draft", "Draft"),
         ("submitted", "Submitted"),
         ("accepted", "Accepted"),
         ("rejected", "Rejected"),
     )
-    
-    rfq = models.ForeignKey(RequestForQuote, on_delete=models.CASCADE, related_name="quotations")
-    vendor = models.ForeignKey(Vendor, on_delete=models.PROTECT, related_name="quotations")
+
+    rfq = models.ForeignKey(
+        RequestForQuote, on_delete=models.CASCADE, related_name="quotations"
+    )
+    vendor = models.ForeignKey(
+        Vendor, on_delete=models.PROTECT, related_name="quotations"
+    )
     quotation_number = models.CharField(max_length=100, unique=True)
-    
+
     subtotal_excl_gst = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     total_gst = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    grand_total_incl_gst = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    
+    grand_total_incl_gst = models.DecimalField(
+        max_digits=15, decimal_places=2, default=0
+    )
+
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
     created_by = models.ForeignKey(User, on_delete=models.PROTECT)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
-        unique_together = ('rfq', 'vendor')
-        ordering = ['-created_at']
-    
+        unique_together = ("rfq", "vendor")
+        ordering = ["-created_at"]
+
     def __str__(self):
         return f"{self.quotation_number} - {self.vendor.name}"
 
@@ -1445,30 +1725,31 @@ class QuotationItem(models.Model):
     """
     Line items in quotation - stores pricing for each item from RFQ
     """
+
     ITEM_TYPE_CHOICES = (
         ("bom", "BOM Part"),
         ("component", "Component"),
     )
-    
-    quotation = models.ForeignKey(Quotation, on_delete=models.CASCADE, related_name="items")
+
+    quotation = models.ForeignKey(
+        Quotation, on_delete=models.CASCADE, related_name="items"
+    )
     item_id = models.CharField(max_length=100)  # PCB-001, GPS-001, etc.
     item_name = models.CharField(max_length=255)
     description = models.TextField()
     item_type = models.CharField(max_length=20, choices=ITEM_TYPE_CHOICES)
-    
+
     quantity = models.PositiveIntegerField(default=1)
     net_unit_price = models.DecimalField(max_digits=12, decimal_places=2)
     gst_rate = models.DecimalField(max_digits=5, decimal_places=2, default=18)
     gst_amount = models.DecimalField(max_digits=12, decimal_places=2)
     total_price = models.DecimalField(max_digits=12, decimal_places=2)
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
-        unique_together = ('quotation', 'item_id')
-        ordering = ['item_id']
-    
+        unique_together = ("quotation", "item_id")
+        ordering = ["item_id"]
+
     def __str__(self):
         return f"{self.quotation.quotation_number} - {self.item_id}"
-
-

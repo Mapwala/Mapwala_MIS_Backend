@@ -79,10 +79,21 @@ class VendorSerializer(serializers.ModelSerializer):
         exclude = ("user",)
 
     def validate(self, data):
+        request = self.context["request"]
+        user = request.user
+
         if data["district"].state_id != data["state"].id:
             raise serializers.ValidationError(
-                "Selected district does not belong to the selected state."
+                {"district": "Selected district does not belong to the selected state."}
             )
+
+        if Vendor.objects.filter(user=user, gst_number=data["gst_number"]).exists():
+            raise serializers.ValidationError(
+                {
+                    "gst_number": "Vendor with this GST number already exists for this user."
+                }
+            )
+
         return data
 
 
@@ -90,7 +101,24 @@ class VendorSerializer(serializers.ModelSerializer):
 class B2CCustomerRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = B2CCustomer
-        fields = ["name","phone_number","email","address","state","district","bank_name","account_holder_name","account_number","ifsc_code","gst_number","gst_document","tan_number","tan_document","pan_number","pan_document",]
+        fields = [
+            "name",
+            "phone_number",
+            "email",
+            "address",
+            "state",
+            "district",
+            "bank_name",
+            "account_holder_name",
+            "account_number",
+            "ifsc_code",
+            "gst_number",
+            "gst_document",
+            "tan_number",
+            "tan_document",
+            "pan_number",
+            "pan_document",
+        ]
 
     def validate(self, data):
         state = data.get("state")
@@ -108,16 +136,33 @@ class B2CCustomerRegistrationSerializer(serializers.ModelSerializer):
 class B2BPartnerRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = B2BPartner
-        fields = ["partner_name","phone_number","email","address","state","district","bank_name","account_holder_name","account_number","ifsc_code","gst_number","gst_document","tan_number","tan_document","pan_number","pan_document",]
+        fields = [
+            "partner_name",
+            "phone_number",
+            "email",
+            "address",
+            "state",
+            "district",
+            "bank_name",
+            "account_holder_name",
+            "account_number",
+            "ifsc_code",
+            "gst_number",
+            "gst_document",
+            "tan_number",
+            "tan_document",
+            "pan_number",
+            "pan_document",
+        ]
 
     def validate(self, data):
         state = data.get("state")
         district = data.get("district")
 
         if district.state_id != state.id:
-            raise serializers.ValidationError({
-                "district": "Selected district does not belong to selected state."
-            })
+            raise serializers.ValidationError(
+                {"district": "Selected district does not belong to selected state."}
+            )
 
         return data
 
@@ -138,21 +183,43 @@ class DistributorRegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Distributor
-        fields = ["name","phone_number","email","address","state","district","bank_name","account_holder_name","account_number","ifsc_code","gst_number","gst_document","tan_number","tan_document","pan_number","pan_document","linked_to","manufacturer","authorised_states","authorised_districts",
+        fields = [
+            "name",
+            "phone_number",
+            "email",
+            "address",
+            "state",
+            "district",
+            "bank_name",
+            "account_holder_name",
+            "account_number",
+            "ifsc_code",
+            "gst_number",
+            "gst_document",
+            "tan_number",
+            "tan_document",
+            "pan_number",
+            "pan_document",
+            "linked_to",
+            "manufacturer",
+            "authorised_states",
+            "authorised_districts",
         ]
 
     def validate(self, data):
         # 1️ Address validation
         if data["district"].state_id != data["state"].id:
-            raise serializers.ValidationError({
-                "district": "District does not belong to selected state."
-            })
+            raise serializers.ValidationError(
+                {"district": "District does not belong to selected state."}
+            )
 
         # 2️ Linked-to validation
         if data["linked_to"] == "manufacturer" and not data.get("manufacturer"):
-            raise serializers.ValidationError({
-                "manufacturer": "Manufacturer is required when Linked To is Manufacturer."
-            })
+            raise serializers.ValidationError(
+                {
+                    "manufacturer": "Manufacturer is required when Linked To is Manufacturer."
+                }
+            )
 
         # 3️ Authorised area validation (MULTI)
         authorised_states = data["authorised_states"]
@@ -162,12 +229,14 @@ class DistributorRegistrationSerializer(serializers.ModelSerializer):
 
         for district in authorised_districts:
             if district.state_id not in state_ids:
-                raise serializers.ValidationError({
-                    "authorised_districts": (
-                        f"District '{district.name}' does not belong "
-                        f"to selected authorised states."
-                    )
-                })
+                raise serializers.ValidationError(
+                    {
+                        "authorised_districts": (
+                            f"District '{district.name}' does not belong "
+                            f"to selected authorised states."
+                        )
+                    }
+                )
 
         return data
 
@@ -188,15 +257,36 @@ class DealerRegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Dealer
-        fields = ["name","phone_number","email","address","state","district","bank_name","account_holder_name","account_number","ifsc_code","gst_number","gst_document","tan_number","tan_document","pan_number","pan_document","linked_to","manufacturer","distributor","authorised_states","authorised_districts",
+        fields = [
+            "name",
+            "phone_number",
+            "email",
+            "address",
+            "state",
+            "district",
+            "bank_name",
+            "account_holder_name",
+            "account_number",
+            "ifsc_code",
+            "gst_number",
+            "gst_document",
+            "tan_number",
+            "tan_document",
+            "pan_number",
+            "pan_document",
+            "linked_to",
+            "manufacturer",
+            "distributor",
+            "authorised_states",
+            "authorised_districts",
         ]
 
     def validate(self, data):
         # 1️ Address check
         if data["district"].state_id != data["state"].id:
-            raise serializers.ValidationError({
-                "district": "District does not belong to selected state."
-            })
+            raise serializers.ValidationError(
+                {"district": "District does not belong to selected state."}
+            )
 
         linked_to = data["linked_to"]
         manufacturer = data.get("manufacturer")
@@ -205,35 +295,45 @@ class DealerRegistrationSerializer(serializers.ModelSerializer):
         # 2️ Linking logic
         if linked_to == "manufacturer":
             if not manufacturer:
-                raise serializers.ValidationError({
-                    "manufacturer": "Manufacturer is required when Linked To is Manufacturer."
-                })
+                raise serializers.ValidationError(
+                    {
+                        "manufacturer": "Manufacturer is required when Linked To is Manufacturer."
+                    }
+                )
             if distributor:
-                raise serializers.ValidationError({
-                    "distributor": "Distributor must be empty when linked to Manufacturer."
-                })
+                raise serializers.ValidationError(
+                    {
+                        "distributor": "Distributor must be empty when linked to Manufacturer."
+                    }
+                )
 
         if linked_to == "distributor":
             if not distributor:
-                raise serializers.ValidationError({
-                    "distributor": "Distributor is required when Linked To is Distributor."
-                })
+                raise serializers.ValidationError(
+                    {
+                        "distributor": "Distributor is required when Linked To is Distributor."
+                    }
+                )
             if manufacturer:
-                raise serializers.ValidationError({
-                    "manufacturer": "Manufacturer must be empty when linked to Distributor."
-                })
+                raise serializers.ValidationError(
+                    {
+                        "manufacturer": "Manufacturer must be empty when linked to Distributor."
+                    }
+                )
 
         # 3️ Authorised area validation (MULTI)
         state_ids = {s.id for s in data["authorised_states"]}
 
         for district in data["authorised_districts"]:
             if district.state_id not in state_ids:
-                raise serializers.ValidationError({
-                    "authorised_districts": (
-                        f"District '{district.name}' does not belong "
-                        f"to selected authorised states."
-                    )
-                })
+                raise serializers.ValidationError(
+                    {
+                        "authorised_districts": (
+                            f"District '{district.name}' does not belong "
+                            f"to selected authorised states."
+                        )
+                    }
+                )
 
         return data
 
@@ -256,16 +356,14 @@ class ProformaInvoiceCreateSerializer(serializers.ModelSerializer):
 
         # ✅ Ensure selected party exists
         if not party_fields.get(party_type):
-            raise serializers.ValidationError({
-                "party": f"{party_type.upper()} must be selected"
-            })
+            raise serializers.ValidationError(
+                {"party": f"{party_type.upper()} must be selected"}
+            )
 
         # ✅ Ensure only ONE party is filled
         for key, value in party_fields.items():
             if key != party_type and value:
-                raise serializers.ValidationError({
-                    key: "This field must be empty"
-                })
+                raise serializers.ValidationError({key: "This field must be empty"})
 
         return data
 
@@ -288,14 +386,14 @@ class BOMSerializer(serializers.ModelSerializer):
         bom_file = data.get("bom_file")
 
         if upload_type == "bulk" and not bom_file:
-            raise serializers.ValidationError({
-                "bom_file": "Excel file required for bulk upload"
-            })
+            raise serializers.ValidationError(
+                {"bom_file": "Excel file required for bulk upload"}
+            )
 
         if upload_type == "individual" and bom_file:
-            raise serializers.ValidationError({
-                "bom_file": "Do not upload Excel file for individual entry"
-            })
+            raise serializers.ValidationError(
+                {"bom_file": "Do not upload Excel file for individual entry"}
+            )
 
         return data
 
@@ -380,7 +478,9 @@ class OrderEntryStep1Serializer(serializers.ModelSerializer):
 
     def validate(self, data):
         if data["order_type"] == "production" and not data.get("production_type"):
-            raise serializers.ValidationError({"production_type": "Required for production order"})
+            raise serializers.ValidationError(
+                {"production_type": "Required for production order"}
+            )
         return data
 
 
@@ -406,19 +506,12 @@ class SalesOrderCreateSerializer(serializers.ModelSerializer):
     - batch (string: batch_number)
     """
 
-    product_device_model = serializers.CharField(
-        write_only=True,
-        required=True
-    )
-    batch = serializers.CharField(
-        write_only=True,
-        required=True
-    )
+    product_device_model = serializers.CharField(write_only=True, required=True)
+    batch = serializers.CharField(write_only=True, required=True)
 
     class Meta:
         model = SalesOrder
         exclude = ("product", "batch")
-
 
     def validate(self, data):
         product_name = data.pop("product_device_model")
@@ -428,36 +521,33 @@ class SalesOrderCreateSerializer(serializers.ModelSerializer):
         try:
             product = OrderProduct.objects.get(name=product_name)
         except OrderProduct.DoesNotExist:
-            raise serializers.ValidationError({
-                "product-device_model": "Invalid product / device model."
-            })
+            raise serializers.ValidationError(
+                {"product-device_model": "Invalid product / device model."}
+            )
 
         # 2️ Resolve batch (must belong to product)
         try:
-            batch = OrderBatch.objects.get(
-                product=product,
-                batch_number=batch_number
-            )
+            batch = OrderBatch.objects.get(product=product, batch_number=batch_number)
         except OrderBatch.DoesNotExist:
-            raise serializers.ValidationError({
-                "batch": "Invalid batch for selected product."
-            })
+            raise serializers.ValidationError(
+                {"batch": "Invalid batch for selected product."}
+            )
 
         data["product"] = product
         data["batch"] = batch
 
         # 3️ Stock validation
         if data["quantity"] > batch.available_stock:
-            raise serializers.ValidationError({
-                "quantity": f"Only {batch.available_stock} units available."
-            })
+            raise serializers.ValidationError(
+                {"quantity": f"Only {batch.available_stock} units available."}
+            )
 
         # 4️ Grand total validation
         calculated = SalesOrder(**data).calculate_grand_total()
         if calculated != data["grand_total"]:
-            raise serializers.ValidationError({
-                "grand_total": "Grand total mismatch with backend calculation."
-            })
+            raise serializers.ValidationError(
+                {"grand_total": "Grand total mismatch with backend calculation."}
+            )
 
         return data
 
@@ -475,23 +565,19 @@ class ProductionOrderCreateSerializer(serializers.ModelSerializer):
     def validate(self, data):
         # Resolve product
         try:
-            product = OrderProduct.objects.get(
-                name=data.pop("product_device_model")
-            )
+            product = OrderProduct.objects.get(name=data.pop("product_device_model"))
         except OrderProduct.DoesNotExist:
-            raise serializers.ValidationError({
-                "product_device_model": "Invalid product/device model."
-            })
+            raise serializers.ValidationError(
+                {"product_device_model": "Invalid product/device model."}
+            )
 
         # Resolve supplier
         try:
-            supplier = SupplierVendor.objects.get(
-                id=data.pop("supplier_vendor_id")
-            )
+            supplier = SupplierVendor.objects.get(id=data.pop("supplier_vendor_id"))
         except SupplierVendor.DoesNotExist:
-            raise serializers.ValidationError({
-                "supplier_vendor": "Invalid supplier/vendor."
-            })
+            raise serializers.ValidationError(
+                {"supplier_vendor": "Invalid supplier/vendor."}
+            )
 
         # Resolve or create batch per product
         batch, _ = OrderBatch.objects.get_or_create(
@@ -505,13 +591,11 @@ class ProductionOrderCreateSerializer(serializers.ModelSerializer):
         data["batch"] = batch
 
         # Validate total value
-        calculated = (
-            data["quantity_added"] * data["unit_price"]
-        )
+        calculated = data["quantity_added"] * data["unit_price"]
         if calculated != data["total_value"]:
-            raise serializers.ValidationError({
-                "total_value": "Total value mismatch with backend calculation."
-            })
+            raise serializers.ValidationError(
+                {"total_value": "Total value mismatch with backend calculation."}
+            )
 
         return data
 
@@ -527,13 +611,11 @@ class OrderEntryStep2MakeToOrderSerializer(serializers.ModelSerializer):
     def validate(self, data):
         # 1. Resolve product from UI value
         try:
-            product = OrderProduct.objects.get(
-                name=data.pop("product_device_model")
-            )
+            product = OrderProduct.objects.get(name=data.pop("product_device_model"))
         except OrderProduct.DoesNotExist:
-            raise serializers.ValidationError({
-                "product_device_model": "Invalid Product / Device Model"
-            })
+            raise serializers.ValidationError(
+                {"product_device_model": "Invalid Product / Device Model"}
+            )
 
         data["product"] = product
 
@@ -545,15 +627,15 @@ class OrderEntryStep2MakeToOrderSerializer(serializers.ModelSerializer):
         calculated_total = taxable + gst + data["shipping_charges"]
 
         if calculated_total != data["grand_total"]:
-            raise serializers.ValidationError({
-                "grand_total": "Grand total mismatch with backend calculation"
-            })
-            
+            raise serializers.ValidationError(
+                {"grand_total": "Grand total mismatch with backend calculation"}
+            )
+
         # 3. Advance payment check
         if data["advance_payment"] > data["grand_total"]:
-            raise serializers.ValidationError({
-                "advance_payment": "Advance payment cannot exceed grand total"
-            })
+            raise serializers.ValidationError(
+                {"advance_payment": "Advance payment cannot exceed grand total"}
+            )
 
         return data
 
@@ -573,34 +655,18 @@ class RFQStep1Serializer(serializers.ModelSerializer):
 
 # -------------------------- Request For Quote (RFQ) Step 2 --------------------------
 class RFQStep2Serializer(serializers.Serializer):
-    bom_parts = serializers.ListField(
-        child=serializers.CharField(),
-        required=False
-    )
-    components = serializers.ListField(
-        child=serializers.CharField(),
-        required=False
-    )
-    services = serializers.ListField(
-        child=serializers.CharField(),
-        required=False
-    )
+    bom_parts = serializers.ListField(child=serializers.CharField(), required=False)
+    components = serializers.ListField(child=serializers.CharField(), required=False)
+    services = serializers.ListField(child=serializers.CharField(), required=False)
 
 
 # -------------------------- Request For Quote (RFQ) Step 3 --------------------------
 class RFQStep3Serializer(serializers.Serializer):
-    vendor_ids = serializers.ListField(
-        child=serializers.IntegerField(),
-        min_length=1
-    )
-    srn_no = serializers.ChoiceField(
-        choices=RequestForQuote.SRN_CHOICES
-    )
+    vendor_ids = serializers.ListField(child=serializers.IntegerField(), min_length=1)
+    srn_no = serializers.ChoiceField(choices=RequestForQuote.SRN_CHOICES)
     delivery_date = serializers.DateField()
     delivery_address = serializers.CharField()
-    additional_requirements = serializers.CharField(
-        required=False, allow_blank=True
-    )
+    additional_requirements = serializers.CharField(required=False, allow_blank=True)
 
 
 # ------------------ Create Purchase Order STEP 1 ------------------
@@ -609,24 +675,18 @@ class PurchaseStep1Serializer(serializers.Serializer):
     order_id = serializers.CharField()
     rfq_id = serializers.CharField()
 
-    assembly_type = serializers.ChoiceField(
-        choices=PurchaseOrder.ASSEMBLY_TYPE_CHOICES
-    )
+    assembly_type = serializers.ChoiceField(choices=PurchaseOrder.ASSEMBLY_TYPE_CHOICES)
 
     order_types = serializers.ListField(
-        child=serializers.ChoiceField(
-            choices=["bom", "component", "service"]
-        ),
-        min_length=1
+        child=serializers.ChoiceField(choices=["bom", "component", "service"]),
+        min_length=1,
     )
 
 
 # ---------- Create Purchase Order STEP 2 ----------
 class PurchaseLineSerializer(serializers.Serializer):
     item_code = serializers.CharField()
-    item_type = serializers.ChoiceField(
-        choices=["bom", "component", "service"]
-    )
+    item_type = serializers.ChoiceField(choices=["bom", "component", "service"])
     vendor_id = serializers.CharField()
     vendor_name = serializers.CharField()
 
@@ -767,10 +827,7 @@ class PostDispatchReturnItemSerializer(serializers.Serializer):
     product_id = serializers.CharField()
     description = serializers.CharField()
     dispatched_qty = serializers.IntegerField(min_value=1)
-    unit_price = serializers.DecimalField(
-        max_digits=10,
-        decimal_places=2
-    )
+    unit_price = serializers.DecimalField(max_digits=10, decimal_places=2)
     return_qty = serializers.IntegerField(min_value=1)
 
     def validate(self, data):
@@ -804,16 +861,29 @@ class DropdownSerializer(serializers.Serializer):
 class AccountRegistrationSerializer(serializers.ModelSerializer):
     aadhar_document = serializers.FileField(validators=[validate_file_size])
     pan_document = serializers.FileField(validators=[validate_file_size])
+
     class Meta:
         model = AccountRegistration
-        fields = ["id", "account_name", "phone_number", "email", "address", "state", "district", "aadhar_number", "aadhar_document", "pan_number", "pan_document" ]
+        fields = [
+            "id",
+            "account_name",
+            "phone_number",
+            "email",
+            "address",
+            "state",
+            "district",
+            "aadhar_number",
+            "aadhar_document",
+            "pan_number",
+            "pan_document",
+        ]
 
     def validate(self, data):
         # Enforce State → District dependency (visible in UI)
         if data["district"].state_id != data["state"].id:
-            raise serializers.ValidationError({
-                "district": "Selected district does not belong to selected state."
-            })
+            raise serializers.ValidationError(
+                {"district": "Selected district does not belong to selected state."}
+            )
         return data
 
 
@@ -824,14 +894,26 @@ class QCInspectorRegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = QCInspectorRegistration
-        fields = ["id","qc_inspector_name","phone_number","email","address","state","district","aadhar_number","aadhar_document","pan_number","pan_document"]
+        fields = [
+            "id",
+            "qc_inspector_name",
+            "phone_number",
+            "email",
+            "address",
+            "state",
+            "district",
+            "aadhar_number",
+            "aadhar_document",
+            "pan_number",
+            "pan_document",
+        ]
 
     def validate(self, data):
         # State → District dependency (implied by dropdown behavior)
         if data["district"].state_id != data["state"].id:
-            raise serializers.ValidationError({
-                "district": "Selected district does not belong to selected state."
-            })
+            raise serializers.ValidationError(
+                {"district": "Selected district does not belong to selected state."}
+            )
         return data
 
 
@@ -839,16 +921,29 @@ class QCInspectorRegistrationSerializer(serializers.ModelSerializer):
 class PurchaseDepartmentRegistrationSerializer(serializers.ModelSerializer):
     aadhar_document = serializers.FileField(validators=[validate_file_size])
     pan_document = serializers.FileField(validators=[validate_file_size])
+
     class Meta:
         model = PurchaseDepartmentRegistration
-        fields = ["id","purchase_department_name","phone_number","email","address","state","district","aadhar_number","aadhar_document","pan_number","pan_document"]
-        
+        fields = [
+            "id",
+            "purchase_department_name",
+            "phone_number",
+            "email",
+            "address",
+            "state",
+            "district",
+            "aadhar_number",
+            "aadhar_document",
+            "pan_number",
+            "pan_document",
+        ]
+
     def validate(self, data):
         # Enforce State → District dependency (visible in UI)
         if data["district"].state_id != data["state"].id:
-            raise serializers.ValidationError({
-                "district": "Selected district does not belong to selected state."
-            })
+            raise serializers.ValidationError(
+                {"district": "Selected district does not belong to selected state."}
+            )
         return data
 
 
@@ -856,16 +951,29 @@ class PurchaseDepartmentRegistrationSerializer(serializers.ModelSerializer):
 class StoreManagerRegistrationSerializer(serializers.ModelSerializer):
     aadhar_document = serializers.FileField(validators=[validate_file_size])
     pan_document = serializers.FileField(validators=[validate_file_size])
+
     class Meta:
         model = StoreManagerRegistration
-        fields = ["id","store_manager_name","phone_number","email","address","state","district","aadhar_number","aadhar_document","pan_number","pan_document"]
-        
+        fields = [
+            "id",
+            "store_manager_name",
+            "phone_number",
+            "email",
+            "address",
+            "state",
+            "district",
+            "aadhar_number",
+            "aadhar_document",
+            "pan_number",
+            "pan_document",
+        ]
+
     def validate(self, data):
         # Enforce State → District dependency (visible in UI)
         if data["district"].state_id != data["state"].id:
-            raise serializers.ValidationError({
-                "district": "Selected district does not belong to selected state."
-            })
+            raise serializers.ValidationError(
+                {"district": "Selected district does not belong to selected state."}
+            )
         return data
 
 
@@ -873,16 +981,29 @@ class StoreManagerRegistrationSerializer(serializers.ModelSerializer):
 class RepairTechnicianRegistrationSerializer(serializers.ModelSerializer):
     aadhar_document = serializers.FileField(validators=[validate_file_size])
     pan_document = serializers.FileField(validators=[validate_file_size])
+
     class Meta:
         model = RepairTechnicianRegistration
-        fields = ["id","repair_technician_name","phone_number","email","address","state","district","aadhar_number","aadhar_document","pan_number","pan_document"]
-        
+        fields = [
+            "id",
+            "repair_technician_name",
+            "phone_number",
+            "email",
+            "address",
+            "state",
+            "district",
+            "aadhar_number",
+            "aadhar_document",
+            "pan_number",
+            "pan_document",
+        ]
+
     def validate(self, data):
         # Enforce State → District dependency (visible in UI)
         if data["district"].state_id != data["state"].id:
-            raise serializers.ValidationError({
-                "district": "Selected district does not belong to selected state."
-            })
+            raise serializers.ValidationError(
+                {"district": "Selected district does not belong to selected state."}
+            )
         return data
 
 
@@ -897,108 +1018,238 @@ class ProductCategorySerializer(serializers.ModelSerializer):
 # ---------------- Store Transfer (Inventory Data) ----------------
 class StoreTransferListSerializer(serializers.ModelSerializer):
     """List view with all columns for Inventory Data table"""
+
     product_name = serializers.CharField(read_only=True)
     category_name = serializers.CharField(source="category.name", read_only=True)
     vendor_name = serializers.CharField(source="vendor.name", read_only=True)
-    dispatch_status_display = serializers.CharField(source="get_dispatch_status_display", read_only=True)
-    
+    dispatch_status_display = serializers.CharField(
+        source="get_dispatch_status_display", read_only=True
+    )
+
     class Meta:
         model = StoreTransfer
-        fields = ["id","transfer_id","product_id","product_name","category","category_name","mrn_number","batch_number","vendor","vendor_name","quantity","unit_price","total_value","transfer_date","dispatch_status","dispatch_status_display","created_at"]
-        read_only_fields = ["id","product_name","vendor_name","dispatch_status_display","created_at"]
+        fields = [
+            "id",
+            "transfer_id",
+            "product_id",
+            "product_name",
+            "category",
+            "category_name",
+            "mrn_number",
+            "batch_number",
+            "vendor",
+            "vendor_name",
+            "quantity",
+            "unit_price",
+            "total_value",
+            "transfer_date",
+            "dispatch_status",
+            "dispatch_status_display",
+            "created_at",
+        ]
+        read_only_fields = [
+            "id",
+            "product_name",
+            "vendor_name",
+            "dispatch_status_display",
+            "created_at",
+        ]
 
 
 # ---------------- Detailed View Serializer ----------------
 class StoreTransferDetailSerializer(serializers.ModelSerializer):
     """Detailed view with all information including creator"""
+
     product_name = serializers.CharField(read_only=True)
     category_name = serializers.CharField(source="category.name", read_only=True)
     vendor_name = serializers.CharField(source="vendor.name", read_only=True)
-    created_by_username = serializers.CharField(source="created_by.username", read_only=True)
-    dispatch_status_display = serializers.CharField(source="get_dispatch_status_display", read_only=True)
-    
+    created_by_username = serializers.CharField(
+        source="created_by.username", read_only=True
+    )
+    dispatch_status_display = serializers.CharField(
+        source="get_dispatch_status_display", read_only=True
+    )
+
     class Meta:
         model = StoreTransfer
-        fields = ["id","transfer_id","product_id","product_name","category","category_name","mrn_number","batch_number","vendor","vendor_name","quantity","unit_price","total_value","transfer_date","dispatch_status","dispatch_status_display","created_at","updated_at","created_by","created_by_username"]
-        read_only_fields = ["id","product_name","vendor_name","created_by_username","dispatch_status_display","created_at","updated_at"]
+        fields = [
+            "id",
+            "transfer_id",
+            "product_id",
+            "product_name",
+            "category",
+            "category_name",
+            "mrn_number",
+            "batch_number",
+            "vendor",
+            "vendor_name",
+            "quantity",
+            "unit_price",
+            "total_value",
+            "transfer_date",
+            "dispatch_status",
+            "dispatch_status_display",
+            "created_at",
+            "updated_at",
+            "created_by",
+            "created_by_username",
+        ]
+        read_only_fields = [
+            "id",
+            "product_name",
+            "vendor_name",
+            "created_by_username",
+            "dispatch_status_display",
+            "created_at",
+            "updated_at",
+        ]
 
 
 # ------------- Create and Update Serializer -----------------
 class StoreTransferCreateUpdateSerializer(serializers.ModelSerializer):
     """Create and update operations"""
-    
+
     class Meta:
         model = StoreTransfer
-        fields = ["product","product_name","category","mrn_number","batch_number","vendor","quantity","unit_price","total_value","transfer_date","dispatch_status"]
-    
+        fields = [
+            "product",
+            "product_name",
+            "category",
+            "mrn_number",
+            "batch_number",
+            "vendor",
+            "quantity",
+            "unit_price",
+            "total_value",
+            "transfer_date",
+            "dispatch_status",
+        ]
+
     def validate(self, data):
         # Validate quantity
         if data.get("quantity", 0) <= 0:
-            raise serializers.ValidationError({
-                "quantity": "Quantity must be greater than 0."
-            })
-        
+            raise serializers.ValidationError(
+                {"quantity": "Quantity must be greater than 0."}
+            )
+
         # Validate unit_price
         if data.get("unit_price", 0) < 0:
-            raise serializers.ValidationError({
-                "unit_price": "Unit price cannot be negative."
-            })
-        
+            raise serializers.ValidationError(
+                {"unit_price": "Unit price cannot be negative."}
+            )
+
         # Validate total_value matches quantity * unit_price
         quantity = data.get("quantity")
         unit_price = data.get("unit_price")
         total_value = data.get("total_value")
-        
+
         if quantity and unit_price:
             expected_total = Decimal(str(quantity)) * Decimal(str(unit_price))
             if Decimal(str(total_value)) != expected_total:
-                raise serializers.ValidationError({
-                    "total_value": f"Total value must equal quantity × unit_price. Expected: {expected_total}"
-                })
-        
+                raise serializers.ValidationError(
+                    {
+                        "total_value": f"Total value must equal quantity × unit_price. Expected: {expected_total}"
+                    }
+                )
+
         return data
 
 
 # ------------- DEBIT NOTES & CREDIT NOTES - ACCOUNT MANAGEMENT -----------------
 class DebitNoteListSerializer(serializers.ModelSerializer):
     """List view for debit notes with essential fields"""
-    created_by_name = serializers.CharField(source="created_by.username", read_only=True)
+
+    created_by_name = serializers.CharField(
+        source="created_by.username", read_only=True
+    )
     status_display = serializers.CharField(source="get_status_display", read_only=True)
     reason_display = serializers.CharField(source="get_reason_display", read_only=True)
-    
+
     class Meta:
         model = DebitNote
-        fields = ["id","number","date","vendor","reason","reason_display","amount","status","status_display","created_by_name","created_at"]
-        read_only_fields = ["number", "created_at", "created_by_name", "reason_display", "status_display"]
+        fields = [
+            "id",
+            "number",
+            "date",
+            "vendor",
+            "reason",
+            "reason_display",
+            "amount",
+            "status",
+            "status_display",
+            "created_by_name",
+            "created_at",
+        ]
+        read_only_fields = [
+            "number",
+            "created_at",
+            "created_by_name",
+            "reason_display",
+            "status_display",
+        ]
 
 
 # ------------- Debit Note Detail Serializer -----------------
 class DebitNoteDetailSerializer(serializers.ModelSerializer):
     """Detail view for single debit note"""
-    created_by_name = serializers.CharField(source="created_by.username", read_only=True)
+
+    created_by_name = serializers.CharField(
+        source="created_by.username", read_only=True
+    )
     status_display = serializers.CharField(source="get_status_display", read_only=True)
     reason_display = serializers.CharField(source="get_reason_display", read_only=True)
-    
+
     class Meta:
         model = DebitNote
-        fields = ["id","number","date","vendor","reason","reason_display","amount","status","status_display","reference_document","remarks","created_by_name","created_at","updated_at"]
-        read_only_fields = ["number", "created_at", "updated_at", "created_by_name", "reason_display", "status_display"]
+        fields = [
+            "id",
+            "number",
+            "date",
+            "vendor",
+            "reason",
+            "reason_display",
+            "amount",
+            "status",
+            "status_display",
+            "reference_document",
+            "remarks",
+            "created_by_name",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "number",
+            "created_at",
+            "updated_at",
+            "created_by_name",
+            "reason_display",
+            "status_display",
+        ]
 
 
 # ------------- Create and Update Serializer -----------------
 class DebitNoteCreateUpdateSerializer(serializers.ModelSerializer):
     """Create and update serializer for debit notes"""
+
     number = serializers.CharField(read_only=True)
-    
+
     class Meta:
         model = DebitNote
-        fields = ["number","vendor","reason","amount","reference_document","remarks","status"]
-    
+        fields = [
+            "number",
+            "vendor",
+            "reason",
+            "amount",
+            "reference_document",
+            "remarks",
+            "status",
+        ]
+
     def validate_amount(self, value):
         if value <= 0:
             raise serializers.ValidationError("Amount must be greater than 0.")
         return value
-    
+
     def validate_vendor(self, value):
         if not value or not value.strip():
             raise serializers.ValidationError("Vendor name cannot be empty.")
@@ -1008,43 +1259,98 @@ class DebitNoteCreateUpdateSerializer(serializers.ModelSerializer):
 # ------------- CREDIT NOTES - ACCOUNT MANAGEMENT -----------------
 class CreditNoteListSerializer(serializers.ModelSerializer):
     """List view for credit notes with essential fields"""
-    created_by_name = serializers.CharField(source="created_by.username", read_only=True)
+
+    created_by_name = serializers.CharField(
+        source="created_by.username", read_only=True
+    )
     status_display = serializers.CharField(source="get_status_display", read_only=True)
     reason_display = serializers.CharField(source="get_reason_display", read_only=True)
-    
+
     class Meta:
         model = CreditNote
-        fields = ["id","number","date","customer","reason","reason_display","amount","status","status_display","created_by_name","created_at"]
-        read_only_fields = ["number", "created_at", "created_by_name", "reason_display", "status_display"]
+        fields = [
+            "id",
+            "number",
+            "date",
+            "customer",
+            "reason",
+            "reason_display",
+            "amount",
+            "status",
+            "status_display",
+            "created_by_name",
+            "created_at",
+        ]
+        read_only_fields = [
+            "number",
+            "created_at",
+            "created_by_name",
+            "reason_display",
+            "status_display",
+        ]
 
 
 # ------------- Credit Note Detail Serializer -----------------
 class CreditNoteDetailSerializer(serializers.ModelSerializer):
     """Detail view for single credit note"""
-    created_by_name = serializers.CharField(source="created_by.username", read_only=True)
+
+    created_by_name = serializers.CharField(
+        source="created_by.username", read_only=True
+    )
     status_display = serializers.CharField(source="get_status_display", read_only=True)
     reason_display = serializers.CharField(source="get_reason_display", read_only=True)
-    
+
     class Meta:
         model = CreditNote
-        fields = ["id","number","date","customer","reason","reason_display","amount","status","status_display","reference_document","remarks","created_by_name","created_at","updated_at"]
-        read_only_fields = ["number", "created_at", "updated_at", "created_by_name", "reason_display", "status_display"]
+        fields = [
+            "id",
+            "number",
+            "date",
+            "customer",
+            "reason",
+            "reason_display",
+            "amount",
+            "status",
+            "status_display",
+            "reference_document",
+            "remarks",
+            "created_by_name",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "number",
+            "created_at",
+            "updated_at",
+            "created_by_name",
+            "reason_display",
+            "status_display",
+        ]
 
 
 # ------------- Create and Update Serializer -----------------
 class CreditNoteCreateUpdateSerializer(serializers.ModelSerializer):
     """Create and update serializer for credit notes"""
+
     number = serializers.CharField(read_only=True)
-    
+
     class Meta:
         model = CreditNote
-        fields = ["number","customer","reason","amount","reference_document","remarks","status"]
-    
+        fields = [
+            "number",
+            "customer",
+            "reason",
+            "amount",
+            "reference_document",
+            "remarks",
+            "status",
+        ]
+
     def validate_amount(self, value):
         if value <= 0:
             raise serializers.ValidationError("Amount must be greater than 0.")
         return value
-    
+
     def validate_customer(self, value):
         if not value or not value.strip():
             raise serializers.ValidationError("Customer name cannot be empty.")
@@ -1056,18 +1362,29 @@ class CreditNoteCreateUpdateSerializer(serializers.ModelSerializer):
 # ============================================================
 class ReturnRequestSerializer(serializers.ModelSerializer):
     created_by_username = serializers.CharField(
-        source='created_by.username',
-        read_only=True
+        source="created_by.username", read_only=True
     )
 
     class Meta:
         model = ReturnRequest
-        fields = ['id','return_number','date','items','reason','amount','status','created_at','updated_at','created_by_username']
-        read_only_fields = ['id', 'created_at', 'updated_at', 'created_by_username']
+        fields = [
+            "id",
+            "return_number",
+            "date",
+            "items",
+            "reason",
+            "amount",
+            "status",
+            "created_at",
+            "updated_at",
+            "created_by_username",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at", "created_by_username"]
 
     def validate_date(self, value):
         """Ensure date is not in future"""
         from django.utils import timezone
+
         if value > timezone.now().date():
             raise serializers.ValidationError("Return date cannot be in the future")
         return value
@@ -1081,13 +1398,15 @@ class ReturnRequestSerializer(serializers.ModelSerializer):
 
 class ReturnRequestListSerializer(serializers.ModelSerializer):
     """Lightweight serializer for list views"""
+
     class Meta:
         model = ReturnRequest
-        fields = ['id','return_number','date','items','reason','amount','status']
+        fields = ["id", "return_number", "date", "items", "reason", "amount", "status"]
 
 
 class ReturnRequestCountSerializer(serializers.Serializer):
     """Serializer for return request counts by status"""
+
     pending = serializers.IntegerField()
     accepted = serializers.IntegerField()
     rejected = serializers.IntegerField()
@@ -1098,34 +1417,65 @@ class ReturnRequestCountSerializer(serializers.Serializer):
 # ============================================================
 class RepairRecordSerializer(serializers.ModelSerializer):
     created_by_username = serializers.CharField(
-        source='created_by.username',
-        read_only=True
+        source="created_by.username", read_only=True
     )
 
     class Meta:
         model = RepairRecord
-        fields = ['id','product_id','product_name','vendor','mrn_number','failed_qty','repaired_qty','rejected_qty','repair_pending','repair_type','repair_center','status','created_at','updated_at','created_by_username']
-        read_only_fields = ['id', 'created_at', 'updated_at', 'created_by_username']
+        fields = [
+            "id",
+            "product_id",
+            "product_name",
+            "vendor",
+            "mrn_number",
+            "failed_qty",
+            "repaired_qty",
+            "rejected_qty",
+            "repair_pending",
+            "repair_type",
+            "repair_center",
+            "status",
+            "created_at",
+            "updated_at",
+            "created_by_username",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at", "created_by_username"]
 
     def validate(self, data):
         """Validate repair quantities"""
-        if data.get('repaired_qty', 0) + data.get('rejected_qty', 0) > data.get('failed_qty', 0):
+        if data.get("repaired_qty", 0) + data.get("rejected_qty", 0) > data.get(
+            "failed_qty", 0
+        ):
             raise serializers.ValidationError(
                 "Repaired Qty + Rejected Qty cannot exceed Failed Qty"
             )
-        
-        repair_pending = data.get('repair_pending', 0)
+
+        repair_pending = data.get("repair_pending", 0)
         if repair_pending < 0:
             raise serializers.ValidationError("Repair Pending cannot be negative")
-        
+
         return data
 
 
 class RepairRecordListSerializer(serializers.ModelSerializer):
     """Lightweight serializer for list views"""
+
     class Meta:
         model = RepairRecord
-        fields = ['id','product_id','product_name','vendor','mrn_number','failed_qty','repaired_qty','rejected_qty','repair_pending','repair_type','repair_center','status']
+        fields = [
+            "id",
+            "product_id",
+            "product_name",
+            "vendor",
+            "mrn_number",
+            "failed_qty",
+            "repaired_qty",
+            "rejected_qty",
+            "repair_pending",
+            "repair_type",
+            "repair_center",
+            "status",
+        ]
 
 
 # ============================================================
@@ -1133,18 +1483,29 @@ class RepairRecordListSerializer(serializers.ModelSerializer):
 # ============================================================
 class RejectedItemSerializer(serializers.ModelSerializer):
     created_by_username = serializers.CharField(
-        source='created_by.username',
-        read_only=True
+        source="created_by.username", read_only=True
     )
 
     class Meta:
         model = RejectedItem
-        fields = ['id','product_id','product_name','vendor','mrn_number','rejected_qty','qc_date','created_at','updated_at','created_by_username']
-        read_only_fields = ['id', 'created_at', 'updated_at', 'created_by_username']
+        fields = [
+            "id",
+            "product_id",
+            "product_name",
+            "vendor",
+            "mrn_number",
+            "rejected_qty",
+            "qc_date",
+            "created_at",
+            "updated_at",
+            "created_by_username",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at", "created_by_username"]
 
     def validate_qc_date(self, value):
         """Ensure QC date is not in future"""
         from django.utils import timezone
+
         if value > timezone.now().date():
             raise serializers.ValidationError("QC date cannot be in the future")
         return value
@@ -1158,9 +1519,18 @@ class RejectedItemSerializer(serializers.ModelSerializer):
 
 class RejectedItemListSerializer(serializers.ModelSerializer):
     """Lightweight serializer for list views"""
+
     class Meta:
         model = RejectedItem
-        fields = ['id','product_id','product_name','vendor','mrn_number','rejected_qty','qc_date']
+        fields = [
+            "id",
+            "product_id",
+            "product_name",
+            "vendor",
+            "mrn_number",
+            "rejected_qty",
+            "qc_date",
+        ]
 
 
 # ============================================================
@@ -1174,30 +1544,25 @@ class DeviceListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Device
-        fields = [
-            'device_id',
-            'name',
-            'model',
-            'status',
-            'updated'
-        ]
+        fields = ["device_id", "name", "model", "status", "updated"]
 
     def get_device_id(self, obj):
         return f"DEV-{obj.id:04d}"
 
     def get_updated(self, obj):
-        return obj.created_at.strftime('%Y-%m-%d') if obj.created_at else None
+        return obj.created_at.strftime("%Y-%m-%d") if obj.created_at else None
 
 
 class EnclosureDetailSerializer(serializers.ModelSerializer):
     """Enclosure details for device view"""
+
     dimensions = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = Enclosure
-        fields = ['dimensions', 'color', 'material', 'quantity']
+        fields = ["dimensions", "color", "material", "quantity"]
         read_only_fields = fields
-    
+
     def get_dimensions(self, obj):
         """Format dimensions as 'L × B × H mm'"""
         return f"{obj.length} × {obj.breadth} × {obj.height} mm"
@@ -1205,9 +1570,10 @@ class EnclosureDetailSerializer(serializers.ModelSerializer):
 
 class WireConnectorDetailSerializer(serializers.ModelSerializer):
     """Individual wire connector details"""
+
     class Meta:
         model = WireConnector
-        fields = ['connector_name', 'number_of_pins', 'wire_colors']
+        fields = ["connector_name", "number_of_pins", "wire_colors"]
         read_only_fields = fields
 
 
@@ -1221,12 +1587,12 @@ class WireHarnessDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = WireHarness
         fields = [
-            'number_of_wires',
-            'color',
-            'length',
-            'pin_type',
-            'no_of_connectors',
-            'connectors',
+            "number_of_wires",
+            "color",
+            "length",
+            "pin_type",
+            "no_of_connectors",
+            "connectors",
         ]
         read_only_fields = fields
 
@@ -1239,21 +1605,21 @@ class WireHarnessDetailSerializer(serializers.ModelSerializer):
         if not obj.specification:
             return result
 
-        parts = [p.strip() for p in obj.specification.split(',')]
+        parts = [p.strip() for p in obj.specification.split(",")]
         for part in parts:
-            if ':' in part:
-                key, value = part.split(':', 1)
+            if ":" in part:
+                key, value = part.split(":", 1)
                 result[key.strip().lower()] = value.strip()
         return result
 
     def get_color(self, obj):
-        return self._parse_specification(obj).get('color')
+        return self._parse_specification(obj).get("color")
 
     def get_length(self, obj):
-        return self._parse_specification(obj).get('length')
+        return self._parse_specification(obj).get("length")
 
     def get_pin_type(self, obj):
-        return self._parse_specification(obj).get('pin type')
+        return self._parse_specification(obj).get("pin type")
 
     def get_no_of_connectors(self, obj):
         return obj.connectors.count()
@@ -1261,22 +1627,24 @@ class WireHarnessDetailSerializer(serializers.ModelSerializer):
 
 class BatteryDetailSerializer(serializers.ModelSerializer):
     """Battery details for device view"""
+
     dimensions = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = Battery
-        fields = ['capacity', 'dimensions']
+        fields = ["capacity", "dimensions"]
         read_only_fields = fields
-    
+
     def get_dimensions(self, obj):
         return f"{obj.length} × {obj.breadth} × {obj.height} mm"
 
 
 class SOSButtonDetailSerializer(serializers.ModelSerializer):
     """SOS Button details for device view"""
+
     class Meta:
         model = SOSButton
-        fields = ['total_length', 'quantity_per_set']
+        fields = ["total_length", "quantity_per_set"]
         read_only_fields = fields
 
 
@@ -1287,10 +1655,10 @@ class StickerDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Sticker
         fields = [
-            'name',
-            'dimensions',
-            'quantity',
-            'file_name',
+            "name",
+            "dimensions",
+            "quantity",
+            "file_name",
         ]
         read_only_fields = fields
 
@@ -1299,74 +1667,81 @@ class StickerDetailSerializer(serializers.ModelSerializer):
 
     def get_file_name(self, obj):
         if obj.file:
-            return obj.file.name.split('/')[-1]
+            return obj.file.name.split("/")[-1]
         return None
 
 
 class BOMComponentDetailSerializer(serializers.ModelSerializer):
     """BOM component/item details"""
+
     class Meta:
         model = BOMComponent
-        fields = ['identification_mark', 'description', 'per_device_quantity']
+        fields = ["identification_mark", "description", "per_device_quantity"]
         read_only_fields = fields
 
 
 class BOMDetailSerializer(serializers.ModelSerializer):
     """BOM with components for device view"""
+
     items = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = BOM
-        fields = ['upload_type', 'items', 'bom_file']
+        fields = ["upload_type", "items", "bom_file"]
         read_only_fields = fields
-    
+
     def get_items(self, obj):
         """Return BOM components as items list"""
         components = obj.components.all()
-        
+
         # Map components to item types based on upload_type
         items_list = []
         for idx, component in enumerate(components, 1):
-            items_list.append({
-                'sr': idx,
-                'item': component.description,
-                'type': (
-                    "Bulk upload" if obj.upload_type == "bulk"
-                    else "Individually purchase"
-                ),
-                'qty': component.per_device_quantity
-            })
+            items_list.append(
+                {
+                    "sr": idx,
+                    "item": component.description,
+                    "type": (
+                        "Bulk upload"
+                        if obj.upload_type == "bulk"
+                        else "Individually purchase"
+                    ),
+                    "qty": component.per_device_quantity,
+                }
+            )
         return items_list
 
 
 class UserManualDetailSerializer(serializers.ModelSerializer):
     """User manual details"""
+
     file_name = serializers.SerializerMethodField()
     file_url = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = UserManual
-        fields = ['file_name', 'file_url']
+        fields = ["file_name", "file_url"]
         read_only_fields = fields
-    
+
     def get_file_name(self, obj):
         """Extract filename from file field"""
         if obj.file:
-            return obj.file.name.split('/')[-1]
+            return obj.file.name.split("/")[-1]
         return None
-    
+
     def get_file_url(self, obj):
         """Return file URL"""
         if obj.file:
-            return self.context.get('request').build_absolute_uri(obj.file.url)
+            return self.context.get("request").build_absolute_uri(obj.file.url)
         return None
 
 
 class AccessoryDetailSerializer(serializers.ModelSerializer):
     """Accessory details"""
+
     class Meta:
         model = Accessory
-        fields = ['name', 'description', 'quantity', 'specifications']
+        fields = ["name", "description", "quantity", "specifications"]
         read_only_fields = fields
 
 
@@ -1379,31 +1754,31 @@ class DeviceDetailSerializer(serializers.ModelSerializer):
     info = DeviceInformationSerializer(read_only=True)
     bom = BOMDetailSerializer(read_only=True)
     enclosure = EnclosureDetailSerializer(read_only=True)
-    wire_harness = WireHarnessDetailSerializer(source='wireharness', read_only=True)
+    wire_harness = WireHarnessDetailSerializer(source="wireharness", read_only=True)
     battery = BatteryDetailSerializer(read_only=True)
-    sos_button = SOSButtonDetailSerializer(source='sosbutton', read_only=True)
-    stickers = StickerDetailSerializer(source='sticker_set', many=True, read_only=True)
-    user_manual = UserManualDetailSerializer(source='usermanual', read_only=True)
+    sos_button = SOSButtonDetailSerializer(source="sosbutton", read_only=True)
+    stickers = StickerDetailSerializer(source="sticker_set", many=True, read_only=True)
+    user_manual = UserManualDetailSerializer(source="usermanual", read_only=True)
     accessories = AccessoryDetailSerializer(many=True, read_only=True)
 
     class Meta:
         model = Device
         fields = [
-            'device_id',
-            'id',
-            'name',
-            'model',
-            'status',
-            'created_date',
-            'info',
-            'bom',
-            'enclosure',
-            'wire_harness',
-            'battery',
-            'sos_button',
-            'stickers',
-            'user_manual',
-            'accessories'
+            "device_id",
+            "id",
+            "name",
+            "model",
+            "status",
+            "created_date",
+            "info",
+            "bom",
+            "enclosure",
+            "wire_harness",
+            "battery",
+            "sos_button",
+            "stickers",
+            "user_manual",
+            "accessories",
         ]
         read_only_fields = fields
 
@@ -1411,39 +1786,39 @@ class DeviceDetailSerializer(serializers.ModelSerializer):
         return f"DEV-{obj.id:04d}"
 
     def get_created_date(self, obj):
-        return obj.created_at.strftime('%Y-%m-%d') if obj.created_at else None
+        return obj.created_at.strftime("%Y-%m-%d") if obj.created_at else None
 
 
 # ================== Self Order ==================
 class SelfOrderSerializer(serializers.ModelSerializer):
-    device_name = serializers.CharField(source='device.info.model', read_only=True)
-    state_name = serializers.CharField(source='supply_state.name', read_only=True)
+    device_name = serializers.CharField(source="device.info.model", read_only=True)
+    state_name = serializers.CharField(source="supply_state.name", read_only=True)
 
     class Meta:
         model = SelfOrder
         fields = [
-            'id',
-            'device',
-            'device_name',
-            'quantity',
-            'supply_state',
-            'state_name',
-            'rate',
-            'gst_rate',
-            'gross_amount',
-            'delivery_date',
-            'delivery_address',
-            'purpose_remark',
-            'created_at',
-            'updated_at'
+            "id",
+            "device",
+            "device_name",
+            "quantity",
+            "supply_state",
+            "state_name",
+            "rate",
+            "gst_rate",
+            "gross_amount",
+            "delivery_date",
+            "delivery_address",
+            "purpose_remark",
+            "created_at",
+            "updated_at",
         ]
         read_only_fields = [
-            'id',
-            'device_name',
-            'state_name',
-            'gross_amount',
-            'created_at',
-            'updated_at'
+            "id",
+            "device_name",
+            "state_name",
+            "gross_amount",
+            "created_at",
+            "updated_at",
         ]
 
     def validate(self, attrs):
@@ -1470,123 +1845,122 @@ class SelfOrderSerializer(serializers.ModelSerializer):
 
     def validate_delivery_date(self, value):
         from django.utils import timezone
+
         if value < timezone.now().date():
             raise serializers.ValidationError("Delivery date cannot be in the past.")
         return value
 
 
+# ================== Quotation ==================
 class QuotationItemSerializer(serializers.Serializer):
     item_id = serializers.CharField()
     item_name = serializers.CharField()
     description = serializers.CharField()
-    item_type = serializers.ChoiceField(choices=['bom', 'component'])
+    item_type = serializers.ChoiceField(choices=["bom", "component"])
     quantity = serializers.IntegerField(min_value=1)
     net_unit_price = serializers.DecimalField(max_digits=10, decimal_places=2)
     gst_rate = serializers.DecimalField(max_digits=5, decimal_places=2)
-    gst_amount = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
-    total_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    gst_amount = serializers.DecimalField(
+        max_digits=10, decimal_places=2, read_only=True
+    )
+    total_price = serializers.DecimalField(
+        max_digits=10, decimal_places=2, read_only=True
+    )
 
 
 class RFQListSerializer(serializers.ModelSerializer):
-    """
-    Serializer for RFQ list view - includes all card display fields
-    """
     rfq_number = serializers.SerializerMethodField()
     vendor_names = serializers.SerializerMethodField()
     bom_parts_count = serializers.SerializerMethodField()
     components_count = serializers.SerializerMethodField()
-    customer = serializers.CharField(source='order_reference', read_only=True)
-    submitted_date = serializers.DateTimeField(source='created_at', read_only=True)
-    
+    customer = serializers.CharField(source="order_reference", read_only=True)
+    submitted_date = serializers.DateTimeField(source="created_at", read_only=True)
+
     class Meta:
         model = RequestForQuote
         fields = [
-            'id',
-            'rfq_number',
-            'status',
-            'customer',
-            'device_name',
-            'quantity',
-            'vendor_names',
-            'assembly_type',
-            'delivery_date',
-            'submitted_date',
-            'bom_parts_count',
-            'components_count'
+            "id",
+            "rfq_number",
+            "status",
+            "customer",
+            "device_name",
+            "quantity",
+            "vendor_names",
+            "assembly_type",
+            "delivery_date",
+            "submitted_date",
+            "bom_parts_count",
+            "components_count",
         ]
-    
+
     def get_rfq_number(self, obj):
-        """Generate RFQ number from ID"""
         return f"RFQ-{obj.created_at.year}-{obj.id:03d}"
-    
+
     def get_vendor_names(self, obj):
-        """Get list of vendor names for this RFQ"""
-        vendors = obj.selections.values_list('reference', flat=True)
-        return list(vendors) if vendors else []
-    
+        return list(
+            obj.quotations.select_related("vendor")
+            .values_list("vendor__name", flat=True)
+            .distinct()
+        )
+
     def get_bom_parts_count(self, obj):
-        """Count selected BOM parts"""
-        bom_count = obj.selections.filter(item_type='bom').count()
-        return bom_count
-    
+        return obj.selections.filter(item_type="bom").count()
+
     def get_components_count(self, obj):
-        """Count selected components"""
-        component_count = obj.selections.filter(item_type='component').count()
-        return component_count
+        return obj.selections.filter(item_type="component").count()
 
 
 class RFQDetailSerializer(serializers.ModelSerializer):
-    """
-    Serializer for RFQ detail view - includes all nested information
-    """
     rfq_number = serializers.SerializerMethodField()
-    customer = serializers.CharField(source='order_reference', read_only=True)
+    customer = serializers.CharField(source="order_reference", read_only=True)
     vendor_details = serializers.SerializerMethodField()
     selected_components = serializers.SerializerMethodField()
-    submitted_date = serializers.DateTimeField(source='created_at', read_only=True)
-    
+    submitted_date = serializers.DateTimeField(source="created_at", read_only=True)
+
     class Meta:
         model = RequestForQuote
         fields = [
-            'id',
-            'rfq_number',
-            'status',
-            'customer',
-            'device_name',
-            'quantity',
-            'delivery_date',
-            'delivery_address',
-            'submitted_date',
-            'additional_requirements',
-            'vendor_details',
-            'assembly_type',
-            'selected_components'
+            "id",
+            "rfq_number",
+            "status",
+            "customer",
+            "device_name",
+            "quantity",
+            "delivery_date",
+            "delivery_address",
+            "submitted_date",
+            "additional_requirements",
+            "vendor_details",
+            "assembly_type",
+            "selected_components",
         ]
-    
+
     def get_rfq_number(self, obj):
-        """Generate RFQ number from ID"""
         return f"RFQ-{obj.created_at.year}-{obj.id:03d}"
-    
+
     def get_vendor_details(self, obj):
-        """Get vendor details from RFQ selections"""
-        selections = obj.selections.all()
+        """
+        Vendors who have submitted quotations for this RFQ
+        """
         return [
             {
-                'vendor_id': sel.id,
-                'vendor_name': sel.reference,
-                'location': 'N/A'
+                "vendor_id": q.vendor.id,
+                "vendor_name": q.vendor.name,
             }
-            for sel in selections
+            for q in obj.quotations.select_related("vendor")
         ]
-    
+
     def get_selected_components(self, obj):
-        """Get selected BOM parts and components from RFQSelection"""
-        bom_parts = obj.selections.filter(item_type='bom').values_list('reference', flat=True)
-        components = obj.selections.filter(item_type='component').values_list('reference', flat=True)
-        
+        bom_parts = obj.selections.filter(item_type="bom").values_list(
+            "reference", flat=True
+        )
+        components = obj.selections.filter(item_type="component").values_list(
+            "reference", flat=True
+        )
+
         return {
-            'bom_parts': [{'part_name': p} for p in bom_parts],
-            'other_components': [{'component_name': c} for c in components]
+            "bom_parts": [{"part_name": p} for p in bom_parts],
+            "other_components": [{"component_name": c} for c in components],
         }
 
 
@@ -1600,10 +1974,9 @@ class QuotationItemInputSerializer(serializers.Serializer):
     gst_rate = serializers.DecimalField(max_digits=5, decimal_places=2, default=18)
 
 
-
 class QuotationCreateSerializer(serializers.Serializer):
     rfq_id = serializers.IntegerField()
-    vendor_id = serializers.IntegerField()
+    vendor_id = serializers.IntegerField(required=True)
     items = QuotationItemInputSerializer(many=True)
 
     def validate(self, data):
@@ -1617,10 +1990,9 @@ class QuotationCreateSerializer(serializers.Serializer):
 
             base = qty * rate
             gst_amount = (base * gst_rate) / Decimal("100")
-            total = base + gst_amount
 
             item["gst_amount"] = gst_amount.quantize(Decimal("0.01"))
-            item["total_price"] = total.quantize(Decimal("0.01"))
+            item["total_price"] = (base + gst_amount).quantize(Decimal("0.01"))
 
             subtotal += base
             total_gst += gst_amount
