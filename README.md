@@ -2,7 +2,7 @@
 
 **Project Type:** Django REST Framework Backend with JWT Authentication  
 **Database:** PostgreSQL  
-**Last Updated:** January 17, 2026
+**Last Updated:** January 22, 2026
 
 ---
 
@@ -673,60 +673,303 @@ Mapwala_MIS_Backend/
 
 ## 📝 SERIALIZERS OVERVIEW
 
-The project uses 50+ serializers for request/response validation:
+The project uses 80+ serializers for request/response validation and data transformation. Serializers ensure data integrity, perform validation, and handle complex nested structures.
 
-### **Core Serializers**
+### Core Serializers Architecture
 
-- `LoginSerializer` - Authentication with terms acceptance
-- `StateSerializer`, `DistrictSerializer` - Location management
-- `ProformaInvoiceCreateSerializer` - PI creation with party validation
+- **Model Serializers**: Auto-generate fields from Django models (most common pattern)
+- **Custom Serializers**: Manual field definitions for complex workflows (RFQ, Dispatch, Returns)
+- **Nested Serializers**: Handle many-to-many and complex relationships
+- **Validators**: Custom validation logic for business rules
 
-### **Registration Serializers**
+### Authentication Serializers
 
-- `B2CCustomerRegistrationSerializer` - B2C customer with documents
-- `B2BPartnerRegistrationSerializer` - B2B partner registration
-- `DistributorRegistrationSerializer` - Distributor with authorized areas
-- `DealerRegistrationSerializer` - Dealer with manufacturer/distributor FK selection
+#### `LoginSerializer`
+- **Purpose**: Handle user authentication with terms acceptance
+- **Fields**: `username`, `password`, `accepted_terms`
+- **Validation**: Authenticates credentials and enforces terms acceptance
 
-### **Device Creation Serializers (Steps 1-10)**
+### Location & Company Serializers
 
-- `DeviceInformationSerializer` - Device specs
-- `BOMSerializer` - BOM with upload type validation
-- `BOMComponentSerializer` - Individual components
-- `EnclosureSerializer`, `WireConnectorSerializer`, `WireHarnessSerializer` - Components
-- `BatterySerializer`, `SOSButtonSerializer` - Specifications
-- `StickerSerializer`, `UserManualSerializer`, `AccessorySerializer` - Attachments
+#### `StateSerializer`, `DistrictSerializer`
+- **Purpose**: Location management serializers
+- **Fields**: State name, status, district code, state relationship
 
-### **Order Management Serializers**
+#### `ParentCompanySerializer`, `VendorSerializer`
+- **Purpose**: Company and vendor information serialization
+- **Features**: Validates state-district relationship, checks unique GST numbers
 
-- `OrderEntryStep1Serializer` - Order type selection
-- `OrderProductSerializer`, `OrderBatchSerializer` - Dropdowns
-- `SalesOrderCreateSerializer` - Sales order with stock validation
-- `ProductionOrderCreateSerializer` - Production order with batch auto-creation
+### Registration Serializers (5 Types)
 
-### **RFQ & Purchase Order Serializers**
+#### 1. **B2CCustomerRegistrationSerializer**
+- **Purpose**: B2C customer registration with documents
+- **Validation**: Enforces state-district relationship, document uploads
+- **Fields**: Customer info, address, banking details, tax documents
 
-- `RFQStep1Serializer`, `RFQStep2Serializer`, `RFQStep3Serializer` - RFQ workflow
-- `PurchaseOrderStep1Serializer`, `PurchaseOrderStep2Serializer` - PO workflow
-- `PurchaseOrderItemSerializer` - Line items
+#### 2. **B2BPartnerRegistrationSerializer**
+- **Purpose**: B2B partner registration
+- **Validation**: District-state dependency validation
+- **Fields**: Partner name, contact, documents, banking info
 
-### **MRN & Dispatch Serializers**
+#### 3. **DistributorRegistrationSerializer**
+- **Purpose**: Distributor registration with authorized areas
+- **Validation**: Multi-select district-state validation, manufacturer linkage
+- **Fields**: Contact info, documents, authorized states/districts, manufacturer FK
 
-- `MRNCreateSerializer` - Material receipt with item details
-- `DispatchStep1Serializer` through `DispatchStep4Serializer` - Dispatch workflow
-- `PostDispatchReturnCreateSerializer` - Return with line items
+#### 4. **DealerRegistrationSerializer**
+- **Purpose**: Dealer registration (linked to Manufacturer OR Distributor)
+- **Validation**: Complex linking logic (XOR between manufacturer/distributor)
+- **Fields**: Contact info, documents, linked_to field, conditional FKs
 
-### **Account Management Serializers**
+#### 5. **Module Management Registration Serializers**
+- **AccountRegistrationSerializer**: Account holder registration
+- **QCInspectorRegistrationSerializer**: QC inspector registration
+- **PurchaseDepartmentRegistrationSerializer**: Purchase department registration
+- **StoreManagerRegistrationSerializer**: Store manager registration
+- **RepairTechnicianRegistrationSerializer**: Repair technician registration
 
-- `DebitNoteSerializer`, `CreditNoteSerializer` - Accounting documents
-- `AccountManagementDashboardSerializer` - Dashboard data
+All module registration serializers:
+- **File Validation**: Enforce max file size via `validate_file_size` function
+- **Location Validation**: Ensure district belongs to selected state
+- **Fields**: Aadhar/PAN documents, location info, contact details
 
-### **Module Management Serializers**
+### Device Creation Serializers (10-Step Process)
 
-- `AccountRegistrationSerializer` - Account registration
-- `QCInspectorRegistrationSerializer` - QC inspector registration
-- `PurchaseDepartmentRegistrationSerializer` - Purchase department registration
-- `StoreManagerRegistrationSerializer` - Store manager registration
+| Step | Serializer | Purpose | Fields |
+|------|-----------|---------|--------|
+| 1 | `DeviceInformationSerializer` | Device specs | Make, model, MRP, version, variant, state of supply |
+| 2 | `BOMSerializer` | Bill of Materials | Upload type (individual/bulk), file upload |
+| 3 | `BOMComponentSerializer` | Individual components | Part details, quantity per device, specifications |
+| 4 | `EnclosureSerializer` | Device casing | Dimensions, color, material, make, part number |
+| 5a | `WireHarnessSerializer` | Wire assembly | Wire count, specification, make, part number |
+| 5b | `WireConnectorSerializer` | Individual connector | Connector name, pin count, wire colors |
+| 6 | `BatterySerializer` | Battery specs | Capacity, dimensions, make, part number |
+| 7 | `SOSButtonSerializer` | SOS button | Length, quantity, make, part number |
+| 8 | `StickerSerializer` | Device stickers | Name, dimensions, quantity, file upload |
+| 9 | `UserManualSerializer` | Manual/documentation | File upload (PDF) |
+| 10 | `AccessorySerializer` | Device accessories | Name, quantity, specifications, description |
+
+### Order Management Serializers
+
+#### Order Entry
+- `OrderEntryStep1Serializer`: Order type selection (Production/Sales)
+- `OrderEntryStep2MakeToOrderSerializer`: Make-to-order workflow details
+
+#### Order Dropdowns
+- `OrderProductSerializer`: Product/device model selection
+- `OrderBatchSerializer`: Batch selection with available stock
+
+#### Sales Order
+- `SalesOrderCreateSerializer`
+  - **Accepts**: `product_device_model` (string), `batch` (string: batch_number)
+  - **Resolves**: Product from name, batch from batch_number
+  - **Validates**: Stock availability, grand total calculation
+  - **Action**: Decrements `OrderBatch.available_stock`
+
+#### Production Order
+- `ProductionOrderCreateSerializer`
+  - **Accepts**: `product_device_model`, `batch_number`, `supplier_vendor_id`
+  - **Creates**: Auto-creates batch if not exists
+  - **Validates**: Total value calculation
+  - **Action**: Increments `OrderBatch.available_stock`
+
+### RFQ (Request for Quote) Serializers
+
+#### Three-Step RFQ Workflow
+- `RFQStep1Serializer`: Device info, assembly type, quantity
+- `RFQStep2Serializer`: Select items (BOM parts, components, services)
+- `RFQStep3Serializer`: Vendor selection, delivery details, SRN
+
+#### RFQ Views
+- `RFQListSerializer`: List view with vendor names, item counts
+- `RFQDetailSerializer`: Full RFQ details with all selections
+- `RFQSelectionSerializer`: Individual item selections
+
+### Purchase Order Serializers
+
+#### Two-Step Purchase Order Workflow
+- `PurchaseStep1Serializer`: Buyer info, order reference, assembly type, order types
+- `PurchaseLineSerializer`: Individual line item details (price, GST, delivery)
+- `PurchaseStep2Serializer`: Vendor selection, wastage %, payment terms, items array
+
+### Material Receipt Note (MRN) Serializers
+
+- `MRNCreateSerializer`: MRN creation with multiple items
+- `MRNItemSerializer`: Individual MRN line items
+- **Features**: Receipt quantity tracking, balance quantity auto-calculation, serial number capture
+
+### Dispatch Workflow Serializers (4-Step)
+
+| Step | Serializer | Purpose |
+|------|-----------|---------|
+| 1 | `DispatchStep1Serializer` | Select sales order, order type |
+| 2 | `DispatchStep2Serializer` | Product, batch, dispatch quantity, IMEI/serial numbers |
+| 3 | `DispatchStep3Serializer` | Dispatch date, remarks, urgency flags |
+| 4 | `DispatchStep4Serializer` | Customer details, completion |
+
+### Post-Dispatch Return Serializers
+
+- `PostDispatchReturnHeaderSerializer`: Return header (dispatch ref, type, reason, date)
+- `PostDispatchReturnItemSerializer`: Individual return items with quantity validation
+- `PostDispatchReturnCreateSerializer`: Full return submission with header and items
+
+### Account Management Serializers
+
+#### Debit Notes
+- `DebitNoteListSerializer`: List view with vendor, reason, status
+- `DebitNoteDetailSerializer`: Full debit note details
+- `DebitNoteCreateUpdateSerializer`: Create/update with auto-generated number
+
+#### Credit Notes
+- `CreditNoteListSerializer`: List view with customer, reason, status
+- `CreditNoteDetailSerializer`: Full credit note details
+- `CreditNoteCreateUpdateSerializer`: Create/update with auto-generated number
+
+### Inventory Management Serializers
+
+#### Store Transfer
+- `StoreTransferListSerializer`: List view with dispatch status, total value
+- `StoreTransferDetailSerializer`: Full details including creator info
+- `StoreTransferCreateUpdateSerializer`: Create/update with value validation
+
+#### Product Category
+- `ProductCategorySerializer`: Simple category serializer with name, description
+
+### Vendor Management Serializers
+
+#### Return Requests
+- `ReturnRequestSerializer`: Complete return request details
+- `ReturnRequestListSerializer`: Lightweight list view
+- `ReturnRequestCountSerializer`: Status-wise return counts
+
+#### Repair Records
+- `RepairRecordSerializer`: Repair tracking with quantity validation
+- `RepairRecordListSerializer`: Lightweight repair list
+
+#### Rejected Items
+- `RejectedItemSerializer`: QC rejected items tracking
+- `RejectedItemListSerializer`: Lightweight rejected items list
+
+### Device Management Serializers
+
+#### Device Views
+- `DeviceListSerializer`: Simplified device list (device_id, name, model, status)
+- `DeviceDetailSerializer`: Full device details with all components
+
+#### Component Detail Serializers (used in Device detail)
+- `EnclosureDetailSerializer`: Enclosure info with formatted dimensions
+- `WireHarnessDetailSerializer`: Wire harness with connector details
+- `BatteryDetailSerializer`: Battery specs with parsed dimensions
+- `SOSButtonDetailSerializer`: SOS button specifications
+- `StickerDetailSerializer`: Sticker info with file extraction
+- `BOMDetailSerializer`: BOM with component items list
+- `UserManualDetailSerializer`: Manual with file URL generation
+- `AccessoryDetailSerializer`: Accessory specs
+
+### Self Orders Serializers
+
+- `SelfOrderSerializer`
+  - **Purpose**: Self-order creation with automatic GST calculation
+  - **Fields**: Device, quantity, rate, GST rate, delivery details
+  - **Auto-Calculation**: `gross_amount = (quantity × rate) × (1 + gst_rate%)`
+
+### Quotation Management Serializers
+
+#### Quotation Item
+- `QuotationItemSerializer`: Individual quotation line items with GST calculation
+
+#### Quotation Operations
+- `QuotationCreateSerializer`: Create quotation from RFQ with items, auto-generates quotation number
+- `QuotationListSerializer`: List view with vendor, totals, item count
+- `QuotationDetailSerializer`: Full quotation with all items, status
+- `QuotationApproveRejectSerializer`: Status update (approve/reject)
+
+### Serializer Validation Patterns
+
+#### 1. **State-District Validation** (Used in 8+ serializers)
+```python
+if district.state_id != state.id:
+    raise ValidationError("District does not belong to state")
+```
+
+#### 2. **Quantity Validation** (Sales, Production, Dispatch)
+```python
+if quantity > available_stock:
+    raise ValidationError("Insufficient stock")
+```
+
+#### 3. **Grand Total Validation** (Sales, Production, Self Orders)
+```python
+calculated = (qty × price - discount) × (1 + gst%) + shipping
+if calculated != grand_total:
+    raise ValidationError("Total mismatch")
+```
+
+#### 4. **Linking Logic Validation** (Dealer, Distributor)
+```python
+# Ensure exactly one party is selected
+# Prevent both from being filled simultaneously
+```
+
+#### 5. **File Size Validation** (All registrations)
+```python
+def validate_file_size(file):
+    if file.size > settings.FILE_UPLOAD_MAX_MEMORY_SIZE:
+        raise ValidationError("File too large")
+```
+
+---
+
+---
+
+## � UTILITY FUNCTIONS & HELPERS
+
+### Concurrency-Safe Number Generators
+
+The `utils.py` file provides thread-safe number generators for automatic sequential numbering of business documents:
+
+#### `generate_note_number(note_type: str) -> str`
+
+Generates unique note numbers for Debit and Credit Notes with automatic year-wise sequencing.
+
+- **Format**: `DN-YYYY-NNN` (Debit Note) or `CN-YYYY-NNN` (Credit Note)
+- **Thread-Safe**: Uses `select_for_update()` to prevent concurrent duplication
+- **Year-Based**: Resets sequence annually
+- **Parameters**:
+  - `note_type` (str): Either "debit" or "credit"
+- **Returns**: Formatted string like "DN-2026-001", "CN-2026-042"
+- **Example Usage**:
+  ```python
+  from mapwala_mis.utils import generate_note_number
+  
+  # Generate debit note number
+  dn_number = generate_note_number("debit")  # Returns: DN-2026-001
+  
+  # Generate credit note number
+  cn_number = generate_note_number("credit")  # Returns: CN-2026-001
+  ```
+
+#### `generate_quotation_number() -> str`
+
+Generates unique quotation numbers with automatic year-wise sequencing.
+
+- **Format**: `QT-YYYY-NNN`
+- **Thread-Safe**: Uses `select_for_update()` for database-level locking
+- **Year-Based**: Resets sequence annually
+- **Returns**: Formatted string like "QT-2026-001", "QT-2026-043"
+- **Example Usage**:
+  ```python
+  from mapwala_mis.utils import generate_quotation_number
+  
+  qt_number = generate_quotation_number()  # Returns: QT-2026-001
+  ```
+
+#### Key Features:
+- **Database-Level Locking**: Uses PostgreSQL row-level locks to ensure thread safety
+- **Atomic Transactions**: All operations wrapped in `transaction.atomic()`
+- **Auto-Increment**: Automatically increments `last_number` in sequence table
+- **Year Isolation**: Each year maintains its own sequence counter
+- **Performance**: Minimal performance impact with direct update operations
 
 ---
 
@@ -984,6 +1227,326 @@ Django will fail to start if `SECRET_KEY` is missing.
 - **Media Root**: Configured for document uploads
 - **Upload Paths**: Organized folder structure (documents/, mrn/, bom/, etc.)
 
+---
+
+## 🛣️ URL ROUTING & API STRUCTURE
+
+The `urls.py` file organizes 70+ API endpoints using Django REST Framework's DefaultRouter and custom URL patterns. All endpoints are organized by business domain for clarity and maintainability.
+
+### Router Configuration
+
+```python
+from rest_framework.routers import DefaultRouter
+
+router = DefaultRouter()
+
+# ViewSets (auto-generates CRUD endpoints)
+router.register(r'states', StateViewSet)
+router.register(r'districts', DistrictViewSet)
+router.register(r'vendors', VendorViewSet)
+router.register(r'product-categories', ProductCategoryViewSet)
+router.register(r'debit-notes', DebitNoteViewSet)
+router.register(r'credit-notes', CreditNoteViewSet)
+router.register(r'return-requests', ReturnRequestViewSet)
+router.register(r'repair-records', RepairRecordViewSet)
+router.register(r'rejected-items', RejectedItemViewSet)
+router.register(r'devices', DeviceViewSet)
+router.register(r'store-transfers', StoreTransferViewSet)
+
+urlpatterns = router.urls
+```
+
+### Endpoint Categories
+
+#### 1. **Authentication & Registration** (7 endpoints)
+- `POST /api/auth/login/` - User authentication with JWT generation
+- `POST /api/b2c/register/` - B2C customer registration
+- `POST /api/b2b/register/` - B2B partner registration
+- `POST /api/distributor/register/` - Distributor registration
+- `POST /api/dealer/register/` - Dealer registration
+- Additional module registration endpoints for QC, Purchase, Store, Account roles
+
+#### 2. **Device Management** (12 endpoints)
+- `POST /api/devices/step-1/` through `POST /api/devices/step-10/` - 10-step device creation workflow
+- `POST /api/device-accessories/` - Device accessory addition
+- `GET /api/devices/` - List all devices
+- `GET /api/devices/{id}/` - Get full device details with all components
+
+#### 3. **Order Management** (8 endpoints)
+- `POST /api/order-entry/step-1/` - Order type selection
+- `POST /api/order-entry/step-2/` - Order entry completion
+- `POST /api/sales-orders/create/` - Create sales order with stock validation
+- `POST /api/production-orders/add-to-stock/` - Add production quantity to inventory
+- Related dropdown endpoints for products, batches, customer types, suppliers
+
+#### 4. **RFQ Workflow** (3 endpoints)
+- `POST /api/rfq/step-1/` - RFQ initialization (device, quantity, assembly type)
+- `POST /api/rfq/step-2/` - Item selection (BOM, components, services)
+- `POST /api/rfq/step-3/` - Vendor selection and delivery details
+- Additional endpoints: List RFQ, Get RFQ details, Vendor quotations
+
+#### 5. **Purchase Order Workflow** (2 endpoints)
+- `POST /api/purchase/step-1/` - Buyer info and order reference
+- `POST /api/purchase/step-2/` - Vendor selection and payment terms
+
+#### 6. **Material Receipt Note (MRN)** (1 endpoint + dropdown)
+- `POST /api/mrn/create/` - MRN creation with received items
+- `GET /api/dropdowns/purchase-orders/` - Purchase orders dropdown
+- `GET /api/purchase/{po_id}/items/` - Get purchase order items
+
+#### 7. **Dispatch Workflow** (4 endpoints + dropdowns)
+- `POST /api/dispatch/step-1/` - Select sales order
+- `POST /api/dispatch/step-2/{dispatch_id}/` - Product and batch selection
+- `POST /api/dispatch/step-3/{dispatch_id}/` - Dispatch date and remarks
+- `POST /api/dispatch/step-4/{dispatch_id}/` - Customer details and completion
+
+#### 8. **Post-Dispatch Returns** (1 endpoint + dropdowns)
+- `POST /api/returns/post-dispatch/create/` - Create return with line items
+- Return type and reason dropdown endpoints
+
+#### 9. **Account Management** (3+ endpoints)
+- `GET /api/account-management/dashboard/` - Financial dashboard summary
+- `GET/POST /api/debit-notes/` - Debit notes CRUD (ViewSet)
+- `GET/POST /api/credit-notes/` - Credit notes CRUD (ViewSet)
+- Status and reason dropdown endpoints
+
+#### 10. **Quotations** (4 endpoints)
+- `POST /api/quotations/create/` - Create quotation from RFQ
+- `GET /api/quotations/` - List all quotations
+- `GET /api/quotations/{id}/` - Get quotation details
+- `POST /api/quotations/{id}/approve-reject/` - Approve or reject quotation
+
+#### 11. **Self Orders** (3 endpoints)
+- `POST /api/self-orders/create/` - Create self order
+- `GET /api/self-orders/` - List self orders
+- `GET /api/self-orders/{id}/` - Get self order details
+
+#### 12. **Location Management** (6 endpoints)
+- `GET/POST /api/states/` - States CRUD
+- `GET /api/states/active/` - Active states only
+- `GET/POST /api/districts/` - Districts CRUD (filterable by state)
+- `GET /api/districts/?state={state_id}` - Districts by state filter
+
+#### 13. **Dropdown APIs** (15+ endpoints for form selections)
+- **General**: States, Districts, Product categories, Suppliers/vendors
+- **Order Related**: Products, Batches, Customer types, Payment modes
+- **Device Related**: Assembly types, SRN options, Quote types
+- **Dispatch Related**: Order types, Dispatch products, Dispatch batches
+- **Return Related**: Return types, Return reasons
+- **Note Related**: Debit/Credit note reasons, Note statuses
+
+---
+
+## 🔧 VIEWS & API IMPLEMENTATIONS
+
+The `views.py` file contains 40+ API view classes organized into 13 sections, implementing all business logic and workflows.
+
+### View Types & Patterns
+
+#### 1. **ViewSets** (Django REST Framework CRUD Auto-generation)
+
+ViewSets automatically generate these endpoints:
+- `GET /endpoint/` - List all
+- `POST /endpoint/` - Create new
+- `GET /endpoint/{id}/` - Get detail
+- `PUT /endpoint/{id}/` - Full update
+- `PATCH /endpoint/{id}/` - Partial update
+- `DELETE /endpoint/{id}/` - Delete
+
+**Implemented ViewSets**:
+- `StateViewSet` - State management with deletion protection (cannot delete if districts exist)
+- `DistrictViewSet` - District management with state filtering
+- `ParentCompanyViewSet` - Parent company management
+- `VendorViewSet` - Vendor management with GST uniqueness validation
+- `ProductCategoryViewSet` - Product category management
+- `DebitNoteViewSet` - Debit notes with auto-generated numbers
+- `CreditNoteViewSet` - Credit notes with auto-generated numbers
+- `ReturnRequestViewSet` - Return request tracking with status filtering
+- `RepairRecordViewSet` - Repair tracking with statistics
+- `RejectedItemViewSet` - Quality control rejected items tracking
+- `DeviceViewSet` - Device viewing (read-only, nested details)
+- `StoreTransferViewSet` - Inventory data with dispatch status filtering
+
+#### 2. **Custom APIView Classes**
+
+**Workflow Pattern**: Single responsibility, specific business operation
+
+##### Authentication & Registration (7 views)
+- `LoginAPIView` - JWT token generation with user profile creation
+- `B2CCustomerRegistrationAPIView` - B2C registration with multipart document upload
+- `B2BPartnerRegistrationAPIView` - B2B registration
+- `DistributorRegistrationAPIView` - Distributor with authorized areas
+- `DealerRegistrationAPIView` - Dealer with conditional linking
+- Plus 4 module registration views (Account, QC, Purchase, Store, Repair)
+
+##### Device Creation (10 views - DeviceStep1APIView to DeviceStep10APIView)
+- `DeviceStep1APIView` - Device information (make, model, MRP, etc.)
+- `DeviceStep2APIView` - BOM upload (individual or bulk Excel)
+- `DeviceStep3APIView` - BOM component entry
+- `DeviceStep4APIView` - Enclosure specification
+- `DeviceStep5APIView` - Wire harness and connectors
+- `DeviceStep6APIView` - Battery specification
+- `DeviceStep7APIView` - SOS button specification
+- `DeviceStep8APIView` - Sticker uploads (multiple files)
+- `DeviceStep9APIView` - User manual PDF upload
+- `DeviceStep10APIView` - Accessories array + mark device as completed
+
+**Common Pattern**:
+```python
+def post(self, request):
+    # Get existing device or create new
+    device = Device.objects.get_or_create(...)
+    
+    # Validate using serializer
+    serializer = DeviceStepXSerializer(data=request.data)
+    if serializer.is_valid():
+        # Create/update model with device FK
+        serializer.save(device=device)
+        return Response({"device_id": device.id, "status": "success"})
+    return Response(serializer.errors, status=400)
+```
+
+##### Order Management (6 views)
+- `OrderEntryStep1APIView` - Order type selection (Production/Sales) and assembly type
+- `OrderEntryStep2APIView` - Order details completion
+- `SalesOrderCreateAPIView` - Create sales order with automatic stock deduction
+- `ProductionOrderCreateAPIView` - Add quantity to stock with batch auto-creation
+- Related dropdown views for products, batches, customers
+
+##### RFQ Workflow (3 views)
+- `RFQStep1APIView` - Initialize RFQ with device and assembly info
+- `RFQStep2APIView` - Select items (BOM, components, services)
+- `RFQStep3APIView` - Vendor selection and final requirements
+- `RFQListAPIView` - List all RFQs with vendor names and item counts
+- `RFQDetailAPIView` - Get RFQ with all selections
+
+##### Purchase Order Workflow (2 views)
+- `PurchaseOrderStep1APIView` - Buyer and order information
+- `PurchaseOrderStep2APIView` - Vendor selection, payment terms, items
+
+##### MRN Management (1 view + dropdowns)
+- `MRNCreateAPIView` - Create material receipt note with line items
+
+##### Dispatch Workflow (4 views)
+- `DispatchStep1APIView` - Select sales order from list
+- `DispatchStep2APIView` - Select product/batch with automatic stock validation
+- `DispatchStep3APIView` - Set dispatch date, remarks, and urgency flags
+- `DispatchStep4APIView` - Customer details, mark as completed (stock deducted here)
+
+**Key Feature**: Stock deduction happens only at Step 4 completion, not during selection
+
+##### Post-Dispatch Returns (1 view)
+- `PostDispatchReturnCreateAPIView` - Create return with header (dispatch ref) and line items (quantities)
+
+##### Account Management (3 views)
+- `AccountManagementDashboardAPIView` - Financial dashboard with summary
+- Auto-number generation for Debit/Credit notes (handled in serializer)
+- DebitNoteViewSet / CreditNoteViewSet handle CRUD
+
+##### Module Management (5 registration views)
+- `AccountRegistrationAPIView`
+- `QCInspectorRegistrationAPIView`
+- `PurchaseDepartmentRegistrationAPIView`
+- `StoreManagerRegistrationAPIView`
+- `RepairTechnicianRegistrationAPIView`
+
+##### Quotation Management (4 views)
+- `QuotationCreateAPIView` - Create quotation from RFQ with items
+- `QuotationListAPIView` - List all quotations with filters
+- `QuotationDetailAPIView` - Get quotation with all items
+- `QuotationApproveRejectAPIView` - Status update to approved/rejected
+
+##### Self Orders (3 views)
+- `SelfOrderCreateAPIView` - Create self order with automatic GST calculation
+- `SelfOrderListAPIView` - List user's self orders
+- `SelfOrderDetailAPIView` - Get single self order details
+
+#### 3. **Dropdown APIViews** (15+ views)
+
+Return `[{id/key, label/name}]` arrays for form selections:
+
+**Location Dropdowns**:
+- `StateDropdownAPIView` - All states
+- `DistrictDropdownAPIView` - Districts by state
+
+**Order Dropdowns**:
+- `OrderProductsDropdownAPIView` - Product names
+- `OrderBatchesDropdownAPIView` - Batches by product
+- `CustomerTypeDropdownAPIView` - [b2c, distributor, dealer]
+- `PaymentModeDropdownAPIView` - [cash, bank_transfer, cheque, credit_card, upi]
+- `PaymentTermsDropdownAPIView` - Various terms
+- `OrderPriorityDropdownAPIView` - [low, medium, high, urgent]
+- `SalesOrdersDropdownAPIView` - Available sales orders
+
+**Device Dropdowns**:
+- `AssemblyTypeDropdownAPIView` - Assembly type choices
+- `QuoteTypeDropdownAPIView` - Quote types
+- `SRNDropdownAPIView` - Standard Requirement Numbers
+
+**Dispatch Dropdowns**:
+- `DispatchOrderTypesDropdownAPIView` - [distributor, dealer, b2c]
+- `DispatchProductsDropdownAPIView` - Products for dispatch
+- `DispatchBatchesDropdownAPIView` - Batches for dispatch
+
+**Return Dropdowns**:
+- `ReturnTypeDropdownAPIView` - [full, partial, replacement]
+- `ReturnReasonDropdownAPIView` - Rejection reasons
+
+**Note Dropdowns**:
+- `DebitNoteReasonsDropdownAPIView` - Debit note reason choices
+- `CreditNoteReasonsDropdownAPIView` - Credit note reason choices
+- `NoteStatusesDropdownAPIView` - Note statuses
+
+### Common View Patterns
+
+#### Pattern 1: Step-Based Workflow
+```python
+def post(self, request):
+    # Validation
+    serializer = StepXSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=400)
+    
+    # Processing
+    result = perform_business_logic(serializer.validated_data)
+    
+    # Response
+    return Response({
+        "success": True,
+        "data": result,
+        "next_step": "next_endpoint"
+    })
+```
+
+#### Pattern 2: Stock Management (Sales vs Production)
+```python
+# Sales Order - DEDUCT stock
+order.batch.available_stock -= order.quantity
+order.batch.save()
+
+# Production Order - ADD stock
+batch.available_stock += order.quantity_added
+batch.save()
+```
+
+#### Pattern 3: Auto-Number Generation
+```python
+from utils import generate_note_number, generate_quotation_number
+
+# In serializer create()
+note_number = generate_note_number("debit")
+debit_note = DebitNote.objects.create(number=note_number, ...)
+```
+
+#### Pattern 4: State-District Cascading
+```python
+# Validate in serializer
+if district.state_id != state.id:
+    raise ValidationError("District must belong to selected state")
+```
+
+---
+
 ## 📊 WORKFLOW EXAMPLES
 
 ### **Example 1: B2B Registration → Proforma Invoice → Sales Order**
@@ -1239,4 +1802,4 @@ Django will fail to start if `SECRET_KEY` is missing.
 
 ---
 
-This documentation represents a complete understanding of the Mapwala MIS Backend project as of January 17, 2026.
+This documentation represents a complete understanding of the Mapwala MIS Backend project as of January 22, 2026.

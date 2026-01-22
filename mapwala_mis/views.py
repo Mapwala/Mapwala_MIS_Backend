@@ -30,25 +30,22 @@ from .serializers import *
 from .utils import generate_note_number
 
 
-# ---------------- Login API ----------------
 class LoginAPIView(APIView):
+    """Handles user authentication and JWT token generation."""
     permission_classes = [AllowAny]
-    throttle_classes = [ScopedRateThrottle]  # ← ADD THIS
+    throttle_classes = [ScopedRateThrottle]
     throttle_scope = "login"
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
         user = serializer.validated_data["user"]
 
-        # Save terms acceptance
         profile, _ = UserProfile.objects.get_or_create(user=user)
         profile.accepted_terms = True
         profile.accepted_at = timezone.now()
         profile.save()
 
-        # Generate JWT tokens
         access_token = AccessToken.for_user(user)
 
         return Response(
@@ -67,13 +64,10 @@ class LoginAPIView(APIView):
         )
 
 
-# ======================================================================
-# ============================ Settings APIs ===========================
-# ======================================================================
+# SETTINGS & MASTER DATA VIEWSETS
 
-
-# ---------------- State ViewSet ----------------
 class StateViewSet(ModelViewSet):
+    """Manage states with search and deletion protection for linked districts."""
     queryset = State.objects.all()
     serializer_class = StateSerializer
     permission_classes = [IsAuthenticated]
@@ -90,7 +84,6 @@ class StateViewSet(ModelViewSet):
         state = self.get_object()
         state_name = state.name
 
-        # Prevent deletion if districts exist
         if state.districts.exists():
             return Response(
                 {
@@ -101,15 +94,14 @@ class StateViewSet(ModelViewSet):
             )
 
         self.perform_destroy(state)
-
         return Response(
             {"success": True, "message": f"State '{state_name}' deleted successfully."},
             status=status.HTTP_200_OK,
         )
 
 
-#   ---------------- District ViewSet ----------------
 class DistrictViewSet(ModelViewSet):
+    """Manage districts with state filtering."""
     queryset = District.objects.select_related("state").all()
     serializer_class = DistrictSerializer
     permission_classes = [IsAuthenticated]
@@ -124,15 +116,15 @@ class DistrictViewSet(ModelViewSet):
         return queryset
 
 
-# ---------------- Parent Company ViewSet ----------------
 class ParentCompanyViewSet(ModelViewSet):
+    """Manage parent companies."""
     queryset = ParentCompany.objects.all()
     serializer_class = ParentCompanySerializer
     permission_classes = [IsAuthenticated]
 
 
-# ---------------- Vendor ViewSet ----------------
 class VendorViewSet(ModelViewSet):
+    """Manage vendors with GST number uniqueness check."""
     queryset = Vendor.objects.select_related("state", "district")
     serializer_class = VendorSerializer
     permission_classes = [IsAuthenticated]
@@ -146,8 +138,10 @@ class VendorViewSet(ModelViewSet):
             )
 
 
-# ---------------- Registrations ----------------
+# CUSTOMER REGISTRATION APIS
+
 class B2CCustomerRegistrationAPIView(APIView):
+    """Register B2C customers."""
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
@@ -167,8 +161,8 @@ class B2CCustomerRegistrationAPIView(APIView):
         )
 
 
-# ---------------- B2B Partner Registration ----------------
 class B2BPartnerRegistrationAPIView(APIView):
+    """Register B2B partners."""
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
@@ -188,8 +182,8 @@ class B2BPartnerRegistrationAPIView(APIView):
         )
 
 
-# ---------------- Distributor Registration ----------------
 class DistributorRegistrationAPIView(APIView):
+    """Register distributors with authorized states and districts."""
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
@@ -201,7 +195,6 @@ class DistributorRegistrationAPIView(APIView):
         authorised_districts = serializer.validated_data.pop("authorised_districts")
 
         distributor = Distributor.objects.create(**serializer.validated_data)
-
         distributor.authorised_states.set(authorised_states)
         distributor.authorised_districts.set(authorised_districts)
 
@@ -215,8 +208,8 @@ class DistributorRegistrationAPIView(APIView):
         )
 
 
-# ---------------- Distributor Registration ----------------
 class DealerRegistrationAPIView(APIView):
+    """Register dealers with authorized states and districts."""
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
@@ -228,7 +221,6 @@ class DealerRegistrationAPIView(APIView):
         authorised_districts = serializer.validated_data.pop("authorised_districts")
 
         dealer = Dealer.objects.create(**serializer.validated_data)
-
         dealer.authorised_states.set(authorised_states)
         dealer.authorised_districts.set(authorised_districts)
 
@@ -242,13 +234,10 @@ class DealerRegistrationAPIView(APIView):
         )
 
 
-# ======================================================================
-# ====================== Sales & Production APIs =======================
-# ======================================================================
+# PROFORMA INVOICE
 
-
-# ---------------- Proforma Invoice Create ----------------
 class ProformaInvoiceCreateAPIView(APIView):
+    """Create proforma invoices."""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -266,9 +255,10 @@ class ProformaInvoiceCreateAPIView(APIView):
         )
 
 
-# ================================= Order Entry APIs ==================================
-# ---------------- STEP 1 ----------------
+# DEVICE CREATION WORKFLOW
+
 class DeviceStep1APIView(APIView):
+    """Device creation step 1: Device information."""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -282,8 +272,8 @@ class DeviceStep1APIView(APIView):
         )
 
 
-# ---------------- STEP 2 ----------------
 class DeviceStep2APIView(APIView):
+    """Device creation step 2: BOM specification."""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -295,8 +285,8 @@ class DeviceStep2APIView(APIView):
         return Response({"message": "Step 2 completed"})
 
 
-# ---------------- STEP 3 ----------------
 class DeviceStep3APIView(APIView):
+    """Device creation step 3: BOM components."""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -308,8 +298,8 @@ class DeviceStep3APIView(APIView):
         return Response({"message": "Step 3 completed"})
 
 
-# ---------------- STEP 4 ----------------
 class DeviceStep4APIView(APIView):
+    """Device creation step 4: Enclosure selection."""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -321,10 +311,8 @@ class DeviceStep4APIView(APIView):
         return Response({"message": "Step 4 completed"})
 
 
-# ---------------- STEP 5 ----------------
-
-
 class DeviceStep5APIView(APIView):
+    """Device creation step 5: Wire harness configuration."""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -336,8 +324,8 @@ class DeviceStep5APIView(APIView):
         return Response({"message": "Step 5 completed"})
 
 
-# ---------------- STEP 6 ----------------
 class DeviceStep6APIView(APIView):
+    """Device creation step 6: Battery specification."""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -349,8 +337,8 @@ class DeviceStep6APIView(APIView):
         return Response({"message": "Step 6 completed"})
 
 
-# ---------------- STEP 7 ----------------
 class DeviceStep7APIView(APIView):
+    """Device creation step 7: SOS button configuration."""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -362,15 +350,13 @@ class DeviceStep7APIView(APIView):
         return Response({"message": "Step 7 completed"})
 
 
-# ---------------- STEP 8 ----------------
 class DeviceStep8APIView(APIView):
+    """Device creation step 8: Sticker placement and configuration."""
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request):
         device = Device.objects.get(id=request.data["device_id"])
-
-        # 🔹 Rebuild stickers array from multipart keys
         stickers_map = defaultdict(dict)
 
         for key, value in request.data.items():
@@ -389,8 +375,8 @@ class DeviceStep8APIView(APIView):
         return Response({"message": "Step 8 completed"})
 
 
-# ---------------- STEP 9 ----------------
 class DeviceStep9APIView(APIView):
+    """Device creation step 9: User manual attachment."""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -402,8 +388,8 @@ class DeviceStep9APIView(APIView):
         return Response({"message": "Step 9 completed"})
 
 
-# ---------------- STEP 10 ----------------
 class DeviceAccessoryAPIView(APIView):
+    """Device creation step 10: Accessory attachment and device completion."""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -418,8 +404,10 @@ class DeviceAccessoryAPIView(APIView):
         return Response({"message": "Device creation completed"})
 
 
-# ---------------- Order Entry Step 1 ----------------
+# ORDER MANAGEMENT
+
 class OrderEntryStep1APIView(APIView):
+    """Order entry step 1: Initial order configuration."""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -434,12 +422,8 @@ class OrderEntryStep1APIView(APIView):
         return Response({"entry_id": entry.id}, status=status.HTTP_200_OK)
 
 
-# ---------------- Order Products, Batches, Sales Order ----------------
 class OrderProductListAPIView(APIView):
-    """
-    UI: Product / Device Model dropdown
-    """
-
+    """List all order products for dropdown selection."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -447,12 +431,8 @@ class OrderProductListAPIView(APIView):
         return Response(OrderProductSerializer(products, many=True).data)
 
 
-# ---------------- Order Batches ----------------
 class OrderBatchListAPIView(APIView):
-    """
-    UI: Batch dropdown depends on selected product
-    """
-
+    """List order batches filtered by product."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -468,8 +448,8 @@ class OrderBatchListAPIView(APIView):
         return Response(OrderBatchSerializer(batches, many=True).data)
 
 
-# ---------------- Sales Order Create ----------------
 class SalesOrderCreateAPIView(APIView):
+    """Create a sales order and update batch stock."""
     permission_classes = [IsAuthenticated]
 
     @transaction.atomic
@@ -501,12 +481,8 @@ class SalesOrderCreateAPIView(APIView):
         )
 
 
-# ---------------- Production Order - Add to Stock  Step 2 of Order Entry ----------------
 class ProductionOrderCreateAPIView(APIView):
-    """
-    Production Order – Add to Stock
-    """
-
+    """Create a production order and add stock to batch."""
     permission_classes = [IsAuthenticated]
 
     @transaction.atomic
@@ -515,8 +491,6 @@ class ProductionOrderCreateAPIView(APIView):
         serializer.is_valid(raise_exception=True)
 
         order = serializer.save()
-
-        # Increase stock safely
         batch = OrderBatch.objects.select_for_update().get(id=order.batch.id)
         batch.available_stock += order.quantity_added
         batch.save(update_fields=["available_stock"])
@@ -541,8 +515,8 @@ class ProductionOrderCreateAPIView(APIView):
         )
 
 
-# ---------------- ProductDropdown APIView ----------------
 class ProductDropdownAPIView(APIView):
+    """List all order products for dropdown."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -551,8 +525,8 @@ class ProductDropdownAPIView(APIView):
         )
 
 
-# ---------------- SupplierVendor Dropdown APIView ----------------
 class SupplierVendorDropdownAPIView(APIView):
+    """List all supplier vendors for dropdown."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -561,28 +535,33 @@ class SupplierVendorDropdownAPIView(APIView):
         )
 
 
+# RFQ (REQUEST FOR QUOTATION)
 
-# ======================== RFQ LIST & DETAIL APIS ==========================
-# ----------- RFQ List API with Filtering & Search -----------
 class RFQListAPIView(APIView):
+    """List RFQs with filtering by status, vendor, and search."""
     permission_classes = [IsAuthenticated]
     pagination_class = PageNumberPagination
 
     def get(self, request):
-        """
-        List all RFQs with filtering by status and vendor search
-        Query params: status, vendor, search, page
-        """
         queryset = RequestForQuote.objects.filter(
             status="submitted"
         ).order_by("-created_at")
 
-        # Status Filter
+        vendor_filter = request.query_params.get("vendor")
+        if vendor_filter and vendor_filter != "all":
+            queryset = queryset.filter(
+                quotations__vendor__name__iexact=vendor_filter
+            ).distinct()
+
         status_filter = request.query_params.get("status")
         if status_filter and status_filter != "all":
-            queryset = queryset.filter(status=status_filter)
+            if status_filter == "pending":
+                queryset = queryset.filter(quotations__isnull=True).distinct()
+            elif status_filter in ["quoted", "rejected"]:
+                queryset = queryset.filter(
+                    quotations__status=status_filter
+                ).distinct()
 
-        # Search Filter (by vendor, RFQ No, customer, device, product ID)
         search_query = request.query_params.get("search", "").strip()
         if search_query:
             queryset = queryset.filter(
@@ -590,12 +569,12 @@ class RFQListAPIView(APIView):
                 | Q(device_name__icontains=search_query)
             )
 
-        # Count statistics
-        total_count = RequestForQuote.objects.filter(status="submitted").count()
-        pending_count = queryset.filter(status="submitted").count()
-        # Note: QUOTED and REJECTED would come from quotation model
+        total_rfqs = RequestForQuote.objects.filter(status="submitted")
+        total_count = total_rfqs.count()
+        pending_count = total_rfqs.filter(quotations__isnull=True).distinct().count()
+        quoted_count = total_rfqs.filter(quotations__status="quoted").distinct().count()
+        rejected_count = total_rfqs.filter(quotations__status="rejected").distinct().count()
 
-        # Pagination
         paginator = PageNumberPagination()
         paginator.page_size = 10
         paginated_queryset = paginator.paginate_queryset(queryset, request)
@@ -607,88 +586,25 @@ class RFQListAPIView(APIView):
                 "count": paginator.page.paginator.count,
                 "total": total_count,
                 "pending": pending_count,
-                "quoted": 0,
-                "rejected": 0,
+                "quoted": quoted_count,
+                "rejected": rejected_count,
                 "results": serializer.data,
             }
         )
 
 
-# ----------- RFQ Detail API -----------
 class RFQDetailAPIView(APIView):
+    """Get detailed information about a specific RFQ."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request, rfq_id):
-        """
-        Fetch complete RFQ details including selections and requirements
-        """
         rfq = get_object_or_404(RequestForQuote, id=rfq_id)
-
         serializer = RFQDetailSerializer(rfq)
-
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-# ----------- Create Quotation API -----------
-class CreateQuotationAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    @transaction.atomic
-    def post(self, request, rfq_id):
-        """
-        Create or update quotation rate for an RFQ by vendor
-        Request body: { "vendor_id": int, "quotation_rate": decimal }
-        """
-        rfq = get_object_or_404(RequestForQuote, id=rfq_id)
-        
-        vendor_id = request.data.get("vendor_id")
-        quotation_rate = request.data.get("quotation_rate")
-
-        if not vendor_id:
-            return Response(
-                {"error": "vendor_id is required"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if quotation_rate is None:
-            return Response(
-                {"error": "quotation_rate is required"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        try:
-            vendor = Vendor.objects.get(id=vendor_id)
-        except Vendor.DoesNotExist:
-            return Response(
-                {"error": "Vendor not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        # Create or update quotation
-        quotation, created = RFQQuotation.objects.update_or_create(
-            rfq=rfq,
-            vendor=vendor,
-            defaults={
-                "quotation_rate": quotation_rate,
-                "status": "quoted",
-                "quotation_date": timezone.now(),
-            },
-        )
-
-        serializer = RFQQuotationSerializer(quotation)
-
-        return Response(
-            {
-                "message": "Quotation created successfully" if created else "Quotation updated successfully",
-                "quotation": serializer.data,
-            },
-            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
-        )
-
-
-
-# ---------------- ProductCategory Dropdown APIView ----------------
 class ProductCategoryDropdownAPIView(APIView):
+    """List product categories for dropdown."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -703,8 +619,8 @@ class ProductCategoryDropdownAPIView(APIView):
         )
 
 
-# ---------------- Order Entry Step 2 (Make To Order) ----------------
 class OrderEntryStep2APIView(APIView):
+    """Order entry step 2: Make-to-order customer and product details."""
     permission_classes = [IsAuthenticated]
 
     @transaction.atomic
@@ -768,8 +684,10 @@ class OrderEntryStep2APIView(APIView):
         )
 
 
-# ---------------- CustomerType Dropdown APIView ----------------
+# DROPDOWN APIS
+
 class CustomerTypeDropdownAPIView(APIView):
+    """List customer types for dropdown."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -783,8 +701,8 @@ class CustomerTypeDropdownAPIView(APIView):
         )
 
 
-# ---------------- Payment Terms Dropdown APIView ----------------
 class PaymentTermsDropdownAPIView(APIView):
+    """List payment terms for dropdown."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -800,8 +718,8 @@ class PaymentTermsDropdownAPIView(APIView):
         )
 
 
-# ---------------- Order Priority Dropdown APIView ----------------
 class OrderPriorityDropdownAPIView(APIView):
+    """List order priorities for dropdown."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -815,22 +733,21 @@ class OrderPriorityDropdownAPIView(APIView):
         )
 
 
-# ========================= Request for Quote =============================
-# ---------------- RFQ Step 1 ----------------
+# RFQ WORKFLOW
+
 class RFQStep1APIView(APIView):
+    """RFQ creation step 1: Initial RFQ specification."""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
         serializer = RFQStep1Serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
         rfq = serializer.save(created_by=request.user)
-
         return Response({"rfq_id": rfq.id, "message": "Step 1 completed"}, status=201)
 
 
-# ---------------- RFQ Step 2 ----------------
 class RFQStep2APIView(APIView):
+    """RFQ creation step 2: Add BOM parts, components, and services."""
     permission_classes = [IsAuthenticated]
 
     @transaction.atomic
@@ -856,8 +773,8 @@ class RFQStep2APIView(APIView):
         return Response({"message": "Step 2 completed"})
 
 
-# ---------------- RFQ STEP-3 API (FINAL SUBMIT) ----------------
 class RFQStep3APIView(APIView):
+    """RFQ creation step 3: Finalize RFQ with delivery details and submit."""
     permission_classes = [IsAuthenticated]
 
     @transaction.atomic
@@ -881,8 +798,8 @@ class RFQStep3APIView(APIView):
         return Response({"message": "RFQ submitted successfully"}, status=201)
 
 
-# ---------------- Dropdowns for RFQ ----------------
 class QuoteTypeDropdownAPIView(APIView):
+    """List quote types for RFQ."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -895,8 +812,8 @@ class QuoteTypeDropdownAPIView(APIView):
         )
 
 
-# ---------------- Assembly Type Dropdown APIView ----------------
 class AssemblyTypeDropdownAPIView(APIView):
+    """List assembly types for RFQ."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -908,8 +825,8 @@ class AssemblyTypeDropdownAPIView(APIView):
         )
 
 
-# ---------------- SRN Dropdown APIView ----------------
 class SRNDropdownAPIView(APIView):
+    """List SRN choices for RFQ."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -918,8 +835,8 @@ class SRNDropdownAPIView(APIView):
         )
 
 
-# ---------------- Vendor Dropdown APIView ----------------
 class VendorDropdownAPIView(APIView):
+    """List vendors for RFQ vendor selection."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -934,8 +851,10 @@ class VendorDropdownAPIView(APIView):
         )
 
 
-# ---------------- Create Purchase Order STEP 1 ----------------
+# PURCHASE ORDER WORKFLOW
+
 class Step1APIView(APIView):
+    """Purchase order creation step 1: Buyer details and order types."""
     permission_classes = [IsAuthenticated]
 
     @transaction.atomic
@@ -959,9 +878,8 @@ class Step1APIView(APIView):
         )
 
 
-# =========================== Create Purchase Order ==========================
-# ---------------- Create Purchase Order STEP 2 ----------------
 class Step2APIView(APIView):
+    """Purchase order creation step 2: Vendor selection and line items."""
     permission_classes = [IsAuthenticated]
 
     @transaction.atomic
@@ -988,8 +906,8 @@ class Step2APIView(APIView):
         return Response({"message": "Purchase Order created successfully"}, status=201)
 
 
-# ---------------- Dropdowns for Purchase Order ----------------
 class OrderTypeDropdown(APIView):
+    """List order types for purchase order."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -1002,8 +920,8 @@ class OrderTypeDropdown(APIView):
         )
 
 
-# ---------------- Assembly Type Dropdown APIView ----------------
 class AssemblyTypeDropdown(APIView):
+    """List assembly types for purchase order."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -1015,8 +933,8 @@ class AssemblyTypeDropdown(APIView):
         )
 
 
-# ---------------- Payment Terms Dropdown APIView ----------------
 class PaymentTermsDropdown(APIView):
+    """List payment terms for purchase order."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -1025,9 +943,10 @@ class PaymentTermsDropdown(APIView):
         )
 
 
-# ============================== MRN =================================
-# ---------------- Create Material Receipt Note (MRN) ----------------
+# MATERIAL RECEIPT NOTE (MRN)
+
 class MRNCreateAPIView(APIView):
+    """Create a material receipt note for inward goods."""
     permission_classes = [IsAuthenticated]
 
     @transaction.atomic
@@ -1099,6 +1018,7 @@ class PurchaseOrderDropdown(APIView):
 
 # ---------------- Inward Type Dropdown APIView ----------------
 class InwardTypeDropdown(APIView):
+    """List inward types for MRN."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -1112,8 +1032,8 @@ class InwardTypeDropdown(APIView):
         )
 
 
-# ---------------- Purchase Order Items APIView ----------------
 class PurchaseOrderItemsAPIView(APIView):
+    """Retrieve line items for a purchase order."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request, po_id):
@@ -1134,9 +1054,10 @@ class PurchaseOrderItemsAPIView(APIView):
         )
 
 
-# ===================================== Dispatch Workflow APIs ========================================
-# ---------------- STEP 1 ----------------
+# DISPATCH WORKFLOW
+
 class DispatchStep1APIView(APIView):
+    """Dispatch step 1: Create dispatch and select sales order."""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -1150,8 +1071,8 @@ class DispatchStep1APIView(APIView):
         return Response({"dispatch_id": dispatch.id}, status=status.HTTP_201_CREATED)
 
 
-# ---------------- STEP 2 ----------------
 class DispatchStep2APIView(APIView):
+    """Dispatch step 2: Verify stock availability."""
     permission_classes = [IsAuthenticated]
 
     def post(self, request, dispatch_id):
@@ -1168,14 +1089,13 @@ class DispatchStep2APIView(APIView):
         )
 
 
-# ---------------- STEP 3 ----------------
 class DispatchStep3APIView(APIView):
+    """Dispatch step 3: Set dispatch date and packaging details."""
     permission_classes = [IsAuthenticated]
 
     def post(self, request, dispatch_id):
         dispatch = get_object_or_404(Dispatch, id=dispatch_id)
 
-        # Block if Step-2 not completed
         if not all([dispatch.product, dispatch.batch, dispatch.dispatch_quantity]):
             return Response(
                 {"error": "Step-2 (Stock Verification) must be completed first."},
@@ -1189,15 +1109,14 @@ class DispatchStep3APIView(APIView):
         return Response({"message": "Dispatch details saved"})
 
 
-# ---------------- STEP 4 ----------------
 class DispatchStep4APIView(APIView):
+    """Dispatch step 4: Finalize dispatch and deduct stock."""
     permission_classes = [IsAuthenticated]
 
     @transaction.atomic
     def post(self, request, dispatch_id):
         dispatch = get_object_or_404(Dispatch, id=dispatch_id)
 
-        # Block if Step-3 not completed
         if not dispatch.dispatch_date:
             return Response(
                 {"error": "Step-3 (Dispatch Details) must be completed first."},
@@ -1208,7 +1127,6 @@ class DispatchStep4APIView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        # Prevent double stock deduction
         if not dispatch.stock_deducted:
             batch = dispatch.batch
 
@@ -1223,7 +1141,6 @@ class DispatchStep4APIView(APIView):
 
             dispatch.stock_deducted = True
 
-        # Mark workflow completed
         dispatch.status = "completed"
         dispatch.save(update_fields=["status", "stock_deducted"])
 
@@ -1233,8 +1150,8 @@ class DispatchStep4APIView(APIView):
         )
 
 
-# ---------------- Dropdown APIs for Dispatch Workflow ----------------
 class SalesOrderDropdownAPIView(APIView):
+    """List sales orders for dispatch order selection."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -1246,8 +1163,8 @@ class SalesOrderDropdownAPIView(APIView):
         )
 
 
-# ---------------- Dispatch Order Type Dropdown APIView ----------------
 class DispatchOrderTypeDropdownAPIView(APIView):
+    """List dispatch order types."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -1260,8 +1177,8 @@ class DispatchOrderTypeDropdownAPIView(APIView):
         )
 
 
-# ---------------- Dispatch Product Dropdown APIView ----------------
 class DispatchProductDropdownAPIView(APIView):
+    """List order products for dispatch selection."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -1273,8 +1190,8 @@ class DispatchProductDropdownAPIView(APIView):
         )
 
 
-# ---------------- Dispatch Batch Dropdown APIView ----------------
 class DispatchBatchDropdownAPIView(APIView):
+    """List product batches for dispatch by product."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -1360,9 +1277,8 @@ class ReturnTypeDropdownAPIView(APIView):
             ]
         )
 
-
-# ---------------------- Return Reason Dropdown API View ----------------
 class ReturnReasonDropdownAPIView(APIView):
+    """List return reasons for post-dispatch returns."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -1379,8 +1295,8 @@ class ReturnReasonDropdownAPIView(APIView):
         )
 
 
-# ---------------- State Dropdown APIView ----------------
 class StateDropdownAPIView(APIView):
+    """List active states for dropdown."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -1390,8 +1306,8 @@ class StateDropdownAPIView(APIView):
         )
 
 
-# ---------------- District Dropdown APIView ----------------
 class DistrictDropdownAPIView(APIView):
+    """List districts by state."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -1413,8 +1329,10 @@ class DistrictDropdownAPIView(APIView):
         )
 
 
-# ---------------- Module Management Account Registration ----------------
+# MODULE MANAGEMENT REGISTRATIONS
+
 class AccountRegistrationCreateAPIView(APIView):
+    """Register account management users."""
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
@@ -1429,8 +1347,8 @@ class AccountRegistrationCreateAPIView(APIView):
         )
 
 
-# ---------------- Module Management QC Inspector Registration ----------------
 class QCInspectorRegistrationCreateAPIView(APIView):
+    """Register QC inspectors."""
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
@@ -1448,8 +1366,8 @@ class QCInspectorRegistrationCreateAPIView(APIView):
         )
 
 
-# ---------------- Module Management Purchase Department Registration ----------------
 class PurchaseDepartmentRegistrationCreateAPIView(APIView):
+    """Register purchase department users."""
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
@@ -1467,8 +1385,8 @@ class PurchaseDepartmentRegistrationCreateAPIView(APIView):
         )
 
 
-# ---------------- Module Management Store Manager Registration ----------------
 class StoreManagerRegistrationCreateAPIView(APIView):
+    """Register store managers."""
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
@@ -1486,8 +1404,8 @@ class StoreManagerRegistrationCreateAPIView(APIView):
         )
 
 
-# ---------------- Module Management Repair Technician Registration --------------
 class RepairTechnicianRegistrationCreateAPIView(APIView):
+    """Register repair technicians."""
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
@@ -1505,25 +1423,26 @@ class RepairTechnicianRegistrationCreateAPIView(APIView):
         )
 
 
-# ---------------- Store Transfer ViewSet ----------------
+# STORE TRANSFERS
+
 class StoreTransferViewSet(ModelViewSet):
+    """Manage store transfers with filtering and search capabilities."""
     queryset = StoreTransfer.objects.select_related(
         "product", "category", "vendor", "created_by"
     ).all()
     permission_classes = [IsAuthenticated]
     filter_backends = [SearchFilter]
     search_fields = [
-        "product_name",  # Search by product name
-        "batch_number",  # Search by batch number
-        "vendor__name",  # Search by vendor name
-        "category__name",  # Search by category name
-        "transfer_id",  # Search by transfer ID
-        "mrn_number",  # Search by MRN number
+        "product_name",
+        "batch_number",
+        "vendor__name",
+        "category__name",
+        "transfer_id",
+        "mrn_number",
     ]
     pagination_class = PageNumberPagination
 
     def get_serializer_class(self):
-        """Choose serializer based on action"""
         if self.action == "retrieve":
             return StoreTransferDetailSerializer
         elif self.action in ["create", "update", "partial_update"]:
@@ -1531,20 +1450,16 @@ class StoreTransferViewSet(ModelViewSet):
         return StoreTransferListSerializer
 
     def get_queryset(self):
-        """Filter by dispatch_status if provided in query params"""
         queryset = super().get_queryset()
 
-        # Filter by dispatch status if provided
         dispatch_status = self.request.query_params.get("dispatch_status")
         if dispatch_status:
             queryset = queryset.filter(dispatch_status=dispatch_status)
 
-        # Filter by category if provided
         category_id = self.request.query_params.get("category_id")
         if category_id:
             queryset = queryset.filter(category_id=category_id)
 
-        # Filter by date range if provided
         transfer_date_from = self.request.query_params.get("transfer_date_from")
         if transfer_date_from:
             queryset = queryset.filter(transfer_date__gte=transfer_date_from)
@@ -1556,12 +1471,10 @@ class StoreTransferViewSet(ModelViewSet):
         return queryset
 
     def perform_create(self, serializer):
-        """Set the created_by field to the current user"""
         serializer.save(created_by=self.request.user)
 
     @action(detail=False, methods=["get"])
     def filter_options(self, request):
-        """Get available filter options for the UI"""
         dispatch_statuses = StoreTransfer.DISPATCH_STATUS_CHOICES
         categories = ProductCategory.objects.all()
 
@@ -1576,10 +1489,8 @@ class StoreTransferViewSet(ModelViewSet):
         )
 
 
-# ---------------- Product Category ViewSet ----------------
 class ProductCategoryViewSet(ModelViewSet):
-    """ViewSet for Product Categories"""
-
+    """Manage product categories."""
     queryset = ProductCategory.objects.all()
     serializer_class = ProductCategorySerializer
     permission_classes = [IsAuthenticated]
@@ -1621,17 +1532,13 @@ class DebitNoteViewSet(ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-
-        # Filter by status if provided
         status = self.request.query_params.get("status")
         if status and status != "all":
             queryset = queryset.filter(status=status)
-
         return queryset.order_by("-created_at")
 
     def perform_create(self, serializer):
         number = generate_note_number("debit")
-
         serializer.save(
             created_by=self.request.user,
             number=number,
@@ -1640,17 +1547,13 @@ class DebitNoteViewSet(ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def summary(self, request):
-        """Get dashboard summary for debit notes"""
         all_notes = self.get_queryset()
-
         pending_amount = all_notes.filter(status="pending").aggregate(
             total=models.Sum("amount")
         )["total"] or Decimal("0")
-
         total_amount = all_notes.aggregate(total=models.Sum("amount"))[
             "total"
         ] or Decimal("0")
-
         return Response(
             {
                 "pending_amount": float(pending_amount),
@@ -1661,20 +1564,8 @@ class DebitNoteViewSet(ModelViewSet):
         )
 
 
-# ---------------- Credit Note ViewSet ----------------
 class CreditNoteViewSet(ModelViewSet):
-    """
-    ViewSet for managing Credit Notes.
-
-    Supports:
-    - LIST: Get all credit notes with search and status filtering
-    - RETRIEVE: Get detailed information about a specific credit note
-    - CREATE: Create a new credit note
-    - UPDATE/PARTIAL_UPDATE: Update credit note information
-    - DESTROY: Delete a credit note
-    - SUMMARY: Get dashboard summary (pending amount, total amount)
-    """
-
+    """Manage credit notes with status filtering and summary."""
     queryset = CreditNote.objects.select_related("created_by").all()
     permission_classes = [IsAuthenticated]
     filter_backends = [SearchFilter]
@@ -1690,17 +1581,13 @@ class CreditNoteViewSet(ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-
-        # Filter by status if provided
         status = self.request.query_params.get("status")
         if status and status != "all":
             queryset = queryset.filter(status=status)
-
         return queryset.order_by("-created_at")
 
     def perform_create(self, serializer):
         number = generate_note_number("credit")
-
         serializer.save(
             created_by=self.request.user,
             number=number,
@@ -1709,17 +1596,13 @@ class CreditNoteViewSet(ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def summary(self, request):
-        """Get dashboard summary for credit notes"""
         all_notes = self.get_queryset()
-
         pending_amount = all_notes.filter(status="pending").aggregate(
             total=models.Sum("amount")
         )["total"] or Decimal("0")
-
         total_amount = all_notes.aggregate(total=models.Sum("amount"))[
             "total"
         ] or Decimal("0")
-
         return Response(
             {
                 "pending_amount": float(pending_amount),
@@ -1730,13 +1613,10 @@ class CreditNoteViewSet(ModelViewSet):
         )
 
 
-# ---------------- Account Management Dashboard API ----------------
-class AccountManagementDashboardAPIView(APIView):
-    """
-    Dashboard view for Account Management.
-    Returns summary of debit notes and credit notes.
-    """
+# ACCOUNT MANAGEMENT
 
+class AccountManagementDashboardAPIView(APIView):
+    """Dashboard for account management with debit and credit note summaries."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -1764,10 +1644,8 @@ class AccountManagementDashboardAPIView(APIView):
         )
 
 
-# ---------------- Dropdown APIs for Debit/Credit Notes ----------------
 class DebitNoteReasonsAPIView(APIView):
-    """Get available debit note reason choices"""
-
+    """List available debit note reasons."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -1778,10 +1656,8 @@ class DebitNoteReasonsAPIView(APIView):
         return Response(reasons)
 
 
-# ---------------- Dropdown APIs for Debit/Credit Notes ----------------
 class CreditNoteReasonsAPIView(APIView):
-    """Get available credit note reason choices"""
-
+    """List available credit note reasons."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -1792,10 +1668,8 @@ class CreditNoteReasonsAPIView(APIView):
         return Response(reasons)
 
 
-# ---------------- Dropdown APIs for Debit/Credit Notes ----------------
 class NoteStatusChoicesAPIView(APIView):
-    """Get available note status choices"""
-
+    """List available note status choices."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -1806,25 +1680,10 @@ class NoteStatusChoicesAPIView(APIView):
         return Response(statuses)
 
 
-# ==================================================================================
-# ====================================== Vendor ====================================
-# ==================================================================================
-# ----------------------------- RETURN REQUEST VIEWSET -----------------------------
+# VENDOR MANAGEMENT
+
 class ReturnRequestViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for managing Return Requests
-
-    Features:
-    - List all return requests with pagination
-    - Filter by status (pending, accepted, rejected)
-    - Search by return number or reason
-    - Get count of returns by status
-    - Retrieve specific return request details
-    - Create new return request
-    - Update return request status
-    - Delete return request
-    """
-
+    """Manage return requests with filtering, search, and status tracking."""
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     search_fields = ["return_number", "reason", "items"]
@@ -1943,23 +1802,6 @@ class RepairRecordViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def statistics(self, request):
-        """
-        Get repair statistics
-
-        Returns:
-        {
-            "total_failed": 100,
-            "total_repaired": 85,
-            "total_rejected": 10,
-            "total_pending": 5,
-            "by_status": {
-                "pending": 10,
-                "in_progress": 20,
-                "completed": 60,
-                "failed": 10
-            }
-        }
-        """
         queryset = self.get_queryset()
         totals = queryset.aggregate(
             total_failed=Sum("failed_qty"),
@@ -1968,7 +1810,6 @@ class RepairRecordViewSet(viewsets.ModelViewSet):
             total_pending=Sum("repair_pending"),
         )
 
-        # Replace None with 0 (important when table is empty)
         totals = {k: v or 0 for k, v in totals.items()}
 
         by_status = queryset.aggregate(
@@ -1982,16 +1823,6 @@ class RepairRecordViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["patch"])
     def update_quantities(self, request, pk=None):
-        """
-        Update repair quantities
-
-        Request:
-        {
-            "repaired_qty": 10,
-            "rejected_qty": 2,
-            "repair_pending": 3
-        }
-        """
         repair_record = self.get_object()
 
         repaired_qty = request.data.get("repaired_qty", repair_record.repaired_qty)
@@ -2000,7 +1831,6 @@ class RepairRecordViewSet(viewsets.ModelViewSet):
             "repair_pending", repair_record.repair_pending
         )
 
-        # Validate quantities
         if repaired_qty + rejected_qty > repair_record.failed_qty:
             return Response(
                 {"error": "Repaired Qty + Rejected Qty cannot exceed Failed Qty"},
@@ -2016,21 +1846,8 @@ class RepairRecordViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-# ------------------------------- REJECTED ITEM VIEWSET -------------------------------
 class RejectedItemViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for managing Rejected Items
-
-    Features:
-    - List all rejected items with search and filter
-    - Search by product ID, product name, vendor, MRN number, or reason
-    - Filter by vendor or date range
-    - Get rejected items statistics
-    - Create new rejected item record
-    - Update rejected item
-    - Delete rejected item
-    """
-
+    """Manage rejected items with statistics and vendor grouping."""
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     search_fields = [
@@ -2059,21 +1876,7 @@ class RejectedItemViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def statistics(self, request):
-        """
-        Get rejected items statistics
-
-        Returns:
-        {
-            "total_rejected_items": 50,
-            "total_rejected_qty": 250,
-            "by_vendor": {
-                "Vendor A": 100,
-                "Vendor B": 150
-            }
-        }
-        """
         queryset = self.get_queryset()
-
         total_rejected_qty = queryset.aggregate(total=Sum("rejected_qty"))["total"] or 0
 
         vendor_stats = (
@@ -2094,9 +1897,6 @@ class RejectedItemViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def by_vendor(self, request):
-        """
-        Get rejected items grouped by vendor
-        """
         vendor = request.query_params.get("vendor")
 
         if not vendor:
@@ -2106,7 +1906,6 @@ class RejectedItemViewSet(viewsets.ModelViewSet):
             )
 
         queryset = self.get_queryset().filter(vendor=vendor)
-
         total_rejected_qty = queryset.aggregate(total=Sum("rejected_qty"))["total"] or 0
 
         serializer = self.get_serializer(queryset, many=True)
@@ -2120,22 +1919,10 @@ class RejectedItemViewSet(viewsets.ModelViewSet):
         )
 
 
-# ============================================================
-# DEVICE MANAGEMENT APIs
-# ============================================================
-
+# DEVICE MANAGEMENT
 
 class DeviceViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    ViewSet for viewing devices
-
-    Features:
-    - LIST: Get all devices (ALL DEVICES table)
-    - RETRIEVE: Get device details (VIEW DEVICE page)
-    - FILTER by status
-    - SEARCH by name/model
-    """
-
+    """View devices with filtering, search, and detailed information."""
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     search_fields = ["info__make", "info__model"]
@@ -2158,33 +1945,27 @@ class DeviceViewSet(viewsets.ReadOnlyModelViewSet):
         )
 
     def get_serializer_class(self):
-        """
-        Choose serializer based on action:
-        - LIST: DeviceListSerializer (minimal fields)
-        - RETRIEVE: DeviceDetailSerializer (all fields)
-        """
         if self.action == "retrieve":
             return DeviceDetailSerializer
         return DeviceListSerializer
 
     def get_serializer_context(self):
-        """Add request to serializer context for URL generation"""
         context = super().get_serializer_context()
         context["request"] = self.request
         return context
 
 
-# ================== Self Order API ==================
+# SELF ORDERS
+
 class SelfOrderCreateAPIView(APIView):
+    """Create a self order for the authenticated user."""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        """Create a new self order"""
         serializer = SelfOrderSerializer(data=request.data)
 
         if serializer.is_valid():
             try:
-                # Set the user to the authenticated user
                 serializer.save(user=request.user)
                 return Response(
                     {
@@ -2212,10 +1993,10 @@ class SelfOrderCreateAPIView(APIView):
 
 
 class SelfOrderListAPIView(APIView):
+    """List all self orders for the authenticated user."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        """Get all self orders for the authenticated user"""
         try:
             self_orders = (
                 SelfOrder.objects.filter(user=request.user)
@@ -2348,6 +2129,147 @@ class GSTRateDropdownAPIView(APIView):
                 {"value": "28.00", "label": "28%"},
             ],
             status=200,
+        )
+
+
+# ======================= QUOTATION APIs ==================================
+
+# ----------- Quotation Create API -----------
+class QuotationCreateAPIView(APIView):
+    """Create a quotation from an RFQ."""
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        serializer = QuotationCreateSerializer(
+            data=request.data,
+            context={"request": request}
+        )
+        
+        if serializer.is_valid():
+            quotation = serializer.save()
+            return Response(
+                {
+                    "message": "Quotation created successfully.",
+                    "quotation_id": quotation.id,
+                    "quotation_number": quotation.quotation_number,
+                    "data": QuotationDetailSerializer(quotation).data,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+        
+        return Response(
+            {"errors": serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+class QuotationListAPIView(APIView):
+    """List quotations with search and status filtering."""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        queryset = Quotation.objects.all()
+        
+        search_query = request.query_params.get("search", "").strip()
+        if search_query:
+            queryset = queryset.filter(
+                Q(vendor__name__icontains=search_query) |
+                Q(quotation_number__icontains=search_query) |
+                Q(customer_name__icontains=search_query)
+            )
+        
+        status_filter = request.query_params.get("status", "").strip()
+        if status_filter and status_filter != "all":
+            queryset = queryset.filter(status=status_filter)
+        
+        total_count = Quotation.objects.count()
+        pending_count = Quotation.objects.filter(status="pending").count()
+        approved_count = Quotation.objects.filter(status="approved").count()
+        rejected_count = Quotation.objects.filter(status="rejected").count()
+        
+        page = int(request.query_params.get("page", 1))
+        limit = int(request.query_params.get("limit", 10))
+        start = (page - 1) * limit
+        end = start + limit
+        
+        quotations = queryset[start:end]
+        
+        return Response(
+            {
+                "count": {
+                    "total": total_count,
+                    "found": queryset.count(),
+                    "pending": pending_count,
+                    "approved": approved_count,
+                    "rejected": rejected_count,
+                },
+                "data": QuotationListSerializer(quotations, many=True).data,
+                "pagination": {
+                    "page": page,
+                    "limit": limit,
+                    "total_pages": (queryset.count() + limit - 1) // limit,
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class QuotationDetailAPIView(APIView):
+    """Get detailed information about a specific quotation."""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, quotation_id):
+        try:
+            quotation = Quotation.objects.get(id=quotation_id)
+        except Quotation.DoesNotExist:
+            return Response(
+                {"error": "Quotation not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        
+        return Response(
+            QuotationDetailSerializer(quotation).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class QuotationApproveRejectAPIView(APIView):
+    """Approve or reject a quotation."""
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, quotation_id):
+        try:
+            quotation = Quotation.objects.get(id=quotation_id)
+        except Quotation.DoesNotExist:
+            return Response(
+                {"error": "Quotation not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        
+        if quotation.status != "pending":
+            return Response(
+                {"error": f"Cannot change status of a {quotation.status} quotation."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        serializer = QuotationApproveRejectSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            new_status = serializer.validated_data["status"]
+            quotation.status = new_status
+            quotation.save()
+            
+            return Response(
+                {
+                    "message": f"Quotation {new_status} successfully.",
+                    "data": QuotationDetailSerializer(quotation).data,
+                },
+                status=status.HTTP_200_OK,
+            )
+        
+        return Response(
+            {"errors": serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST,
         )
 
 

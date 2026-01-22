@@ -1,7 +1,7 @@
 # mapwala_mis/utils.py
 from django.db import transaction
 from django.utils import timezone
-from .models import NoteSequence
+from .models import NoteSequence, QuotationSequence
 
 
 # ---------------- Note Number Generator ----------------
@@ -26,3 +26,25 @@ def generate_note_number(note_type: str) -> str:
 
         prefix = "DN" if note_type == "debit" else "CN"
         return f"{prefix}-{year}-{seq.last_number:03d}"
+
+
+# --------- Quotation Number Generator ---------
+def generate_quotation_number() -> str:
+    """
+    Thread-safe, concurrency-safe quotation number generator.
+    Format: QT-YYYY-001
+    """
+    year = timezone.now().year
+
+    with transaction.atomic():
+        seq, _ = QuotationSequence.objects.select_for_update().get_or_create(
+            year=year,
+            defaults={"last_number": 0},
+        )
+
+        seq.last_number += 1
+        seq.save(update_fields=["last_number"])
+
+        return f"QT-{year}-{seq.last_number:03d}"
+
+

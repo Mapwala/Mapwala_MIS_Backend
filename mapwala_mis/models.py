@@ -1715,3 +1715,154 @@ class RFQQuotation(models.Model):
         return f"Quotation-RFQ{self.rfq.id}-Vendor{self.vendor.id}"
 
 
+# ============================================================================
+# ======================= QUOTATION MODULE =============================
+# ============================================================================
+
+# --------- Quotation Sequence ---------
+class QuotationSequence(models.Model):
+    """
+    Maintains year-wise running sequence for Quotations
+    """
+    year = models.PositiveIntegerField()
+    last_number = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        unique_together = ("year",)
+
+    def __str__(self):
+        return f"QT-{self.year}: {self.last_number}"
+
+
+# ---------------- Quotation ----------------
+class Quotation(models.Model):
+    """
+    Quotation document created from an RFQ with vendor details and item pricing
+    """
+    STATUS_CHOICES = (
+        ("pending", "Pending"),
+        ("approved", "Approved"),
+        ("rejected", "Rejected"),
+    )
+    
+    # Reference and relationships
+    rfq = models.ForeignKey(
+        RequestForQuote, on_delete=models.CASCADE, related_name="quotations_created"
+    )
+    vendor = models.ForeignKey(
+        Vendor, on_delete=models.PROTECT, related_name="quotations"
+    )
+    
+    # Quotation details
+    quotation_number = models.CharField(max_length=50, unique=True)
+    customer_name = models.CharField(max_length=255)
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default="pending"
+    )
+    
+    # Pricing - auto-calculated from items
+    subtotal_excl_gst = models.DecimalField(
+        max_digits=15, decimal_places=2, default=Decimal("0.00"),
+        validators=[MinValueValidator(Decimal("0.00"))]
+    )
+    total_gst = models.DecimalField(
+        max_digits=15, decimal_places=2, default=Decimal("0.00"),
+        validators=[MinValueValidator(Decimal("0.00"))]
+    )
+    grand_total_incl_gst = models.DecimalField(
+        max_digits=15, decimal_places=2, default=Decimal("0.00"),
+        validators=[MinValueValidator(Decimal("0.00"))]
+    )
+    
+    # Validity
+    valid_until = models.DateField()
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name_plural = "Quotations"
+
+    def __str__(self):
+        return f"{self.quotation_number} - {self.customer_name}"
+
+    def calculate_totals(self):
+        """Calculate and update quotation totals from items"""
+        items = self.items.all()
+        
+        subtotal = Decimal("0.00")
+        total_gst = Decimal("0.00")
+        
+        for item in items:
+            item.calculate_gst_amount()
+            subtotal += item.subtotal_excl_gst
+            total_gst += item.gst_amount
+        
+        self.subtotal_excl_gst = subtotal
+        self.total_gst = total_gst
+        self.grand_total_incl_gst = subtotal + total_gst
+        self.save(update_fields=['subtotal_excl_gst', 'total_gst', 'grand_total_incl_gst'])
+
+
+# ---------------- Quotation Item ----------------
+class QuotationItem(models.Model):
+    """
+    Individual item in a quotation with pricing details
+    """
+    ITEM_TYPE_CHOICES = (
+        ("bom", "BOM"),
+        ("component", "Component"),
+    )
+    
+    quotation = models.ForeignKey(
+        Quotation, on_delete=models.CASCADE, related_name="items"
+    )
+    
+    # Item information (copied from RFQ for record keeping)
+    item_name = models.CharField(max_length=255)
+    description = models.TextField()
+    item_type = models.CharField(max_length=20, choices=ITEM_TYPE_CHOICES)
+    
+    # Quantity
+    quantity = models.PositiveIntegerField()
+    
+    # Pricing
+    net_unit_price_excl_gst = models.DecimalField(
+        max_digits=12, decimal_places=2,
+        validators=[MinValueValidator(Decimal("0.00"))]
+    )
+    gst_rate = models.DecimalField(
+        max_digits=5, decimal_places=2, default=Decimal("18.00"),
+        validators=[MinValueValidator(Decimal("0.00")), MaxValueValidator(Decimal("100.00"))]
+    )
+    
+    # Calculated fields
+    subtotal_excl_gst = models.DecimalField(
+        max_digits=15, decimal_places=2,
+        validators=[MinValueValidator(Decimal("0.00"))]
+    )
+    gst_amount = models.DecimalField(
+        max_digits=15, decimal_places=2, default=Decimal("0.00"),
+        validators=[MinValueValidator(Decimal("0.00"))]
+    )
+    total_incl_gst = models.DecimalField(
+        max_digits=15, decimal_places=2,
+        validators=[MinValueValidator(Decimal("0.00"))]
+    )
+    
+    class Meta:
+        ordering = ['id']
+
+    def __str__(self):
+        return f"{self.item_name} - {self.quotation.quotation_number}"
+
+    def calculate_gst_amount(self):
+        """Calculate GST amount and total"""
+        self.gst_amount = self.subtotal_excl_gst * (self.gst_rate / Decimal("100"))
+        self.total_incl_gst = self.subtotal_excl_gst + self.gst_amount
+        self.save(update_fields=['gst_amount', 'total_incl_gst'])
+
+

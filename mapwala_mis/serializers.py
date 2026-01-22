@@ -1876,10 +1876,11 @@ class RFQListSerializer(serializers.ModelSerializer):
         ]
 
     def get_vendor_names(self, obj):
-        """Extract unique vendor names from selections or order reference"""
-        vendors = []
-        # Get from order reference or external vendor source
-        return vendors
+        """Extract unique vendor names from RFQ quotations"""
+        vendor_names = list(
+            obj.quotations.values_list("vendor__name", flat=True).distinct()
+        )
+        return vendor_names
 
     def get_bom_parts_count(self, obj):
         """Count BOM parts in selections"""
@@ -1950,46 +1951,230 @@ class RFQDetailSerializer(serializers.ModelSerializer):
         )
 
     def get_vendor_names(self, obj):
-        """Extract vendor names from order reference or external mapping"""
-        vendors = []
-        # This would typically come from a vendor lookup
-        return vendors
+        """Extract vendor names from RFQ quotations"""
+        vendor_names = list(
+            obj.quotations.values_list("vendor__name", flat=True).distinct()
+        )
+        return vendor_names
 
 
 # ----------------------- RFQ Quotation Serializer -----------------------
-class RFQQuotationCreateSerializer(serializers.ModelSerializer):
-    """Serializer for creating/updating quotation rates"""
+# class RFQQuotationCreateSerializer(serializers.ModelSerializer):
+#     """Serializer for creating/updating quotation rates"""
+    
+#     class Meta:
+#         model = RFQQuotation
+#         fields = ["id", "rfq", "vendor", "quotation_rate", "status"]
+#         read_only_fields = ["id"]
+
+#     def validate_quotation_rate(self, value):
+#         if value is not None and value < 0:
+#             raise serializers.ValidationError("Quotation rate cannot be negative.")
+#         return value
+
+
+# class RFQQuotationSerializer(serializers.ModelSerializer):
+#     """Serializer for reading quotation details"""
+#     vendor_name = serializers.CharField(source="vendor.name", read_only=True)
+#     status_display = serializers.CharField(source="get_status_display", read_only=True)
+
+#     class Meta:
+#         model = RFQQuotation
+#         fields = [
+#             "id",
+#             "rfq",
+#             "vendor",
+#             "vendor_name",
+#             "quotation_rate",
+#             "status",
+#             "status_display",
+#             "quotation_date",
+#             "created_at",
+#             "updated_at",
+#         ]
+#         read_only_fields = ["id", "created_at", "updated_at"]
+
+
+# ============================================================================
+# ======================= QUOTATION SERIALIZERS =============================
+# ============================================================================
+
+# --------- Quotation Item Serializer ---------
+class QuotationItemSerializer(serializers.ModelSerializer):
+    """Serializer for quotation items"""
     
     class Meta:
-        model = RFQQuotation
-        fields = ["id", "rfq", "vendor", "quotation_rate", "status"]
-        read_only_fields = ["id"]
-
-    def validate_quotation_rate(self, value):
-        if value is not None and value < 0:
-            raise serializers.ValidationError("Quotation rate cannot be negative.")
-        return value
-
-
-class RFQQuotationSerializer(serializers.ModelSerializer):
-    """Serializer for reading quotation details"""
-    vendor_name = serializers.CharField(source="vendor.name", read_only=True)
-    status_display = serializers.CharField(source="get_status_display", read_only=True)
-
-    class Meta:
-        model = RFQQuotation
+        model = QuotationItem
         fields = [
             "id",
+            "item_name",
+            "description",
+            "item_type",
+            "quantity",
+            "net_unit_price_excl_gst",
+            "gst_rate",
+            "subtotal_excl_gst",
+            "gst_amount",
+            "total_incl_gst",
+        ]
+        read_only_fields = ["gst_amount", "subtotal_excl_gst", "total_incl_gst"]
+
+
+# --------- Quotation Create Serializer ---------
+class QuotationCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating quotations from RFQ"""
+    items = QuotationItemSerializer(many=True, write_only=True)
+    
+    class Meta:
+        model = Quotation
+        fields = [
             "rfq",
             "vendor",
+            "customer_name",
+            "valid_until",
+            "items",
+        ]
+    
+    def validate(self, data):
+        """Validate quotation data"""
+        if not data.get("items"):
+            raise serializers.ValidationError("Quotation must contain at least one item.")
+        
+        rfq = data.get("rfq")
+        vendor = data.get("vendor")
+        
+        # Check for duplicate quotation for same RFQ and vendor
+        existing = Quotation.objects.filter(rfq=rfq, vendor=vendor).exists()
+        if existing:
+            raise serializers.ValidationError("A quotation already exists for this RFQ and vendor.")
+        
+        return data
+    
+    def create(self, validated_data):
+        """Create quotation with items"""
+        items_data = validated_data.pop("items")
+        
+        # Generate unique quotation number
+        from .utils import generate_quotation_number
+        quotation_number = generate_quotation_number()
+        
+        # Get current user
+        user = self.context["request"].user
+        
+        # Create quotation
+        quotation = Quotation.objects.create(
+            quotation_number=quotation_number,
+            created_by=user,
+            **validated_data
+        )
+        
+        # Create items
+        for item_data in items_data:
+            quantity = item_data.get("quantity", 1)
+            net_unit_price = item_data.get("net_unit_price_excl_gst")
+            gst_rate = item_data.get("gst_rate", Decimal("18.00"))
+            
+            # Calculate subtotal
+            subtotal = quantity * net_unit_price
+            
+            # Calculate GST and total before creating item
+            gst_amount = subtotal * (gst_rate / Decimal("100"))
+            total_incl_gst = subtotal + gst_amount
+            
+            item = QuotationItem.objects.create(
+                quotation=quotation,
+                subtotal_excl_gst=subtotal,
+                gst_amount=gst_amount,
+                total_incl_gst=total_incl_gst,
+                **item_data
+            )
+        
+        # Calculate quotation totals
+        quotation.calculate_totals()
+        
+        return quotation
+
+
+# --------- Quotation List Serializer ---------
+class QuotationListSerializer(serializers.ModelSerializer):
+    """Serializer for listing quotations"""
+    vendor_name = serializers.CharField(source="vendor.name", read_only=True)
+    rfq_reference = serializers.SerializerMethodField()
+    item_count = serializers.SerializerMethodField()
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    
+    class Meta:
+        model = Quotation
+        fields = [
+            "id",
+            "quotation_number",
+            "customer_name",
+            "rfq_reference",
             "vendor_name",
-            "quotation_rate",
+            "item_count",
+            "subtotal_excl_gst",
+            "total_gst",
+            "grand_total_incl_gst",
+            "valid_until",
             "status",
             "status_display",
-            "quotation_date",
             "created_at",
+        ]
+        read_only_fields = fields
+    
+    def get_rfq_reference(self, obj):
+        """Get RFQ reference number"""
+        return f"RFQ-{obj.rfq.id}"
+    
+    def get_item_count(self, obj):
+        """Get count of items in quotation"""
+        return obj.items.count()
+
+
+# --------- Quotation Detail Serializer ---------
+class QuotationDetailSerializer(serializers.ModelSerializer):
+    """Serializer for quotation details"""
+    vendor_name = serializers.CharField(source="vendor.name", read_only=True)
+    rfq_reference = serializers.SerializerMethodField()
+    items = QuotationItemSerializer(many=True, read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    created_by_name = serializers.CharField(source="created_by.get_full_name", read_only=True)
+    
+    class Meta:
+        model = Quotation
+        fields = [
+            "id",
+            "quotation_number",
+            "customer_name",
+            "rfq_reference",
+            "vendor_name",
+            "status",
+            "status_display",
+            "subtotal_excl_gst",
+            "total_gst",
+            "grand_total_incl_gst",
+            "valid_until",
+            "items",
+            "created_at",
+            "created_by_name",
             "updated_at",
         ]
-        read_only_fields = ["id", "created_at", "updated_at"]
+        read_only_fields = fields
+    
+    def get_rfq_reference(self, obj):
+        """Get RFQ reference number"""
+        return f"RFQ-{obj.rfq.id}"
+
+
+# --------- Quotation Approve/Reject Serializer ---------
+class QuotationApproveRejectSerializer(serializers.Serializer):
+    """Serializer for approving or rejecting quotations"""
+    status = serializers.ChoiceField(choices=["approved", "rejected"])
+    
+    def validate_status(self, value):
+        """Validate status"""
+        if value not in ["approved", "rejected"]:
+            raise serializers.ValidationError("Status must be 'approved' or 'rejected'.")
+        return value
 
 

@@ -1,14 +1,10 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from .models import *
 from django.utils.safestring import mark_safe
-from django.contrib import messages
 from django.urls import reverse
 from django.utils.html import format_html
 from django.forms.models import BaseInlineFormSet
 from decimal import Decimal
-from django.urls import path
-from django.http import JsonResponse
-from django.core.paginator import Paginator
 
 
 # ------------------ User Profile ------------------
