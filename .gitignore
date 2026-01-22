@@ -39,8 +39,6 @@ ENV/
 .DS_Store
 Thumbs.db
 
-# Docker
-.dockerignore
 
 # PostgreSQL (optional if used in production)
 postgres_data/
@@ -51,17 +49,6 @@ htmlcov/
 .pytest_cache/
 *.cover
 .hypothesis/
-
-# Migrations (keep if you want to version them)
-# If not, uncomment below:
-# */migrations/*
-# !*/migrations/__init__.py
-
-# Node (if you have frontend)
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 
 # Project-specific ignores
 Mapwala_MIS_Backend.postman_collection.json  # or .json if that's what it is
