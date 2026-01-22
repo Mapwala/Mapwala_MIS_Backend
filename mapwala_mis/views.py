@@ -561,6 +561,132 @@ class SupplierVendorDropdownAPIView(APIView):
         )
 
 
+
+# ======================== RFQ LIST & DETAIL APIS ==========================
+# ----------- RFQ List API with Filtering & Search -----------
+class RFQListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    pagination_class = PageNumberPagination
+
+    def get(self, request):
+        """
+        List all RFQs with filtering by status and vendor search
+        Query params: status, vendor, search, page
+        """
+        queryset = RequestForQuote.objects.filter(
+            status="submitted"
+        ).order_by("-created_at")
+
+        # Status Filter
+        status_filter = request.query_params.get("status")
+        if status_filter and status_filter != "all":
+            queryset = queryset.filter(status=status_filter)
+
+        # Search Filter (by vendor, RFQ No, customer, device, product ID)
+        search_query = request.query_params.get("search", "").strip()
+        if search_query:
+            queryset = queryset.filter(
+                Q(order_reference__icontains=search_query)
+                | Q(device_name__icontains=search_query)
+            )
+
+        # Count statistics
+        total_count = RequestForQuote.objects.filter(status="submitted").count()
+        pending_count = queryset.filter(status="submitted").count()
+        # Note: QUOTED and REJECTED would come from quotation model
+
+        # Pagination
+        paginator = PageNumberPagination()
+        paginator.page_size = 10
+        paginated_queryset = paginator.paginate_queryset(queryset, request)
+
+        serializer = RFQListSerializer(paginated_queryset, many=True)
+
+        return Response(
+            {
+                "count": paginator.page.paginator.count,
+                "total": total_count,
+                "pending": pending_count,
+                "quoted": 0,
+                "rejected": 0,
+                "results": serializer.data,
+            }
+        )
+
+
+# ----------- RFQ Detail API -----------
+class RFQDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, rfq_id):
+        """
+        Fetch complete RFQ details including selections and requirements
+        """
+        rfq = get_object_or_404(RequestForQuote, id=rfq_id)
+
+        serializer = RFQDetailSerializer(rfq)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+# ----------- Create Quotation API -----------
+class CreateQuotationAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request, rfq_id):
+        """
+        Create or update quotation rate for an RFQ by vendor
+        Request body: { "vendor_id": int, "quotation_rate": decimal }
+        """
+        rfq = get_object_or_404(RequestForQuote, id=rfq_id)
+        
+        vendor_id = request.data.get("vendor_id")
+        quotation_rate = request.data.get("quotation_rate")
+
+        if not vendor_id:
+            return Response(
+                {"error": "vendor_id is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if quotation_rate is None:
+            return Response(
+                {"error": "quotation_rate is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            vendor = Vendor.objects.get(id=vendor_id)
+        except Vendor.DoesNotExist:
+            return Response(
+                {"error": "Vendor not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Create or update quotation
+        quotation, created = RFQQuotation.objects.update_or_create(
+            rfq=rfq,
+            vendor=vendor,
+            defaults={
+                "quotation_rate": quotation_rate,
+                "status": "quoted",
+                "quotation_date": timezone.now(),
+            },
+        )
+
+        serializer = RFQQuotationSerializer(quotation)
+
+        return Response(
+            {
+                "message": "Quotation created successfully" if created else "Quotation updated successfully",
+                "quotation": serializer.data,
+            },
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
+
+
+
 # ---------------- ProductCategory Dropdown APIView ----------------
 class ProductCategoryDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -2225,203 +2351,4 @@ class GSTRateDropdownAPIView(APIView):
         )
 
 
-# ============================================================
-class RFQListAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-    """
-    GET /rfq/list/
-    List all RFQs with search and filter capabilities
-    """
 
-    def get(self, request):
-        # Get query parameters
-        search_query = request.query_params.get("search", "").strip()
-        status_filter = request.query_params.get("status", "all")
-        vendor_filter = request.query_params.get("vendor", "all")
-
-        # Start with all RFQs
-        rfqs = RequestForQuote.objects.all().prefetch_related("selections")
-
-        # Apply status filter
-        if status_filter != "all":
-            rfqs = rfqs.filter(status=status_filter.lower())
-
-        # Apply vendor filter - RFQSelection links vendors to RFQs by reference
-        if vendor_filter != "all":
-            rfqs = rfqs.filter(quotations__vendor__name__icontains=vendor_filter)
-
-        # Apply search filter
-        if search_query:
-            rfqs = rfqs.filter(
-                Q(order_reference__icontains=search_query)
-                | Q(device_name__icontains=search_query)
-                | Q(selections__reference__icontains=search_query)
-            )
-
-        rfqs = rfqs.distinct()
-
-        # Serialize the results
-        serializer = RFQListSerializer(rfqs, many=True)
-
-        return Response(
-            {
-                "found": rfqs.count(),
-                "total": RequestForQuote.objects.count(),
-                "results": serializer.data,
-            },
-            status=status.HTTP_200_OK,
-        )
-
-
-class RFQDetailAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, rfq_id):
-        try:
-            rfq = RequestForQuote.objects.get(id=rfq_id)
-        except RequestForQuote.DoesNotExist:
-            return Response(
-                {"error": "RFQ not found"}, status=status.HTTP_404_NOT_FOUND
-            )
-
-        serializer = RFQDetailSerializer(rfq)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-class QuotationEntryAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    @transaction.atomic
-    def post(self, request):
-        serializer = QuotationCreateSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        data = serializer.validated_data
-
-        rfq = get_object_or_404(RequestForQuote, id=data["rfq_id"])
-        vendor = get_object_or_404(Vendor, id=data["vendor_id"])
-
-        if not request.user.vendors.filter(id=vendor.id).exists():
-            return Response(
-                {"error": "Only vendors owned by you can submit quotations"},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        if Quotation.objects.filter(rfq=rfq, vendor=vendor).exists():
-            return Response(
-                {"error": "Quotation already submitted for this vendor"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        quotation = Quotation.objects.create(
-            rfq=rfq,
-            vendor=vendor,
-            quotation_number=f"QT-{uuid.uuid4().hex[:10].upper()}",
-            subtotal_excl_gst=data["subtotal_excl_gst"],
-            total_gst=data["total_gst"],
-            grand_total_incl_gst=data["grand_total"],
-            status="submitted",
-            created_by=request.user,
-        )
-
-        for item in data["items"]:
-            QuotationItem.objects.create(
-                quotation=quotation,
-                item_id=item["item_id"],
-                item_name=item["item_name"],
-                description=item["description"],
-                item_type=item["item_type"],
-                quantity=item["quantity"],
-                net_unit_price=item["net_unit_price"],
-                gst_rate=item["gst_rate"],
-                gst_amount=item["gst_amount"],
-                total_price=item["total_price"],
-            )
-
-        rfq.status = "quoted"
-        rfq.save(update_fields=["status"])
-
-        return Response(
-            {
-                "message": "Quotation created successfully",
-                "quotation_id": quotation.id,
-                "quotation_number": quotation.quotation_number,
-            },
-            status=status.HTTP_201_CREATED,
-        )
-
-
-class QuotationFormDataAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        rfq_id = request.query_params.get("rfq_id")
-        if not rfq_id:
-            return Response(
-                {"error": "rfq_id query param is required"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        rfq = get_object_or_404(RequestForQuote, id=rfq_id)
-
-        rfq_number = f"RFQ-{rfq.created_at.year}-{rfq.id:03d}"
-
-        vendors = Vendor.objects.filter(quotations__rfq=rfq).distinct()
-
-        vendor_dropdown = [{"id": v.id, "label": v.name} for v in vendors]
-
-        items = [
-            {
-                "item_id": sel.reference,
-                "item_name": sel.reference,
-                "description": f"{sel.get_item_type_display()} - {sel.reference}",
-                "item_type": sel.item_type,
-                "quantity": 1,
-                "net_unit_price": "0.00",
-                "gst_rate": "18.00",
-                "gst_amount": "0.00",
-                "total_price": "0.00",
-            }
-            for sel in rfq.selections.all()
-        ]
-
-        return Response(
-            {
-                "rfq_id": rfq.id,
-                "rfq_number": rfq_number,
-                "vendors": vendor_dropdown,
-                "items": items,
-            },
-            status=status.HTTP_200_OK,
-        )
-
-
-class RFQFiltersAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        return Response(
-            {
-                "statuses": [
-                    {"value": "all", "label": "All Status"},
-                    {"value": "pending", "label": "Pending"},
-                    {"value": "quoted", "label": "Quoted"},
-                    {"value": "rejected", "label": "Rejected"},
-                ],
-                "vendors": [
-                    {"id": v.id, "name": v.name}
-                    for v in Vendor.objects.all().order_by("name")
-                ],
-            },
-            status=200,
-        )
-
-
-class RFQVendorDropdownAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        vendors = Vendor.objects.all().order_by("name")
-        return Response(
-            [{"id": v.id, "label": f"{v.name}"} for v in vendors], status=200
-        )

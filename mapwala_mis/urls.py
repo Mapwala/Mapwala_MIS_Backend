@@ -91,6 +91,9 @@ urlpatterns = [
     # ============================================================
     # RFQ MANAGEMENT
     # ============================================================
+    path("rfq/", RFQListAPIView.as_view(), name="rfq-list"),
+    path("rfq/<int:rfq_id>/", RFQDetailAPIView.as_view(), name="rfq-detail"),
+    path("rfq/<int:rfq_id>/quotation/", CreateQuotationAPIView.as_view(), name="create-quotation"),
     path("rfq/step-1/", RFQStep1APIView.as_view()),
     path("rfq/step-2/", RFQStep2APIView.as_view()),
     path("rfq/step-3/", RFQStep3APIView.as_view()),
@@ -186,18 +189,6 @@ urlpatterns = [
         GSTRateDropdownAPIView.as_view(),
         name="self-order-gst-rates",
     ),
-    # ============================================================
-    # RFQ MANAGEMENT - LIST & FILTERING
-    # ============================================================
-    path("rfq/list/", RFQListAPIView.as_view()),
-    path("rfq/<int:rfq_id>/detail/", RFQDetailAPIView.as_view()),
-    path("rfq/filters/", RFQFiltersAPIView.as_view()),
-    path("rfq/vendors/", RFQVendorDropdownAPIView.as_view()),
-    # ============================================================
-    # QUOTATION MANAGEMENT
-    # ============================================================
-    path("quotation/form-data/", QuotationFormDataAPIView.as_view()),
-    path("quotation/create/", QuotationEntryAPIView.as_view()),
 ]
 
 urlpatterns += router.urls

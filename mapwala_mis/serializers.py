@@ -1851,155 +1851,145 @@ class SelfOrderSerializer(serializers.ModelSerializer):
         return value
 
 
-# ================== Quotation ==================
-class QuotationItemSerializer(serializers.Serializer):
-    item_id = serializers.CharField()
-    item_name = serializers.CharField()
-    description = serializers.CharField()
-    item_type = serializers.ChoiceField(choices=["bom", "component"])
-    quantity = serializers.IntegerField(min_value=1)
-    net_unit_price = serializers.DecimalField(max_digits=10, decimal_places=2)
-    gst_rate = serializers.DecimalField(max_digits=5, decimal_places=2)
-    gst_amount = serializers.DecimalField(
-        max_digits=10, decimal_places=2, read_only=True
-    )
-    total_price = serializers.DecimalField(
-        max_digits=10, decimal_places=2, read_only=True
-    )
-
-
+# ----------------------- RFQ List Serializer -----------------------
 class RFQListSerializer(serializers.ModelSerializer):
-    rfq_number = serializers.SerializerMethodField()
     vendor_names = serializers.SerializerMethodField()
     bom_parts_count = serializers.SerializerMethodField()
     components_count = serializers.SerializerMethodField()
-    customer = serializers.CharField(source="order_reference", read_only=True)
-    submitted_date = serializers.DateTimeField(source="created_at", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
 
     class Meta:
         model = RequestForQuote
         fields = [
             "id",
-            "rfq_number",
-            "status",
-            "customer",
+            "order_reference",
             "device_name",
             "quantity",
-            "vendor_names",
             "assembly_type",
             "delivery_date",
-            "submitted_date",
+            "created_at",
+            "status",
+            "status_display",
+            "vendor_names",
             "bom_parts_count",
             "components_count",
         ]
 
-    def get_rfq_number(self, obj):
-        return f"RFQ-{obj.created_at.year}-{obj.id:03d}"
-
     def get_vendor_names(self, obj):
-        return list(
-            obj.quotations.select_related("vendor")
-            .values_list("vendor__name", flat=True)
-            .distinct()
-        )
+        """Extract unique vendor names from selections or order reference"""
+        vendors = []
+        # Get from order reference or external vendor source
+        return vendors
 
     def get_bom_parts_count(self, obj):
+        """Count BOM parts in selections"""
         return obj.selections.filter(item_type="bom").count()
 
     def get_components_count(self, obj):
+        """Count components in selections"""
         return obj.selections.filter(item_type="component").count()
 
 
+# ----------------------- RFQ Selection Serializer -----------------------
+class RFQSelectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RFQSelection
+        fields = ["id", "item_type", "reference"]
+
+
+# ----------------------- RFQ Detail Serializer -----------------------
 class RFQDetailSerializer(serializers.ModelSerializer):
-    rfq_number = serializers.SerializerMethodField()
-    customer = serializers.CharField(source="order_reference", read_only=True)
-    vendor_details = serializers.SerializerMethodField()
-    selected_components = serializers.SerializerMethodField()
-    submitted_date = serializers.DateTimeField(source="created_at", read_only=True)
+    selections = RFQSelectionSerializer(many=True, read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    assembly_type_display = serializers.CharField(
+        source="get_assembly_type_display", read_only=True
+    )
+    bom_parts = serializers.SerializerMethodField()
+    other_components = serializers.SerializerMethodField()
+    vendor_names = serializers.SerializerMethodField()
 
     class Meta:
         model = RequestForQuote
         fields = [
             "id",
-            "rfq_number",
-            "status",
-            "customer",
+            "order_reference",
             "device_name",
             "quantity",
+            "assembly_type",
+            "assembly_type_display",
             "delivery_date",
             "delivery_address",
-            "submitted_date",
             "additional_requirements",
-            "vendor_details",
-            "assembly_type",
-            "selected_components",
+            "created_at",
+            "status",
+            "status_display",
+            "selections",
+            "bom_parts",
+            "other_components",
+            "vendor_names",
+        ]
+        read_only_fields = [
+            "id",
+            "created_at",
+            "status",
+            "selections",
         ]
 
-    def get_rfq_number(self, obj):
-        return f"RFQ-{obj.created_at.year}-{obj.id:03d}"
+    def get_bom_parts(self, obj):
+        """Extract BOM part references"""
+        return list(
+            obj.selections.filter(item_type="bom").values_list("reference", flat=True)
+        )
 
-    def get_vendor_details(self, obj):
-        """
-        Vendors who have submitted quotations for this RFQ
-        """
-        return [
-            {
-                "vendor_id": q.vendor.id,
-                "vendor_name": q.vendor.name,
-            }
-            for q in obj.quotations.select_related("vendor")
+    def get_other_components(self, obj):
+        """Extract component references"""
+        return list(
+            obj.selections.filter(item_type="component").values_list(
+                "reference", flat=True
+            )
+        )
+
+    def get_vendor_names(self, obj):
+        """Extract vendor names from order reference or external mapping"""
+        vendors = []
+        # This would typically come from a vendor lookup
+        return vendors
+
+
+# ----------------------- RFQ Quotation Serializer -----------------------
+class RFQQuotationCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating/updating quotation rates"""
+    
+    class Meta:
+        model = RFQQuotation
+        fields = ["id", "rfq", "vendor", "quotation_rate", "status"]
+        read_only_fields = ["id"]
+
+    def validate_quotation_rate(self, value):
+        if value is not None and value < 0:
+            raise serializers.ValidationError("Quotation rate cannot be negative.")
+        return value
+
+
+class RFQQuotationSerializer(serializers.ModelSerializer):
+    """Serializer for reading quotation details"""
+    vendor_name = serializers.CharField(source="vendor.name", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+
+    class Meta:
+        model = RFQQuotation
+        fields = [
+            "id",
+            "rfq",
+            "vendor",
+            "vendor_name",
+            "quotation_rate",
+            "status",
+            "status_display",
+            "quotation_date",
+            "created_at",
+            "updated_at",
         ]
+        read_only_fields = ["id", "created_at", "updated_at"]
 
-    def get_selected_components(self, obj):
-        bom_parts = obj.selections.filter(item_type="bom").values_list(
-            "reference", flat=True
-        )
-        components = obj.selections.filter(item_type="component").values_list(
-            "reference", flat=True
-        )
-
-        return {
-            "bom_parts": [{"part_name": p} for p in bom_parts],
-            "other_components": [{"component_name": c} for c in components],
-        }
-
-
-class QuotationItemInputSerializer(serializers.Serializer):
-    item_id = serializers.CharField()
-    item_name = serializers.CharField()
-    description = serializers.CharField()
-    item_type = serializers.CharField()
-    quantity = serializers.IntegerField(default=1)
-    net_unit_price = serializers.DecimalField(max_digits=10, decimal_places=2)
-    gst_rate = serializers.DecimalField(max_digits=5, decimal_places=2, default=18)
-
-
-class QuotationCreateSerializer(serializers.Serializer):
-    rfq_id = serializers.IntegerField()
-    vendor_id = serializers.IntegerField(required=True)
-    items = QuotationItemInputSerializer(many=True)
-
-    def validate(self, data):
-        subtotal = Decimal("0.00")
-        total_gst = Decimal("0.00")
-
-        for item in data["items"]:
-            qty = Decimal(item.get("quantity", 1))
-            rate = Decimal(item["net_unit_price"])
-            gst_rate = Decimal(item["gst_rate"])
-
-            base = qty * rate
-            gst_amount = (base * gst_rate) / Decimal("100")
-
-            item["gst_amount"] = gst_amount.quantize(Decimal("0.01"))
-            item["total_price"] = (base + gst_amount).quantize(Decimal("0.01"))
-
-            subtotal += base
-            total_gst += gst_amount
-
-        data["subtotal_excl_gst"] = subtotal.quantize(Decimal("0.01"))
-        data["total_gst"] = total_gst.quantize(Decimal("0.01"))
-        data["grand_total"] = (subtotal + total_gst).quantize(Decimal("0.01"))
-
-        return data
 

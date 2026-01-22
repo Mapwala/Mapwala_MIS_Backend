@@ -1677,39 +1677,33 @@ class SelfOrder(models.Model):
         return f"SelfOrder-{self.id} ({self.device.id})"
 
 
-# ============================================================
-# QUOTATION MANAGEMENT
-# ============================================================
-
-
-class Quotation(models.Model):
+# ---------------- RFQ Quotation ----------------
+class RFQQuotation(models.Model):
     """
-    Main quotation record - created when vendor submits pricing for an RFQ
+    Stores quotation rates for vendors in response to RFQs
     """
-
     STATUS_CHOICES = (
-        ("draft", "Draft"),
-        ("submitted", "Submitted"),
-        ("accepted", "Accepted"),
+        ("pending", "Pending"),
+        ("quoted", "Quoted"),
         ("rejected", "Rejected"),
+        ("accepted", "Accepted"),
     )
-
+    
     rfq = models.ForeignKey(
         RequestForQuote, on_delete=models.CASCADE, related_name="quotations"
     )
     vendor = models.ForeignKey(
-        Vendor, on_delete=models.PROTECT, related_name="quotations"
+        Vendor, on_delete=models.CASCADE, related_name="rfq_quotations"
     )
-    quotation_number = models.CharField(max_length=100, unique=True)
-
-    subtotal_excl_gst = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    total_gst = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    grand_total_incl_gst = models.DecimalField(
-        max_digits=15, decimal_places=2, default=0
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default="pending"
     )
-
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
-    created_by = models.ForeignKey(User, on_delete=models.PROTECT)
+    quotation_rate = models.DecimalField(
+        max_digits=12, decimal_places=2, 
+        validators=[MinValueValidator(Decimal("0.00"))],
+        null=True, blank=True
+    )
+    quotation_date = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -1718,38 +1712,6 @@ class Quotation(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"{self.quotation_number} - {self.vendor.name}"
+        return f"Quotation-RFQ{self.rfq.id}-Vendor{self.vendor.id}"
 
 
-class QuotationItem(models.Model):
-    """
-    Line items in quotation - stores pricing for each item from RFQ
-    """
-
-    ITEM_TYPE_CHOICES = (
-        ("bom", "BOM Part"),
-        ("component", "Component"),
-    )
-
-    quotation = models.ForeignKey(
-        Quotation, on_delete=models.CASCADE, related_name="items"
-    )
-    item_id = models.CharField(max_length=100)  # PCB-001, GPS-001, etc.
-    item_name = models.CharField(max_length=255)
-    description = models.TextField()
-    item_type = models.CharField(max_length=20, choices=ITEM_TYPE_CHOICES)
-
-    quantity = models.PositiveIntegerField(default=1)
-    net_unit_price = models.DecimalField(max_digits=12, decimal_places=2)
-    gst_rate = models.DecimalField(max_digits=5, decimal_places=2, default=18)
-    gst_amount = models.DecimalField(max_digits=12, decimal_places=2)
-    total_price = models.DecimalField(max_digits=12, decimal_places=2)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ("quotation", "item_id")
-        ordering = ["item_id"]
-
-    def __str__(self):
-        return f"{self.quotation.quotation_number} - {self.item_id}"

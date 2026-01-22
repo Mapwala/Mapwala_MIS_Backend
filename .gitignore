@@ -20,13 +20,13 @@ documents/
 # Environment variables
 .env
 .env.*
-env_example
 
 # Virtual environment
 vir_env/
 env/
 venv/
 ENV/
+.venv/
 
 # IDE
 .vscode/
