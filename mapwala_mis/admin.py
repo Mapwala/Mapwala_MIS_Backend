@@ -808,6 +808,7 @@ class ProductAdmin(admin.ModelAdmin):
     readonly_fields = ("created_at",)
 
 
+# ------------------ Device and Inlines ------------------
 class DeviceInformationInline(admin.StackedInline):
     model = DeviceInformation
     extra = 0
@@ -921,8 +922,6 @@ class DeviceAdmin(admin.ModelAdmin):
     def created_at_formatted(self, obj):
         return obj.created_at.strftime("%d %b %Y %I:%M %p")
     created_at_formatted.short_description = "Created At"
-
-
 
 
 # ------------------ Proforma Invoice ------------------
@@ -2280,7 +2279,9 @@ class RejectedItemAdmin(admin.ModelAdmin):
     list_select_related = ("created_by",)
 
 
-# ================== Self Order ==================
+# ============================================================================
+# Self Order 
+# ============================================================================
 @admin.register(SelfOrder)
 class SelfOrderAdmin(admin.ModelAdmin):
     list_display = (
@@ -2369,3 +2370,143 @@ class SelfOrderAdmin(admin.ModelAdmin):
         return f"₹{obj.gross_amount:,.2f}"
 
     gross_amount_display.short_description = "Gross Amount"
+
+
+# ============================================================================
+# RFQ QUOTATION ADMIN
+# ============================================================================
+
+@admin.register(RFQQuotation)
+class RFQQuotationAdmin(admin.ModelAdmin):
+    """
+    Admin configuration for vendor quotations against RFQs
+    """
+    list_display = (
+        "rfq",
+        "vendor",
+        "status",
+        "quotation_rate",
+        "quotation_date",
+        "created_at",
+    )
+    list_filter = ("status", "quotation_date", "created_at")
+    search_fields = ("rfq__id", "vendor__name")
+    ordering = ("-created_at",)
+    autocomplete_fields = ("rfq", "vendor")
+
+    readonly_fields = ("created_at", "updated_at")
+
+
+# ============================================================================
+# QUOTATION SEQUENCE ADMIN
+# ============================================================================
+
+@admin.register(QuotationSequence)
+class QuotationSequenceAdmin(admin.ModelAdmin):
+    """
+    Maintains year-wise quotation number sequence
+    """
+    list_display = ("year", "last_number")
+    ordering = ("-year",)
+
+
+# ============================================================================
+# QUOTATION ITEM INLINE
+# ============================================================================
+
+class QuotationItemInline(admin.TabularInline):
+    """
+    Inline items displayed inside Quotation admin
+    """
+    model = QuotationItem
+    extra = 0
+    min_num = 1
+
+    fields = (
+        "item_name",
+        "item_type",
+        "quantity",
+        "net_unit_price_excl_gst",
+        "gst_rate",
+        "subtotal_excl_gst",
+        "gst_amount",
+        "total_incl_gst",
+    )
+
+    readonly_fields = ("gst_amount", "total_incl_gst")
+
+
+# ============================================================================
+# QUOTATION ADMIN
+# ============================================================================
+
+@admin.register(Quotation)
+class QuotationAdmin(admin.ModelAdmin):
+    """
+    Admin configuration for final quotation documents
+    """
+    list_display = (
+        "quotation_number",
+        "customer_name",
+        "vendor",
+        "status",
+        "grand_total_incl_gst",
+        "valid_until",
+        "created_at",
+    )
+
+    list_filter = ("status", "created_at", "valid_until")
+    search_fields = (
+        "quotation_number",
+        "customer_name",
+        "vendor__name",
+        "rfq__id",
+    )
+
+    ordering = ("-created_at",)
+    autocomplete_fields = ("rfq", "vendor", "created_by")
+
+    readonly_fields = (
+        "quotation_number",
+        "subtotal_excl_gst",
+        "total_gst",
+        "grand_total_incl_gst",
+        "created_at",
+        "updated_at",
+    )
+
+    fieldsets = (
+        ("Reference Details", {
+            "fields": ("quotation_number", "rfq", "vendor", "customer_name")
+        }),
+        ("Status & Validity", {
+            "fields": ("status", "valid_until")
+        }),
+        ("Pricing Summary", {
+            "fields": (
+                "subtotal_excl_gst",
+                "total_gst",
+                "grand_total_incl_gst",
+            )
+        }),
+        ("Audit Information", {
+            "fields": ("created_by", "created_at", "updated_at")
+        }),
+    )
+
+    inlines = [QuotationItemInline]
+
+    actions = ["recalculate_totals"]
+
+    def recalculate_totals(self, request, queryset):
+        """
+        Admin action to recalculate quotation totals
+        """
+        for quotation in queryset:
+            quotation.calculate_totals()
+
+        self.message_user(request, "Selected quotations recalculated successfully.")
+
+    recalculate_totals.short_description = "Recalculate totals for selected quotations"
+
+

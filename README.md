@@ -26,37 +26,33 @@ Mapwala MIS (Management Information System) is a comprehensive backend service d
 
 ```
 Mapwala_MIS_Backend/
-├── 🐳 Deployment & Config
-│   ├── .dockerignore
-│   ├── Dockerfile              # Docker image definition
-│   ├── docker-compose.yml      # Container orchestration
-│   ├── .env                    # Active environment variables (Secrets)
-│   ├── env_example             # Template for environment variables
-│   └── requirements.txt        # Python dependencies
-│
-├── ⚙️ Core Project (Mapwala_MIS_Backend)
-│   ├── settings.py             # Main Django settings
-│   ├── urls.py                 # Global URL routing
-│   ├── asgi.py                 # ASGI config (Async entry point)
-│   ├── wsgi.py                 # WSGI config (Sync entry point)
-│   └── __init__.py
-│
-├── 📦 Main Application (mapwala_mis)
-│   ├── admin.py                # Django Admin panel configuration
-│   ├── apps.py                 # App configuration
-│   ├── models.py               # Database schemas
-│   ├── serializers.py          # DRF Serializers (JSON conversion)
-│   ├── views.py                # API Logic and ViewSets
-│   ├── urls.py                 # App-specific URL routing
-│   ├── utils.py                # Helper functions/utilities
-│   ├── tests.py                # Unit tests
-│   ├── jazzmin_patch.py        # Customizations for Jazzmin (Admin Theme)
-│   ├── migrations/             # Database migrations
-│   └── __init__.py
-│
-└── 🚀 Management
-    ├── manage.py               # Django command-line utility
-    └── .gitignore              # Git ignore rules
+├── 🐳 .dockerignore            # Files excluded from Docker context
+├── 🔐 .env                     # Active secrets & environment variables
+├── 🙈 .gitignore               # Files ignored by Git
+├── 🐳 Dockerfile               # Docker image blueprint
+├── ⚙️ Mapwala_MIS_Backend/     # Core Project Configuration
+│   ├── 🐍 __init__.py
+│   ├── ⚡ asgi.py              # Async entry point (ASGI)
+│   ├── 🛠️ settings.py          # Main Django settings
+│   ├── 🛣️ urls.py              # Global URL routing
+│   └── 🔌 wsgi.py              # Sync entry point (WSGI)
+├── 🐙 docker-compose.yml       # Container orchestration config
+├── 🚀 entrypoint.sh            # Container startup & init script
+├── 📋 env_example              # Template for environment variables
+├── 🕹️ manage.py                # Django CLI utility
+├── 📦 mapwala_mis/             # Main Application Logic
+│   ├── 🐍 __init__.py
+│   ├── 🛡️ admin.py             # Admin panel configuration
+│   ├── 🧩 apps.py              # App metadata
+│   ├── 🎨 jazzmin_patch.py     # Admin theme customization
+│   ├── 🗃️ migrations/          # Database schema history
+│   ├── 🛢️ models.py            # Database models (Schema)
+│   ├── 🔄 serializers.py       # JSON Serializers (DRF)
+│   ├── 🧪 tests.py             # Unit & Integration tests
+│   ├── 🔗 urls.py              # App-specific routes
+│   ├── 🧰 utils.py             # Helper functions
+│   └── 🧠 views.py             # API Business logic
+└── 📥 requirements.txt         # Python dependencies
 ```
 
 ---
