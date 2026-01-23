@@ -23,7 +23,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"username\": \"Vaibhav\",\r\n  \"password\": \"qwerty@12345\",\r\n  \"accepted_terms\": true\r\n}\r\n",
+              "raw": "{\r\n  \"username\": \"test\",\r\n  \"password\": \"qwerty@12345\",\r\n  \"accepted_terms\": true\r\n}\r\n",
               "options": {
                 "raw": {
                   "language": "json"
@@ -620,7 +620,7 @@
                 "header": [
                   {
                     "key": "Authorization",
-                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3ODY4ODkwLCJpYXQiOjE3Njc3ODI0OTAsImp0aSI6ImI4YTMxOGY5NDRmZDQxODk5N2Y2MjliMDNmNjdiODVlIiwidXNlcl9pZCI6IjIifQ.1Hil84Dd3v8N_uDEM1hbOs-3_2-wkeoD-V8S4BixoME",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MjI3OTE2LCJpYXQiOjE3NjkxNDE1MTYsImp0aSI6ImY2ODNiYjU0ZjA5YjRlYTRhYzg4OGUyNGUyYjBjMTExIiwidXNlcl9pZCI6IjIifQ.NsDySQbgmNaRWFiW7-hW8VLxuwIuCE0-VI1lhAgdOxs",
                     "description": "Bearer JWT access token"
                   }
                 ],
@@ -649,12 +649,12 @@
                     },
                     {
                       "key": "state",
-                      "value": "6",
+                      "value": "1",
                       "type": "text"
                     },
                     {
                       "key": "district",
-                      "value": "36",
+                      "value": "1",
                       "type": "text"
                     },
                     {
@@ -685,7 +685,7 @@
                     {
                       "key": "gst_document",
                       "type": "file",
-                      "src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+                      "src": "/C:/Users/desk6/Downloads/Mapwala_MIS.pdf"
                     },
                     {
                       "key": "tan_number",
@@ -695,7 +695,7 @@
                     {
                       "key": "tan_document",
                       "type": "file",
-                      "src": "/C:/Users/desk6/Downloads/screencapture-127-0-0-1-8000-admin-mapwala-mis-dealer-1-change-2026-01-08-15_18_05.png"
+                      "src": "/C:/Users/desk6/Downloads/Mapwala_MIS.pdf"
                     },
                     {
                       "key": "pan_number",
@@ -705,7 +705,7 @@
                     {
                       "key": "pan_document",
                       "type": "file",
-                      "src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+                      "src": "/C:/Users/desk6/Downloads/Mapwala_MIS.pdf"
                     }
                   ]
                 },
@@ -741,7 +741,7 @@
                 "header": [
                   {
                     "key": "Authorization",
-                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3OTQwMTc5LCJpYXQiOjE3Njc4NTM3NzksImp0aSI6ImVkYWNkY2ZmZmZiODRkZDM4MWQxMDAzODdkOGYxOGUxIiwidXNlcl9pZCI6IjIifQ.jPj_tVb3d4u6NIF7HjKKBFaCaTmwr6ZBXetVJYQN3nE"
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MTU4Njc3LCJpYXQiOjE3NjkwNzIyNzcsImp0aSI6Ijk5ZGI4MjAwMGZlNDQ4MzRhOTYzY2JjNzQwZGNjYjlmIiwidXNlcl9pZCI6IjIifQ.Aw5zTadlypTJB6n5fGNaRNZi7FBRcSWU_MqfiDyI8E0"
                   }
                 ],
                 "body": {
@@ -759,7 +759,7 @@
                     },
                     {
                       "key": "email",
-                      "value": "contact@abcsupplies.com",
+                      "value": "test@gmail.com",
                       "type": "text"
                     },
                     {
@@ -769,7 +769,7 @@
                     },
                     {
                       "key": "state",
-                      "value": "4",
+                      "value": "1",
                       "type": "text"
                     },
                     {
@@ -805,7 +805,7 @@
                     {
                       "key": "gst_document",
                       "type": "file",
-                      "src": "/C:/Users/desk6/Downloads/screencapture-127-0-0-1-8000-admin-mapwala-mis-dealer-1-change-2026-01-08-15_18_05.png"
+                      "src": "/C:/Users/desk6/Downloads/Mapwala_MIS.pdf"
                     },
                     {
                       "key": "tan_number",
@@ -815,7 +815,7 @@
                     {
                       "key": "tan_document",
                       "type": "file",
-                      "src": "/C:/Users/desk6/Downloads/screencapture-127-0-0-1-8000-admin-mapwala-mis-dealer-1-change-2026-01-08-15_18_05.png"
+                      "src": "/C:/Users/desk6/Downloads/Mapwala_MIS.pdf"
                     },
                     {
                       "key": "pan_number",
@@ -825,7 +825,7 @@
                     {
                       "key": "pan_document",
                       "type": "file",
-                      "src": "/C:/Users/desk6/Downloads/screencapture-127-0-0-1-8000-admin-mapwala-mis-dealer-1-change-2026-01-08-15_18_05.png"
+                      "src": "/C:/Users/desk6/Downloads/Mapwala_MIS.pdf"
                     }
                   ]
                 },
@@ -861,7 +861,7 @@
                 "header": [
                   {
                     "key": "Authorization",
-                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3ODY4ODkwLCJpYXQiOjE3Njc3ODI0OTAsImp0aSI6ImI4YTMxOGY5NDRmZDQxODk5N2Y2MjliMDNmNjdiODVlIiwidXNlcl9pZCI6IjIifQ.1Hil84Dd3v8N_uDEM1hbOs-3_2-wkeoD-V8S4BixoME"
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MjI3OTE2LCJpYXQiOjE3NjkxNDE1MTYsImp0aSI6ImY2ODNiYjU0ZjA5YjRlYTRhYzg4OGUyNGUyYjBjMTExIiwidXNlcl9pZCI6IjIifQ.NsDySQbgmNaRWFiW7-hW8VLxuwIuCE0-VI1lhAgdOxs"
                   }
                 ],
                 "body": {
@@ -890,12 +890,12 @@
                     {
                       "type": "text",
                       "key": "state",
-                      "value": "4"
+                      "value": "1"
                     },
                     {
                       "type": "text",
                       "key": "district",
-                      "value": "34"
+                      "value": "1"
                     },
                     {
                       "type": "text",
@@ -925,7 +925,7 @@
                     {
                       "type": "file",
                       "key": "gst_document",
-                      "src": "/C:/Users/desk6/Downloads/screencapture-127-0-0-1-8000-admin-mapwala-mis-dealer-1-change-2026-01-08-15_18_05.png"
+                      "src": "/C:/Users/desk6/Downloads/Mapwala_MIS.pdf"
                     },
                     {
                       "type": "text",
@@ -935,7 +935,7 @@
                     {
                       "type": "file",
                       "key": "tan_document",
-                      "src": "/C:/Users/desk6/Downloads/screencapture-127-0-0-1-8000-admin-mapwala-mis-dealer-1-change-2026-01-08-15_18_05.png"
+                      "src": "/C:/Users/desk6/Downloads/Mapwala_MIS.pdf"
                     },
                     {
                       "type": "text",
@@ -945,7 +945,7 @@
                     {
                       "type": "file",
                       "key": "pan_document",
-                      "src": "/C:/Users/desk6/Downloads/screencapture-127-0-0-1-8000-admin-mapwala-mis-dealer-1-change-2026-01-08-15_18_05.png"
+                      "src": "/C:/Users/desk6/Downloads/Mapwala_MIS.pdf"
                     }
                   ]
                 },
@@ -979,7 +979,7 @@
                 "header": [
                   {
                     "key": "Authorization",
-                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY3OTQwMTc5LCJpYXQiOjE3Njc4NTM3NzksImp0aSI6ImVkYWNkY2ZmZmZiODRkZDM4MWQxMDAzODdkOGYxOGUxIiwidXNlcl9pZCI6IjIifQ.jPj_tVb3d4u6NIF7HjKKBFaCaTmwr6ZBXetVJYQN3nE"
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MjI3OTE2LCJpYXQiOjE3NjkxNDE1MTYsImp0aSI6ImY2ODNiYjU0ZjA5YjRlYTRhYzg4OGUyNGUyYjBjMTExIiwidXNlcl9pZCI6IjIifQ.NsDySQbgmNaRWFiW7-hW8VLxuwIuCE0-VI1lhAgdOxs"
                   }
                 ],
                 "body": {
@@ -1043,7 +1043,7 @@
                     {
                       "key": "gst_document",
                       "type": "file",
-                      "src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+                      "src": "/C:/Users/desk6/Downloads/Mapwala_MIS.pdf"
                     },
                     {
                       "key": "tan_number",
@@ -1053,7 +1053,7 @@
                     {
                       "key": "tan_document",
                       "type": "file",
-                      "src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+                      "src": "/C:/Users/desk6/Downloads/Mapwala_MIS.pdf"
                     },
                     {
                       "key": "pan_number",
@@ -1063,7 +1063,7 @@
                     {
                       "key": "pan_document",
                       "type": "file",
-                      "src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+                      "src": "/C:/Users/desk6/Downloads/Mapwala_MIS.pdf"
                     }
                   ]
                 },
@@ -1091,13 +1091,13 @@
           "name": "Create Distributor Registration",
           "item": [
             {
-              "name": "Create Dealer Registration",
+              "name": "Dealer Registration",
               "request": {
                 "method": "POST",
                 "header": [
                   {
                     "key": "Authorization",
-                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NjMzODYwLCJpYXQiOjE3Njg1NDc0NjAsImp0aSI6IjNlYjE4OGUxNTQyNjQ2OTU5MDJhOTlmYzZkMjRkZDA1IiwidXNlcl9pZCI6IjMifQ.CRHqtxm4a2_WxJiUbS2WV5C_y1GToLRNTNskO0mThfw"
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MjI3OTE2LCJpYXQiOjE3NjkxNDE1MTYsImp0aSI6ImY2ODNiYjU0ZjA5YjRlYTRhYzg4OGUyNGUyYjBjMTExIiwidXNlcl9pZCI6IjIifQ.NsDySQbgmNaRWFiW7-hW8VLxuwIuCE0-VI1lhAgdOxs"
                   }
                 ],
                 "body": {
@@ -1161,7 +1161,7 @@
                     {
                       "type": "file",
                       "key": "gst_document",
-                      "src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+                      "src": "/C:/Users/desk6/Downloads/Mapwala_MIS.pdf"
                     },
                     {
                       "type": "text",
@@ -1171,7 +1171,7 @@
                     {
                       "type": "file",
                       "key": "tan_document",
-                      "src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+                      "src": "/C:/Users/desk6/Downloads/Mapwala_MIS.pdf"
                     },
                     {
                       "type": "text",
@@ -1181,7 +1181,7 @@
                     {
                       "type": "file",
                       "key": "pan_document",
-                      "src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+                      "src": "/C:/Users/desk6/Downloads/Mapwala_MIS.pdf"
                     },
                     {
                       "type": "text",
@@ -1248,7 +1248,7 @@
                 "header": [
                   {
                     "key": "Authorization",
-                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NjMzODYwLCJpYXQiOjE3Njg1NDc0NjAsImp0aSI6IjNlYjE4OGUxNTQyNjQ2OTU5MDJhOTlmYzZkMjRkZDA1IiwidXNlcl9pZCI6IjMifQ.CRHqtxm4a2_WxJiUbS2WV5C_y1GToLRNTNskO0mThfw"
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MjI3OTE2LCJpYXQiOjE3NjkxNDE1MTYsImp0aSI6ImY2ODNiYjU0ZjA5YjRlYTRhYzg4OGUyNGUyYjBjMTExIiwidXNlcl9pZCI6IjIifQ.NsDySQbgmNaRWFiW7-hW8VLxuwIuCE0-VI1lhAgdOxs"
                   }
                 ],
                 "body": {
@@ -1312,7 +1312,7 @@
                     {
                       "type": "file",
                       "key": "gst_document",
-                      "src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+                      "src": "/C:/Users/desk6/Downloads/Mapwala_MIS.pdf"
                     },
                     {
                       "type": "text",
@@ -1322,7 +1322,7 @@
                     {
                       "type": "file",
                       "key": "tan_document",
-                      "src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+                      "src": "/C:/Users/desk6/Downloads/Mapwala_MIS.pdf"
                     },
                     {
                       "type": "text",
@@ -1332,7 +1332,7 @@
                     {
                       "type": "file",
                       "key": "pan_document",
-                      "src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+                      "src": "/C:/Users/desk6/Downloads/Mapwala_MIS.pdf"
                     },
                     {
                       "type": "text",
@@ -1402,7 +1402,7 @@
       ]
     },
     {
-      "name": "Module Management",
+      "name": "State and District dropdowns",
       "item": [
         {
           "name": "State Dropdown",
@@ -1411,7 +1411,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NjMzODYwLCJpYXQiOjE3Njg1NDc0NjAsImp0aSI6IjNlYjE4OGUxNTQyNjQ2OTU5MDJhOTlmYzZkMjRkZDA1IiwidXNlcl9pZCI6IjMifQ.CRHqtxm4a2_WxJiUbS2WV5C_y1GToLRNTNskO0mThfw"
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MjI3OTE2LCJpYXQiOjE3NjkxNDE1MTYsImp0aSI6ImY2ODNiYjU0ZjA5YjRlYTRhYzg4OGUyNGUyYjBjMTExIiwidXNlcl9pZCI6IjIifQ.NsDySQbgmNaRWFiW7-hW8VLxuwIuCE0-VI1lhAgdOxs"
               }
             ],
             "url": {
@@ -1432,6 +1432,43 @@
               ]
             },
             "description": "StartFragment\n\n## Module: Common Dropdowns\n\n### API: State Dropdown\n\n---\n\n## 🔹 Purpose\n\nThis API provides a **list of Indian states** for dropdown selection.\n\nIt is used in:\n\n- Account Registration\n    \n- QC Inspector Registration\n    \n- Purchase Department Registration\n    \n- Store Manager Registration\n    \n- Repair Technician Registration\n    \n\n---\n\n## 🔐 Authentication\n\n**Required**\n\n- Type: **Bearer Token**\n    \n- Header name: `Authorization`\n    \n\n```\nAuthorization: Bearer <ACCESS_TOKEN>\n\n ```\n\n---\n\n## 🌐 Endpoint Details\n\n| Item | Value |\n| --- | --- |\n| Method | `GET` |\n| URL | `/api/dropdowns/states/` |\n| Content-Type | `application/json` |\n| Auth Required | ✅ Yes |\n\n---\n\n## 🧪 cURL (Reference)\n\n```\ncurl --location 'http://127.0.0.1:8000/api/dropdowns/states/' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27;\n\n ```\n\n---\n\n## ✅ Success Response (200 OK)\n\n### Description\n\nReturns a **list of states** sorted alphabetically.\n\n### Response Body\n\n```\n[\n  { \"id\": 1, \"label\": \"Andhra Pradesh\" },\n  { \"id\": 2, \"label\": \"Arunachal Pradesh\" },\n  { \"id\": 3, \"label\": \"Assam\" },\n  { \"id\": 4, \"label\": \"Bihar\" },\n  { \"id\": 5, \"label\": \"Chhattisgarh\" },\n  { \"id\": 29, \"label\": \"Delhi\" },\n  { \"id\": 6, \"label\": \"Goa\" },\n  { \"id\": 7, \"label\": \"Gujarat\" },\n  { \"id\": 8, \"label\": \"Haryana\" },\n  { \"id\": 9, \"label\": \"Himachal Pradesh\" },\n  { \"id\": 10, \"label\": \"Jharkhand\" },\n  { \"id\": 11, \"label\": \"Karnataka\" },\n  { \"id\": 12, \"label\": \"Kerala\" },\n  { \"id\": 13, \"label\": \"Madhya Pradesh\" },\n  { \"id\": 14, \"label\": \"Maharashtra\" },\n  { \"id\": 15, \"label\": \"Manipur\" },\n  { \"id\": 16, \"label\": \"Meghalaya\" },\n  { \"id\": 17, \"label\": \"Mizoram\" },\n  { \"id\": 18, \"label\": \"Nagaland\" },\n  { \"id\": 19, \"label\": \"Odisha\" },\n  { \"id\": 20, \"label\": \"Punjab\" },\n  { \"id\": 21, \"label\": \"Rajasthan\" },\n  { \"id\": 22, \"label\": \"Sikkim\" },\n  { \"id\": 23, \"label\": \"Tamil Nadu\" },\n  { \"id\": 24, \"label\": \"Telangana\" },\n  { \"id\": 25, \"label\": \"Tripura\" },\n  { \"id\": 26, \"label\": \"Uttar Pradesh\" },\n  { \"id\": 27, \"label\": \"Uttarakhand\" },\n  { \"id\": 28, \"label\": \"West Bengal\" }\n]\n\n ```\n\n---\n\n## 🧩 Field Explanation (Frontend)\n\n| Field | Type | Description |\n| --- | --- | --- |\n| id | number | State ID (use this value when submitting forms) |\n| label | string | Display name for dropdown |\n\n---\n\n## ❌ Error Scenarios\n\n### 1️⃣ Missing Authorization Token\n\n**Condition**\n\n- `Authorization` header not provided\n    \n\n**HTTP Status**\n\n```\n401 Unauthorized\n\n ```\n\n**Response**\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n---\n\n### 2️⃣ Invalid / Expired Token\n\n**Condition**\n\n- Token is invalid or expired\n    \n\n**HTTP Status**\n\n```\n401 Unauthorized\n\n ```\n\n**Response**\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n---\n\n### 3️⃣ Token Belongs to Inactive User\n\n**Condition**\n\n- User is inactive or disabled\n    \n\n**HTTP Status**\n\n```\n401 Unauthorized\n\n ```\n\n**Response**\n\n```\n{\n  \"detail\": \"User is inactive\"\n}\n\n ```\n\n---\n\n### 4️⃣ Server Error (Rare)\n\n**Condition**\n\n- Database unavailable or internal error\n    \n\n**HTTP Status**\n\n```\n500 Internal Server Error\n\n ```\n\n**Response**\n\n```\n{\n  \"detail\": \"Internal Server Error\"\n}\n\n ```\n\n---\n\n## 🔁 Frontend Usage Flow\n\n1. Call **State Dropdown API** on page load\n    \n2. Populate State dropdown using:\n    \n    - `label` → display\n        \n    - `id` → value\n        \n3. On state selection:\n    \n    - Call **District Dropdown API** using selected `state_id`\n        \n\n---\n\n## 📌 Notes for Frontend Developers\n\n- This API is **read-only**\n    \n- No pagination\n    \n- No request body\n    \n- Can be safely reused across all registration forms\n    \n- State list is centrally managed by backend\n    \n\n---\n\n## ✅ Summary\n\n✔ Authenticated GET API  \n  \n✔ Stable dropdown data  \n  \n✔ Shared across modules  \n  \n✔ Clear error handling\n\nEndFragment"
+          },
+          "response": []
+        },
+        {
+          "name": "DIstrict dropdown based on State ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MjI3OTE2LCJpYXQiOjE3NjkxNDE1MTYsImp0aSI6ImY2ODNiYjU0ZjA5YjRlYTRhYzg4OGUyNGUyYjBjMTExIiwidXNlcl9pZCI6IjIifQ.NsDySQbgmNaRWFiW7-hW8VLxuwIuCE0-VI1lhAgdOxs"
+              }
+            ],
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/dropdowns/districts/?state_id=6",
+              "protocol": "http",
+              "host": [
+                "127",
+                "0",
+                "0",
+                "1"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "dropdowns",
+                "districts",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "state_id",
+                  "value": "6"
+                }
+              ]
+            },
+            "description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/dropdowns/districts/?state_id=1' \\\r\n--header 'Authorization: Bearer YOUR_ACCESS_TOKEN'\r\n"
           },
           "response": []
         },
@@ -1471,7 +1508,12 @@
             "description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/dropdowns/districts/?state_id=1' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>'\r\n"
           },
           "response": []
-        },
+        }
+      ]
+    },
+    {
+      "name": "Module Management",
+      "item": [
         {
           "name": "Create Account Registration",
           "request": {
@@ -1479,7 +1521,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NjMzODYwLCJpYXQiOjE3Njg1NDc0NjAsImp0aSI6IjNlYjE4OGUxNTQyNjQ2OTU5MDJhOTlmYzZkMjRkZDA1IiwidXNlcl9pZCI6IjMifQ.CRHqtxm4a2_WxJiUbS2WV5C_y1GToLRNTNskO0mThfw"
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MTU4Njc3LCJpYXQiOjE3NjkwNzIyNzcsImp0aSI6Ijk5ZGI4MjAwMGZlNDQ4MzRhOTYzY2JjNzQwZGNjYjlmIiwidXNlcl9pZCI6IjIifQ.Aw5zTadlypTJB6n5fGNaRNZi7FBRcSWU_MqfiDyI8E0"
               }
             ],
             "body": {
@@ -1523,7 +1565,7 @@
                 {
                   "type": "file",
                   "key": "aadhar_document",
-                  "src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+                  "src": "/C:/Users/desk6/Downloads/Mapwala_MIS.pdf"
                 },
                 {
                   "type": "text",
@@ -1533,7 +1575,7 @@
                 {
                   "type": "file",
                   "key": "pan_document",
-                  "src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+                  "src": "/C:/Users/desk6/Downloads/Mapwala_MIS.pdf"
                 }
               ]
             },
@@ -1565,7 +1607,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NjMzODYwLCJpYXQiOjE3Njg1NDc0NjAsImp0aSI6IjNlYjE4OGUxNTQyNjQ2OTU5MDJhOTlmYzZkMjRkZDA1IiwidXNlcl9pZCI6IjMifQ.CRHqtxm4a2_WxJiUbS2WV5C_y1GToLRNTNskO0mThfw"
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MjI3OTE2LCJpYXQiOjE3NjkxNDE1MTYsImp0aSI6ImY2ODNiYjU0ZjA5YjRlYTRhYzg4OGUyNGUyYjBjMTExIiwidXNlcl9pZCI6IjIifQ.NsDySQbgmNaRWFiW7-hW8VLxuwIuCE0-VI1lhAgdOxs"
               }
             ],
             "body": {
@@ -1609,7 +1651,7 @@
                 {
                   "type": "file",
                   "key": "aadhar_document",
-                  "src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+                  "src": "/C:/Users/desk6/Downloads/Mapwala_MIS.pdf"
                 },
                 {
                   "type": "text",
@@ -1619,7 +1661,7 @@
                 {
                   "type": "file",
                   "key": "pan_document",
-                  "src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+                  "src": "/C:/Users/desk6/Downloads/Mapwala_MIS.pdf"
                 }
               ]
             },
@@ -1651,7 +1693,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NjMzODYwLCJpYXQiOjE3Njg1NDc0NjAsImp0aSI6IjNlYjE4OGUxNTQyNjQ2OTU5MDJhOTlmYzZkMjRkZDA1IiwidXNlcl9pZCI6IjMifQ.CRHqtxm4a2_WxJiUbS2WV5C_y1GToLRNTNskO0mThfw"
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MjI3OTE2LCJpYXQiOjE3NjkxNDE1MTYsImp0aSI6ImY2ODNiYjU0ZjA5YjRlYTRhYzg4OGUyNGUyYjBjMTExIiwidXNlcl9pZCI6IjIifQ.NsDySQbgmNaRWFiW7-hW8VLxuwIuCE0-VI1lhAgdOxs"
               }
             ],
             "body": {
@@ -1695,7 +1737,7 @@
                 {
                   "type": "file",
                   "key": "aadhar_document",
-                  "src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+                  "src": "/C:/Users/desk6/Downloads/Mapwala_MIS.pdf"
                 },
                 {
                   "type": "text",
@@ -1705,7 +1747,7 @@
                 {
                   "type": "file",
                   "key": "pan_document",
-                  "src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+                  "src": "/C:/Users/desk6/Downloads/Mapwala_MIS.pdf"
                 }
               ]
             },
@@ -1726,7 +1768,7 @@
                 ""
               ]
             },
-            "description": "StartFragment\n\n## Module: Store Manager Registration\n\n### API: Register Store Manager\n\n---\n\n## 🔹 Purpose\n\nThis API allows a user to **register a Store Manager** by submitting personal details and identity documents.\n\nIt is a **single-step registration form**.\n\n---\n\n## 🔐 Authentication\n\n**Required**\n\n```\nAuthorization: Bearer <ACCESS_TOKEN>\n\n ```\n\n---\n\n## 🌐 Endpoint Details\n\n| Item | Value |\n| --- | --- |\n| Method | `POST` |\n| URL | `/api/store-managers/register/` |\n| Content-Type | `multipart/form-data` |\n| Auth Required | ✅ Yes |\n\n---\n\n## 🧪 cURL (Reference)\n\n```\ncurl --location 'http://127.0.0.1:8000/api/store-managers/register/' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27; \\\n--form 'store_manager_name=Anil Sharma' \\\n--form 'phone_number=9876543210' \\\n--form 'email=store@test.com' \\\n--form 'address=Guwahati' \\\n--form 'state=1' \\\n--form 'district=5' \\\n--form 'aadhar_number=123412341234' \\\n--form 'aadhar_document=@/path/to/aadhar.pdf' \\\n--form 'pan_number=ABCDE1234F' \\\n--form 'pan_document=@/path/to/pan.pdf'\n\n ```\n\n---\n\n## 📥 Request Fields\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| store_manager_name | string | ✅ Yes | Store Manager full name |\n| phone_number | string | ✅ Yes | Contact number |\n| email | string | ✅ Yes | Email address |\n| address | string | ✅ Yes | Full address |\n| state | number | ✅ Yes | Selected state ID |\n| district | number | ✅ Yes | Selected district ID |\n| aadhar_number | string | ✅ Yes | Aadhar number |\n| aadhar_document | file | ✅ Yes | Aadhar document |\n| pan_number | string | ✅ Yes | PAN number |\n| pan_document | file | ✅ Yes | PAN document |\n\n---\n\n## 📌 File Upload Rules\n\n| Rule | Value |\n| --- | --- |\n| Max file size | **5 MB** |\n| Upload format | `multipart/form-data` |\n\n---\n\n## ✅ Success Response (201 Created)\n\n```\n{\n  \"message\": \"Store Manager registered successfully\",\n  \"store_manager_id\": 1\n}\n\n ```\n\n### Field Explanation\n\n| Field | Description |\n| --- | --- |\n| message | Success message |\n| store_manager_id | Newly created Store Manager ID |\n\n---\n\n## ❌ Error Scenarios\n\n### 1️⃣ Missing Authorization Header\n\n**HTTP Status**\n\n```\n401 Unauthorized\n\n ```\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n---\n\n### 2️⃣ Invalid / Expired Token\n\n**HTTP Status**\n\n```\n401 Unauthorized\n\n ```\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n---\n\n### 3️⃣ Missing Required Field\n\n**HTTP Status**\n\n```\n400 Bad Request\n\n ```\n\n```\n{\n  \"store_manager_name\": [\n    \"This field is required.\"\n  ]\n}\n\n ```\n\n---\n\n### 4️⃣ State–District Mismatch\n\n**HTTP Status**\n\n```\n400 Bad Request\n\n ```\n\n```\n{\n  \"district\": \"Selected district does not belong to selected state.\"\n}\n\n ```\n\n---\n\n### 5️⃣ File Size Exceeds 5 MB\n\n**HTTP Status**\n\n```\n400 Bad Request\n\n ```\n\n```\n{\n  \"aadhar_document\": [\n    \"File size must be less than or equal to 5 MB.\"\n  ]\n}\n\n ```\n\nOR\n\n```\n{\n  \"pan_document\": [\n    \"File size must be less than or equal to 5 MB.\"\n  ]\n}\n\n ```\n\n---\n\n### 6️⃣ Invalid Field Type\n\n**HTTP Status**\n\n```\n400 Bad Request\n\n ```\n\n```\n{\n  \"state\": [\n    \"Incorrect type. Expected pk value.\"\n  ]\n}\n\n ```\n\n---\n\n### 7️⃣ Server Error (Rare)\n\n**HTTP Status**\n\n```\n500 Internal Server Error\n\n ```\n\n```\n{\n  \"detail\": \"Internal Server Error\"\n}\n\n ```\n\n---\n\n## 🔁 Frontend Integration Flow\n\n1. Load **State Dropdown**\n    \n2. Load **District Dropdown** after state selection\n    \n3. Fill form fields\n    \n4. Submit using `multipart/form-data`\n    \n5. Handle success or error response\n    \n\n---\n\n## 📌 Notes for Frontend Developers\n\n- All fields are mandatory\n    \n- Max file size is **5 MB**\n    \n- Only **create** operation is supported\n    \n- No edit / delete APIs exist\n    \n- Same dropdown APIs are reused across modules\n    \n\n---\n\n## ✅ Summary\n\n✔ Auth-protected  \n  \n✔ Multipart upload  \n  \n✔ Clear validation messages  \n  \n✔ Consistent behavior across modules\n\nEndFragment"
+            "description": "## Module: Store Manager Registration\n\n### API: Register Store Manager\n\n---\n\n## 🔹 Purpose\n\nThis API allows a user to **register a Store Manager** by submitting personal details and identity documents.\n\nIt is a **single-step registration form**.\n\n---\n\n## 🔐 Authentication\n\n**Required**\n\n```\nAuthorization: Bearer <ACCESS_TOKEN>\n\n ```\n\n---\n\n## 🌐 Endpoint Details\n\n| Item | Value |\n| --- | --- |\n| Method | `POST` |\n| URL | `/api/store-managers/register/` |\n| Content-Type | `multipart/form-data` |\n| Auth Required | ✅ Yes |\n\n---\n\n## 🧪 cURL (Reference)\n\n```\ncurl --location 'http://127.0.0.1:8000/api/store-managers/register/' \\\n--header &#x27;Authorization: Bearer <ACCESS_TOKEN>&#x27; \\\n--form 'store_manager_name=Anil Sharma' \\\n--form 'phone_number=9876543210' \\\n--form 'email=store@test.com' \\\n--form 'address=Guwahati' \\\n--form 'state=1' \\\n--form 'district=5' \\\n--form 'aadhar_number=123412341234' \\\n--form 'aadhar_document=@/path/to/aadhar.pdf' \\\n--form 'pan_number=ABCDE1234F' \\\n--form 'pan_document=@/path/to/pan.pdf'\n\n ```\n\n---\n\n## 📥 Request Fields\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| store_manager_name | string | ✅ Yes | Store Manager full name |\n| phone_number | string | ✅ Yes | Contact number |\n| email | string | ✅ Yes | Email address |\n| address | string | ✅ Yes | Full address |\n| state | number | ✅ Yes | Selected state ID |\n| district | number | ✅ Yes | Selected district ID |\n| aadhar_number | string | ✅ Yes | Aadhar number |\n| aadhar_document | file | ✅ Yes | Aadhar document |\n| pan_number | string | ✅ Yes | PAN number |\n| pan_document | file | ✅ Yes | PAN document |\n\n---\n\n## 📌 File Upload Rules\n\n| Rule | Value |\n| --- | --- |\n| Max file size | **5 MB** |\n| Upload format | `multipart/form-data` |\n\n---\n\n## ✅ Success Response (201 Created)\n\n```\n{\n  \"message\": \"Store Manager registered successfully\",\n  \"store_manager_id\": 1\n}\n\n ```\n\n### Field Explanation\n\n| Field | Description |\n| --- | --- |\n| message | Success message |\n| store_manager_id | Newly created Store Manager ID |\n\n---\n\n## ❌ Error Scenarios\n\n### 1️⃣ Missing Authorization Header\n\n**HTTP Status**\n\n```\n401 Unauthorized\n\n ```\n\n```\n{\n  \"detail\": \"Authentication credentials were not provided.\"\n}\n\n ```\n\n---\n\n### 2️⃣ Invalid / Expired Token\n\n**HTTP Status**\n\n```\n401 Unauthorized\n\n ```\n\n```\n{\n  \"detail\": \"Given token not valid for any token type\"\n}\n\n ```\n\n---\n\n### 3️⃣ Missing Required Field\n\n**HTTP Status**\n\n```\n400 Bad Request\n\n ```\n\n```\n{\n  \"store_manager_name\": [\n    \"This field is required.\"\n  ]\n}\n\n ```\n\n---\n\n### 4️⃣ State–District Mismatch\n\n**HTTP Status**\n\n```\n400 Bad Request\n\n ```\n\n```\n{\n  \"district\": \"Selected district does not belong to selected state.\"\n}\n\n ```\n\n---\n\n### 5️⃣ File Size Exceeds 5 MB\n\n**HTTP Status**\n\n```\n400 Bad Request\n\n ```\n\n```\n{\n  \"aadhar_document\": [\n    \"File size must be less than or equal to 5 MB.\"\n  ]\n}\n\n ```\n\nOR\n\n```\n{\n  \"pan_document\": [\n    \"File size must be less than or equal to 5 MB.\"\n  ]\n}\n\n ```\n\n---\n\n### 6️⃣ Invalid Field Type\n\n**HTTP Status**\n\n```\n400 Bad Request\n\n ```\n\n```\n{\n  \"state\": [\n    \"Incorrect type. Expected pk value.\"\n  ]\n}\n\n ```\n\n---\n\n### 7️⃣ Server Error (Rare)\n\n**HTTP Status**\n\n```\n500 Internal Server Error\n\n ```\n\n```\n{\n  \"detail\": \"Internal Server Error\"\n}\n\n ```\n\n---\n\n## 🔁 Frontend Integration Flow\n\n1. Load **State Dropdown**\n    \n2. Load **District Dropdown** after state selection\n    \n3. Fill form fields\n    \n4. Submit using `multipart/form-data`\n    \n5. Handle success or error response\n    \n\n---\n\n## 📌 Notes for Frontend Developers\n\n- All fields are mandatory\n    \n- Max file size is **5 MB**\n    \n- Only **create** operation is supported\n    \n- No edit / delete APIs exist\n    \n- Same dropdown APIs are reused across modules\n    \n\n---\n\n## ✅ Summary\n\n✔ Auth-protected\n\n✔ Multipart upload\n\n✔ Clear validation messages\n\n✔ Consistent behavior across modules"
           },
           "response": []
         },
@@ -1737,7 +1779,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NjMzODYwLCJpYXQiOjE3Njg1NDc0NjAsImp0aSI6IjNlYjE4OGUxNTQyNjQ2OTU5MDJhOTlmYzZkMjRkZDA1IiwidXNlcl9pZCI6IjMifQ.CRHqtxm4a2_WxJiUbS2WV5C_y1GToLRNTNskO0mThfw"
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MjI3OTE2LCJpYXQiOjE3NjkxNDE1MTYsImp0aSI6ImY2ODNiYjU0ZjA5YjRlYTRhYzg4OGUyNGUyYjBjMTExIiwidXNlcl9pZCI6IjIifQ.NsDySQbgmNaRWFiW7-hW8VLxuwIuCE0-VI1lhAgdOxs"
               }
             ],
             "body": {
@@ -1781,7 +1823,7 @@
                 {
                   "type": "file",
                   "key": "aadhar_document",
-                  "src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+                  "src": "/C:/Users/desk6/Downloads/Mapwala_MIS.pdf"
                 },
                 {
                   "type": "text",
@@ -1791,7 +1833,7 @@
                 {
                   "type": "file",
                   "key": "pan_document",
-                  "src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+                  "src": "/C:/Users/desk6/Downloads/Mapwala_MIS.pdf"
                 }
               ]
             },
@@ -1823,7 +1865,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NjMzODYwLCJpYXQiOjE3Njg1NDc0NjAsImp0aSI6IjNlYjE4OGUxNTQyNjQ2OTU5MDJhOTlmYzZkMjRkZDA1IiwidXNlcl9pZCI6IjMifQ.CRHqtxm4a2_WxJiUbS2WV5C_y1GToLRNTNskO0mThfw"
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MjI3OTE2LCJpYXQiOjE3NjkxNDE1MTYsImp0aSI6ImY2ODNiYjU0ZjA5YjRlYTRhYzg4OGUyNGUyYjBjMTExIiwidXNlcl9pZCI6IjIifQ.NsDySQbgmNaRWFiW7-hW8VLxuwIuCE0-VI1lhAgdOxs"
               }
             ],
             "body": {
@@ -1867,7 +1909,7 @@
                 {
                   "type": "file",
                   "key": "aadhar_document",
-                  "src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+                  "src": "/C:/Users/desk6/Downloads/Mapwala_MIS.pdf"
                 },
                 {
                   "type": "text",
@@ -1877,7 +1919,7 @@
                 {
                   "type": "file",
                   "key": "pan_document",
-                  "src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+                  "src": "/C:/Users/desk6/Downloads/Mapwala_MIS.pdf"
                 }
               ]
             },
@@ -1908,27 +1950,126 @@
       "name": "Create Device",
       "item": [
         {
+          "name": "Device – Unit of Measure Dropdown",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MjI3OTE2LCJpYXQiOjE3NjkxNDE1MTYsImp0aSI6ImY2ODNiYjU0ZjA5YjRlYTRhYzg4OGUyNGUyYjBjMTExIiwidXNlcl9pZCI6IjIifQ.NsDySQbgmNaRWFiW7-hW8VLxuwIuCE0-VI1lhAgdOxs"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/devices/dropdowns/unit-of-measure/",
+              "protocol": "http",
+              "host": [
+                "127",
+                "0",
+                "0",
+                "1"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "devices",
+                "dropdowns",
+                "unit-of-measure",
+                ""
+              ]
+            },
+            "description": "Generated from cURL: curl --location --request GET 'http://127.0.0.1:8000/api/devices/dropdowns/unit-of-measure/' \\\r\n--header 'Authorization: Bearer YOUR_ACCESS_TOKEN' \\\r\n--header 'Accept: application/json'\r\n"
+          },
+          "response": []
+        },
+        {
+          "name": "Device – State of Supply Dropdown",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MjI3OTE2LCJpYXQiOjE3NjkxNDE1MTYsImp0aSI6ImY2ODNiYjU0ZjA5YjRlYTRhYzg4OGUyNGUyYjBjMTExIiwidXNlcl9pZCI6IjIifQ.NsDySQbgmNaRWFiW7-hW8VLxuwIuCE0-VI1lhAgdOxs"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://127.0.0.1:8000/api/devices/dropdowns/state-of-supply/",
+              "protocol": "http",
+              "host": [
+                "127",
+                "0",
+                "0",
+                "1"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "devices",
+                "dropdowns",
+                "state-of-supply",
+                ""
+              ]
+            },
+            "description": "Generated from cURL: curl --location --request GET 'http://127.0.0.1:8000/api/devices/dropdowns/state-of-supply/' \\\r\n--header 'Authorization: Bearer YOUR_ACCESS_TOKEN' \\\r\n--header 'Accept: application/json'\r\n"
+          },
+          "response": []
+        },
+        {
           "name": "STEP 1 – Device Information",
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MDQyNTQwLCJpYXQiOjE3Njc5NTYxNDAsImp0aSI6ImJmYjVlMjM2YzczODRkMDhiNjhlZTE4ODI2YzkxMzY5IiwidXNlcl9pZCI6IjIifQ.hnIbH5w2p4EQYkdprPQF0yUUHcRBU1C8Gnfy4yrm9uc"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MjI3OTE2LCJpYXQiOjE3NjkxNDE1MTYsImp0aSI6ImY2ODNiYjU0ZjA5YjRlYTRhYzg4OGUyNGUyYjBjMTExIiwidXNlcl9pZCI6IjIifQ.NsDySQbgmNaRWFiW7-hW8VLxuwIuCE0-VI1lhAgdOxs"
               }
             ],
             "body": {
-              "mode": "raw",
-              "raw": "{\r\n  \"make\": \"ABC\",\r\n  \"model\": \"XYZ-100\",\r\n  \"mrp\": 200,\r\n  \"unit_of_measure\": \"Kilograms (KG)\",\r\n  \"version\": \"v1\",\r\n  \"variant\": \"standard\",\r\n  \"state_of_supply\": \"Raw Material\"\r\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "type": "text",
+                  "key": "make",
+                  "value": "DEF"
+                },
+                {
+                  "type": "text",
+                  "key": "model",
+                  "value": "XYZ-100"
+                },
+                {
+                  "type": "text",
+                  "key": "mrp",
+                  "value": "200"
+                },
+                {
+                  "type": "text",
+                  "key": "unit_of_measure",
+                  "value": "KG"
+                },
+                {
+                  "type": "text",
+                  "key": "version",
+                  "value": "v1"
+                },
+                {
+                  "type": "text",
+                  "key": "variant",
+                  "value": "standard"
+                },
+                {
+                  "type": "text",
+                  "key": "state_of_supply",
+                  "value": "RAW"
                 }
-              }
+              ]
             },
             "url": {
               "raw": "http://127.0.0.1:8000/api/devices/step-1/",
@@ -1947,7 +2088,7 @@
                 ""
               ]
             },
-            "description": "StartFragment\n\n# 📘 Devices API — Step 1 (Basic Device Details)\n\n### **Create Device — Step 1**\n\nInitial step of the multi-step device creation process.  \n  \nThis endpoint stores the **basic identification and classification details** of a device.\n\n---\n\n## 🔹 **Endpoint**\n\n| Field | Value |\n| --- | --- |\n| **Method** | `POST` |\n| **URL** | `/api/devices/step-1/` |\n| **Auth** | Bearer Token (JWT) |\n| **Content-Type** | `application/json` |\n\n---\n\n## 🔹 **Headers**\n\n| Key | Value |\n| --- | --- |\n| Authorization | `Bearer` |\n| Content-Type | `application/json` |\n\n---\n\n## 🔹 **Request Body**\n\n```\n{\n  \"make\": \"ABC\",\n  \"model\": \"XYZ-100\",\n  \"mrp\": 200,\n  \"unit_of_measure\": \"Kilograms (KG)\",\n  \"version\": \"v1\",\n  \"variant\": \"standard\",\n  \"state_of_supply\": \"Raw Material\"\n}\n\n ```\n\n### **Field Descriptions**\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| make | string | ✅ | Manufacturer or brand name |\n| model | string | ✅ | Model number or code |\n| mrp | number | ✅ | Maximum Retail Price |\n| unit_of_measure | string | ✅ | Measurement unit (e.g., Kilograms, Liters, Pieces) |\n| version | string | ❌ | Version identifier |\n| variant | string | ❌ | Variant or configuration type |\n| state_of_supply | string | ✅ | Classification/state of supply |\n\n---\n\n## 🔹 **Success Response**\n\n**Status:** `200 OK` or `201 Created`\n\n```\n{\n  \"device_id\": 1,\n  \"message\": \"Step 1 completed\"\n}\n\n ```\n\n### **Response Fields**\n\n| Field | Type | Description |\n| --- | --- | --- |\n| device_id | integer | Unique ID of the newly created device |\n| message | string | Confirmation message |\n\n---\n\n## 🔹 **Usage Notes**\n\n- This is the **first step** in a multi-step device onboarding workflow.\n    \n- The returned `device_id` must be passed in subsequent steps (`step-2`, `step-3`, etc.).\n    \n- Authorization token must be valid and unexpired.\n    \n- All required fields must be present, otherwise validation errors will occur.\n    \n\n---\n\n## 🔹 **Common Error Responses**\n\n| Status | Reason | Example |\n| --- | --- | --- |\n| 400 | Validation error | Missing or invalid field |\n| 401 | Unauthorized | Token missing or expired |\n| 403 | Forbidden | Insufficient permissions |\n\n---\n\n### ✅ **Example Flow**\n\n1. Call `/step-1/` → receive `device_id`\n    \n2. Use `device_id` in `/step-2/`, `/step-3/`…\n    \n3. Complete all steps to fully register a device\n    \n\nEndFragment"
+            "description": "# 📘 Devices API — Step 1 (Basic Device Details)\n\n### **Create Device — Step 1**\n\nInitial step of the multi-step device creation process.\n\nThis endpoint stores the **basic identification and classification details** of a device.\n\n---\n\n## 🔹 **Endpoint**\n\n| Field | Value |\n| --- | --- |\n| **Method** | `POST` |\n| **URL** | `/api/devices/step-1/` |\n| **Auth** | Bearer Token (JWT) |\n| **Content-Type** | `application/json` |\n\n---\n\n## 🔹 **Headers**\n\n| Key | Value |\n| --- | --- |\n| Authorization | `Bearer` |\n| Content-Type | `application/json` |\n\n---\n\n## 🔹 **Request Body**\n\n```\n{\n  \"make\": \"ABC\",\n  \"model\": \"XYZ-100\",\n  \"mrp\": 200,\n  \"unit_of_measure\": \"Kilograms (KG)\",\n  \"version\": \"v1\",\n  \"variant\": \"standard\",\n  \"state_of_supply\": \"Raw Material\"\n}\n\n ```\n\n### **Field Descriptions**\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| make | string | ✅ | Manufacturer or brand name |\n| model | string | ✅ | Model number or code |\n| mrp | number | ✅ | Maximum Retail Price |\n| unit_of_measure | string | ✅ | Measurement unit (e.g., Kilograms, Liters, Pieces) |\n| version | string | ❌ | Version identifier |\n| variant | string | ❌ | Variant or configuration type |\n| state_of_supply | string | ✅ | Classification/state of supply |\n\n---\n\n## 🔹 **Success Response**\n\n**Status:** `200 OK` or `201 Created`\n\n```\n{\n  \"device_id\": 1,\n  \"message\": \"Step 1 completed\"\n}\n\n ```\n\n### **Response Fields**\n\n| Field | Type | Description |\n| --- | --- | --- |\n| device_id | integer | Unique ID of the newly created device |\n| message | string | Confirmation message |\n\n---\n\n## 🔹 **Usage Notes**\n\n- This is the **first step** in a multi-step device onboarding workflow.\n    \n- The returned `device_id` must be passed in subsequent steps (`step-2`, `step-3`, etc.).\n    \n- Authorization token must be valid and unexpired.\n    \n- All required fields must be present, otherwise validation errors will occur.\n    \n\n---\n\n## 🔹 **Common Error Responses**\n\n| Status | Reason | Example |\n| --- | --- | --- |\n| 400 | Validation error | Missing or invalid field |\n| 401 | Unauthorized | Token missing or expired |\n| 403 | Forbidden | Insufficient permissions |\n\n---\n\n### ✅ **Example Flow**\n\n1. Call `/step-1/` → receive `device_id`\n    \n2. Use `device_id` in `/step-2/`, `/step-3/`…\n    \n3. Complete all steps to fully register a device"
           },
           "response": []
         },
@@ -1958,7 +2099,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MDQyNTQwLCJpYXQiOjE3Njc5NTYxNDAsImp0aSI6ImJmYjVlMjM2YzczODRkMDhiNjhlZTE4ODI2YzkxMzY5IiwidXNlcl9pZCI6IjIifQ.hnIbH5w2p4EQYkdprPQF0yUUHcRBU1C8Gnfy4yrm9uc"
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MjI3OTE2LCJpYXQiOjE3NjkxNDE1MTYsImp0aSI6ImY2ODNiYjU0ZjA5YjRlYTRhYzg4OGUyNGUyYjBjMTExIiwidXNlcl9pZCI6IjIifQ.NsDySQbgmNaRWFiW7-hW8VLxuwIuCE0-VI1lhAgdOxs"
               },
               {
                 "key": "Content-Type",
@@ -1967,7 +2108,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"device_id\": 1,\r\n  \"upload_type\": \"individual\"\r\n}",
+              "raw": "{\r\n  \"device_id\": 3,\r\n  \"upload_type\": \"individual\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2002,7 +2143,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MDQyNTQwLCJpYXQiOjE3Njc5NTYxNDAsImp0aSI6ImJmYjVlMjM2YzczODRkMDhiNjhlZTE4ODI2YzkxMzY5IiwidXNlcl9pZCI6IjIifQ.hnIbH5w2p4EQYkdprPQF0yUUHcRBU1C8Gnfy4yrm9uc"
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MjI3OTE2LCJpYXQiOjE3NjkxNDE1MTYsImp0aSI6ImY2ODNiYjU0ZjA5YjRlYTRhYzg4OGUyNGUyYjBjMTExIiwidXNlcl9pZCI6IjIifQ.NsDySQbgmNaRWFiW7-hW8VLxuwIuCE0-VI1lhAgdOxs"
               },
               {
                 "key": "Content-Type",
@@ -2011,7 +2152,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"device_id\": 1,\r\n  \"components\": [\r\n    {\r\n      \"identification_mark\": \"1\",\r\n      \"description\": \"ORANGE LED\",\r\n      \"designator\": \"BLE1\",\r\n      \"footprint\": \"0805\",\r\n      \"volt\": \"30\",\r\n      \"part_no\": \"0805\",\r\n      \"part_make\": \"ABC\",\r\n      \"per_device_quantity\": 1,\r\n      \"remarks\": \"NA\"\r\n    },\r\n    {\r\n      \"identification_mark\": \"2\",\r\n      \"description\": \"RED LED\",\r\n      \"designator\": \"PWR1\",\r\n      \"footprint\": \"0805\",\r\n      \"volt\": \"25\",\r\n      \"part_no\": \"0805\",\r\n      \"part_make\": \"XYZ\",\r\n      \"per_device_quantity\": 1,\r\n      \"remarks\": \"\"\r\n    }\r\n  ]\r\n}",
+              "raw": "{\r\n  \"device_id\": 3,\r\n  \"components\": [\r\n    {\r\n      \"identification_mark\": \"1\",\r\n      \"description\": \"ORANGE LED\",\r\n      \"designator\": \"BLE1\",\r\n      \"footprint\": \"0805\",\r\n      \"volt\": \"30\",\r\n      \"part_no\": \"0805\",\r\n      \"part_make\": \"ABC\",\r\n      \"per_device_quantity\": 1,\r\n      \"remarks\": \"NA\"\r\n    },\r\n    {\r\n      \"identification_mark\": \"2\",\r\n      \"description\": \"RED LED\",\r\n      \"designator\": \"PWR1\",\r\n      \"footprint\": \"0805\",\r\n      \"volt\": \"25\",\r\n      \"part_no\": \"0805\",\r\n      \"part_make\": \"XYZ\",\r\n      \"per_device_quantity\": 1,\r\n      \"remarks\": \"\"\r\n    }\r\n  ]\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2046,7 +2187,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MDQyNTQwLCJpYXQiOjE3Njc5NTYxNDAsImp0aSI6ImJmYjVlMjM2YzczODRkMDhiNjhlZTE4ODI2YzkxMzY5IiwidXNlcl9pZCI6IjIifQ.hnIbH5w2p4EQYkdprPQF0yUUHcRBU1C8Gnfy4yrm9uc"
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MjI3OTE2LCJpYXQiOjE3NjkxNDE1MTYsImp0aSI6ImY2ODNiYjU0ZjA5YjRlYTRhYzg4OGUyNGUyYjBjMTExIiwidXNlcl9pZCI6IjIifQ.NsDySQbgmNaRWFiW7-hW8VLxuwIuCE0-VI1lhAgdOxs"
               },
               {
                 "key": "Content-Type",
@@ -2055,7 +2196,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"device_id\": 1,\r\n  \"length\": 12,\r\n  \"breadth\": 12,\r\n  \"height\": 12,\r\n  \"color\": \"Black\",\r\n  \"material\": \"Plastic\",\r\n  \"quantity\": 1,\r\n  \"make\": \"Local\",\r\n  \"part_number\": \"ENC-001\"\r\n}",
+              "raw": "{\r\n  \"device_id\": 3,\r\n  \"length\": 12,\r\n  \"breadth\": 12,\r\n  \"height\": 12,\r\n  \"color\": \"Black\",\r\n  \"material\": \"Plastic\",\r\n  \"quantity\": 1,\r\n  \"make\": \"Local\",\r\n  \"part_number\": \"ENC-001\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2090,7 +2231,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MDQyNTQwLCJpYXQiOjE3Njc5NTYxNDAsImp0aSI6ImJmYjVlMjM2YzczODRkMDhiNjhlZTE4ODI2YzkxMzY5IiwidXNlcl9pZCI6IjIifQ.hnIbH5w2p4EQYkdprPQF0yUUHcRBU1C8Gnfy4yrm9uc"
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MjI3OTE2LCJpYXQiOjE3NjkxNDE1MTYsImp0aSI6ImY2ODNiYjU0ZjA5YjRlYTRhYzg4OGUyNGUyYjBjMTExIiwidXNlcl9pZCI6IjIifQ.NsDySQbgmNaRWFiW7-hW8VLxuwIuCE0-VI1lhAgdOxs"
               },
               {
                 "key": "Content-Type",
@@ -2099,7 +2240,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"device_id\": 1,\r\n  \"number_of_wires\": 12,\r\n  \"specification\": \"Standard wiring\",\r\n  \"make\": \"Local\",\r\n  \"part_number\": \"WH-01\",\r\n  \"connectors\": [\r\n    {\r\n      \"connector_name\": \"Connector A\",\r\n      \"number_of_pins\": 2,\r\n      \"wire_colors\": \"Red,Black\"\r\n    },\r\n    {\r\n      \"connector_name\": \"Connector B\",\r\n      \"number_of_pins\": 4,\r\n      \"wire_colors\": \"Blue,Green\"\r\n    }\r\n  ]\r\n}",
+              "raw": "{\r\n  \"device_id\": 3,\r\n  \"number_of_wires\": 12,\r\n  \"specification\": \"Standard wiring\",\r\n  \"make\": \"Local\",\r\n  \"part_number\": \"WH-01\",\r\n  \"connectors\": [\r\n    {\r\n      \"connector_name\": \"Connector A\",\r\n      \"number_of_pins\": 2,\r\n      \"wire_colors\": \"Red,Black\"\r\n    },\r\n    {\r\n      \"connector_name\": \"Connector B\",\r\n      \"number_of_pins\": 4,\r\n      \"wire_colors\": \"Blue,Green\"\r\n    }\r\n  ]\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2134,7 +2275,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MDQyNTQwLCJpYXQiOjE3Njc5NTYxNDAsImp0aSI6ImJmYjVlMjM2YzczODRkMDhiNjhlZTE4ODI2YzkxMzY5IiwidXNlcl9pZCI6IjIifQ.hnIbH5w2p4EQYkdprPQF0yUUHcRBU1C8Gnfy4yrm9uc"
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MjI3OTE2LCJpYXQiOjE3NjkxNDE1MTYsImp0aSI6ImY2ODNiYjU0ZjA5YjRlYTRhYzg4OGUyNGUyYjBjMTExIiwidXNlcl9pZCI6IjIifQ.NsDySQbgmNaRWFiW7-hW8VLxuwIuCE0-VI1lhAgdOxs"
               },
               {
                 "key": "Content-Type",
@@ -2143,7 +2284,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"device_id\": 1,\r\n  \"capacity\": \"850 mAh\",\r\n  \"length\": 132,\r\n  \"breadth\": 123,\r\n  \"height\": 123,\r\n  \"make\": \"Panasonic\",\r\n  \"part_number\": \"BAT-850\"\r\n}",
+              "raw": "{\r\n  \"device_id\": 3,\r\n  \"capacity\": \"850 mAh\",\r\n  \"length\": 132,\r\n  \"breadth\": 123,\r\n  \"height\": 123,\r\n  \"make\": \"Panasonic\",\r\n  \"part_number\": \"BAT-850\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2178,7 +2319,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MDQyNTQwLCJpYXQiOjE3Njc5NTYxNDAsImp0aSI6ImJmYjVlMjM2YzczODRkMDhiNjhlZTE4ODI2YzkxMzY5IiwidXNlcl9pZCI6IjIifQ.hnIbH5w2p4EQYkdprPQF0yUUHcRBU1C8Gnfy4yrm9uc"
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MjI3OTE2LCJpYXQiOjE3NjkxNDE1MTYsImp0aSI6ImY2ODNiYjU0ZjA5YjRlYTRhYzg4OGUyNGUyYjBjMTExIiwidXNlcl9pZCI6IjIifQ.NsDySQbgmNaRWFiW7-hW8VLxuwIuCE0-VI1lhAgdOxs"
               },
               {
                 "key": "Content-Type",
@@ -2187,7 +2328,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"device_id\": 1,\r\n  \"total_length\": 1243,\r\n  \"quantity_per_set\": 1,\r\n  \"make\": \"Local\",\r\n  \"part_number\": \"SOS-01\"\r\n}",
+              "raw": "{\r\n  \"device_id\": 3,\r\n  \"total_length\": 1243,\r\n  \"quantity_per_set\": 1,\r\n  \"make\": \"Local\",\r\n  \"part_number\": \"SOS-01\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2222,7 +2363,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MDQyNTQwLCJpYXQiOjE3Njc5NTYxNDAsImp0aSI6ImJmYjVlMjM2YzczODRkMDhiNjhlZTE4ODI2YzkxMzY5IiwidXNlcl9pZCI6IjIifQ.hnIbH5w2p4EQYkdprPQF0yUUHcRBU1C8Gnfy4yrm9uc"
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MjI3OTE2LCJpYXQiOjE3NjkxNDE1MTYsImp0aSI6ImY2ODNiYjU0ZjA5YjRlYTRhYzg4OGUyNGUyYjBjMTExIiwidXNlcl9pZCI6IjIifQ.NsDySQbgmNaRWFiW7-hW8VLxuwIuCE0-VI1lhAgdOxs"
               }
             ],
             "body": {
@@ -2231,7 +2372,7 @@
                 {
                   "type": "text",
                   "key": "device_id",
-                  "value": "1"
+                  "value": "3"
                 },
                 {
                   "type": "text",
@@ -2256,7 +2397,7 @@
                 {
                   "type": "file",
                   "key": "stickers[0][file]",
-                  "src": "/C:/Users/desk6/Pictures/Screenshots/Screenshot 2026-01-05 113820.png"
+                  "src": "/C:/Users/desk6/Downloads/Mapwala_MIS.pdf"
                 },
                 {
                   "type": "text",
@@ -2298,7 +2439,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MDQyNTQwLCJpYXQiOjE3Njc5NTYxNDAsImp0aSI6ImJmYjVlMjM2YzczODRkMDhiNjhlZTE4ODI2YzkxMzY5IiwidXNlcl9pZCI6IjIifQ.hnIbH5w2p4EQYkdprPQF0yUUHcRBU1C8Gnfy4yrm9uc"
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MjI3OTE2LCJpYXQiOjE3NjkxNDE1MTYsImp0aSI6ImY2ODNiYjU0ZjA5YjRlYTRhYzg4OGUyNGUyYjBjMTExIiwidXNlcl9pZCI6IjIifQ.NsDySQbgmNaRWFiW7-hW8VLxuwIuCE0-VI1lhAgdOxs"
               }
             ],
             "body": {
@@ -2307,12 +2448,12 @@
                 {
                   "type": "text",
                   "key": "device_id",
-                  "value": "1"
+                  "value": "3"
                 },
                 {
                   "type": "file",
                   "key": "file",
-                  "src": "/C:/Users/desk6/Downloads/git_cheat_sheet.pdf"
+                  "src": "/C:/Users/desk6/Downloads/Mapwala_MIS.pdf"
                 }
               ]
             },
@@ -2344,7 +2485,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4MDQyNTQwLCJpYXQiOjE3Njc5NTYxNDAsImp0aSI6ImJmYjVlMjM2YzczODRkMDhiNjhlZTE4ODI2YzkxMzY5IiwidXNlcl9pZCI6IjIifQ.hnIbH5w2p4EQYkdprPQF0yUUHcRBU1C8Gnfy4yrm9uc"
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MjI3OTE2LCJpYXQiOjE3NjkxNDE1MTYsImp0aSI6ImY2ODNiYjU0ZjA5YjRlYTRhYzg4OGUyNGUyYjBjMTExIiwidXNlcl9pZCI6IjIifQ.NsDySQbgmNaRWFiW7-hW8VLxuwIuCE0-VI1lhAgdOxs"
               },
               {
                 "key": "Content-Type",
@@ -2353,7 +2494,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"device_id\": 1,\r\n  \"accessories\": [\r\n    {\r\n      \"name\": \"Charging Cable\",\r\n      \"quantity\": 1,\r\n      \"specifications\": \"USB Type-C\",\r\n      \"description\": \"Fast charging cable\"\r\n    }\r\n  ]\r\n}",
+              "raw": "{\r\n  \"device_id\": 3,\r\n  \"accessories\": [\r\n    {\r\n      \"name\": \"Charging Cable\",\r\n      \"quantity\": 1,\r\n      \"specifications\": \"USB Type-C\",\r\n      \"description\": \"Fast charging cable\"\r\n    }\r\n  ]\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3122,7 +3263,7 @@
                 "header": [
                   {
                     "key": "Authorization",
-                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NDUwNDc0LCJpYXQiOjE3NjgzNjQwNzQsImp0aSI6Ijc4MjU4MzNmNzAzNDQ3ODJiNmY4ODk3NjIyNmE1NzcwIiwidXNlcl9pZCI6IjMifQ.lmCkI3BEgbNCL-cU2I4mpEFBzq5xe5Tlk9YMw8Jiilk"
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MTU4Njc3LCJpYXQiOjE3NjkwNzIyNzcsImp0aSI6Ijk5ZGI4MjAwMGZlNDQ4MzRhOTYzY2JjNzQwZGNjYjlmIiwidXNlcl9pZCI6IjIifQ.Aw5zTadlypTJB6n5fGNaRNZi7FBRcSWU_MqfiDyI8E0"
                   },
                   {
                     "key": "Content-Type",
@@ -3166,7 +3307,7 @@
                 "header": [
                   {
                     "key": "Authorization",
-                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NDUwNDc0LCJpYXQiOjE3NjgzNjQwNzQsImp0aSI6Ijc4MjU4MzNmNzAzNDQ3ODJiNmY4ODk3NjIyNmE1NzcwIiwidXNlcl9pZCI6IjMifQ.lmCkI3BEgbNCL-cU2I4mpEFBzq5xe5Tlk9YMw8Jiilk"
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MTU4Njc3LCJpYXQiOjE3NjkwNzIyNzcsImp0aSI6Ijk5ZGI4MjAwMGZlNDQ4MzRhOTYzY2JjNzQwZGNjYjlmIiwidXNlcl9pZCI6IjIifQ.Aw5zTadlypTJB6n5fGNaRNZi7FBRcSWU_MqfiDyI8E0"
                   },
                   {
                     "key": "Content-Type",
@@ -3175,7 +3316,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\r\n  \"rfq_id\": 5,\r\n  \"bom_parts\": [\"PCB-001\", \"GPS-001\"],\r\n  \"components\": [\"Enclosure\", \"Wire Harness\"],\r\n  \"services\": [\"PCB Assembly\"]\r\n}",
+                  "raw": "{\r\n  \"rfq_id\": 2,\r\n  \"bom_parts\": [\"PCB-001\", \"GPS-001\"],\r\n  \"components\": [\"Enclosure\", \"Wire Harness\"],\r\n  \"services\": [\"PCB Assembly\"]\r\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -3254,7 +3395,7 @@
                 "header": [
                   {
                     "key": "Authorization",
-                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NDUwNDc0LCJpYXQiOjE3NjgzNjQwNzQsImp0aSI6Ijc4MjU4MzNmNzAzNDQ3ODJiNmY4ODk3NjIyNmE1NzcwIiwidXNlcl9pZCI6IjMifQ.lmCkI3BEgbNCL-cU2I4mpEFBzq5xe5Tlk9YMw8Jiilk"
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MTU4Njc3LCJpYXQiOjE3NjkwNzIyNzcsImp0aSI6Ijk5ZGI4MjAwMGZlNDQ4MzRhOTYzY2JjNzQwZGNjYjlmIiwidXNlcl9pZCI6IjIifQ.Aw5zTadlypTJB6n5fGNaRNZi7FBRcSWU_MqfiDyI8E0"
                   }
                 ],
                 "url": {
@@ -3285,7 +3426,7 @@
                 "header": [
                   {
                     "key": "Authorization",
-                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NDUwNDc0LCJpYXQiOjE3NjgzNjQwNzQsImp0aSI6Ijc4MjU4MzNmNzAzNDQ3ODJiNmY4ODk3NjIyNmE1NzcwIiwidXNlcl9pZCI6IjMifQ.lmCkI3BEgbNCL-cU2I4mpEFBzq5xe5Tlk9YMw8Jiilk"
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MTU4Njc3LCJpYXQiOjE3NjkwNzIyNzcsImp0aSI6Ijk5ZGI4MjAwMGZlNDQ4MzRhOTYzY2JjNzQwZGNjYjlmIiwidXNlcl9pZCI6IjIifQ.Aw5zTadlypTJB6n5fGNaRNZi7FBRcSWU_MqfiDyI8E0"
                   }
                 ],
                 "url": {
@@ -3316,7 +3457,7 @@
                 "header": [
                   {
                     "key": "Authorization",
-                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NDUwNDc0LCJpYXQiOjE3NjgzNjQwNzQsImp0aSI6Ijc4MjU4MzNmNzAzNDQ3ODJiNmY4ODk3NjIyNmE1NzcwIiwidXNlcl9pZCI6IjMifQ.lmCkI3BEgbNCL-cU2I4mpEFBzq5xe5Tlk9YMw8Jiilk"
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MTU4Njc3LCJpYXQiOjE3NjkwNzIyNzcsImp0aSI6Ijk5ZGI4MjAwMGZlNDQ4MzRhOTYzY2JjNzQwZGNjYjlmIiwidXNlcl9pZCI6IjIifQ.Aw5zTadlypTJB6n5fGNaRNZi7FBRcSWU_MqfiDyI8E0"
                   }
                 ],
                 "url": {
@@ -3347,7 +3488,7 @@
                 "header": [
                   {
                     "key": "Authorization",
-                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY4NDUwNDc0LCJpYXQiOjE3NjgzNjQwNzQsImp0aSI6Ijc4MjU4MzNmNzAzNDQ3ODJiNmY4ODk3NjIyNmE1NzcwIiwidXNlcl9pZCI6IjMifQ.lmCkI3BEgbNCL-cU2I4mpEFBzq5xe5Tlk9YMw8Jiilk"
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MTU4Njc3LCJpYXQiOjE3NjkwNzIyNzcsImp0aSI6Ijk5ZGI4MjAwMGZlNDQ4MzRhOTYzY2JjNzQwZGNjYjlmIiwidXNlcl9pZCI6IjIifQ.Aw5zTadlypTJB6n5fGNaRNZi7FBRcSWU_MqfiDyI8E0"
                   }
                 ],
                 "url": {
@@ -6227,6 +6368,584 @@
               "response": []
             }
           ]
+        }
+      ]
+    },
+    {
+      "name": "View RFQ",
+      "item": [
+        {
+          "name": "List All RFQs (Default)",
+          "item": [
+            {
+              "name": "UI: Initial RFQ listing",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MTU4Njc3LCJpYXQiOjE3NjkwNzIyNzcsImp0aSI6Ijk5ZGI4MjAwMGZlNDQ4MzRhOTYzY2JjNzQwZGNjYjlmIiwidXNlcl9pZCI6IjIifQ.Aw5zTadlypTJB6n5fGNaRNZi7FBRcSWU_MqfiDyI8E0"
+                  }
+                ],
+                "url": {
+                  "raw": "http://127.0.0.1:8000/api/rfq/",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "rfq",
+                    ""
+                  ]
+                },
+                "description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/rfq/' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>'\r\n"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Status Filter (Dropdown)",
+          "item": [
+            {
+              "name": "Pending RFQs",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MTU4Njc3LCJpYXQiOjE3NjkwNzIyNzcsImp0aSI6Ijk5ZGI4MjAwMGZlNDQ4MzRhOTYzY2JjNzQwZGNjYjlmIiwidXNlcl9pZCI6IjIifQ.Aw5zTadlypTJB6n5fGNaRNZi7FBRcSWU_MqfiDyI8E0"
+                  }
+                ],
+                "url": {
+                  "raw": "http://127.0.0.1:8000/api/rfq/?status=pending",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "rfq",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "pending"
+                    }
+                  ]
+                },
+                "description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/rfq/?status=pending' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>'\r\n"
+              },
+              "response": []
+            },
+            {
+              "name": "Rejected RFQs",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MTU4Njc3LCJpYXQiOjE3NjkwNzIyNzcsImp0aSI6Ijk5ZGI4MjAwMGZlNDQ4MzRhOTYzY2JjNzQwZGNjYjlmIiwidXNlcl9pZCI6IjIifQ.Aw5zTadlypTJB6n5fGNaRNZi7FBRcSWU_MqfiDyI8E0"
+                  }
+                ],
+                "url": {
+                  "raw": "http://127.0.0.1:8000/api/rfq/?status=rejected",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "rfq",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "rejected"
+                    }
+                  ]
+                },
+                "description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/rfq/?status=rejected' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>'\r\n"
+              },
+              "response": []
+            },
+            {
+              "name": "All Status",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MTU4Njc3LCJpYXQiOjE3NjkwNzIyNzcsImp0aSI6Ijk5ZGI4MjAwMGZlNDQ4MzRhOTYzY2JjNzQwZGNjYjlmIiwidXNlcl9pZCI6IjIifQ.Aw5zTadlypTJB6n5fGNaRNZi7FBRcSWU_MqfiDyI8E0"
+                  }
+                ],
+                "url": {
+                  "raw": "http://127.0.0.1:8000/api/rfq/?status=all",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "rfq",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "all"
+                    }
+                  ]
+                },
+                "description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/rfq/?status=all' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>'\r\n"
+              },
+              "response": []
+            },
+            {
+              "name": "Quoted RFQs",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MTU4Njc3LCJpYXQiOjE3NjkwNzIyNzcsImp0aSI6Ijk5ZGI4MjAwMGZlNDQ4MzRhOTYzY2JjNzQwZGNjYjlmIiwidXNlcl9pZCI6IjIifQ.Aw5zTadlypTJB6n5fGNaRNZi7FBRcSWU_MqfiDyI8E0"
+                  }
+                ],
+                "url": {
+                  "raw": "http://127.0.0.1:8000/api/rfq/?status=quoted",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "rfq",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "quoted"
+                    }
+                  ]
+                },
+                "description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/rfq/?status=quoted' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>'\r\n"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Vendor Filter (Dropdown)",
+          "item": [
+            {
+              "name": "RFQs for a Specific Vendor",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MTU4Njc3LCJpYXQiOjE3NjkwNzIyNzcsImp0aSI6Ijk5ZGI4MjAwMGZlNDQ4MzRhOTYzY2JjNzQwZGNjYjlmIiwidXNlcl9pZCI6IjIifQ.Aw5zTadlypTJB6n5fGNaRNZi7FBRcSWU_MqfiDyI8E0"
+                  }
+                ],
+                "url": {
+                  "raw": "http://127.0.0.1:8000/api/rfq/?vendor=AutoTech%20Systems",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "rfq",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "vendor",
+                      "value": "AutoTech%20Systems"
+                    }
+                  ]
+                },
+                "description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/rfq/?vendor=AutoTech%20Systems' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>'\r\n"
+              },
+              "response": []
+            },
+            {
+              "name": "Vendor + Status Combined",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MTU4Njc3LCJpYXQiOjE3NjkwNzIyNzcsImp0aSI6Ijk5ZGI4MjAwMGZlNDQ4MzRhOTYzY2JjNzQwZGNjYjlmIiwidXNlcl9pZCI6IjIifQ.Aw5zTadlypTJB6n5fGNaRNZi7FBRcSWU_MqfiDyI8E0"
+                  }
+                ],
+                "url": {
+                  "raw": "http://127.0.0.1:8000/api/rfq/?vendor=NavTech%20Industries&status=quoted",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "rfq",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "vendor",
+                      "value": "NavTech%20Industries"
+                    },
+                    {
+                      "key": "status",
+                      "value": "quoted"
+                    }
+                  ]
+                },
+                "description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/rfq/?vendor=NavTech%20Industries&status=quoted' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>'\r\n"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Search Bar (Top Search Input)",
+          "item": [
+            {
+              "name": "Search by RFQ Number",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MTU4Njc3LCJpYXQiOjE3NjkwNzIyNzcsImp0aSI6Ijk5ZGI4MjAwMGZlNDQ4MzRhOTYzY2JjNzQwZGNjYjlmIiwidXNlcl9pZCI6IjIifQ.Aw5zTadlypTJB6n5fGNaRNZi7FBRcSWU_MqfiDyI8E0"
+                  }
+                ],
+                "url": {
+                  "raw": "http://127.0.0.1:8000/api/rfq/?search=RFQ-2024-001",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "rfq",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "search",
+                      "value": "RFQ-2024-001"
+                    }
+                  ]
+                },
+                "description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/rfq/?search=RFQ-2024-001' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>'\r\n"
+              },
+              "response": []
+            },
+            {
+              "name": "Search by Device Name",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MTU4Njc3LCJpYXQiOjE3NjkwNzIyNzcsImp0aSI6Ijk5ZGI4MjAwMGZlNDQ4MzRhOTYzY2JjNzQwZGNjYjlmIiwidXNlcl9pZCI6IjIifQ.Aw5zTadlypTJB6n5fGNaRNZi7FBRcSWU_MqfiDyI8E0"
+                  }
+                ],
+                "url": {
+                  "raw": "http://127.0.0.1:8000/api/rfq/?search=GPS",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "rfq",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "search",
+                      "value": "GPS"
+                    }
+                  ]
+                },
+                "description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/rfq/?search=GPS' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>'\r\n"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Combined Filters (Real UI Scenario)",
+          "item": [
+            {
+              "name": "Vendor + Status + Search",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MTU4Njc3LCJpYXQiOjE3NjkwNzIyNzcsImp0aSI6Ijk5ZGI4MjAwMGZlNDQ4MzRhOTYzY2JjNzQwZGNjYjlmIiwidXNlcl9pZCI6IjIifQ.Aw5zTadlypTJB6n5fGNaRNZi7FBRcSWU_MqfiDyI8E0"
+                  }
+                ],
+                "url": {
+                  "raw": "http://127.0.0.1:8000/api/rfq/?vendor=SensorTech%20Corp&status=pending&search=Tracker",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "rfq",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "vendor",
+                      "value": "SensorTech%20Corp"
+                    },
+                    {
+                      "key": "status",
+                      "value": "pending"
+                    },
+                    {
+                      "key": "search",
+                      "value": "Tracker"
+                    }
+                  ]
+                },
+                "description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/rfq/?vendor=SensorTech%20Corp&status=pending&search=Tracker' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>'\r\n"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Pagination",
+          "item": [
+            {
+              "name": "Page 1",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MTU4Njc3LCJpYXQiOjE3NjkwNzIyNzcsImp0aSI6Ijk5ZGI4MjAwMGZlNDQ4MzRhOTYzY2JjNzQwZGNjYjlmIiwidXNlcl9pZCI6IjIifQ.Aw5zTadlypTJB6n5fGNaRNZi7FBRcSWU_MqfiDyI8E0"
+                  }
+                ],
+                "url": {
+                  "raw": "http://127.0.0.1:8000/api/rfq/?page=1",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "rfq",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    }
+                  ]
+                },
+                "description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/rfq/?page=1' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>'\r\n"
+              },
+              "response": []
+            },
+            {
+              "name": "Page 2",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MTU4Njc3LCJpYXQiOjE3NjkwNzIyNzcsImp0aSI6Ijk5ZGI4MjAwMGZlNDQ4MzRhOTYzY2JjNzQwZGNjYjlmIiwidXNlcl9pZCI6IjIifQ.Aw5zTadlypTJB6n5fGNaRNZi7FBRcSWU_MqfiDyI8E0"
+                  }
+                ],
+                "url": {
+                  "raw": "http://127.0.0.1:8000/api/rfq/?page=2",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "rfq",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "2"
+                    }
+                  ]
+                },
+                "description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/rfq/?page=2' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>'\r\n"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "RFQ Detail Page",
+          "item": [
+            {
+              "name": "View RFQ Details Modal",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MTU4Njc3LCJpYXQiOjE3NjkwNzIyNzcsImp0aSI6Ijk5ZGI4MjAwMGZlNDQ4MzRhOTYzY2JjNzQwZGNjYjlmIiwidXNlcl9pZCI6IjIifQ.Aw5zTadlypTJB6n5fGNaRNZi7FBRcSWU_MqfiDyI8E0"
+                  }
+                ],
+                "url": {
+                  "raw": "http://127.0.0.1:8000/api/rfq/1/",
+                  "protocol": "http",
+                  "host": [
+                    "127",
+                    "0",
+                    "0",
+                    "1"
+                  ],
+                  "port": "8000",
+                  "path": [
+                    "api",
+                    "rfq",
+                    "1",
+                    ""
+                  ]
+                },
+                "description": "Generated from cURL: curl --location 'http://127.0.0.1:8000/api/rfq/1/' \\\r\n--header 'Authorization: Bearer <ACCESS_TOKEN>'\r\n"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "http://localhost:8000/api/rfq/12/",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MjI3OTE2LCJpYXQiOjE3NjkxNDE1MTYsImp0aSI6ImY2ODNiYjU0ZjA5YjRlYTRhYzg4OGUyNGUyYjBjMTExIiwidXNlcl9pZCI6IjIifQ.NsDySQbgmNaRWFiW7-hW8VLxuwIuCE0-VI1lhAgdOxs"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8000/api/rfq/1/",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "rfq",
+                "1",
+                ""
+              ]
+            },
+            "description": "Generated from cURL: curl --location 'http://localhost:8000/api/rfq/12/' \\\r\n--header 'Authorization: Bearer YOUR_ACCESS_TOKEN'\r\n"
+          },
+          "response": []
+        },
+        {
+          "name": "http://localhost:8000/api/quotations/create/",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzY5MTU4Njc3LCJpYXQiOjE3NjkwNzIyNzcsImp0aSI6Ijk5ZGI4MjAwMGZlNDQ4MzRhOTYzY2JjNzQwZGNjYjlmIiwidXNlcl9pZCI6IjIifQ.Aw5zTadlypTJB6n5fGNaRNZi7FBRcSWU_MqfiDyI8E0"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"rfq\": 1,\r\n  \"vendor\": 1,\r\n  \"customer_name\": \"Tata Power Ltd\",\r\n  \"valid_until\": \"2026-03-31\",\r\n  \"items\": [\r\n    {\r\n      \"item_name\": \"Main Control Board\",\r\n      \"description\": \"PCB with embedded controller\",\r\n      \"item_type\": \"component\",\r\n      \"quantity\": 10,\r\n      \"net_unit_price_excl_gst\": \"1500.00\",\r\n      \"gst_rate\": \"18.00\",\r\n      \"subtotal_excl_gst\": \"15000.00\"\r\n    },\r\n    {\r\n      \"item_name\": \"Wiring Harness\",\r\n      \"description\": \"Complete wiring set\",\r\n      \"item_type\": \"bom\",\r\n      \"quantity\": 5,\r\n      \"net_unit_price_excl_gst\": \"800.00\",\r\n      \"gst_rate\": \"18.00\",\r\n      \"subtotal_excl_gst\": \"4000.00\"\r\n    }\r\n  ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8000/api/quotations/create/",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8000",
+              "path": [
+                "api",
+                "quotations",
+                "create",
+                ""
+              ]
+            },
+            "description": "Generated from cURL: curl --location 'http://localhost:8000/api/quotations/create/' \\\r\n--header 'Authorization: Bearer YOUR_ACCESS_TOKEN' \\\r\n--header 'Content-Type: application/json' \\\r\n--data '{\r\n  \"rfq\": 12,\r\n  \"vendor\": 3,\r\n  \"customer_name\": \"Tata Power Ltd\",\r\n  \"valid_until\": \"2026-03-31\",\r\n  \"items\": [\r\n    {\r\n      \"item_name\": \"Main Control Board\",\r\n      \"description\": \"PCB with embedded controller\",\r\n      \"item_type\": \"component\",\r\n      \"quantity\": 10,\r\n      \"net_unit_price_excl_gst\": \"1500.00\",\r\n      \"gst_rate\": \"18.00\",\r\n      \"subtotal_excl_gst\": \"15000.00\"\r\n    },\r\n    {\r\n      \"item_name\": \"Wiring Harness\",\r\n      \"description\": \"Complete wiring set\",\r\n      \"item_type\": \"bom\",\r\n      \"quantity\": 5,\r\n      \"net_unit_price_excl_gst\": \"800.00\",\r\n      \"gst_rate\": \"18.00\",\r\n      \"subtotal_excl_gst\": \"4000.00\"\r\n    }\r\n  ]\r\n}'\r\n"
+          },
+          "response": []
         }
       ]
     }

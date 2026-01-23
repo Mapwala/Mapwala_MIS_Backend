@@ -420,14 +420,44 @@ class Device(models.Model):
 
 # ---------------- Device Information ----------------
 class DeviceInformation(models.Model):
+
+    UNIT_OF_MEASURE_CHOICES = (
+        ("PCS", "Pieces (PCS)"),
+        ("KG", "Kilograms (KG)"),
+        ("G", "Grams (G)"),
+        ("M", "Meters (M)"),
+        ("CM", "Centimeters (CM)"),
+        ("L", "Liters (L)"),
+        ("ML", "Milliliters (ML)"),
+    )
+
+    STATE_OF_SUPPLY_CHOICES = (
+        ("RAW", "Raw Material"),
+        ("WIP", "Work in Progress"),
+        ("FG", "Finished Goods"),
+        ("SFG", "Semi-Finished"),
+        ("CON", "Consumable"),
+    )
     device = models.OneToOneField(Device, on_delete=models.CASCADE, related_name="info")
     make = models.CharField(max_length=255)
     model = models.CharField(max_length=255)
     mrp = models.DecimalField(max_digits=10, decimal_places=2)
-    unit_of_measure = models.CharField(max_length=50)
+
+    unit_of_measure = models.CharField(
+        max_length=20,   # was 10
+        choices=UNIT_OF_MEASURE_CHOICES,
+    )
+
     version = models.CharField(max_length=50)
     variant = models.CharField(max_length=50)
-    state_of_supply = models.CharField(max_length=100)
+
+    state_of_supply = models.CharField(
+        max_length=20,   # was 10
+        choices=STATE_OF_SUPPLY_CHOICES,
+    )
+    
+    def __str__(self):
+        return f"{self.device} - {self.make} {self.model}"
 
 
 # ---------------- BOM ----------------
@@ -440,6 +470,9 @@ class BOM(models.Model):
     upload_type = models.CharField(max_length=20, choices=UPLOAD_TYPE_CHOICES)
     bom_file = models.FileField(upload_to="bom/excel/", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"BOM for {self.device}"
 
 
 # ---------------- BOM Component ----------------
@@ -468,6 +501,9 @@ class Enclosure(models.Model):
     quantity = models.PositiveIntegerField()
     make = models.CharField(max_length=100)
     part_number = models.CharField(max_length=100)
+    
+    def __str__(self):
+        return f"Enclosure for {self.device}"
 
 
 # ---------------- Wire Harness ----------------

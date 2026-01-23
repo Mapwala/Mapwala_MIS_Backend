@@ -9,7 +9,7 @@ from django.db.models import Sum
 from django.utils import timezone
 
 from rest_framework import status, viewsets
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -257,6 +257,25 @@ class ProformaInvoiceCreateAPIView(APIView):
 
 # DEVICE CREATION WORKFLOW
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def unit_of_measure_dropdown(request):
+    data = [
+        {"value": key, "label": label}
+        for key, label in DeviceInformation.UNIT_OF_MEASURE_CHOICES
+    ]
+    return Response(data)
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def state_of_supply_dropdown(request):
+    data = [
+        {"value": key, "label": label}
+        for key, label in DeviceInformation.STATE_OF_SUPPLY_CHOICES
+    ]
+    return Response(data)
+
+
 class DeviceStep1APIView(APIView):
     """Device creation step 1: Device information."""
     permission_classes = [IsAuthenticated]
@@ -356,7 +375,7 @@ class DeviceStep8APIView(APIView):
     parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request):
-        device = Device.objects.get(id=request.data["device_id"])
+        device = get_object_or_404(Device, id=request.data["device_id"])
         stickers_map = defaultdict(dict)
 
         for key, value in request.data.items():

@@ -808,246 +808,121 @@ class ProductAdmin(admin.ModelAdmin):
     readonly_fields = ("created_at",)
 
 
-# ------------------ Device ------------------
+class DeviceInformationInline(admin.StackedInline):
+    model = DeviceInformation
+    extra = 0
+    can_delete = False
+
+
+class BOMInline(admin.StackedInline):
+    model = BOM
+    extra = 0
+    can_delete = False
+
+
+class EnclosureInline(admin.StackedInline):
+    model = Enclosure
+    extra = 0
+
+
+class WireHarnessInline(admin.StackedInline):
+    model = WireHarness
+    extra = 0
+
+
+class BatteryInline(admin.StackedInline):
+    model = Battery
+    extra = 0
+
+
+class SOSButtonInline(admin.StackedInline):
+    model = SOSButton
+    extra = 0
+
+
+class UserManualInline(admin.StackedInline):
+    model = UserManual
+    extra = 0
+
+
+class StickerInline(admin.TabularInline):
+    model = Sticker
+    extra = 0
+
+
+class AccessoryInline(admin.TabularInline):
+    model = Accessory
+    extra = 0
+
+
 @admin.register(Device)
 class DeviceAdmin(admin.ModelAdmin):
-    list_display = ("id_link", "status_badge", "created_by", "created_at_formatted")
-    list_filter = ("status", "created_at", "created_by")
-    search_fields = ("id", "created_by__username", "created_by__email")
-    readonly_fields = ("created_at", "id_display")
-    ordering = ("-id",)
-
-    fieldsets = (
-        (
-            "Device Status",
-            {
-                "fields": ("status",),
-                "description": "Draft: Incomplete configuration. Completed: Ready for production.",
-            },
-        ),
-        (
-            "Created Info",
-            {
-                "fields": ("id_display", "created_by", "created_at"),
-            },
-        ),
+    list_display = (
+        "id_link",
+        "status_badge",
+        "completion_status",
+        "created_by",
+        "created_at_formatted",
     )
+    list_filter = ("status", "created_at")
+    readonly_fields = ("status", "created_by", "created_at")
+
+    inlines = [
+        DeviceInformationInline,
+        BOMInline,
+        EnclosureInline,
+        WireHarnessInline,
+        BatteryInline,
+        SOSButtonInline,
+        StickerInline,
+        UserManualInline,
+        AccessoryInline,
+    ]
+
+    def has_add_permission(self, request):
+        return False
 
     def id_link(self, obj):
         url = reverse(
-            f"admin:{obj._meta.app_label}_{obj._meta.model_name}_change", args=[obj.pk]
+            f"admin:{obj._meta.app_label}_{obj._meta.model_name}_change",
+            args=[obj.pk],
         )
-        return mark_safe(f'<a href="{url}"><strong>Device-{obj.id}</strong></a>')
-
+        return mark_safe(f"<strong>Device-{obj.id}</strong>")
     id_link.short_description = "Device ID"
-    id_link.admin_order_field = "id"
-
-    def id_display(self, obj):
-        return f"Device-{obj.id}"
-
-    id_display.short_description = "Full ID"
 
     def status_badge(self, obj):
         colors = {"draft": "#ffc107", "completed": "#28a745"}
         return mark_safe(
-            f'<span style="background-color:{colors.get(obj.status, "#6c757d")}; '
-            f'color:white; padding:4px 8px; border-radius:4px; font-weight:bold;">'
-            f"{obj.get_status_display()}</span>"
+            f'<span style="background:{colors.get(obj.status)};'
+            f'color:white;padding:4px 8px;border-radius:4px;">'
+            f'{obj.get_status_display()}</span>'
         )
-
     status_badge.short_description = "Status"
 
-    def created_at_formatted(self, obj):
-        return (
-            obj.created_at.strftime("%b %d, %Y at %I:%M %p") if obj.created_at else "—"
-        )
+    def completion_status(self, obj):
+        steps = {
+            "Info": hasattr(obj, "info"),
+            "BOM": hasattr(obj, "bom"),
+            "Enclosure": hasattr(obj, "enclosure"),
+            "Wire": hasattr(obj, "wireharness"),
+            "Battery": hasattr(obj, "battery"),
+            "SOS": hasattr(obj, "sosbutton"),
+            "Manual": hasattr(obj, "usermanual"),
+        }
 
+        return mark_safe(
+            " ".join(
+                f"<span style='color:{'green' if done else 'red'}'>{step}</span>"
+                for step, done in steps.items()
+            )
+        )
+    completion_status.short_description = "Completion"
+
+    def created_at_formatted(self, obj):
+        return obj.created_at.strftime("%d %b %Y %I:%M %p")
     created_at_formatted.short_description = "Created At"
 
 
-# ------------------ Device Information ------------------
-@admin.register(DeviceInformation)
-class DeviceInformationAdmin(admin.ModelAdmin):
-    list_display = ("device", "make", "model", "mrp", "state_of_supply")
-    search_fields = ("make", "model", "device__id")
-    list_filter = ("state_of_supply",)
-    ordering = ("device__id",)
-
-    fieldsets = (
-        ("Device Reference", {"fields": ("device",)}),
-        ("Basic Info", {"fields": ("make", "model", "version", "variant")}),
-        ("Pricing", {"fields": ("mrp",)}),
-        ("Supply Info", {"fields": ("unit_of_measure", "state_of_supply")}),
-    )
-
-
-# ------------------ BOM ------------------
-class BOMComponentInline(admin.TabularInline):
-    model = BOMComponent
-    extra = 0
-
-
-# ------------------ BOM ------------------
-@admin.register(BOM)
-class BOMAdmin(admin.ModelAdmin):
-    list_display = ("device", "upload_type", "created_at")
-    list_filter = ("upload_type", "created_at")
-    readonly_fields = ("created_at",)
-    inlines = [BOMComponentInline]
-
-    fieldsets = (
-        ("Device", {"fields": ("device",)}),
-        ("Upload Info", {"fields": ("upload_type", "bom_file")}),
-        ("System", {"fields": ("created_at",)}),
-    )
-
-
-# ------------------ BOM Component ------------------
-@admin.register(BOMComponent)
-class BOMComponentAdmin(admin.ModelAdmin):
-    list_display = (
-        "bom",
-        "identification_mark",
-        "part_no",
-        "part_make",
-        "per_device_quantity",
-    )
-    search_fields = ("identification_mark", "part_no", "part_make")
-    list_filter = ("part_make",)
-    fieldsets = (
-        ("BOM Reference", {"fields": ("bom",)}),
-        (
-            "Component Details",
-            {
-                "fields": (
-                    "identification_mark",
-                    "description",
-                    "designator",
-                    "footprint",
-                    "volt",
-                )
-            },
-        ),
-        (
-            "Part Info",
-            {"fields": ("part_no", "part_make", "per_device_quantity", "remarks")},
-        ),
-    )
-
-
-# ------------------ Enclosure ------------------
-@admin.register(Enclosure)
-class EnclosureAdmin(admin.ModelAdmin):
-    list_display = (
-        "device",
-        "length",
-        "breadth",
-        "height",
-        "material",
-        "color",
-        "quantity",
-    )
-    fieldsets = (
-        ("Device", {"fields": ("device",)}),
-        ("Dimensions", {"fields": ("length", "breadth", "height")}),
-        ("Material Info", {"fields": ("material", "color", "make", "part_number")}),
-        ("Quantity", {"fields": ("quantity",)}),
-    )
-
-
-# ------------------ Wire Harness ------------------
-class WireConnectorInline(admin.TabularInline):
-    model = WireConnector
-    extra = 0
-
-
-# --------------------------- Wire Harness ------------------
-@admin.register(WireHarness)
-class WireHarnessAdmin(admin.ModelAdmin):
-    list_display = ("device", "number_of_wires", "specification", "make", "part_number")
-    inlines = [WireConnectorInline]
-
-    fieldsets = (
-        ("Device", {"fields": ("device",)}),
-        ("Harness Details", {"fields": ("number_of_wires", "specification")}),
-        ("Part Info", {"fields": ("make", "part_number")}),
-    )
-
-
-# ------------------ Wire Connector ------------------
-@admin.register(WireConnector)
-class WireConnectorAdmin(admin.ModelAdmin):
-    list_display = ("wire_harness", "connector_name", "number_of_pins", "wire_colors")
-
-    fieldsets = (
-        ("Wire Harness", {"fields": ("wire_harness",)}),
-        (
-            "Connector Info",
-            {"fields": ("connector_name", "number_of_pins", "wire_colors")},
-        ),
-    )
-
-
-# ------------------ Battery ------------------
-@admin.register(Battery)
-class BatteryAdmin(admin.ModelAdmin):
-    list_display = ("device", "capacity", "make", "part_number")
-
-    fieldsets = (
-        ("Device", {"fields": ("device",)}),
-        ("Battery Specs", {"fields": ("capacity", "length", "breadth", "height")}),
-        ("Part Info", {"fields": ("make", "part_number")}),
-    )
-
-
-# ------------------ SOS Button ------------------
-@admin.register(SOSButton)
-class SOSButtonAdmin(admin.ModelAdmin):
-    list_display = ("device", "total_length", "quantity_per_set", "make", "part_number")
-
-    fieldsets = (
-        ("Device", {"fields": ("device",)}),
-        ("Button Specs", {"fields": ("total_length", "quantity_per_set")}),
-        ("Part Info", {"fields": ("make", "part_number")}),
-    )
-
-
-# ------------------ Sticker ------------------
-@admin.register(Sticker)
-class StickerAdmin(admin.ModelAdmin):
-    list_display = ("device", "name", "length", "breadth", "quantity", "make")
-
-    fieldsets = (
-        ("Device", {"fields": ("device",)}),
-        ("Sticker Details", {"fields": ("name", "length", "breadth", "quantity")}),
-        ("File", {"fields": ("file",)}),
-        ("Part Info", {"fields": ("make", "part_number")}),
-    )
-
-
-# ------------------ User Manual ------------------
-@admin.register(UserManual)
-class UserManualAdmin(admin.ModelAdmin):
-    list_display = ("device", "file")
-
-    fieldsets = (
-        ("Device", {"fields": ("device",)}),
-        ("Manual File", {"fields": ("file",)}),
-    )
-
-
-# ------------------ Accessories ------------------
-@admin.register(Accessory)
-class AccessoryAdmin(admin.ModelAdmin):
-    list_display = ("device", "name", "quantity", "specifications")
-
-    fieldsets = (
-        ("Device", {"fields": ("device",)}),
-        (
-            "Accessory Info",
-            {"fields": ("name", "quantity", "specifications", "description")},
-        ),
-    )
 
 
 # ------------------ Proforma Invoice ------------------

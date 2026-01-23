@@ -42,6 +42,8 @@ urlpatterns = [
     path("notes/statuses/", NoteStatusChoicesAPIView.as_view()),
 
     # Device creation (steps)
+    path("devices/dropdowns/unit-of-measure/",unit_of_measure_dropdown,name="unit-of-measure-dropdown"),
+    path("devices/dropdowns/state-of-supply/",state_of_supply_dropdown,name="state-of-supply-dropdown"),
     path("devices/step-1/", DeviceStep1APIView.as_view()),
     path("devices/step-2/", DeviceStep2APIView.as_view()),
     path("devices/step-3/", DeviceStep3APIView.as_view()),
@@ -114,6 +116,7 @@ urlpatterns = [
     path("qc-inspectors/register/", QCInspectorRegistrationCreateAPIView.as_view()),
     path("purchase-departments/register/", PurchaseDepartmentRegistrationCreateAPIView.as_view()),
     path("store-managers/register/", StoreManagerRegistrationCreateAPIView.as_view()),
+    path("repair-technicians/register/", RepairTechnicianRegistrationCreateAPIView.as_view()),
 
     # Self orders
     path("self-orders/create/", SelfOrderCreateAPIView.as_view()),
