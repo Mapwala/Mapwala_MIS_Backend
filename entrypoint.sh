@@ -8,11 +8,7 @@ done
 
 echo "PostgreSQL started"
 
-echo "Running makemigrations..."
 python manage.py makemigrations
-
-echo "Running migrate..."
 python manage.py migrate
 
-echo "Starting Django server..."
 exec "$@"
