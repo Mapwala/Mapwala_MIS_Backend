@@ -18,6 +18,22 @@ DB_HOST=localhost
 DB_PORT=5432
 
 # ----------------------------
+# Docker DB toggle
+# ----------------------------
+# If true, the backend container will use the dockerized postgres service (profile: localdb).
+# Default is false to use your main PostgreSQL server running on the VM.
+USE_DOCKER_DB=false
+
+# Used only when USE_DOCKER_DB=true
+DOCKER_DB_NAME=mapwala_db
+DOCKER_DB_USER=postgres
+DOCKER_DB_PASSWORD=postgres
+DOCKER_PG_HOST=db
+
+# Used only when USE_DOCKER_DB=false and backend runs in Docker
+HOST_PG_HOST=host.docker.internal
+
+# ----------------------------
 # Docker Compose override
 # (uncomment when running via docker-compose)
 # ----------------------------
