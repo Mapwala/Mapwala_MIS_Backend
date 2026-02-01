@@ -8,7 +8,12 @@ if [ "$USE_DOCKER_DB" = "true" ] || [ "$USE_DOCKER_DB" = "True" ] || [ "$USE_DOC
   export DB_USER="${DOCKER_DB_USER:-${DB_USER}}"
   export DB_PASSWORD="${DOCKER_DB_PASSWORD:-${DB_PASSWORD}}"
 else
-  export DB_HOST="${HOST_PG_HOST:-${DB_HOST:-host.docker.internal}}"
+  # Respect DB_HOST from .env when it is not localhost.
+  # If DB_HOST is localhost/127.0.0.1, that would point to the container itself,
+  # so we map it to the Docker host gateway instead.
+  if [ "${DB_HOST:-}" = "localhost" ] || [ "${DB_HOST:-}" = "127.0.0.1" ] || [ -z "${DB_HOST:-}" ]; then
+    export DB_HOST="${HOST_PG_HOST:-host.docker.internal}"
+  fi
 fi
 
 export DB_PORT="${DB_PORT:-5432}"
