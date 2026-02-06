@@ -1,32 +1,45 @@
 #!/bin/sh
+set -e
 
-USE_DOCKER_DB="${USE_DOCKER_DB:-false}"
+echo "⏳ Waiting for PostgreSQL..."
 
-if [ "$USE_DOCKER_DB" = "true" ] || [ "$USE_DOCKER_DB" = "True" ] || [ "$USE_DOCKER_DB" = "1" ]; then
-  export DB_HOST="${DOCKER_PG_HOST:-db}"
-  export DB_NAME="${DOCKER_DB_NAME:-${DB_NAME}}"
-  export DB_USER="${DOCKER_DB_USER:-${DB_USER}}"
-  export DB_PASSWORD="${DOCKER_DB_PASSWORD:-${DB_PASSWORD}}"
-else
-  # Respect DB_HOST from .env when it is not localhost.
-  # If DB_HOST is localhost/127.0.0.1, that would point to the container itself,
-  # so we map it to the Docker host gateway instead.
-  if [ "${DB_HOST:-}" = "localhost" ] || [ "${DB_HOST:-}" = "127.0.0.1" ] || [ -z "${DB_HOST:-}" ]; then
-    export DB_HOST="${HOST_PG_HOST:-host.docker.internal}"
-  fi
-fi
+DB_HOST=${DB_HOST:-db}
+DB_PORT=${DB_PORT:-5432}
 
-export DB_PORT="${DB_PORT:-5432}"
-
-echo "Waiting for PostgreSQL at ${DB_HOST}:${DB_PORT}..."
-
-while ! nc -z "$DB_HOST" "$DB_PORT"; do
+until nc -z "$DB_HOST" "$DB_PORT"; do
   sleep 1
 done
 
-echo "PostgreSQL is reachable"
+echo "✅ PostgreSQL started"
 
+echo "📦 Running migrations..."
 python manage.py makemigrations
 python manage.py migrate
+
+echo "👤 Ensuring standard user exists..."
+
+python manage.py shell -c "
+import os
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+username = os.getenv('APP_USERNAME', 'app_user')
+password = os.getenv('APP_PASSWORD', 'app_password')
+
+if not username or not password:
+    raise RuntimeError('APP_USERNAME and APP_PASSWORD must be set')
+
+if User.objects.filter(username=username).exists():
+    print('ℹ️  User already exists')
+else:
+    User.objects.create_user(
+        username=username,
+        password=password,
+        is_staff=True,
+        is_superuser=False
+    )
+    print('✅ Standard user created')
+"
 
 exec "$@"

@@ -1168,7 +1168,7 @@ Or use individual database settings:
 ```env
 SECRET_KEY=your_generated_secret_key_here
 DEBUG=True
-DB_ENGINE=postgresql
+DB_ENGINE=django.db.backends.postgresql
 DB_NAME=mapwala_mis
 DB_USER=postgres
 DB_PASSWORD=your_password

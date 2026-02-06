@@ -1,7 +1,6 @@
 from pathlib import Path
 import os
 from dotenv import load_dotenv
-import dj_database_url
 from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -83,27 +82,31 @@ WSGI_APPLICATION = "Mapwala_MIS_Backend.wsgi.application"
 
 
 # Database
-DATABASE_URL = os.getenv("DATABASE_URL")
+import os
 
-if not DATABASE_URL:
-    DB_ENGINE = os.getenv("DB_ENGINE", "postgresql")
-    DB_NAME = os.getenv("DB_NAME")
-    DB_USER = os.getenv("DB_USER")
-    DB_PASSWORD = os.getenv("DB_PASSWORD")
-    DB_HOST = os.getenv("DB_HOST", "localhost")
-    DB_PORT = os.getenv("DB_PORT", "5432")
-
-    if not all([DB_NAME, DB_USER, DB_PASSWORD]):
-        raise RuntimeError("Database environment variables are not fully set")
-
-    DATABASE_URL = f"{DB_ENGINE}://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+# Database Configuration (NO DATABASE_URL)
 
 DATABASES = {
-    "default": dj_database_url.parse(
-        DATABASE_URL,
-        conn_max_age=600,
-    )
+    "default": {
+        "ENGINE": os.getenv("DB_ENGINE", "django.db.backends.postgresql"),
+        "NAME": os.getenv("DB_NAME"),
+        "USER": os.getenv("DB_USER"),
+        "PASSWORD": os.getenv("DB_PASSWORD"),
+        "HOST": os.getenv("DB_HOST", "localhost"),
+        "PORT": os.getenv("DB_PORT", "5432"),
+        "CONN_MAX_AGE": 600,
+    }
 }
+
+# Safety Check (Recommended)
+if not all(
+    [
+        DATABASES["default"]["NAME"],
+        DATABASES["default"]["USER"],
+        DATABASES["default"]["PASSWORD"],
+    ]
+):
+    raise RuntimeError("❌ Database environment variables are not fully set")
 
 
 # Password validation
@@ -349,4 +352,3 @@ MEDIA_ROOT = BASE_DIR / "media"
 # Upload limits (security)
 DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5 MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880   # 5 MB
-
