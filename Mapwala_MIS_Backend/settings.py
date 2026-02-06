@@ -81,14 +81,23 @@ TEMPLATES = [
 WSGI_APPLICATION = "Mapwala_MIS_Backend.wsgi.application"
 
 
-# Database
-import os
-
 # Database Configuration (NO DATABASE_URL)
+
+_raw_db_engine = (os.getenv("DB_ENGINE") or "django.db.backends.postgresql").strip()
+_db_engine_aliases = {
+    # Common shorthands people put in .env
+    "postgres": "django.db.backends.postgresql",
+    "postgresql": "django.db.backends.postgresql",
+    "sqlite": "django.db.backends.sqlite3",
+    "sqlite3": "django.db.backends.sqlite3",
+    "mysql": "django.db.backends.mysql",
+    "oracle": "django.db.backends.oracle",
+}
+_db_engine = _db_engine_aliases.get(_raw_db_engine, _raw_db_engine)
 
 DATABASES = {
     "default": {
-        "ENGINE": os.getenv("DB_ENGINE", "django.db.backends.postgresql"),
+        "ENGINE": _db_engine,
         "NAME": os.getenv("DB_NAME"),
         "USER": os.getenv("DB_USER"),
         "PASSWORD": os.getenv("DB_PASSWORD"),
