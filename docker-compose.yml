@@ -6,20 +6,22 @@ services:
       - .:/app
       - media_volume:/app/media
     ports:
-      - "8000:8000"
+      - "6631:6631"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     env_file:
       - .env
-    depends_on:
-      - db
 
   db:
     image: postgres:15
     container_name: mapwala_db
     restart: always
+    profiles:
+      - localdb
     environment:
-      POSTGRES_DB: mapwala_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: Skytrack976531
+      POSTGRES_DB: ${DOCKER_DB_NAME:-mapwala_db}
+      POSTGRES_USER: ${DOCKER_DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DOCKER_DB_PASSWORD:-postgres}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:

@@ -1,0 +1,63 @@
+name: Deploy (prod)
+
+on:
+  push:
+    branches:
+      - backend
+
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    # Runs on your VM where you installed the GitHub Actions self-hosted runner.
+    runs-on: [self-hosted, mapwalaprod]
+
+    steps:
+      - name: Deploy locally on the VM (Docker Compose)
+        shell: bash
+        env:
+          # GitHub automatically provides this token at runtime.
+          GITHUB_TOKEN: ${{ github.token }}
+          DEPLOY_PATH: /home/azureuser/projects/Mapwala_MIS_Backend
+          DEPLOY_BRANCH: backend
+        run: |
+          set -euo pipefail
+
+          # Git 2.35+ blocks using repos owned by a different user unless marked safe.
+          if ! git config --global --get-all safe.directory | grep -qx "$DEPLOY_PATH"; then
+            git config --global --add safe.directory "$DEPLOY_PATH"
+          fi
+
+          cd "$DEPLOY_PATH"
+
+          # If origin is HTTPS, make fetch non-interactive by using the workflow token.
+          origin_url="$(git remote get-url origin)"
+          if echo "$origin_url" | grep -q '^https://github.com/' && [ -n "${GITHUB_TOKEN:-}" ]; then
+            repo="${GITHUB_REPOSITORY:-}"
+            if [ -z "$repo" ]; then
+              echo 'GITHUB_REPOSITORY is empty; cannot build authenticated origin URL.'
+              exit 1
+            fi
+            git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${repo}.git"
+          fi
+
+          git fetch origin
+          git checkout "$DEPLOY_BRANCH"
+          git reset --hard "origin/$DEPLOY_BRANCH"
+
+          # Ensure we're using the main VM PostgreSQL by default.
+          # The dockerized postgres service only starts when COMPOSE_PROFILES=localdb.
+          export USE_DOCKER_DB="${USE_DOCKER_DB:-false}"
+
+          docker compose up -d --build
+          docker compose ps
+
+          # Show a bit of recent app logs to confirm startup/migrations.
+          docker compose logs --tail=80 backend || true

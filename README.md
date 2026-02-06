@@ -1744,13 +1744,18 @@ if district.state_id != state.id:
 2. **Run with Docker Compose**
 
    ```bash
-   docker-compose up -d
+   # Default: uses your main PostgreSQL server (no docker db container)
+   docker compose up -d
+
+   # Optional: start the disposable local postgres container for developer testing
+   # USE_DOCKER_DB=true and COMPOSE_PROFILES=localdb enables the `db` service
+   USE_DOCKER_DB=true COMPOSE_PROFILES=localdb docker compose up -d
    ```
 
 3. **Run migrations in container**
    ```bash
-   docker-compose exec web python manage.py migrate
-   docker-compose exec web python manage.py createsuperuser
+   docker compose exec backend python manage.py migrate
+   docker compose exec backend python manage.py createsuperuser
    ```
 
 ### **Production Deployment**
