@@ -2,6 +2,7 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 from datetime import timedelta
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -44,6 +45,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -81,41 +83,32 @@ TEMPLATES = [
 WSGI_APPLICATION = "Mapwala_MIS_Backend.wsgi.application"
 
 
-# Database Configuration (NO DATABASE_URL)
+# Database Configuration
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-_raw_db_engine = (os.getenv("DB_ENGINE") or "django.db.backends.postgresql").strip()
-_db_engine_aliases = {
-    # Common shorthands people put in .env
-    "postgres": "django.db.backends.postgresql",
-    "postgresql": "django.db.backends.postgresql",
-    "sqlite": "django.db.backends.sqlite3",
-    "sqlite3": "django.db.backends.sqlite3",
-    "mysql": "django.db.backends.mysql",
-    "oracle": "django.db.backends.oracle",
-}
-_db_engine = _db_engine_aliases.get(_raw_db_engine, _raw_db_engine)
-
-DATABASES = {
-    "default": {
-        "ENGINE": _db_engine,
-        "NAME": os.getenv("DB_NAME"),
-        "USER": os.getenv("DB_USER"),
-        "PASSWORD": os.getenv("DB_PASSWORD"),
-        "HOST": os.getenv("DB_HOST", "localhost"),
-        "PORT": os.getenv("DB_PORT", "5432"),
-        "CONN_MAX_AGE": 600,
+if DATABASE_URL:
+    DATABASES = {"default": dj_database_url.parse(DATABASE_URL, conn_max_age=600)}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.getenv("DB_NAME"),
+            "USER": os.getenv("DB_USER"),
+            "PASSWORD": os.getenv("DB_PASSWORD"),
+            "HOST": os.getenv("DB_HOST", "localhost"),
+            "PORT": os.getenv("DB_PORT", "5432"),
+            "CONN_MAX_AGE": 600,
+        }
     }
-}
 
-# Safety Check (Recommended)
-if not all(
-    [
-        DATABASES["default"]["NAME"],
-        DATABASES["default"]["USER"],
-        DATABASES["default"]["PASSWORD"],
-    ]
-):
-    raise RuntimeError("❌ Database environment variables are not fully set")
+    if not all(
+        [
+            DATABASES["default"]["NAME"],
+            DATABASES["default"]["USER"],
+            DATABASES["default"]["PASSWORD"],
+        ]
+    ):
+        raise RuntimeError("❌ Database environment variables are not fully set")
 
 
 # Password validation
@@ -139,9 +132,7 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
-    "DEFAULT_PERMISSION_CLASSES": (
-        "rest_framework.permissions.IsAuthenticated",
-    ),
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
@@ -170,43 +161,36 @@ JAZZMIN_SETTINGS = {
     "site_brand": "Mapwala MIS",
     "welcome_sign": "Welcome to Mapwala MIS",
     "copyright": "© Mapwala Technologies",
-
     # -------------------- Logos --------------------
     "site_logo": None,
     "site_logo_classes": "img-circle",
     "site_icon": "fas fa-warehouse",
     "login_logo": None,
     "login_logo_dark": None,
-
     # -------------------- Theme --------------------
     "theme": "flatly",
     "dark_mode_theme": None,
     "show_theme_switcher": True,
-
     # -------------------- Layout --------------------
     "show_sidebar": True,
     "navigation_expanded": False,
     "order_with_respect_to": ["auth", "mapwala_mis"],
-
     "changeform_format": "horizontal_tabs",
     "changeform_format_overrides": {
         "auth.user": "collapsible",
         "auth.group": "vertical_tabs",
     },
-
     # -------------------- Sidebar --------------------
     "sidebar_fixed": True,
     "sidebar": {
         "scrollbar_theme": "os-theme-dark",
         "scrollbar_auto_hide": "l",
     },
-
     # -------------------- Icons --------------------
     "icons": {
         "auth": "fas fa-users-cog",
         "auth.user": "fas fa-user-circle",
         "auth.group": "fas fa-users",
-
         "mapwala_mis": "fas fa-database",
         "mapwala_mis.state": "fas fa-map",
         "mapwala_mis.district": "fas fa-map-marked-alt",
@@ -215,24 +199,25 @@ JAZZMIN_SETTINGS = {
         "mapwala_mis.b2ccustomer": "fas fa-user-tag",
         "mapwala_mis.b2bpartner": "fas fa-handshake",
         "mapwala_mis.userprofile": "fas fa-id-card",
-
         "admin.LogEntry": "fas fa-history",
         "sessions": "fas fa-clock",
         "sites": "fas fa-globe",
     },
-
     "default_icon_parents": "fas fa-chevron-right",
     "default_icon_children": "fas fa-circle",
-
     # -------------------- Menus --------------------
     "topmenu_links": [
         {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
         {"name": "Dashboard", "url": "/admin/dashboard/"},
         {"model": "auth.User"},
         {"model": "auth.Group"},
-        {"name": "Support", "url": "https://mapwala.com/support", "new_window": True, "icon": "fas fa-life-ring"},
+        {
+            "name": "Support",
+            "url": "https://mapwala.com/support",
+            "new_window": True,
+            "icon": "fas fa-life-ring",
+        },
     ],
-
     "usermenu_links": [
         {
             "name": "Profile",
@@ -240,11 +225,20 @@ JAZZMIN_SETTINGS = {
             "icon": "fas fa-user-edit",
             "url_args": lambda request: {"object_id": request.user.pk},
         },
-        {"name": "Support", "url": "https://mapwala.com/support", "new_window": True, "icon": "fas fa-question-circle"},
-        {"name": "Documentation", "url": "https://docs.mapwala.com", "new_window": True, "icon": "fas fa-book"},
+        {
+            "name": "Support",
+            "url": "https://mapwala.com/support",
+            "new_window": True,
+            "icon": "fas fa-question-circle",
+        },
+        {
+            "name": "Documentation",
+            "url": "https://docs.mapwala.com",
+            "new_window": True,
+            "icon": "fas fa-book",
+        },
         {"model": "auth.user"},
     ],
-
     # -------------------- UI Behaviour --------------------
     "related_modal_active": True,
     "use_google_fonts_cdn": True,
@@ -252,7 +246,6 @@ JAZZMIN_SETTINGS = {
     "actions_sticky_top": False,  # overridden by your tweak request
     "language_chooser": False,
     "collapse_nav": True,
-
     "form_nav_classes": {
         "default": "nav-tabs nav-justified",
         "auth.user": "nav-tabs",
@@ -266,25 +259,20 @@ JAZZMIN_UI_TWEAKS = {
     "footer_small_text": False,
     "body_small_text": True,
     "brand_small_text": False,
-
     # -------------------- Brand --------------------
     "brand_colour": False,
-
     # -------------------- Accent --------------------
     "accent": "accent-primary",
-
     # -------------------- Navbar --------------------
     "navbar": "navbar-dark",
     "navbar_dark": True,
     "navbar_color": "dark",
     "no_navbar_border": False,
     "navbar_fixed": False,
-
     # -------------------- Layout --------------------
     "layout_boxed": False,
     "footer_fixed": True,
     "sidebar_fixed": True,
-
     # -------------------- Sidebar --------------------
     "sidebar": "sidebar-dark-primary",
     "sidebar_nav_small_text": False,
@@ -293,11 +281,9 @@ JAZZMIN_UI_TWEAKS = {
     "sidebar_nav_compact_style": True,
     "sidebar_nav_legacy_style": False,
     "sidebar_nav_flat_style": True,
-
     # -------------------- Theme --------------------
     "theme": "flatly",
     "dark_mode_theme": None,
-
     # -------------------- Buttons --------------------
     "button_classes": {
         "primary": "btn-primary",
@@ -307,7 +293,6 @@ JAZZMIN_UI_TWEAKS = {
         "danger": "btn-danger",
         "success": "btn-success",
     },
-
     # -------------------- Alerts --------------------
     "alert_classes": {
         "error": "alert-danger",
@@ -315,14 +300,12 @@ JAZZMIN_UI_TWEAKS = {
         "success": "alert-success",
         "info": "alert-info",
     },
-
     # -------------------- Cards --------------------
     "card": {
         "theme": "dark",
         "background": "bg-dark",
         "border": "border-dark",
     },
-
     # -------------------- Tables --------------------
     "table": {
         "theme": "dark",
@@ -331,20 +314,17 @@ JAZZMIN_UI_TWEAKS = {
         "bordered": False,
         "condensed": True,
     },
-
     # -------------------- Forms --------------------
     "form": {
         "field_background": "bg-dark",
         "field_border": "border-secondary",
         "field_text_color": "text-light",
     },
-
     # -------------------- Modals --------------------
     "modal": {
         "theme": "dark",
         "backdrop": True,
     },
-
     # -------------------- Actions --------------------
     "actions_sticky_top": False,
 }
@@ -353,6 +333,10 @@ JAZZMIN_UI_TWEAKS = {
 # STATIC FILES
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_DIRS = [BASE_DIR / "static"] if (BASE_DIR / "static").exists() else []
+
+# WhiteNoise — serves compressed, cached static files in production
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # MEDIA FILES (for uploads like GST docs)
 MEDIA_URL = "/media/"
@@ -360,4 +344,4 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 # Upload limits (security)
 DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5 MB
-FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880   # 5 MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5 MB

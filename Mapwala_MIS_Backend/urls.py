@@ -5,14 +5,18 @@ from django.conf.urls.static import static
 from django.http import HttpResponse
 from django.views.generic import RedirectView
 
+
 def home(request):
-    return HttpResponse("<h1>Django is running</h1><strong><p>Use /admin or /api</p></strong>")
+    return HttpResponse(
+        "<h1>Django is running</h1><strong><p>Use /admin or /api</p></strong>"
+    )
+
 
 urlpatterns = [
     path("", home, name="home"),
     path("admin/dashboard/", RedirectView.as_view(url="/admin/", permanent=False)),
     path("admin/", admin.site.urls),
-    path("api/", include("mapwala_mis.urls")), 
+    path("api/", include("mapwala_mis.urls")),
 ]
 
 if settings.DEBUG:

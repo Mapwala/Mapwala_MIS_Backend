@@ -1,26 +1,31 @@
 # Docker Notes
 
 ## Overview
+
 Docker is a containerization platform that packages applications with their dependencies into isolated containers.
 
 ## Key Concepts
 
 ### Images
+
 - Blueprints for containers
 - Built from Dockerfile
 - Immutable snapshots of application code and dependencies
 
 ### Containers
+
 - Running instances of images
 - Lightweight and isolated environments
 - Can be started, stopped, and removed
 
 ### Dockerfile
+
 - Instructions to build Docker images
 - Line-by-line commands executed sequentially
 - Common commands: FROM, RUN, COPY, WORKDIR, ENV, EXPOSE, CMD, ENTRYPOINT
 
 ### Docker Compose
+
 - Tool for defining and running multi-container applications
 - Uses docker-compose.yml file
 - Manages networking and volume mounting between containers
@@ -28,6 +33,7 @@ Docker is a containerization platform that packages applications with their depe
 ## Common Docker Commands
 
 ### Image Management
+
 ```bash
 docker build -t image_name:tag .              # Build image from Dockerfile
 docker images                                  # List all images
@@ -37,6 +43,7 @@ docker push image_name                         # Push image to registry
 ```
 
 ### Container Management
+
 ```bash
 docker run -d image_name                       # Run container in background
 docker ps                                      # List running containers
@@ -49,6 +56,7 @@ docker exec -it container_id /bin/bash         # Execute command in container
 ```
 
 ### Docker Compose Commands
+
 ```bash
 docker-compose up                              # Start services
 docker-compose up -d                           # Start services in background
@@ -129,7 +137,6 @@ docker-compose build                           # Build/rebuild services
 | Create migrations | `docker compose run backend python manage.py makemigrations` |
 | Apply migrations | `docker exec mapwala_backend python manage.py migrate` |
 | Access database | `docker exec -it mapwala_db psql -U postgres -d mapwala_db` |
-
 
 ---
 

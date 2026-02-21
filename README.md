@@ -681,6 +681,7 @@ The project uses 80+ serializers for request/response validation and data transf
 ### Authentication Serializers
 
 #### `LoginSerializer`
+
 - **Purpose**: Handle user authentication with terms acceptance
 - **Fields**: `username`, `password`, `accepted_terms`
 - **Validation**: Authenticates credentials and enforces terms acceptance
@@ -688,36 +689,43 @@ The project uses 80+ serializers for request/response validation and data transf
 ### Location & Company Serializers
 
 #### `StateSerializer`, `DistrictSerializer`
+
 - **Purpose**: Location management serializers
 - **Fields**: State name, status, district code, state relationship
 
 #### `ParentCompanySerializer`, `VendorSerializer`
+
 - **Purpose**: Company and vendor information serialization
 - **Features**: Validates state-district relationship, checks unique GST numbers
 
 ### Registration Serializers (5 Types)
 
 #### 1. **B2CCustomerRegistrationSerializer**
+
 - **Purpose**: B2C customer registration with documents
 - **Validation**: Enforces state-district relationship, document uploads
 - **Fields**: Customer info, address, banking details, tax documents
 
 #### 2. **B2BPartnerRegistrationSerializer**
+
 - **Purpose**: B2B partner registration
 - **Validation**: District-state dependency validation
 - **Fields**: Partner name, contact, documents, banking info
 
 #### 3. **DistributorRegistrationSerializer**
+
 - **Purpose**: Distributor registration with authorized areas
 - **Validation**: Multi-select district-state validation, manufacturer linkage
 - **Fields**: Contact info, documents, authorized states/districts, manufacturer FK
 
 #### 4. **DealerRegistrationSerializer**
+
 - **Purpose**: Dealer registration (linked to Manufacturer OR Distributor)
 - **Validation**: Complex linking logic (XOR between manufacturer/distributor)
 - **Fields**: Contact info, documents, linked_to field, conditional FKs
 
 #### 5. **Module Management Registration Serializers**
+
 - **AccountRegistrationSerializer**: Account holder registration
 - **QCInspectorRegistrationSerializer**: QC inspector registration
 - **PurchaseDepartmentRegistrationSerializer**: Purchase department registration
@@ -725,6 +733,7 @@ The project uses 80+ serializers for request/response validation and data transf
 - **RepairTechnicianRegistrationSerializer**: Repair technician registration
 
 All module registration serializers:
+
 - **File Validation**: Enforce max file size via `validate_file_size` function
 - **Location Validation**: Ensure district belongs to selected state
 - **Fields**: Aadhar/PAN documents, location info, contact details
@@ -748,14 +757,17 @@ All module registration serializers:
 ### Order Management Serializers
 
 #### Order Entry
+
 - `OrderEntryStep1Serializer`: Order type selection (Production/Sales)
 - `OrderEntryStep2MakeToOrderSerializer`: Make-to-order workflow details
 
 #### Order Dropdowns
+
 - `OrderProductSerializer`: Product/device model selection
 - `OrderBatchSerializer`: Batch selection with available stock
 
 #### Sales Order
+
 - `SalesOrderCreateSerializer`
   - **Accepts**: `product_device_model` (string), `batch` (string: batch_number)
   - **Resolves**: Product from name, batch from batch_number
@@ -763,6 +775,7 @@ All module registration serializers:
   - **Action**: Decrements `OrderBatch.available_stock`
 
 #### Production Order
+
 - `ProductionOrderCreateSerializer`
   - **Accepts**: `product_device_model`, `batch_number`, `supplier_vendor_id`
   - **Creates**: Auto-creates batch if not exists
@@ -772,11 +785,13 @@ All module registration serializers:
 ### RFQ (Request for Quote) Serializers
 
 #### Three-Step RFQ Workflow
+
 - `RFQStep1Serializer`: Device info, assembly type, quantity
 - `RFQStep2Serializer`: Select items (BOM parts, components, services)
 - `RFQStep3Serializer`: Vendor selection, delivery details, SRN
 
 #### RFQ Views
+
 - `RFQListSerializer`: List view with vendor names, item counts
 - `RFQDetailSerializer`: Full RFQ details with all selections
 - `RFQSelectionSerializer`: Individual item selections
@@ -784,6 +799,7 @@ All module registration serializers:
 ### Purchase Order Serializers
 
 #### Two-Step Purchase Order Workflow
+
 - `PurchaseStep1Serializer`: Buyer info, order reference, assembly type, order types
 - `PurchaseLineSerializer`: Individual line item details (price, GST, delivery)
 - `PurchaseStep2Serializer`: Vendor selection, wastage %, payment terms, items array
@@ -812,11 +828,13 @@ All module registration serializers:
 ### Account Management Serializers
 
 #### Debit Notes
+
 - `DebitNoteListSerializer`: List view with vendor, reason, status
 - `DebitNoteDetailSerializer`: Full debit note details
 - `DebitNoteCreateUpdateSerializer`: Create/update with auto-generated number
 
 #### Credit Notes
+
 - `CreditNoteListSerializer`: List view with customer, reason, status
 - `CreditNoteDetailSerializer`: Full credit note details
 - `CreditNoteCreateUpdateSerializer`: Create/update with auto-generated number
@@ -824,35 +842,42 @@ All module registration serializers:
 ### Inventory Management Serializers
 
 #### Store Transfer
+
 - `StoreTransferListSerializer`: List view with dispatch status, total value
 - `StoreTransferDetailSerializer`: Full details including creator info
 - `StoreTransferCreateUpdateSerializer`: Create/update with value validation
 
 #### Product Category
+
 - `ProductCategorySerializer`: Simple category serializer with name, description
 
 ### Vendor Management Serializers
 
 #### Return Requests
+
 - `ReturnRequestSerializer`: Complete return request details
 - `ReturnRequestListSerializer`: Lightweight list view
 - `ReturnRequestCountSerializer`: Status-wise return counts
 
 #### Repair Records
+
 - `RepairRecordSerializer`: Repair tracking with quantity validation
 - `RepairRecordListSerializer`: Lightweight repair list
 
 #### Rejected Items
+
 - `RejectedItemSerializer`: QC rejected items tracking
 - `RejectedItemListSerializer`: Lightweight rejected items list
 
 ### Device Management Serializers
 
 #### Device Views
+
 - `DeviceListSerializer`: Simplified device list (device_id, name, model, status)
 - `DeviceDetailSerializer`: Full device details with all components
 
 #### Component Detail Serializers (used in Device detail)
+
 - `EnclosureDetailSerializer`: Enclosure info with formatted dimensions
 - `WireHarnessDetailSerializer`: Wire harness with connector details
 - `BatteryDetailSerializer`: Battery specs with parsed dimensions
@@ -872,9 +897,11 @@ All module registration serializers:
 ### Quotation Management Serializers
 
 #### Quotation Item
+
 - `QuotationItemSerializer`: Individual quotation line items with GST calculation
 
 #### Quotation Operations
+
 - `QuotationCreateSerializer`: Create quotation from RFQ with items, auto-generates quotation number
 - `QuotationListSerializer`: List view with vendor, totals, item count
 - `QuotationDetailSerializer`: Full quotation with all items, status
@@ -883,18 +910,21 @@ All module registration serializers:
 ### Serializer Validation Patterns
 
 #### 1. **State-District Validation** (Used in 8+ serializers)
+
 ```python
 if district.state_id != state.id:
     raise ValidationError("District does not belong to state")
 ```
 
 #### 2. **Quantity Validation** (Sales, Production, Dispatch)
+
 ```python
 if quantity > available_stock:
     raise ValidationError("Insufficient stock")
 ```
 
 #### 3. **Grand Total Validation** (Sales, Production, Self Orders)
+
 ```python
 calculated = (qty × price - discount) × (1 + gst%) + shipping
 if calculated != grand_total:
@@ -902,12 +932,14 @@ if calculated != grand_total:
 ```
 
 #### 4. **Linking Logic Validation** (Dealer, Distributor)
+
 ```python
 # Ensure exactly one party is selected
 # Prevent both from being filled simultaneously
 ```
 
 #### 5. **File Size Validation** (All registrations)
+
 ```python
 def validate_file_size(file):
     if file.size > settings.FILE_UPLOAD_MAX_MEMORY_SIZE:
@@ -935,6 +967,7 @@ Generates unique note numbers for Debit and Credit Notes with automatic year-wis
   - `note_type` (str): Either "debit" or "credit"
 - **Returns**: Formatted string like "DN-2026-001", "CN-2026-042"
 - **Example Usage**:
+
   ```python
   from mapwala_mis.utils import generate_note_number
   
@@ -954,13 +987,15 @@ Generates unique quotation numbers with automatic year-wise sequencing.
 - **Year-Based**: Resets sequence annually
 - **Returns**: Formatted string like "QT-2026-001", "QT-2026-043"
 - **Example Usage**:
+
   ```python
   from mapwala_mis.utils import generate_quotation_number
   
   qt_number = generate_quotation_number()  # Returns: QT-2026-001
   ```
 
-#### Key Features:
+#### Key Features
+
 - **Database-Level Locking**: Uses PostgreSQL row-level locks to ensure thread safety
 - **Atomic Transactions**: All operations wrapped in `transaction.atomic()`
 - **Auto-Increment**: Automatically increments `last_number` in sequence table
@@ -1255,6 +1290,7 @@ urlpatterns = router.urls
 ### Endpoint Categories
 
 #### 1. **Authentication & Registration** (7 endpoints)
+
 - `POST /api/auth/login/` - User authentication with JWT generation
 - `POST /api/b2c/register/` - B2C customer registration
 - `POST /api/b2b/register/` - B2B partner registration
@@ -1263,12 +1299,14 @@ urlpatterns = router.urls
 - Additional module registration endpoints for QC, Purchase, Store, Account roles
 
 #### 2. **Device Management** (12 endpoints)
+
 - `POST /api/devices/step-1/` through `POST /api/devices/step-10/` - 10-step device creation workflow
 - `POST /api/device-accessories/` - Device accessory addition
 - `GET /api/devices/` - List all devices
 - `GET /api/devices/{id}/` - Get full device details with all components
 
 #### 3. **Order Management** (8 endpoints)
+
 - `POST /api/order-entry/step-1/` - Order type selection
 - `POST /api/order-entry/step-2/` - Order entry completion
 - `POST /api/sales-orders/create/` - Create sales order with stock validation
@@ -1276,54 +1314,64 @@ urlpatterns = router.urls
 - Related dropdown endpoints for products, batches, customer types, suppliers
 
 #### 4. **RFQ Workflow** (3 endpoints)
+
 - `POST /api/rfq/step-1/` - RFQ initialization (device, quantity, assembly type)
 - `POST /api/rfq/step-2/` - Item selection (BOM, components, services)
 - `POST /api/rfq/step-3/` - Vendor selection and delivery details
 - Additional endpoints: List RFQ, Get RFQ details, Vendor quotations
 
 #### 5. **Purchase Order Workflow** (2 endpoints)
+
 - `POST /api/purchase/step-1/` - Buyer info and order reference
 - `POST /api/purchase/step-2/` - Vendor selection and payment terms
 
 #### 6. **Material Receipt Note (MRN)** (1 endpoint + dropdown)
+
 - `POST /api/mrn/create/` - MRN creation with received items
 - `GET /api/dropdowns/purchase-orders/` - Purchase orders dropdown
 - `GET /api/purchase/{po_id}/items/` - Get purchase order items
 
 #### 7. **Dispatch Workflow** (4 endpoints + dropdowns)
+
 - `POST /api/dispatch/step-1/` - Select sales order
 - `POST /api/dispatch/step-2/{dispatch_id}/` - Product and batch selection
 - `POST /api/dispatch/step-3/{dispatch_id}/` - Dispatch date and remarks
 - `POST /api/dispatch/step-4/{dispatch_id}/` - Customer details and completion
 
 #### 8. **Post-Dispatch Returns** (1 endpoint + dropdowns)
+
 - `POST /api/returns/post-dispatch/create/` - Create return with line items
 - Return type and reason dropdown endpoints
 
 #### 9. **Account Management** (3+ endpoints)
+
 - `GET /api/account-management/dashboard/` - Financial dashboard summary
 - `GET/POST /api/debit-notes/` - Debit notes CRUD (ViewSet)
 - `GET/POST /api/credit-notes/` - Credit notes CRUD (ViewSet)
 - Status and reason dropdown endpoints
 
 #### 10. **Quotations** (4 endpoints)
+
 - `POST /api/quotations/create/` - Create quotation from RFQ
 - `GET /api/quotations/` - List all quotations
 - `GET /api/quotations/{id}/` - Get quotation details
 - `POST /api/quotations/{id}/approve-reject/` - Approve or reject quotation
 
 #### 11. **Self Orders** (3 endpoints)
+
 - `POST /api/self-orders/create/` - Create self order
 - `GET /api/self-orders/` - List self orders
 - `GET /api/self-orders/{id}/` - Get self order details
 
 #### 12. **Location Management** (6 endpoints)
+
 - `GET/POST /api/states/` - States CRUD
 - `GET /api/states/active/` - Active states only
 - `GET/POST /api/districts/` - Districts CRUD (filterable by state)
 - `GET /api/districts/?state={state_id}` - Districts by state filter
 
 #### 13. **Dropdown APIs** (15+ endpoints for form selections)
+
 - **General**: States, Districts, Product categories, Suppliers/vendors
 - **Order Related**: Products, Batches, Customer types, Payment modes
 - **Device Related**: Assembly types, SRN options, Quote types
@@ -1342,6 +1390,7 @@ The `views.py` file contains 40+ API view classes organized into 13 sections, im
 #### 1. **ViewSets** (Django REST Framework CRUD Auto-generation)
 
 ViewSets automatically generate these endpoints:
+
 - `GET /endpoint/` - List all
 - `POST /endpoint/` - Create new
 - `GET /endpoint/{id}/` - Get detail
@@ -1350,6 +1399,7 @@ ViewSets automatically generate these endpoints:
 - `DELETE /endpoint/{id}/` - Delete
 
 **Implemented ViewSets**:
+
 - `StateViewSet` - State management with deletion protection (cannot delete if districts exist)
 - `DistrictViewSet` - District management with state filtering
 - `ParentCompanyViewSet` - Parent company management
@@ -1368,6 +1418,7 @@ ViewSets automatically generate these endpoints:
 **Workflow Pattern**: Single responsibility, specific business operation
 
 ##### Authentication & Registration (7 views)
+
 - `LoginAPIView` - JWT token generation with user profile creation
 - `B2CCustomerRegistrationAPIView` - B2C registration with multipart document upload
 - `B2BPartnerRegistrationAPIView` - B2B registration
@@ -1376,6 +1427,7 @@ ViewSets automatically generate these endpoints:
 - Plus 4 module registration views (Account, QC, Purchase, Store, Repair)
 
 ##### Device Creation (10 views - DeviceStep1APIView to DeviceStep10APIView)
+
 - `DeviceStep1APIView` - Device information (make, model, MRP, etc.)
 - `DeviceStep2APIView` - BOM upload (individual or bulk Excel)
 - `DeviceStep3APIView` - BOM component entry
@@ -1388,6 +1440,7 @@ ViewSets automatically generate these endpoints:
 - `DeviceStep10APIView` - Accessories array + mark device as completed
 
 **Common Pattern**:
+
 ```python
 def post(self, request):
     # Get existing device or create new
@@ -1403,6 +1456,7 @@ def post(self, request):
 ```
 
 ##### Order Management (6 views)
+
 - `OrderEntryStep1APIView` - Order type selection (Production/Sales) and assembly type
 - `OrderEntryStep2APIView` - Order details completion
 - `SalesOrderCreateAPIView` - Create sales order with automatic stock deduction
@@ -1410,6 +1464,7 @@ def post(self, request):
 - Related dropdown views for products, batches, customers
 
 ##### RFQ Workflow (3 views)
+
 - `RFQStep1APIView` - Initialize RFQ with device and assembly info
 - `RFQStep2APIView` - Select items (BOM, components, services)
 - `RFQStep3APIView` - Vendor selection and final requirements
@@ -1417,13 +1472,16 @@ def post(self, request):
 - `RFQDetailAPIView` - Get RFQ with all selections
 
 ##### Purchase Order Workflow (2 views)
+
 - `PurchaseOrderStep1APIView` - Buyer and order information
 - `PurchaseOrderStep2APIView` - Vendor selection, payment terms, items
 
 ##### MRN Management (1 view + dropdowns)
+
 - `MRNCreateAPIView` - Create material receipt note with line items
 
 ##### Dispatch Workflow (4 views)
+
 - `DispatchStep1APIView` - Select sales order from list
 - `DispatchStep2APIView` - Select product/batch with automatic stock validation
 - `DispatchStep3APIView` - Set dispatch date, remarks, and urgency flags
@@ -1432,14 +1490,17 @@ def post(self, request):
 **Key Feature**: Stock deduction happens only at Step 4 completion, not during selection
 
 ##### Post-Dispatch Returns (1 view)
+
 - `PostDispatchReturnCreateAPIView` - Create return with header (dispatch ref) and line items (quantities)
 
 ##### Account Management (3 views)
+
 - `AccountManagementDashboardAPIView` - Financial dashboard with summary
 - Auto-number generation for Debit/Credit notes (handled in serializer)
 - DebitNoteViewSet / CreditNoteViewSet handle CRUD
 
 ##### Module Management (5 registration views)
+
 - `AccountRegistrationAPIView`
 - `QCInspectorRegistrationAPIView`
 - `PurchaseDepartmentRegistrationAPIView`
@@ -1447,12 +1508,14 @@ def post(self, request):
 - `RepairTechnicianRegistrationAPIView`
 
 ##### Quotation Management (4 views)
+
 - `QuotationCreateAPIView` - Create quotation from RFQ with items
 - `QuotationListAPIView` - List all quotations with filters
 - `QuotationDetailAPIView` - Get quotation with all items
 - `QuotationApproveRejectAPIView` - Status update to approved/rejected
 
 ##### Self Orders (3 views)
+
 - `SelfOrderCreateAPIView` - Create self order with automatic GST calculation
 - `SelfOrderListAPIView` - List user's self orders
 - `SelfOrderDetailAPIView` - Get single self order details
@@ -1462,10 +1525,12 @@ def post(self, request):
 Return `[{id/key, label/name}]` arrays for form selections:
 
 **Location Dropdowns**:
+
 - `StateDropdownAPIView` - All states
 - `DistrictDropdownAPIView` - Districts by state
 
 **Order Dropdowns**:
+
 - `OrderProductsDropdownAPIView` - Product names
 - `OrderBatchesDropdownAPIView` - Batches by product
 - `CustomerTypeDropdownAPIView` - [b2c, distributor, dealer]
@@ -1475,20 +1540,24 @@ Return `[{id/key, label/name}]` arrays for form selections:
 - `SalesOrdersDropdownAPIView` - Available sales orders
 
 **Device Dropdowns**:
+
 - `AssemblyTypeDropdownAPIView` - Assembly type choices
 - `QuoteTypeDropdownAPIView` - Quote types
 - `SRNDropdownAPIView` - Standard Requirement Numbers
 
 **Dispatch Dropdowns**:
+
 - `DispatchOrderTypesDropdownAPIView` - [distributor, dealer, b2c]
 - `DispatchProductsDropdownAPIView` - Products for dispatch
 - `DispatchBatchesDropdownAPIView` - Batches for dispatch
 
 **Return Dropdowns**:
+
 - `ReturnTypeDropdownAPIView` - [full, partial, replacement]
 - `ReturnReasonDropdownAPIView` - Rejection reasons
 
 **Note Dropdowns**:
+
 - `DebitNoteReasonsDropdownAPIView` - Debit note reason choices
 - `CreditNoteReasonsDropdownAPIView` - Credit note reason choices
 - `NoteStatusesDropdownAPIView` - Note statuses
@@ -1496,6 +1565,7 @@ Return `[{id/key, label/name}]` arrays for form selections:
 ### Common View Patterns
 
 #### Pattern 1: Step-Based Workflow
+
 ```python
 def post(self, request):
     # Validation
@@ -1515,6 +1585,7 @@ def post(self, request):
 ```
 
 #### Pattern 2: Stock Management (Sales vs Production)
+
 ```python
 # Sales Order - DEDUCT stock
 order.batch.available_stock -= order.quantity
@@ -1526,6 +1597,7 @@ batch.save()
 ```
 
 #### Pattern 3: Auto-Number Generation
+
 ```python
 from utils import generate_note_number, generate_quotation_number
 
@@ -1535,6 +1607,7 @@ debit_note = DebitNote.objects.create(number=note_number, ...)
 ```
 
 #### Pattern 4: State-District Cascading
+
 ```python
 # Validate in serializer
 if district.state_id != state.id:
@@ -1564,6 +1637,7 @@ if district.state_id != state.id:
    ```
 
 3. **Create Sales Order**
+
    ```
    POST /api/sales-orders/create/
    Body: product_device_model="Product 101", batch="BATCH-001", qty, prices
@@ -1612,6 +1686,7 @@ if district.state_id != state.id:
    ```
 
 3. **Create Material Receipt Note (MRN)**
+
    ```
    POST /api/mrn/create/
    Body: po_id, vendor, inward_type, received_qty
@@ -1631,6 +1706,7 @@ if district.state_id != state.id:
    ```
 
 2. **Create Post-Dispatch Return**
+
    ```
    POST /api/returns/post-dispatch/create/
    Body: dispatch_ref, return_type, return_reason, return_qty
@@ -1649,6 +1725,7 @@ if district.state_id != state.id:
    ```
 
 2. **Create Credit Note (Customer)**
+
    ```
    POST /api/credit-notes/
    Body: customer, reason, amount, reference_document
@@ -1666,6 +1743,7 @@ if district.state_id != state.id:
    ```
 
 2. **Create Make-to-Order Details**
+
    ```
    POST /api/order-entry/step-2/
    Body: customer_type, product_specifications, customization_details,
@@ -1673,86 +1751,185 @@ if district.state_id != state.id:
    Returns: order_id
    ```
 
-## 🚀 RUNNING THE PROJECT
+# Mapwala MIS Backend
 
-### **Prerequisites**
+## 🚀 Running the Project
 
-- Python 3.10+
-- PostgreSQL 12+
-- Virtual environment (venv, conda, etc.)
+### Prerequisites
 
-### **Local Development Setup**
+- Python 3.12+
+- PostgreSQL 15+
+- Virtual environment
 
-1. **Clone the repository**
+---
 
-   ```bash
-   cd /home/vaibhav/project/Mapwala_MIS_Backend
-   ```
+### Local Development (without Docker)
 
-2. **Create & activate virtual environment**
+**1. Clone the repository and navigate to project**
 
-   ```bash
-   python -m venv vir_env
-   source vir_env/bin/activate  # On Windows: vir_env\Scripts\activate
-   ```
+```bash
+cd Mapwala_MIS_Backend
+```
 
-3. **Install dependencies**
+**2. Create and activate virtual environment**
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+```bash
+python -m venv .venv
+source .venv/bin/activate        # Linux/Mac
+# .venv\Scripts\activate         # Windows
+```
 
-4. **Create .env file** (see Configuration section above)
+**3. Install dependencies**
 
-   ```bash
-   cp env_example .env
-   # Edit .env with your settings
-   ```
+```bash
+pip install -r requirements.txt
+```
 
-5. **Run migrations**
+**4. Create `.env` file**
 
-   ```bash
-   python manage.py migrate
-   ```
+```bash
+cp env_example .env
+# Edit .env with your local settings
+```
 
-6. **Create superuser (for admin access)**
+Make sure `.env` has `DB_HOST=localhost` for local development.
 
-   ```bash
-   python manage.py createsuperuser
-   ```
+**5. Run migrations**
 
-7. **Run development server**
+```bash
+python manage.py migrate
+```
 
-   ```bash
-   python manage.py runserver
-   # Server runs on http://localhost:8000
-   ```
+**6. Collect static files**
 
-8. **Access admin panel**
-   ```
-   http://localhost:8000/admin/
-   ```
+```bash
+python manage.py collectstatic --no-input
+```
 
-### **Docker Deployment**
+**7. Create superuser (for admin access)**
 
-1. **Build Docker image**
+```bash
+python manage.py createsuperuser
+```
 
-   ```bash
-   docker build -t mapwala-mis .
-   ```
+**8. Run with Django dev server**
 
-2. **Run with Docker Compose**
+```bash
+python manage.py runserver 0.0.0.0:8000
+```
 
-   ```bash
-   # Default: uses your main PostgreSQL server (no docker db container)
-   docker compose up -d
+**Or run with Gunicorn (production-like)**
 
-   # Optional: start the disposable local postgres container for developer testing
-   # USE_DOCKER_DB=true and COMPOSE_PROFILES=localdb enables the `db` service
-   USE_DOCKER_DB=true COMPOSE_PROFILES=localdb docker compose up -d
-   ```
+```bash
+gunicorn Mapwala_MIS_Backend.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120 --access-logfile -
+```
 
-3. **Run migrations in container**
+**9. Access**
+
+```
+API:   http://localhost:8000/
+Admin: http://localhost:8000/admin/
+```
+
+---
+
+### Docker Deployment
+
+**`.env` must have these vars before running Docker:**
+
+```dotenv
+SECRET_KEY=your-secret-key
+DEBUG=True
+
+# Docker Postgres initialization
+DOCKER_DB_NAME=mapwala_db
+DOCKER_DB_USER=postgres
+DOCKER_DB_PASSWORD=yourpassword
+
+# Django DB connection (must match above password)
+DATABASE_URL=postgresql://postgres:yourpassword@db:5432/mapwala_db
+
+ALLOWED_HOSTS=localhost,127.0.0.1
+CORS_ALLOWED_ORIGINS=http://localhost:3000
+
+GUNICORN_WORKERS=3
+GUNICORN_TIMEOUT=120
+
+APP_USERNAME=9876543210
+APP_PASSWORD=YourStr0ng!Pass
+
+SUPERUSER_USERNAME=admin
+SUPERUSER_PASSWORD=Admin@1234
+SUPERUSER_EMAIL=admin@mapwala.com
+```
+
+> ⚠️ `DATABASE_URL` uses `db` as host (Docker service name), not `localhost`.
+
+---
+
+**Docker commands:**
+
+```bash
+# Full clean reset — removes containers, volumes and orphans
+docker compose down -v --remove-orphans
+
+# Rebuild images from scratch — no cache
+docker compose build --no-cache
+
+# Start all services
+docker compose up
+
+# Stop all services — keeps database data
+docker compose down
+
+# Start all services again
+docker compose up
+
+# Rebuild and start — use after code changes
+docker compose up --build
+```
+
+**Access**
+
+```
+API:   http://localhost:8000/
+Admin: http://localhost:8000/admin/
+```
+
+> Superuser and standard user are created automatically on first startup via `entrypoint.sh`.
+> No need to run `createsuperuser` manually in Docker.
+
+---
+
+### Environment Variables Reference
+
+| Variable | Required | Description |
+|---|---|---|
+| `SECRET_KEY` | ✅ | Django secret key |
+| `DEBUG` | ✅ | `True` for dev, `False` for production |
+| `DATABASE_URL` | ✅ (Docker) | Full Postgres connection URL |
+| `DB_NAME` | ✅ (Local) | Database name |
+| `DB_USER` | ✅ (Local) | Database user |
+| `DB_PASSWORD` | ✅ (Local) | Database password |
+| `DB_HOST` | ✅ (Local) | `localhost` for local, `db` for Docker |
+| `DB_PORT` | ✅ (Local) | Default `5432` |
+| `DOCKER_DB_NAME` | ✅ (Docker) | Postgres container DB name |
+| `DOCKER_DB_USER` | ✅ (Docker) | Postgres container user |
+| `DOCKER_DB_PASSWORD` | ✅ (Docker) | Postgres container password |
+| `ALLOWED_HOSTS` | ✅ | Comma-separated allowed hosts |
+| `CORS_ALLOWED_ORIGINS` | ✅ | Comma-separated allowed origins |
+| `GUNICORN_WORKERS` | ✅ (Docker) | Number of Gunicorn workers |
+| `GUNICORN_TIMEOUT` | ✅ (Docker) | Gunicorn worker timeout in seconds |
+| `APP_USERNAME` | ✅ | Standard app user (10-digit mobile number) |
+| `APP_PASSWORD` | ✅ | Standard app user password |
+| `SUPERUSER_USERNAME` | ✅ (Docker) | Django admin superuser username |
+| `SUPERUSER_PASSWORD` | ✅ (Docker) | Django admin superuser password |
+| `SUPERUSER_EMAIL` | ✅ (Docker) | Django admin superuser email |
+
+---
+
+1. **Run migrations in container**
+
    ```bash
    docker compose exec backend python manage.py migrate
    docker compose exec backend python manage.py createsuperuser

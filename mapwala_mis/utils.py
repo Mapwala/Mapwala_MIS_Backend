@@ -46,5 +46,3 @@ def generate_quotation_number() -> str:
         seq.save(update_fields=["last_number"])
 
         return f"QT-{year}-{seq.last_number:03d}"
-
-
