@@ -6,6 +6,7 @@ from decimal import Decimal
 from django.conf import settings
 from django.contrib.auth import authenticate
 from rest_framework import serializers
+from django.db import transaction
 from .models import (
     State,
     District,
@@ -56,7 +57,7 @@ from .models import (
     RFQSelection,
     QuotationItem,
     Quotation,
-    ProformaInvoice,
+    ProformaInvoice,Manufacturer
 )
 
 
@@ -247,18 +248,24 @@ class B2BPartnerRegistrationSerializer(serializers.ModelSerializer):
         return data
 
 
+class LinkedToChoicesSerializer(serializers.Serializer):
+    value = serializers.CharField()
+    label = serializers.CharField()
+
+
+class ManufacturerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Manufacturer
+        fields = ["id", "name"]
+
+
 # ---------------- Distributor Registration ----------------
 class DistributorRegistrationSerializer(serializers.ModelSerializer):
     authorised_states = serializers.PrimaryKeyRelatedField(
-        queryset=State.objects.all(),
-        many=True,
-        required=True,
+        queryset=State.objects.all(), many=True
     )
-
     authorised_districts = serializers.PrimaryKeyRelatedField(
-        queryset=District.objects.all(),
-        many=True,
-        required=True,
+        queryset=District.objects.all(), many=True
     )
 
     class Meta:
@@ -287,38 +294,35 @@ class DistributorRegistrationSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, data):
-        # 1️ Address validation
         if data["district"].state_id != data["state"].id:
             raise serializers.ValidationError(
                 {"district": "District does not belong to selected state."}
             )
 
-        # 2️ Linked-to validation
         if data["linked_to"] == "manufacturer" and not data.get("manufacturer"):
             raise serializers.ValidationError(
-                {
-                    "manufacturer": "Manufacturer is required when Linked To is Manufacturer."
-                }
+                {"manufacturer": "Manufacturer is required."}
             )
 
-        # 3️ Authorised area validation (MULTI)
-        authorised_states = data["authorised_states"]
-        authorised_districts = data["authorised_districts"]
-
-        state_ids = {state.id for state in authorised_states}
-
-        for district in authorised_districts:
-            if district.state_id not in state_ids:
+        state_ids = {s.id for s in data["authorised_states"]}
+        for d in data["authorised_districts"]:
+            if d.state_id not in state_ids:
                 raise serializers.ValidationError(
-                    {
-                        "authorised_districts": (
-                            f"District '{district.name}' does not belong "
-                            f"to selected authorised states."
-                        )
-                    }
+                    {"authorised_districts": "District not in authorised states."}
                 )
 
         return data
+
+    @transaction.atomic
+    def create(self, validated_data):
+        states = validated_data.pop("authorised_states")
+        districts = validated_data.pop("authorised_districts")
+
+        distributor = Distributor.objects.create(**validated_data)
+        distributor.authorised_states.set(states)
+        distributor.authorised_districts.set(districts)
+
+        return distributor
 
 
 # ---------------- Dealer Registration ----------------

@@ -23,6 +23,8 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.exceptions import ValidationError
 from django.db import IntegrityError
+from rest_framework import serializers
+from rest_framework.viewsets import ReadOnlyModelViewSet
 import uuid
 
 from django_filters.rest_framework import DjangoFilterBackend
@@ -65,6 +67,7 @@ from .models import (
     Dispatch,
     PostDispatchReturn,
     Quotation,
+    Manufacturer,
 )
 
 from .serializers import (
@@ -136,6 +139,8 @@ from .serializers import (
     DeviceDetailSerializer,
     DeviceListSerializer,
     QuotationApproveRejectSerializer,
+    ManufacturerSerializer,
+    LinkedToChoicesSerializer,
 )
 
 class LoginAPIView(APIView):
@@ -299,22 +304,26 @@ class B2BPartnerRegistrationAPIView(APIView):
         )
 
 
-class DistributorRegistrationAPIView(APIView):
-    """Register distributors with authorized states and districts."""
+class LinkedToChoicesAPIView(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def get(self, request):
+        data = [
+            {"value": key, "label": label}
+            for key, label in Distributor.LINKED_TO_CHOICES
+        ]
+        serializer = LinkedToChoicesSerializer(data, many=True)
+        return Response(serializer.data)
+
+
+class DistributorRegistrationAPIView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request):
         serializer = DistributorRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
-        authorised_states = serializer.validated_data.pop("authorised_states")
-        authorised_districts = serializer.validated_data.pop("authorised_districts")
-
-        distributor = Distributor.objects.create(**serializer.validated_data)
-        distributor.authorised_states.set(authorised_states)
-        distributor.authorised_districts.set(authorised_districts)
+        distributor = serializer.save()
 
         return Response(
             {
@@ -324,6 +333,12 @@ class DistributorRegistrationAPIView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+
+
+class ManufacturerViewSet(ReadOnlyModelViewSet):
+    queryset = Manufacturer.objects.all().order_by("name")
+    serializer_class = ManufacturerSerializer
+    permission_classes = [IsAuthenticated]
 
 
 class DealerRegistrationAPIView(APIView):
