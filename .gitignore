@@ -3,52 +3,62 @@ __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
-*.egg-info/
-dist/
-build/
-*.so
-.Python
+*.pyc
+*.pdb
+
+# Virtual Environment
+.venv/
+venv/
+env/
+vir_env/
 
 # Django
 *.log
 local_settings.py
 db.sqlite3
-staticfiles/
-media/
-documents/
+db.sqlite3-journal
 
-# Environment variables
+# Media files (user uploads - never commit these)
+media/
+
+# Static files (generated)
+staticfiles/
+static_root/
+
+# Environment variables (secrets - never commit)
 .env
 .env.*
+!env_example
 
-# Virtual environment
-vir_env/
-env/
-venv/
-ENV/
-.venv/
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+.eggs/
 
-# IDE
+# Testing
+.coverage
+.pytest_cache/
+htmlcov/
+coverage.xml
+
+# IDEs
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
+
+# Qodo AI
+.qodo/
+
+# Docker
+docker-compose.override.yml
 
 # OS
 .DS_Store
 Thumbs.db
+desktop.ini
 
-
-# PostgreSQL (optional if used in production)
-postgres_data/
-
-# Test / coverage
-.coverage
-htmlcov/
-.pytest_cache/
-*.cover
-.hypothesis/
-
-# Project-specific ignores
-Mapwala_MIS_Backend.postman_collection.json  # or .json if that's what it is
+# Misc
+*.bak
+*.tmp

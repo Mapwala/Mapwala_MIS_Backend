@@ -1,9 +1,64 @@
-from django.contrib.auth import authenticate
-from django.conf import settings
-from rest_framework import serializers
-from decimal import Decimal
-from .models import *
+# mapwala_mis/serializers.py
+import re
+from django.core.validators import RegexValidator
 import json
+from decimal import Decimal
+from django.conf import settings
+from django.contrib.auth import authenticate
+from rest_framework import serializers
+from django.db import transaction
+from .models import (
+    State,
+    District,
+    ProductCategory,
+    SupplierVendor,
+    ProductionOrder,
+    OrderBatch,
+    OrderEntry,
+    OrderEntryMakeToOrder,
+    RequestForQuote,
+    PurchaseOrder,
+    MaterialReceiptNote,
+    Dispatch,
+    PostDispatchReturn,
+    B2CCustomer,
+    B2BPartner,
+    Distributor,
+    Dealer,
+    ProformaInvoice,
+    DeviceInformation,
+    BOM,
+    BOMComponent,
+    Enclosure,
+    WireHarness,
+    WireConnector,
+    Battery,
+    SOSButton,
+    Sticker,
+    UserManual,
+    Accessory,
+    AccountRegistration,
+    QCInspectorRegistration,
+    PurchaseDepartmentRegistration,
+    StoreManagerRegistration,
+    RepairTechnicianRegistration,
+    Vendor,
+    ParentCompany,
+    OrderProduct,
+    SalesOrder,
+    StoreTransfer,
+    DebitNote,
+    RejectedItem,
+    CreditNote,
+    ReturnRequest,
+    RepairRecord,
+    Device,
+    SelfOrder,
+    RFQSelection,
+    QuotationItem,
+    Quotation,
+    ProformaInvoice,Manufacturer
+)
 
 
 # ---------------- File Size Validator ----------------
@@ -18,9 +73,36 @@ def validate_file_size(file):
 
 # ---------------- Login ----------------
 class LoginSerializer(serializers.Serializer):
-    username = serializers.CharField()
+    username = serializers.CharField(
+        validators=[
+            RegexValidator(
+                regex=r"^\d{10}$",
+                message="Username must be a valid 10-digit mobile number.",
+            )
+        ]
+    )
     password = serializers.CharField(write_only=True)
     accepted_terms = serializers.BooleanField()
+
+    def validate_password(self, value):
+        errors = []
+
+        if len(value) < 8:
+            errors.append("Password must be at least 8 characters long.")
+
+        if not re.search(r"[A-Z]", value):
+            errors.append("Password must contain at least one uppercase letter [A-Z].")
+
+        if not re.search(r"[0-9]", value):
+            errors.append("Password must contain at least one digit [0-9].")
+
+        if not re.search(r"[!@#$%^&*(),.?\":{}|<>_\-\[\]\\/\'\`~+=;]", value):
+            errors.append("Password must contain at least one special character.")
+
+        if errors:
+            raise serializers.ValidationError(errors)
+
+        return value
 
     def validate(self, data):
         if not data.get("accepted_terms"):
@@ -32,7 +114,6 @@ class LoginSerializer(serializers.Serializer):
             username=data["username"],
             password=data["password"],
         )
-
         if user is None:
             raise serializers.ValidationError(
                 {"credentials": "Invalid username or password"}
@@ -167,18 +248,24 @@ class B2BPartnerRegistrationSerializer(serializers.ModelSerializer):
         return data
 
 
+class LinkedToChoicesSerializer(serializers.Serializer):
+    value = serializers.CharField()
+    label = serializers.CharField()
+
+
+class ManufacturerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Manufacturer
+        fields = ["id", "name"]
+
+
 # ---------------- Distributor Registration ----------------
 class DistributorRegistrationSerializer(serializers.ModelSerializer):
     authorised_states = serializers.PrimaryKeyRelatedField(
-        queryset=State.objects.all(),
-        many=True,
-        required=True,
+        queryset=State.objects.all(), many=True
     )
-
     authorised_districts = serializers.PrimaryKeyRelatedField(
-        queryset=District.objects.all(),
-        many=True,
-        required=True,
+        queryset=District.objects.all(), many=True
     )
 
     class Meta:
@@ -207,38 +294,35 @@ class DistributorRegistrationSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, data):
-        # 1️ Address validation
         if data["district"].state_id != data["state"].id:
             raise serializers.ValidationError(
                 {"district": "District does not belong to selected state."}
             )
 
-        # 2️ Linked-to validation
         if data["linked_to"] == "manufacturer" and not data.get("manufacturer"):
             raise serializers.ValidationError(
-                {
-                    "manufacturer": "Manufacturer is required when Linked To is Manufacturer."
-                }
+                {"manufacturer": "Manufacturer is required."}
             )
 
-        # 3️ Authorised area validation (MULTI)
-        authorised_states = data["authorised_states"]
-        authorised_districts = data["authorised_districts"]
-
-        state_ids = {state.id for state in authorised_states}
-
-        for district in authorised_districts:
-            if district.state_id not in state_ids:
+        state_ids = {s.id for s in data["authorised_states"]}
+        for d in data["authorised_districts"]:
+            if d.state_id not in state_ids:
                 raise serializers.ValidationError(
-                    {
-                        "authorised_districts": (
-                            f"District '{district.name}' does not belong "
-                            f"to selected authorised states."
-                        )
-                    }
+                    {"authorised_districts": "District not in authorised states."}
                 )
 
         return data
+
+    @transaction.atomic
+    def create(self, validated_data):
+        states = validated_data.pop("authorised_states")
+        districts = validated_data.pop("authorised_districts")
+
+        distributor = Distributor.objects.create(**validated_data)
+        distributor.authorised_states.set(states)
+        distributor.authorised_districts.set(districts)
+
+        return distributor
 
 
 # ---------------- Dealer Registration ----------------
@@ -1961,7 +2045,7 @@ class RFQDetailSerializer(serializers.ModelSerializer):
 # ----------------------- RFQ Quotation Serializer -----------------------
 # class RFQQuotationCreateSerializer(serializers.ModelSerializer):
 #     """Serializer for creating/updating quotation rates"""
-    
+
 #     class Meta:
 #         model = RFQQuotation
 #         fields = ["id", "rfq", "vendor", "quotation_rate", "status"]
@@ -1999,10 +2083,11 @@ class RFQDetailSerializer(serializers.ModelSerializer):
 # ======================= QUOTATION SERIALIZERS =============================
 # ============================================================================
 
+
 # --------- Quotation Item Serializer ---------
 class QuotationItemSerializer(serializers.ModelSerializer):
     """Serializer for quotation items"""
-    
+
     class Meta:
         model = QuotationItem
         fields = [
@@ -2023,8 +2108,9 @@ class QuotationItemSerializer(serializers.ModelSerializer):
 # --------- Quotation Create Serializer ---------
 class QuotationCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating quotations from RFQ"""
+
     items = QuotationItemSerializer(many=True, write_only=True)
-    
+
     class Meta:
         model = Quotation
         fields = [
@@ -2034,75 +2120,79 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
             "valid_until",
             "items",
         ]
-    
+
     def validate(self, data):
         """Validate quotation data"""
         if not data.get("items"):
-            raise serializers.ValidationError("Quotation must contain at least one item.")
-        
+            raise serializers.ValidationError(
+                "Quotation must contain at least one item."
+            )
+
         rfq = data.get("rfq")
         vendor = data.get("vendor")
-        
+
         # Check for duplicate quotation for same RFQ and vendor
         existing = Quotation.objects.filter(rfq=rfq, vendor=vendor).exists()
         if existing:
-            raise serializers.ValidationError("A quotation already exists for this RFQ and vendor.")
-        
+            raise serializers.ValidationError(
+                "A quotation already exists for this RFQ and vendor."
+            )
+
         return data
-    
+
     def create(self, validated_data):
         """Create quotation with items"""
         items_data = validated_data.pop("items")
-        
+
         # Generate unique quotation number
         from .utils import generate_quotation_number
+
         quotation_number = generate_quotation_number()
-        
+
         # Get current user
         user = self.context["request"].user
-        
+
         # Create quotation
         quotation = Quotation.objects.create(
-            quotation_number=quotation_number,
-            created_by=user,
-            **validated_data
+            quotation_number=quotation_number, created_by=user, **validated_data
         )
-        
+
         # Create items
         for item_data in items_data:
             quantity = item_data.get("quantity", 1)
             net_unit_price = item_data.get("net_unit_price_excl_gst")
             gst_rate = item_data.get("gst_rate", Decimal("18.00"))
-            
+
             # Calculate subtotal
             subtotal = quantity * net_unit_price
-            
+
             # Calculate GST and total before creating item
             gst_amount = subtotal * (gst_rate / Decimal("100"))
             total_incl_gst = subtotal + gst_amount
-            
+
             item = QuotationItem.objects.create(
                 quotation=quotation,
                 subtotal_excl_gst=subtotal,
                 gst_amount=gst_amount,
                 total_incl_gst=total_incl_gst,
-                **item_data
+                **item_data,
             )
-        
+
         # Calculate quotation totals
         quotation.calculate_totals()
-        
+
         return quotation
 
 
 # --------- Quotation List Serializer ---------
 class QuotationListSerializer(serializers.ModelSerializer):
     """Serializer for listing quotations"""
+
     vendor_name = serializers.CharField(source="vendor.name", read_only=True)
     rfq_reference = serializers.SerializerMethodField()
     item_count = serializers.SerializerMethodField()
     status_display = serializers.CharField(source="get_status_display", read_only=True)
-    
+
     class Meta:
         model = Quotation
         fields = [
@@ -2121,11 +2211,11 @@ class QuotationListSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = fields
-    
+
     def get_rfq_reference(self, obj):
         """Get RFQ reference number"""
         return f"RFQ-{obj.rfq.id}"
-    
+
     def get_item_count(self, obj):
         """Get count of items in quotation"""
         return obj.items.count()
@@ -2134,12 +2224,15 @@ class QuotationListSerializer(serializers.ModelSerializer):
 # --------- Quotation Detail Serializer ---------
 class QuotationDetailSerializer(serializers.ModelSerializer):
     """Serializer for quotation details"""
+
     vendor_name = serializers.CharField(source="vendor.name", read_only=True)
     rfq_reference = serializers.SerializerMethodField()
     items = QuotationItemSerializer(many=True, read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
-    created_by_name = serializers.CharField(source="created_by.get_full_name", read_only=True)
-    
+    created_by_name = serializers.CharField(
+        source="created_by.get_full_name", read_only=True
+    )
+
     class Meta:
         model = Quotation
         fields = [
@@ -2160,7 +2253,7 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = fields
-    
+
     def get_rfq_reference(self, obj):
         """Get RFQ reference number"""
         return f"RFQ-{obj.rfq.id}"
@@ -2169,12 +2262,13 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
 # --------- Quotation Approve/Reject Serializer ---------
 class QuotationApproveRejectSerializer(serializers.Serializer):
     """Serializer for approving or rejecting quotations"""
+
     status = serializers.ChoiceField(choices=["approved", "rejected"])
-    
+
     def validate_status(self, value):
         """Validate status"""
         if value not in ["approved", "rejected"]:
-            raise serializers.ValidationError("Status must be 'approved' or 'rejected'.")
+            raise serializers.ValidationError(
+                "Status must be 'approved' or 'rejected'."
+            )
         return value
-
-
