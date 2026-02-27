@@ -386,13 +386,7 @@ class Dealer(models.Model):
 
 # ---------------- Product ----------------
 class Product(models.Model):
-    # product_id = models.PositiveIntegerField(unique=True,verbose_name="Product ID",help_text="Numeric Product ID shown in PI screen (e.g. 101, 102)")
-    product_id = models.CharField(
-        max_length=20,
-        unique=True,
-        verbose_name="Product ID",
-        help_text="Numeric Product ID shown in PI screen (e.g. 101, 102)",
-    )
+    product_id = models.CharField(max_length=20,unique=True,verbose_name="Product ID",help_text="Numeric Product ID shown in PI screen (e.g. 101, 102)")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
