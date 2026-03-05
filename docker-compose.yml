@@ -7,7 +7,7 @@ services:
       - .:/app
       - media_volume:/app/media
     ports:
-      - "8000:8000"
+      - "6631:8000"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     env_file:
@@ -26,8 +26,6 @@ services:
       POSTGRES_PASSWORD: ${DOCKER_DB_PASSWORD:-postgres}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DOCKER_DB_USER:-postgres} -d ${DOCKER_DB_NAME:-mapwala_db}"]
       interval: 5s
