@@ -12,6 +12,7 @@ from .models import (
     District,
     ProductCategory,
     SupplierVendor,
+    Product,
     ProductionOrder,
     OrderBatch,
     OrderEntry,
@@ -323,6 +324,34 @@ class DistributorRegistrationSerializer(serializers.ModelSerializer):
         distributor.authorised_districts.set(districts)
 
         return distributor
+
+
+class ProductCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = ["id", "product_id", "created_at"]
+        read_only_fields = ["id", "created_at"]
+
+    def validate_product_id(self, value):
+        if not value.strip():
+            raise serializers.ValidationError("Product ID cannot be empty.")
+
+        if Product.objects.filter(product_id=value).exists():
+            raise serializers.ValidationError("Product with this ID already exists.")
+
+        return value
+
+
+class ProductDropdownSerializer(serializers.ModelSerializer):
+    value = serializers.IntegerField(source="id")
+    label = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Product
+        fields = ["value", "label"]
+
+    def get_label(self, obj):
+        return str(obj)
 
 
 # ---------------- Dealer Registration ----------------

@@ -31,6 +31,8 @@ from .views import (
     SalesOrderCreateAPIView,
     ProductionOrderCreateAPIView,
     ProductDropdownAPIView,
+    ProductCreateAPIView,
+    OrderProductDropdownAPIView,
     SupplierVendorDropdownAPIView,
     ProductCategoryDropdownAPIView,
     CustomerTypeDropdownAPIView,
@@ -127,27 +129,20 @@ urlpatterns = [
     path("auth/login/", LoginAPIView.as_view(), name="login"),
     path("b2c/register/", B2CCustomerRegistrationAPIView.as_view()),
     path("b2b/register/", B2BPartnerRegistrationAPIView.as_view()),
-    
     path("dropdowns/linked-to/", LinkedToChoicesAPIView.as_view()),
     path("distributor/register/", DistributorRegistrationAPIView.as_view()),
-    
     path("dealer/register/", DealerRegistrationAPIView.as_view()),
+    # Product Dropdowns
+    path("dropdowns/products/",ProductDropdownAPIView.as_view(),name="product-dropdown"),
+    path("products/", ProductCreateAPIView.as_view(), name="product-create"),
     # Account management
     path("account-management/dashboard/", AccountManagementDashboardAPIView.as_view()),
     path("debit-notes/reasons/", DebitNoteReasonsAPIView.as_view()),
     path("credit-notes/reasons/", CreditNoteReasonsAPIView.as_view()),
     path("notes/statuses/", NoteStatusChoicesAPIView.as_view()),
     # Device creation (steps)
-    path(
-        "devices/dropdowns/unit-of-measure/",
-        unit_of_measure_dropdown,
-        name="unit-of-measure-dropdown",
-    ),
-    path(
-        "devices/dropdowns/state-of-supply/",
-        state_of_supply_dropdown,
-        name="state-of-supply-dropdown",
-    ),
+    path("devices/dropdowns/unit-of-measure/",unit_of_measure_dropdown,name="unit-of-measure-dropdown"),
+    path("devices/dropdowns/state-of-supply/",state_of_supply_dropdown,name="state-of-supply-dropdown"),
     path("devices/step-1/", DeviceStep1APIView.as_view()),
     path("devices/step-2/", DeviceStep2APIView.as_view()),
     path("devices/step-3/", DeviceStep3APIView.as_view()),
@@ -168,7 +163,7 @@ urlpatterns = [
     path("sales-orders/create/", SalesOrderCreateAPIView.as_view()),
     path("production-orders/add-to-stock/", ProductionOrderCreateAPIView.as_view()),
     # Dropdowns
-    path("dropdowns/products/", ProductDropdownAPIView.as_view()),
+    path("dropdowns/order-products/",OrderProductDropdownAPIView.as_view(),name="order-product-dropdown"),
     path("dropdowns/suppliers/", SupplierVendorDropdownAPIView.as_view()),
     path("dropdowns/product-categories/", ProductCategoryDropdownAPIView.as_view()),
     path("dropdowns/customer-types/", CustomerTypeDropdownAPIView.as_view()),

@@ -39,6 +39,7 @@ from .models import (
     ParentCompany,
     SupplierVendor,
     Vendor,
+    Product,
     DeviceInformation,
     StoreTransfer,
     ProductCategory,
@@ -76,6 +77,8 @@ from .serializers import (
     ParentCompanySerializer,
     VendorSerializer,
     ProductCategorySerializer,
+    ProductCreateSerializer,
+    ProductDropdownSerializer,
     ReturnRequestSerializer,
     RepairRecordSerializer,
     RejectedItemSerializer,
@@ -142,6 +145,7 @@ from .serializers import (
     ManufacturerSerializer,
     LinkedToChoicesSerializer,
 )
+
 
 class LoginAPIView(APIView):
     """Handles user authentication and JWT token generation."""
@@ -368,9 +372,64 @@ class DealerRegistrationAPIView(APIView):
         )
 
 
+class ProductCreateAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = ProductCreateSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(
+                {
+                    "error": "Validation failed",
+                    "details": serializer.errors,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            with transaction.atomic():  
+                product = serializer.save()
+
+            return Response(
+                {
+                    "message": "Product created successfully",
+                    "data": ProductCreateSerializer(product).data,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+
+        except IntegrityError:
+            # Handles DB-level unique constraint failure
+            return Response(
+                {
+                    "error": "Product already exists",
+                    "details": {"product_id": ["Product with this ID already exists."]},
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        except Exception as e:
+            # Catch unexpected errors
+            return Response(
+                {
+                    "error": "Something went wrong",
+                    "details": str(e),
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class ProductDropdownAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        queryset = Product.objects.all().order_by("product_id")
+        serializer = ProductDropdownSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+
 # PROFORMA INVOICE
-
-
 class ProformaInvoiceCreateAPIView(APIView):
     """Create proforma invoices."""
 
@@ -392,8 +451,6 @@ class ProformaInvoiceCreateAPIView(APIView):
 
 
 # DEVICE CREATION WORKFLOW
-
-
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def unit_of_measure_dropdown(request):
@@ -688,7 +745,7 @@ class ProductionOrderCreateAPIView(APIView):
         )
 
 
-class ProductDropdownAPIView(APIView):
+class OrderProductDropdownAPIView(APIView):
     """List all order products for dropdown."""
 
     permission_classes = [IsAuthenticated]
