@@ -339,10 +339,18 @@ class DistributorRegistrationAPIView(APIView):
         )
 
 
-class ManufacturerViewSet(ReadOnlyModelViewSet):
-    queryset = Manufacturer.objects.all().order_by("name")
+class ManufacturerViewSet(ModelViewSet):
+    """
+    CRUD API for Manufacturer Registration
+    """
+
+    queryset = Manufacturer.objects.all().order_by("-created_at")
     serializer_class = ManufacturerSerializer
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
 
 
 class DealerRegistrationAPIView(APIView):

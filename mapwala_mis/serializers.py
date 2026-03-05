@@ -1,4 +1,5 @@
 # mapwala_mis/serializers.py
+
 import re
 from django.core.validators import RegexValidator
 import json
@@ -254,10 +255,37 @@ class LinkedToChoicesSerializer(serializers.Serializer):
     label = serializers.CharField()
 
 
+# class ManufacturerSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Manufacturer
+#         fields = ["id", "name"]
+
+
 class ManufacturerSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Manufacturer
-        fields = ["id", "name"]
+        fields = "__all__"
+        read_only_fields = ["id", "created_at", "created_by"]
+
+    def validate_applicant_mobile(self, value):
+        if not value.isdigit():
+            raise serializers.ValidationError("Mobile number must contain digits only.")
+        if len(value) < 10:
+            raise serializers.ValidationError(
+                "Mobile number must be at least 10 digits."
+            )
+        return value
+
+    def validate_company_gst_no(self, value):
+        if len(value) < 10:
+            raise serializers.ValidationError("Invalid GST number.")
+        return value
+
+    def validate_company_pan_no(self, value):
+        if len(value) != 10:
+            raise serializers.ValidationError("PAN number must be 10 characters.")
+        return value.upper()
 
 
 # ---------------- Distributor Registration ----------------

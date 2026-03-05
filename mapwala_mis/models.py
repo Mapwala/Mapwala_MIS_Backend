@@ -192,11 +192,49 @@ class B2BPartner(models.Model):
 
 
 # ---------------- Manufacturer ----------------
+# class Manufacturer(models.Model):
+#     name = models.CharField(max_length=255, unique=True)
+
+#     def __str__(self):
+#         return self.name
+
 class Manufacturer(models.Model):
-    name = models.CharField(max_length=255, unique=True)
+    # Applicant Information
+    applicant_name = models.CharField(max_length=255)
+    applicant_email = models.EmailField()
+    applicant_mobile = models.CharField(max_length=15)
+    applicant_dob = models.DateField()
+    applicant_id_proof_no = models.CharField(max_length=100)
+    applicant_address = models.TextField()
+    applicant_pin = models.CharField(max_length=10)
+    # Company Information
+    company_name = models.CharField(max_length=255)
+    company_email = models.EmailField()
+    company_phone = models.CharField(max_length=15)
+    company_address = models.TextField()
+    company_pin = models.CharField(max_length=10)
+    company_gst_no = models.CharField(max_length=50)
+    company_pan_no = models.CharField(max_length=20)
+    company_registration_number = models.CharField(max_length=100, blank=True, null=True)
+    # TAC Information
+    tac_no = models.CharField(max_length=100)
+    tac_validity = models.DateField()
+    # Document Uploads
+    self_certified_applicant = models.FileField(upload_to="manufacturers/self_certified/")
+    authorization_letter = models.FileField(upload_to="manufacturers/authorization_letter/")
+    pan_card = models.FileField(upload_to="manufacturers/pan_card/")
+    gst_certificate = models.FileField(upload_to="manufacturers/gst_certificate/")
+    company_registration_certificate = models.FileField(upload_to="manufacturers/company_registration/", blank=True, null=True)
+    technical_onboarding_request_letter = models.FileField(upload_to="manufacturers/technical_onboarding/")
+    tac_document = models.FileField(upload_to="manufacturers/tac/")
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey("auth.User", on_delete=models.SET_NULL, null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
 
     def __str__(self):
-        return self.name
+        return self.company_name
 
 
 # ---------------- Distributor ----------------

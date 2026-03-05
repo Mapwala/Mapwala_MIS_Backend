@@ -686,9 +686,178 @@ class B2BPartnerAdmin(admin.ModelAdmin):
 # ------------------ Manufacturer ------------------
 @admin.register(Manufacturer)
 class ManufacturerAdmin(admin.ModelAdmin):
-    list_display = ("id", "name")
-    search_fields = ("name",)
-    ordering = ("id",)
+
+    # ─── List View ────────────────────────────────────────────────────────────
+
+    list_display = (
+        "company_name",
+        "applicant_name",
+        "applicant_email",
+        "company_phone",
+        "tac_no",
+        "tac_validity",
+        "created_at",
+        "created_by",
+    )
+
+    list_filter = (
+        "tac_validity",
+        "created_at",
+        "created_by",
+    )
+
+    search_fields = (
+        "company_name",
+        "applicant_name",
+        "applicant_email",
+        "company_email",
+        "company_gst_no",
+        "company_pan_no",
+        "tac_no",
+        "company_registration_number",
+    )
+
+    ordering = ("-created_at",)
+
+    date_hierarchy = "created_at"
+
+    list_per_page = 25
+
+    # ─── Detail View – Fieldsets ───────────────────────────────────────────────
+
+    fieldsets = (
+        (
+            "👤 Applicant Information",
+            {
+                "fields": (
+                    ("applicant_name", "applicant_email"),
+                    ("applicant_mobile", "applicant_dob"),
+                    "applicant_id_proof_no",
+                    "applicant_address",
+                    "applicant_pin",
+                )
+            },
+        ),
+        (
+            "🏢 Company Information",
+            {
+                "fields": (
+                    ("company_name", "company_email"),
+                    "company_phone",
+                    "company_address",
+                    "company_pin",
+                    ("company_gst_no", "company_pan_no"),
+                    "company_registration_number",
+                )
+            },
+        ),
+        (
+            "📋 TAC Information",
+            {"fields": (("tac_no", "tac_validity"),)},
+        ),
+        (
+            "📁 Document Uploads",
+            {
+                "description": "Upload required documents below. Existing files are shown as download links.",
+                "fields": (
+                    "self_certified_applicant",
+                    "self_certified_applicant_link",
+                    "authorization_letter",
+                    "authorization_letter_link",
+                    "pan_card",
+                    "pan_card_link",
+                    "gst_certificate",
+                    "gst_certificate_link",
+                    "company_registration_certificate",
+                    "company_registration_certificate_link",
+                    "technical_onboarding_request_letter",
+                    "technical_onboarding_request_letter_link",
+                    "tac_document",
+                    "tac_document_link",
+                ),
+            },
+        ),
+        (
+            "🔐 Meta",
+            {
+                "classes": ("collapse",),
+                "fields": (
+                    "created_by",
+                    "created_at",
+                ),
+            },
+        ),
+    )
+
+    readonly_fields = (
+        "created_at",
+        # document preview links
+        "self_certified_applicant_link",
+        "authorization_letter_link",
+        "pan_card_link",
+        "gst_certificate_link",
+        "company_registration_certificate_link",
+        "technical_onboarding_request_letter_link",
+        "tac_document_link",
+    )
+
+    # ─── Auto-fill created_by on save ─────────────────────────────────────────
+
+    def save_model(self, request, obj, form, change):
+        if not obj.pk:  # only on creation
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+    # ─── Document Preview Helpers ──────────────────────────────────────────────
+
+    def _file_link(self, file_field, label):
+        if file_field and hasattr(file_field, "url"):
+            return format_html(
+                '<a href="{}" target="_blank">📄 View / Download {}</a>',
+                file_field.url,
+                label,
+            )
+        return "No file uploaded"
+
+    def self_certified_applicant_link(self, obj):
+        return self._file_link(obj.self_certified_applicant, "Self Certified Document")
+
+    self_certified_applicant_link.short_description = "Current File"
+
+    def authorization_letter_link(self, obj):
+        return self._file_link(obj.authorization_letter, "Authorization Letter")
+
+    authorization_letter_link.short_description = "Current File"
+
+    def pan_card_link(self, obj):
+        return self._file_link(obj.pan_card, "PAN Card")
+
+    pan_card_link.short_description = "Current File"
+
+    def gst_certificate_link(self, obj):
+        return self._file_link(obj.gst_certificate, "GST Certificate")
+
+    gst_certificate_link.short_description = "Current File"
+
+    def company_registration_certificate_link(self, obj):
+        return self._file_link(
+            obj.company_registration_certificate, "Company Registration Certificate"
+        )
+
+    company_registration_certificate_link.short_description = "Current File"
+
+    def technical_onboarding_request_letter_link(self, obj):
+        return self._file_link(
+            obj.technical_onboarding_request_letter,
+            "Technical Onboarding Request Letter",
+        )
+
+    technical_onboarding_request_letter_link.short_description = "Current File"
+
+    def tac_document_link(self, obj):
+        return self._file_link(obj.tac_document, "TAC Document")
+
+    tac_document_link.short_description = "Current File"
 
 
 # ------------------ Distributor ------------------
@@ -2282,7 +2451,7 @@ class RejectedItemAdmin(admin.ModelAdmin):
 
 
 # ============================================================================
-# Self Order 
+# Self Order
 # ============================================================================
 @admin.register(SelfOrder)
 class SelfOrderAdmin(admin.ModelAdmin):
@@ -2510,5 +2679,3 @@ class QuotationAdmin(admin.ModelAdmin):
         self.message_user(request, "Selected quotations recalculated successfully.")
 
     recalculate_totals.short_description = "Recalculate totals for selected quotations"
-
-
