@@ -5,10 +5,11 @@ from django.core.validators import RegexValidator
 import json
 from decimal import Decimal
 from django.conf import settings
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, get_user_model
 from rest_framework import serializers
 from django.db import transaction
 from .models import (
+    UserProfile,
     State,
     District,
     ProductCategory,
@@ -62,6 +63,7 @@ from .models import (
     ProformaInvoice,Manufacturer
 )
 
+User = get_user_model()
 
 # ---------------- File Size Validator ----------------
 def validate_file_size(file):
@@ -71,6 +73,51 @@ def validate_file_size(file):
         raise serializers.ValidationError(
             f"File size must be less than or equal to {max_size // (1024 * 1024)} MB."
         )
+
+class UserSerializer(serializers.ModelSerializer):
+    accepted_terms = serializers.BooleanField(
+        source="profile.accepted_terms", read_only=True
+    )
+
+    class Meta:
+        model = User
+        fields = ["id", "username", "email", "is_active", "accepted_terms"]
+
+
+class UserCreateSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+    accepted_terms = serializers.BooleanField(write_only=True)
+
+    class Meta:
+        model = User
+        fields = [
+            "username",
+            "password",
+            "email",
+            "accepted_terms",
+        ]
+
+    def validate_username(self, value):
+        if not re.fullmatch(r"\d{10,15}", value):
+            raise serializers.ValidationError(
+                "Username must be a valid phone number (10–15 digits)."
+            )
+
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError(
+                "This phone number is already registered."
+            )
+
+        return value
+
+    def create(self, validated_data):
+        accepted_terms = validated_data.pop("accepted_terms")
+
+        user = User.objects.create_user(**validated_data)
+
+        UserProfile.objects.create(user=user, accepted_terms=accepted_terms)
+
+        return user
 
 
 # ---------------- Login ----------------
@@ -181,10 +228,12 @@ class VendorSerializer(serializers.ModelSerializer):
 
 
 # ---------------- Registrations ----------------
-class B2CCustomerRegistrationSerializer(serializers.ModelSerializer):
+class B2CCustomerSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = B2CCustomer
         fields = [
+            "id",
             "name",
             "phone_number",
             "email",
@@ -201,7 +250,9 @@ class B2CCustomerRegistrationSerializer(serializers.ModelSerializer):
             "tan_document",
             "pan_number",
             "pan_document",
+            "created_at",
         ]
+        read_only_fields = ["id", "created_at"]
 
     def validate(self, data):
         state = data.get("state")
@@ -216,10 +267,12 @@ class B2CCustomerRegistrationSerializer(serializers.ModelSerializer):
 
 
 # ---------------- B2B Partner Registration ----------------
-class B2BPartnerRegistrationSerializer(serializers.ModelSerializer):
+class B2BPartnerSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = B2BPartner
         fields = [
+            "id",
             "partner_name",
             "phone_number",
             "email",
@@ -236,7 +289,9 @@ class B2BPartnerRegistrationSerializer(serializers.ModelSerializer):
             "tan_document",
             "pan_number",
             "pan_document",
+            "created_at",
         ]
+        read_only_fields = ["id", "created_at"]
 
     def validate(self, data):
         state = data.get("state")
@@ -255,18 +310,20 @@ class LinkedToChoicesSerializer(serializers.Serializer):
     label = serializers.CharField()
 
 
-# class ManufacturerSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Manufacturer
-#         fields = ["id", "name"]
-
-
 class ManufacturerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Manufacturer
         fields = "__all__"
         read_only_fields = ["id", "created_at", "created_by"]
+        extra_kwargs = {
+            "self_certified_applicant": {"required": False},
+            "authorization_letter": {"required": False},
+            "pan_card": {"required": False},
+            "gst_certificate": {"required": False},
+            "technical_onboarding_request_letter": {"required": False},
+            "tac_document": {"required": False},
+        }
 
     def validate_applicant_mobile(self, value):
         if not value.isdigit():
@@ -384,43 +441,14 @@ class ProductDropdownSerializer(serializers.ModelSerializer):
 
 # ---------------- Dealer Registration ----------------
 class DealerRegistrationSerializer(serializers.ModelSerializer):
-    authorised_states = serializers.PrimaryKeyRelatedField(
-        queryset=State.objects.all(),
-        many=True,
-        required=True,
-    )
-
-    authorised_districts = serializers.PrimaryKeyRelatedField(
-        queryset=District.objects.all(),
-        many=True,
-        required=True,
-    )
+    authorised_states = serializers.PrimaryKeyRelatedField(queryset=State.objects.all(),many=True,required=True)
+    authorised_districts = serializers.PrimaryKeyRelatedField(queryset=District.objects.all(),many=True,required=True)
 
     class Meta:
         model = Dealer
-        fields = [
-            "name",
-            "phone_number",
-            "email",
-            "address",
-            "state",
-            "district",
-            "bank_name",
-            "account_holder_name",
-            "account_number",
-            "ifsc_code",
-            "gst_number",
-            "gst_document",
-            "tan_number",
-            "tan_document",
-            "pan_number",
-            "pan_document",
-            "linked_to",
-            "manufacturer",
-            "distributor",
-            "authorised_states",
-            "authorised_districts",
-        ]
+        fields = ["id", "name", "phone_number", "email", "address", "state", "district", "bank_name", "account_holder_name", "account_number", "ifsc_code", "gst_number", "gst_document", "tan_number", "tan_document", "pan_number", "pan_document", "linked_to", "manufacturer", "distributor", "authorised_states", "authorised_districts", "created_at"]
+
+        read_only_fields = ["id", "created_at"]
 
     def validate(self, data):
         # 1️ Address check

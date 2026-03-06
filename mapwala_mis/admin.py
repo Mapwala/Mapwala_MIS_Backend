@@ -19,211 +19,171 @@ class UserProfileAdmin(admin.ModelAdmin):
     readonly_fields = ("accepted_at",)
 
 
-# ------------------ State ------------------
-@admin.register(State)
-class StateAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "status_badge", "created_at_formatted")
-    list_display_links = ("name",)
-    search_fields = ("name",)
-    list_filter = ("status", "created_at")
-    ordering = ("id",)
-    readonly_fields = ("created_at", "id_display")
+from django.contrib import admin
+from django.utils.html import format_html, mark_safe
+from django.contrib import messages
 
-    # Organize form fields
-    fieldsets = (
-        (
-            "State Details",
-            {
-                "fields": ("id_display", "name", "status"),
-                "description": "Enter the official name of the state/region.",
-            },
-        ),
-        (
-            "Metadata",
-            {
-                "fields": ("created_at",),
-                "classes": ("collapse",),
-            },
-        ),
-    )
-
-    # Bulk actions
-    actions = ["make_active", "make_inactive"]
-
-    # Custom display methods
-
-    def status_badge(self, obj):
-        """Color-coded status badge using mark_safe."""
-        colors = {
-            "active": "#28a745",  # Green
-            "inactive": "#6c757d",  # Gray
-        }
-        bg_color = colors.get(obj.status, "#000")
-        display_text = obj.get_status_display().title()
-
-        # Manually construct safe HTML string
-        html = (
-            f'<span style="background-color: {bg_color}; color: white; padding: 4px 8px; '
-            f'border-radius: 4px; font-weight: bold;">{display_text}</span>'
-        )
-
-        return mark_safe(html)
-
-    status_badge.short_description = "Status"
-    status_badge.admin_order_field = "status"
-
-    def created_at_formatted(self, obj):
-        """Format creation date for readability."""
-        return (
-            obj.created_at.strftime("%b %d, %Y at %I:%M %p") if obj.created_at else "—"
-        )
-
-    created_at_formatted.short_description = "Created At"
-
-    def id_display(self, obj):
-        """Show ID in form (read-only)."""
-        return obj.id if obj.id else "—"
-
-    id_display.short_description = "ID"
-
-    # Bulk action: Activate selected states
-    def make_active(self, request, queryset):
-        updated = queryset.update(status="active")
-        self.message_user(
-            request,
-            f"{updated} state(s) successfully marked as active.",
-            messages.SUCCESS,
-        )
-
-    make_active.short_description = "Mark selected states as Active"
-
-    # Bulk action: Deactivate selected states
-    def make_inactive(self, request, queryset):
-        updated = queryset.update(status="inactive")
-        self.message_user(
-            request,
-            f"{updated} state(s) successfully marked as inactive.",
-            messages.WARNING,
-        )
-
-    make_inactive.short_description = "Mark selected states as Inactive"
-
-    # Optional: Prevent saving invalid data (extra safety)
-    def save_model(self, request, obj, form, change):
-        # Ensure name is title-cased (optional consistency)
-        obj.name = obj.name.strip().title()
-        super().save_model(request, obj, form, change)
+from .models import State, District
 
 
-# ------------------ District ------------------
+# ─── District Inline (Full Control inside State) ──────────────────────────────
+
+
+class DistrictInline(admin.TabularInline):
+    model = District
+    extra = 1
+    fields = ("id", "name", "code", "status")  # ← "id" added here
+    readonly_fields = ("id",)  # ← id is read-only (auto assigned)
+    can_delete = True
+    min_num = 0
+    verbose_name = "District"
+    verbose_name_plural = "Districts"
+
+
+# ─── District Admin (Hidden from sidebar, registered only for autocomplete) ───
+
+
 @admin.register(District)
 class DistrictAdmin(admin.ModelAdmin):
+    search_fields = ("name", "code", "state__name")  # Required for autocomplete
+
+    def get_model_perms(self, request):
+        """Return empty perms so District never appears in the sidebar."""
+        return {}
+
+
+# ─── State Admin (Single entry point — controls everything) ───────────────────
+
+
+@admin.register(State)
+class StateAdmin(admin.ModelAdmin):
+
+    # ── List View ──
     list_display = (
         "id",
         "name",
-        "code",
-        "state_link",
         "status_badge",
+        "district_count",
         "created_at_formatted",
     )
     list_display_links = ("name",)
-    search_fields = ("name", "code", "state__name")
-    list_filter = ("status", "state", "created_at")
+    search_fields = ("name", "districts__name", "districts__code")
+    list_filter = ("status", "created_at")
     ordering = ("id",)
-    readonly_fields = ("created_at", "id_display")
 
-    # Organize form into logical sections
+    # ── Detail View ──
+    readonly_fields = ("id_display", "created_at", "district_count")
     fieldsets = (
         (
-            "District Details",
+            "🗺️ State Details",
             {
-                "fields": ("id_display", "name", "code", "state", "status"),
-                "description": "Ensure the district code is unique within the selected state.",
+                "description": "Enter the official name of the state and set its status.",
+                "fields": ("id_display", "name", "status"),
             },
         ),
         (
-            "Metadata",
+            "📊 Stats",
             {
-                "fields": ("created_at",),
+                "fields": ("district_count",),
+            },
+        ),
+        (
+            "🕒 Metadata",
+            {
                 "classes": ("collapse",),
+                "fields": ("created_at",),
             },
         ),
     )
 
-    # Enable bulk actions
-    actions = ["make_active", "make_inactive"]
+    # Districts fully managed from this page
+    inlines = [DistrictInline]
 
-    # --- Custom Display Methods ---
+    # ── Bulk Actions ──
+    actions = [
+        "make_active",
+        "make_inactive",
+        "make_all_districts_active",
+        "make_all_districts_inactive",
+    ]
 
-    def state_link(self, obj):
-        """Link to the related State's admin change page."""
-        if obj.state:
-            url = reverse("admin:mapwala_mis_state_change", args=[obj.state.id])
-            return format_html(
-                '<a href="{}"><strong>{}</strong></a>', url, obj.state.name
-            )
-        return "—"
-
-    state_link.short_description = "State"
-    state_link.admin_order_field = "state__name"
+    # ── Custom Columns ──
 
     def status_badge(self, obj):
-        """Color-coded status using mark_safe."""
-        colors = {
-            "active": "#28a745",  # Green
-            "inactive": "#6c757d",  # Gray
-        }
-        bg_color = colors.get(obj.status, "#000")
-        display_text = obj.get_status_display().title()
-        html = (
-            f'<span style="background-color: {bg_color}; color: white; '
-            f'padding: 4px 8px; border-radius: 4px; font-weight: bold;">'
-            f"{display_text}</span>"
+        colors = {"active": "#28a745", "inactive": "#6c757d"}
+        bg = colors.get(obj.status, "#000")
+        return mark_safe(
+            f'<span style="background:{bg};color:white;padding:3px 10px;'
+            f'border-radius:4px;font-weight:bold;">'
+            f"{obj.get_status_display()}</span>"
         )
-        return mark_safe(html)
 
     status_badge.short_description = "Status"
     status_badge.admin_order_field = "status"
 
+    def district_count(self, obj):
+        count = obj.districts.count()
+        return format_html("<strong>{}</strong> District(s)", count)
+
+    district_count.short_description = "Total Districts"
+
     def created_at_formatted(self, obj):
-        """Human-readable creation timestamp."""
-        if obj.created_at:
-            return obj.created_at.strftime("%b %d, %Y at %I:%M %p")
-        return "—"
+        return obj.created_at.strftime("%b %d, %Y  %I:%M %p") if obj.created_at else "—"
 
     created_at_formatted.short_description = "Created At"
 
     def id_display(self, obj):
-        return obj.id if obj.id else "—"
+        return obj.id or "—"
 
     id_display.short_description = "ID"
 
-    # --- Bulk Actions ---
+    # ── State Bulk Actions ──
 
     def make_active(self, request, queryset):
         updated = queryset.update(status="active")
         self.message_user(
-            request,
-            f"{updated} district(s) successfully marked as active.",
-            messages.SUCCESS,
+            request, f"{updated} state(s) marked as Active.", messages.SUCCESS
         )
 
-    make_active.short_description = "Mark selected districts as Active"
+    make_active.short_description = "✅ Mark selected States as Active"
 
     def make_inactive(self, request, queryset):
         updated = queryset.update(status="inactive")
         self.message_user(
+            request, f"{updated} state(s) marked as Inactive.", messages.WARNING
+        )
+
+    make_inactive.short_description = "🚫 Mark selected States as Inactive"
+
+    # ── District Bulk Actions (applied from State list) ──
+
+    def make_all_districts_active(self, request, queryset):
+        updated = District.objects.filter(state__in=queryset).update(status="active")
+        self.message_user(
             request,
-            f"{updated} district(s) successfully marked as inactive.",
+            f"{updated} district(s) under selected state(s) marked as Active.",
+            messages.SUCCESS,
+        )
+
+    make_all_districts_active.short_description = (
+        "✅ Mark all Districts of selected States as Active"
+    )
+
+    def make_all_districts_inactive(self, request, queryset):
+        updated = District.objects.filter(state__in=queryset).update(status="inactive")
+        self.message_user(
+            request,
+            f"{updated} district(s) under selected state(s) marked as Inactive.",
             messages.WARNING,
         )
 
-    make_inactive.short_description = "Mark selected districts as Inactive"
+    make_all_districts_inactive.short_description = (
+        "🚫 Mark all Districts of selected States as Inactive"
+    )
 
-    # --- Optional: Auto-format name on save ---
+    # ── Auto-format on save ──
     def save_model(self, request, obj, form, change):
         obj.name = obj.name.strip().title()
-        obj.code = obj.code.strip().upper()
         super().save_model(request, obj, form, change)
 
 
@@ -1500,18 +1460,6 @@ class RequestForQuoteAdmin(admin.ModelAdmin):
         if not obj.pk:
             obj.created_by = request.user
         super().save_model(request, obj, form, change)
-
-
-# # ===================== RFQ SELECTION ADMIN =====================
-# @admin.register(RFQSelection)
-# class RFQSelectionAdmin(admin.ModelAdmin):
-#     list_display = ("rfq", "item_type", "reference")
-#     list_filter = ("item_type",)
-#     search_fields = ("rfq__order_reference", "reference")
-#     fieldsets = (
-#         ("RFQ", {"fields": ("rfq",)}),
-#         ("Selection Value", {"fields": ("item_type", "reference")}),
-#     )
 
 
 # -------------------- Inlines --------------------

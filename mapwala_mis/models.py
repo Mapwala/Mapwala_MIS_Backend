@@ -1,8 +1,6 @@
 # mapwala_mis/models.py
 
 from django.db import models
-
-# from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
 from decimal import Decimal
 from django.contrib.auth import get_user_model
@@ -192,12 +190,6 @@ class B2BPartner(models.Model):
 
 
 # ---------------- Manufacturer ----------------
-# class Manufacturer(models.Model):
-#     name = models.CharField(max_length=255, unique=True)
-
-#     def __str__(self):
-#         return self.name
-
 class Manufacturer(models.Model):
     # Applicant Information
     applicant_name = models.CharField(max_length=255)
@@ -349,24 +341,16 @@ class Dealer(models.Model):
     )
     # Bank details
     bank_name = models.CharField(max_length=255, verbose_name="Bank Name")
-    account_holder_name = models.CharField(
-        max_length=255, verbose_name="Account Holder Name"
-    )
+    account_holder_name = models.CharField(max_length=255, verbose_name="Account Holder Name")
     account_number = models.CharField(max_length=50, verbose_name="Bank Account Number")
     ifsc_code = models.CharField(max_length=20, verbose_name="IFSC Code")
     # Tax details
     gst_number = models.CharField(max_length=20, verbose_name="GST Number")
-    gst_document = models.FileField(
-        upload_to="documents/dealer/gst/", verbose_name="GST Document"
-    )
+    gst_document = models.FileField(upload_to="documents/dealer/gst/", verbose_name="GST Document")
     tan_number = models.CharField(max_length=20, verbose_name="TAN Number")
-    tan_document = models.FileField(
-        upload_to="documents/dealer/tan/", verbose_name="TAN Document"
-    )
+    tan_document = models.FileField(upload_to="documents/dealer/tan/", verbose_name="TAN Document")
     pan_number = models.CharField(max_length=20, verbose_name="PAN Number")
-    pan_document = models.FileField(
-        upload_to="documents/dealer/pan/", verbose_name="PAN Document"
-    )
+    pan_document = models.FileField(upload_to="documents/dealer/pan/", verbose_name="PAN Document")
     # Business linking
     linked_to = models.CharField(
         max_length=20,

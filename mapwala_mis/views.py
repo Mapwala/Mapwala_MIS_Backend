@@ -3,15 +3,11 @@
 from datetime import datetime
 from decimal import Decimal
 from collections import defaultdict
-
-from django.db import transaction
-from django.db.models import Count, Q
+from django.db import transaction, IntegrityError, models
+from django.db.models import Count, Q, Sum
 from django.shortcuts import get_object_or_404
-from django.db.models import Sum
-from django.db import models
 from django.utils import timezone
-
-from rest_framework import status, viewsets
+from rest_framework import status, viewsets, serializers
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -19,24 +15,27 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.exceptions import ValidationError
-from django.db import IntegrityError
-from rest_framework import serializers
-from rest_framework.viewsets import ReadOnlyModelViewSet
 import uuid
-
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework_simplejwt.tokens import AccessToken
-
 from .utils import generate_note_number
-
+from django.contrib.auth import get_user_model
+from rest_framework.mixins import (
+    ListModelMixin,
+    RetrieveModelMixin,
+    UpdateModelMixin,
+    DestroyModelMixin,
+)
 from .models import (
     State,
     SelfOrder,
     District,
     ParentCompany,
+    B2CCustomer,
+    B2BPartner,
     SupplierVendor,
     Vendor,
     Product,
@@ -70,8 +69,12 @@ from .models import (
     Quotation,
     Manufacturer,
 )
-
 from .serializers import (
+    UserSerializer,
+    UserCreateSerializer,
+    LoginSerializer,
+    B2CCustomerSerializer,
+    B2BPartnerSerializer,
     StateSerializer,
     DistrictSerializer,
     ParentCompanySerializer,
@@ -82,9 +85,6 @@ from .serializers import (
     ReturnRequestSerializer,
     RepairRecordSerializer,
     RejectedItemSerializer,
-    LoginSerializer,
-    B2CCustomerRegistrationSerializer,
-    B2BPartnerRegistrationSerializer,
     DistributorRegistrationSerializer,
     DealerRegistrationSerializer,
     ProformaInvoiceCreateSerializer,
@@ -147,6 +147,9 @@ from .serializers import (
 )
 
 
+User = get_user_model()
+
+
 class LoginAPIView(APIView):
     """Handles user authentication and JWT token generation."""
 
@@ -182,7 +185,31 @@ class LoginAPIView(APIView):
         )
 
 
-# SETTINGS & MASTER DATA VIEWSETS
+class UserViewSet(ListModelMixin, RetrieveModelMixin, UpdateModelMixin, DestroyModelMixin, GenericViewSet):
+    queryset = User.objects.select_related("profile").all().order_by("-id")
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def destroy(self, request, *args, **kwargs):
+        user = self.get_object()
+
+        user_data = {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "is_active": user.is_active,
+        }
+
+        self.perform_destroy(user)
+
+        return Response(
+            {
+                "success": True,
+                "message": f"User '{user_data['username']}' deleted successfully.",
+                "user": user_data,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class StateViewSet(ModelViewSet):
@@ -219,6 +246,14 @@ class StateViewSet(ModelViewSet):
             status=status.HTTP_200_OK,
         )
 
+    @action(detail=False, methods=["get"], url_path="dropdown")
+    def dropdown(self, request):
+        states = State.objects.filter(status="active").order_by("name")
+
+        data = [{"id": state.id, "label": state.name} for state in states]
+
+        return Response(data)
+
 
 class DistrictViewSet(ModelViewSet):
     """Manage districts with state filtering."""
@@ -235,6 +270,27 @@ class DistrictViewSet(ModelViewSet):
         if state_id:
             queryset = queryset.filter(state_id=state_id)
         return queryset
+
+    @action(detail=False, methods=["get"], url_path="dropdown")
+    def dropdown(self, request):
+        state_id = request.query_params.get("state")
+
+        if not state_id:
+            return Response(
+                {"error": "state query parameter is required"},
+                status=400,
+            )
+
+        districts = (
+            District.objects.filter(state_id=state_id, status="active")
+            .values("id", "name")
+            .order_by("name")
+        )
+
+        data = [
+            {"id": district["id"], "label": district["name"]} for district in districts
+        ]
+        return Response(data)
 
 
 class ParentCompanyViewSet(ModelViewSet):
@@ -261,50 +317,63 @@ class VendorViewSet(ModelViewSet):
             )
 
 
-# CUSTOMER REGISTRATION APIS
-
-
-class B2CCustomerRegistrationAPIView(APIView):
-    """Register B2C customers."""
-
+class B2CCustomerViewSet(ModelViewSet):
+    queryset = B2CCustomer.objects.select_related("state", "district").all()
+    serializer_class = B2CCustomerSerializer
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
-    def post(self, request):
-        serializer = B2CCustomerRegistrationSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        customer = serializer.save()
+    def destroy(self, request, *args, **kwargs):
+        customer = self.get_object()
+
+        data = {
+            "id": customer.id,
+            "name": customer.name,
+            "phone_number": customer.phone_number,
+            "email": customer.email,
+        }
+
+        self.perform_destroy(customer)
 
         return Response(
             {
-                "message": "B2C Customer registered successfully",
-                "customer_id": customer.id,
-                "name": customer.name,
-                "email": customer.email,
+                "success": True,
+                "message": f"B2C Customer '{data['name']}' deleted successfully.",
+                "customer": data,
             },
-            status=status.HTTP_201_CREATED,
+            status=status.HTTP_200_OK,
         )
 
 
-class B2BPartnerRegistrationAPIView(APIView):
-    """Register B2B partners."""
+class B2BPartnerViewSet(ModelViewSet):
+    """
+    CRUD API for B2B Partners
+    """
 
+    queryset = B2BPartner.objects.select_related("state", "district").all()
+    serializer_class = B2BPartnerSerializer
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
-    def post(self, request):
-        serializer = B2BPartnerRegistrationSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        partner = serializer.save()
+    def destroy(self, request, *args, **kwargs):
+        partner = self.get_object()
+
+        data = {
+            "id": partner.id,
+            "partner_name": partner.partner_name,
+            "phone_number": partner.phone_number,
+            "email": partner.email,
+        }
+
+        self.perform_destroy(partner)
 
         return Response(
             {
-                "message": "B2B Partner registered successfully",
-                "partner_id": partner.id,
-                "partner_name": partner.partner_name,
-                "email": partner.email,
+                "success": True,
+                "message": f"B2B Partner '{data['partner_name']}' deleted successfully.",
+                "partner": data,
             },
-            status=status.HTTP_201_CREATED,
+            status=status.HTTP_200_OK,
         )
 
 
@@ -352,15 +421,38 @@ class ManufacturerViewSet(ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
+    def destroy(self, request, *args, **kwargs):
+        manufacturer = self.get_object()
+        company_name = manufacturer.company_name
 
-class DealerRegistrationAPIView(APIView):
-    """Register dealers with authorized states and districts."""
+        self.perform_destroy(manufacturer)
 
+        return Response(
+            {
+                "success": True,
+                "message": f"Manufacturer '{company_name}' deleted successfully.",
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class DealerViewSet(ModelViewSet):
+    queryset = Dealer.objects.select_related(
+        "state",
+        "district",
+        "manufacturer",
+        "distributor",
+    ).prefetch_related(
+        "authorised_states",
+        "authorised_districts",
+    )
+
+    serializer_class = DealerRegistrationSerializer
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
-    def post(self, request):
-        serializer = DealerRegistrationSerializer(data=request.data)
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         authorised_states = serializer.validated_data.pop("authorised_states")
@@ -372,11 +464,23 @@ class DealerRegistrationAPIView(APIView):
 
         return Response(
             {
+                "success": True,
                 "message": "Dealer registered successfully",
                 "dealer_id": dealer.id,
                 "name": dealer.name,
             },
             status=status.HTTP_201_CREATED,
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        dealer = self.get_object()
+        name = dealer.name
+
+        self.perform_destroy(dealer)
+
+        return Response(
+            {"success": True, "message": f"Dealer '{name}' deleted successfully."},
+            status=status.HTTP_200_OK,
         )
 
 
@@ -396,7 +500,7 @@ class ProductCreateAPIView(APIView):
             )
 
         try:
-            with transaction.atomic():  
+            with transaction.atomic():
                 product = serializer.save()
 
             return Response(
@@ -1565,45 +1669,6 @@ class ReturnReasonDropdownAPIView(APIView):
                 {"key": "other", "label": "Other"},
             ]
         )
-
-
-class StateDropdownAPIView(APIView):
-    """List active states for dropdown."""
-
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        states = State.objects.filter(status="active").order_by("name")
-        return Response(
-            [{"id": state.id, "label": state.name} for state in states], status=200
-        )
-
-
-class DistrictDropdownAPIView(APIView):
-    """List districts by state."""
-
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        state_id = request.query_params.get("state_id")
-
-        if not state_id:
-            return Response(
-                {"state_id": "state_id query param is required"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        districts = District.objects.filter(
-            state_id=state_id, status="active"
-        ).order_by("name")
-
-        return Response(
-            [{"id": district.id, "label": district.name} for district in districts],
-            status=200,
-        )
-
-
-# MODULE MANAGEMENT REGISTRATIONS
 
 
 class AccountRegistrationCreateAPIView(APIView):

@@ -4,11 +4,12 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from .views import (
+    UserViewSet,
     LoginAPIView,
-    B2CCustomerRegistrationAPIView,
-    B2BPartnerRegistrationAPIView,
+    B2CCustomerViewSet,
+    B2BPartnerViewSet,
     DistributorRegistrationAPIView,
-    DealerRegistrationAPIView,
+    DealerViewSet,
     AccountManagementDashboardAPIView,
     DebitNoteReasonsAPIView,
     CreditNoteReasonsAPIView,
@@ -64,8 +65,6 @@ from .views import (
     DispatchOrderTypeDropdownAPIView,
     DispatchProductDropdownAPIView,
     DispatchBatchDropdownAPIView,
-    StateDropdownAPIView,
-    DistrictDropdownAPIView,
     AccountRegistrationCreateAPIView,
     QCInspectorRegistrationCreateAPIView,
     PurchaseDepartmentRegistrationCreateAPIView,
@@ -102,36 +101,31 @@ from .views import (
 router = DefaultRouter()
 
 # Master data
+router.register("users", UserViewSet, basename="users")
 router.register("states", StateViewSet, basename="states")
 router.register("districts", DistrictViewSet, basename="districts")
+router.register("b2c-customers", B2CCustomerViewSet, basename="b2c-customers")
+router.register("b2b-partners", B2BPartnerViewSet, basename="b2b-partners")
+router.register("dealers", DealerViewSet, basename="dealers")
 router.register("parent-companies", ParentCompanyViewSet, basename="parent-companies")
 router.register("vendors", VendorViewSet, basename="vendors")
 router.register("store-transfers", StoreTransferViewSet, basename="store-transfers")
 router.register("product-categories", ProductCategoryViewSet, basename="product-categories")
-
 router.register("manufacturers", ManufacturerViewSet, basename="manufacturers")
-
-# Notes
 router.register("debit-notes", DebitNoteViewSet, basename="debit-notes")
 router.register("credit-notes", CreditNoteViewSet, basename="credit-notes")
-
-# Quality & returns
 router.register("return-requests", ReturnRequestViewSet, basename="return-request")
 router.register("repair-records", RepairRecordViewSet, basename="repair-record")
 router.register("rejected-items", RejectedItemViewSet, basename="rejected-item")
-
-# Devices
 router.register("devices", DeviceViewSet, basename="devices")
 
 
 urlpatterns = [
     # Auth & registration
     path("auth/login/", LoginAPIView.as_view(), name="login"),
-    path("b2c/register/", B2CCustomerRegistrationAPIView.as_view()),
-    path("b2b/register/", B2BPartnerRegistrationAPIView.as_view()),
     path("dropdowns/linked-to/", LinkedToChoicesAPIView.as_view()),
     path("distributor/register/", DistributorRegistrationAPIView.as_view()),
-    path("dealer/register/", DealerRegistrationAPIView.as_view()),
+
     # Product Dropdowns
     path("dropdowns/products/",ProductDropdownAPIView.as_view(),name="product-dropdown"),
     path("products/", ProductCreateAPIView.as_view(), name="product-create"),
@@ -200,19 +194,11 @@ urlpatterns = [
     path("dropdowns/dispatch-products/", DispatchProductDropdownAPIView.as_view()),
     path("dropdowns/dispatch-batches/", DispatchBatchDropdownAPIView.as_view()),
     # Module registrations
-    path("dropdowns/states/", StateDropdownAPIView.as_view()),
-    path("dropdowns/districts/", DistrictDropdownAPIView.as_view()),
     path("account/register/", AccountRegistrationCreateAPIView.as_view()),
     path("qc-inspectors/register/", QCInspectorRegistrationCreateAPIView.as_view()),
-    path(
-        "purchase-departments/register/",
-        PurchaseDepartmentRegistrationCreateAPIView.as_view(),
-    ),
+    path("purchase-departments/register/",PurchaseDepartmentRegistrationCreateAPIView.as_view()),
     path("store-managers/register/", StoreManagerRegistrationCreateAPIView.as_view()),
-    path(
-        "repair-technicians/register/",
-        RepairTechnicianRegistrationCreateAPIView.as_view(),
-    ),
+    path("repair-technicians/register/",RepairTechnicianRegistrationCreateAPIView.as_view()),
     # Self orders
     path("self-orders/create/", SelfOrderCreateAPIView.as_view()),
     path("self-orders/", SelfOrderListAPIView.as_view()),
@@ -223,10 +209,7 @@ urlpatterns = [
     path("quotations/create/", QuotationCreateAPIView.as_view()),
     path("quotations/", QuotationListAPIView.as_view()),
     path("quotations/<int:quotation_id>/", QuotationDetailAPIView.as_view()),
-    path(
-        "quotations/<int:quotation_id>/approve-reject/",
-        QuotationApproveRejectAPIView.as_view(),
-    ),
+    path("quotations/<int:quotation_id>/approve-reject/",QuotationApproveRejectAPIView.as_view()),
 ]
 
 urlpatterns += router.urls
