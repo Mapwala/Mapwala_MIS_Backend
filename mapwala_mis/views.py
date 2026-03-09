@@ -299,6 +299,25 @@ class ParentCompanyViewSet(ModelViewSet):
     queryset = ParentCompany.objects.all()
     serializer_class = ParentCompanySerializer
     permission_classes = [IsAuthenticated]
+    
+    def destroy(self, request, *args, **kwargs):
+        parent_company = self.get_object()
+
+        company_data = {
+            "id": parent_company.id,
+            "name": parent_company.name,
+        }
+
+        self.perform_destroy(parent_company)
+
+        return Response(
+            {
+                "success": True,
+                "message": f"Parent company '{company_data['name']}' deleted successfully.",
+                "parent_company": company_data,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class VendorViewSet(ModelViewSet):
@@ -314,6 +333,27 @@ class VendorViewSet(ModelViewSet):
         except IntegrityError:
             raise ValidationError(
                 {"detail": "Vendor with this GST number already exists for this user."}
+            )
+
+
+    def destroy(self, request, *args, **kwargs):
+            vendor = self.get_object()
+
+            vendor_data = {
+                "id": vendor.id,
+                "name": vendor.name,
+                "gst_number": vendor.gst_number,
+            }
+
+            self.perform_destroy(vendor)
+
+            return Response(
+                {
+                    "success": True,
+                    "message": f"Vendor '{vendor_data['name']}' deleted successfully.",
+                    "vendor": vendor_data,
+                },
+                status=status.HTTP_200_OK,
             )
 
 
@@ -389,23 +429,97 @@ class LinkedToChoicesAPIView(APIView):
         return Response(serializer.data)
 
 
-class DistributorRegistrationAPIView(APIView):
+class DistributorViewSet(ModelViewSet):
+
+    queryset = Distributor.objects.select_related(
+        "state", "district", "manufacturer"
+    ).prefetch_related("authorised_states", "authorised_districts")
+
+    serializer_class = DistributorRegistrationSerializer
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
-    def post(self, request):
-        serializer = DistributorRegistrationSerializer(data=request.data)
+    # CREATE
+    def create(self, request, *args, **kwargs):
+
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
         distributor = serializer.save()
 
         return Response(
             {
+                "success": True,
                 "message": "Distributor registered successfully",
                 "distributor_id": distributor.id,
                 "name": distributor.name,
             },
             status=status.HTTP_201_CREATED,
         )
+
+    # UPDATE (PUT/PATCH safe)
+    def update(self, request, *args, **kwargs):
+
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+
+        serializer = self.get_serializer(
+            instance,
+            data=request.data,
+            partial=partial,
+        )
+
+        serializer.is_valid(raise_exception=True)
+        distributor = serializer.save()
+
+        return Response(
+            {
+                "success": True,
+                "message": "Distributor updated successfully",
+                "distributor_id": distributor.id,
+                "name": distributor.name,
+            }
+        )
+
+    # DELETE
+    def destroy(self, request, *args, **kwargs):
+        from django.db.models import ProtectedError
+
+        distributor = self.get_object()
+        distributor_data = {
+            "id": distributor.id,
+            "name": distributor.name
+        }
+        try:
+            self.perform_destroy(distributor)
+        except ProtectedError:
+
+            return Response(
+                {
+                    "success": False,
+                    "message": f"Distributor '{distributor.name}' cannot be deleted because it is linked to existing dealers."
+                },
+                status=status.HTTP_409_CONFLICT
+            )
+
+        return Response(
+            {
+                "success": True,
+                "message": f"Distributor '{distributor.name}' deleted successfully.",
+                "distributor": distributor_data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    # DROPDOWN
+    @action(detail=False, methods=["get"], url_path="dropdown")
+    def dropdown(self, request):
+
+        distributors = Distributor.objects.only("id", "name").order_by("name")
+
+        data = [{"id": d.id, "label": d.name} for d in distributors]
+
+        return Response(data)
 
 
 class ManufacturerViewSet(ModelViewSet):
@@ -423,17 +537,40 @@ class ManufacturerViewSet(ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         manufacturer = self.get_object()
-        company_name = manufacturer.company_name
+
+        data = {"id": manufacturer.id, "company_name": manufacturer.company_name}
 
         self.perform_destroy(manufacturer)
 
         return Response(
             {
                 "success": True,
-                "message": f"Manufacturer '{company_name}' deleted successfully.",
+                "message": f"Manufacturer '{data['company_name']}' deleted successfully.",
+                "manufacturer": data,
             },
             status=status.HTTP_200_OK,
         )
+
+    # ✅ DROPDOWN API
+    @action(detail=False, methods=["get"], url_path="dropdown")
+    def dropdown(self, request):
+        """
+        Returns manufacturers for dropdown selection
+        """
+
+        manufacturers = Manufacturer.objects.only("id", "company_name").order_by(
+            "company_name"
+        )
+
+        data = [
+            {
+                "id": m.id,
+                "label": m.company_name,
+            }
+            for m in manufacturers
+        ]
+
+        return Response(data)
 
 
 class DealerViewSet(ModelViewSet):

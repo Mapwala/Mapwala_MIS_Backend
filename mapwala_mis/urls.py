@@ -8,7 +8,6 @@ from .views import (
     LoginAPIView,
     B2CCustomerViewSet,
     B2BPartnerViewSet,
-    DistributorRegistrationAPIView,
     DealerViewSet,
     AccountManagementDashboardAPIView,
     DebitNoteReasonsAPIView,
@@ -95,6 +94,7 @@ from .views import (
     DeviceViewSet,
     ManufacturerViewSet,
     LinkedToChoicesAPIView,
+    DistributorViewSet,
 )
 
 
@@ -111,6 +111,7 @@ router.register("parent-companies", ParentCompanyViewSet, basename="parent-compa
 router.register("vendors", VendorViewSet, basename="vendors")
 router.register("store-transfers", StoreTransferViewSet, basename="store-transfers")
 router.register("product-categories", ProductCategoryViewSet, basename="product-categories")
+router.register("distributors", DistributorViewSet, basename="distributors")
 router.register("manufacturers", ManufacturerViewSet, basename="manufacturers")
 router.register("debit-notes", DebitNoteViewSet, basename="debit-notes")
 router.register("credit-notes", CreditNoteViewSet, basename="credit-notes")
@@ -124,7 +125,6 @@ urlpatterns = [
     # Auth & registration
     path("auth/login/", LoginAPIView.as_view(), name="login"),
     path("dropdowns/linked-to/", LinkedToChoicesAPIView.as_view()),
-    path("distributor/register/", DistributorRegistrationAPIView.as_view()),
 
     # Product Dropdowns
     path("dropdowns/products/",ProductDropdownAPIView.as_view(),name="product-dropdown"),

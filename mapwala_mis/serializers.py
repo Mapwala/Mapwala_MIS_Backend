@@ -195,15 +195,27 @@ class ParentCompanySerializer(serializers.ModelSerializer):
         fields = "__all__"
 
     def validate(self, data):
-        if data["district"].state_id != data["state"].id:
+        state = data.get("state")
+        district = data.get("district")
+
+        # Handle PATCH case where fields may not be provided
+        if state is None:
+            state = getattr(self.instance, "state", None)
+
+        if district is None:
+            district = getattr(self.instance, "district", None)
+
+        if state and district and district.state_id != state.id:
             raise serializers.ValidationError(
-                "Selected district does not belong to selected state."
+                {"district": "Selected district does not belong to selected state."}
             )
+
         return data
 
 
 # ---------------- Vendor ----------------
 class VendorSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Vendor
         exclude = ("user",)
@@ -212,12 +224,23 @@ class VendorSerializer(serializers.ModelSerializer):
         request = self.context["request"]
         user = request.user
 
-        if data["district"].state_id != data["state"].id:
+        state = data.get("state")
+        district = data.get("district")
+
+        if state and district and district.state_id != state.id:
             raise serializers.ValidationError(
                 {"district": "Selected district does not belong to the selected state."}
             )
 
-        if Vendor.objects.filter(user=user, gst_number=data["gst_number"]).exists():
+        gst_number = data.get("gst_number")
+
+        queryset = Vendor.objects.filter(user=user, gst_number=gst_number)
+
+        # exclude current object during update
+        if self.instance:
+            queryset = queryset.exclude(id=self.instance.id)
+
+        if queryset.exists():
             raise serializers.ValidationError(
                 {
                     "gst_number": "Vendor with this GST number already exists for this user."
@@ -380,18 +403,40 @@ class DistributorRegistrationSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, data):
-        if data["district"].state_id != data["state"].id:
+        instance = getattr(self, "instance", None)
+
+        state = data.get("state", getattr(instance, "state", None))
+        district = data.get("district", getattr(instance, "district", None))
+
+        # 1️⃣ Address validation
+        if state and district and district.state_id != state.id:
             raise serializers.ValidationError(
                 {"district": "District does not belong to selected state."}
             )
 
-        if data["linked_to"] == "manufacturer" and not data.get("manufacturer"):
+        linked_to = data.get("linked_to", getattr(instance, "linked_to", None))
+        manufacturer = data.get("manufacturer", getattr(instance, "manufacturer", None))
+
+        # 2️⃣ Manufacturer validation
+        if linked_to == "manufacturer" and not manufacturer:
             raise serializers.ValidationError(
                 {"manufacturer": "Manufacturer is required."}
             )
 
-        state_ids = {s.id for s in data["authorised_states"]}
-        for d in data["authorised_districts"]:
+        authorised_states = data.get(
+            "authorised_states",
+            list(instance.authorised_states.all()) if instance else [],
+        )
+
+        authorised_districts = data.get(
+            "authorised_districts",
+            list(instance.authorised_districts.all()) if instance else [],
+        )
+
+        # 3️⃣ Authorised district validation
+        state_ids = {s.id for s in authorised_states}
+
+        for d in authorised_districts:
             if d.state_id not in state_ids:
                 raise serializers.ValidationError(
                     {"authorised_districts": "District not in authorised states."}
@@ -441,66 +486,98 @@ class ProductDropdownSerializer(serializers.ModelSerializer):
 
 # ---------------- Dealer Registration ----------------
 class DealerRegistrationSerializer(serializers.ModelSerializer):
-    authorised_states = serializers.PrimaryKeyRelatedField(queryset=State.objects.all(),many=True,required=True)
-    authorised_districts = serializers.PrimaryKeyRelatedField(queryset=District.objects.all(),many=True,required=True)
+
+    authorised_states = serializers.PrimaryKeyRelatedField(
+        queryset=State.objects.all(), many=True, required=True
+    )
+
+    authorised_districts = serializers.PrimaryKeyRelatedField(
+        queryset=District.objects.all(), many=True, required=True
+    )
 
     class Meta:
         model = Dealer
-        fields = ["id", "name", "phone_number", "email", "address", "state", "district", "bank_name", "account_holder_name", "account_number", "ifsc_code", "gst_number", "gst_document", "tan_number", "tan_document", "pan_number", "pan_document", "linked_to", "manufacturer", "distributor", "authorised_states", "authorised_districts", "created_at"]
+        fields = [
+            "id",
+            "name",
+            "phone_number",
+            "email",
+            "address",
+            "state",
+            "district",
+            "bank_name",
+            "account_holder_name",
+            "account_number",
+            "ifsc_code",
+            "gst_number",
+            "gst_document",
+            "tan_number",
+            "tan_document",
+            "pan_number",
+            "pan_document",
+            "linked_to",
+            "manufacturer",
+            "distributor",
+            "authorised_states",
+            "authorised_districts",
+            "created_at",
+        ]
 
         read_only_fields = ["id", "created_at"]
 
     def validate(self, data):
-        # 1️ Address check
-        if data["district"].state_id != data["state"].id:
+
+        instance = getattr(self, "instance", None)
+
+        state = data.get("state", getattr(instance, "state", None))
+        district = data.get("district", getattr(instance, "district", None))
+
+        if state and district and district.state_id != state.id:
             raise serializers.ValidationError(
                 {"district": "District does not belong to selected state."}
             )
 
-        linked_to = data["linked_to"]
+        linked_to = data.get("linked_to", getattr(instance, "linked_to", None))
         manufacturer = data.get("manufacturer")
         distributor = data.get("distributor")
 
-        # 2️ Linking logic
+        # Manufacturer logic
         if linked_to == "manufacturer":
+
             if not manufacturer:
                 raise serializers.ValidationError(
-                    {
-                        "manufacturer": "Manufacturer is required when Linked To is Manufacturer."
-                    }
-                )
-            if distributor:
-                raise serializers.ValidationError(
-                    {
-                        "distributor": "Distributor must be empty when linked to Manufacturer."
-                    }
+                    {"manufacturer": "Manufacturer is required."}
                 )
 
+            data["distributor"] = None
+
+        # Distributor logic
         if linked_to == "distributor":
+
             if not distributor:
                 raise serializers.ValidationError(
-                    {
-                        "distributor": "Distributor is required when Linked To is Distributor."
-                    }
-                )
-            if manufacturer:
-                raise serializers.ValidationError(
-                    {
-                        "manufacturer": "Manufacturer must be empty when linked to Distributor."
-                    }
+                    {"distributor": "Distributor is required."}
                 )
 
-        # 3️ Authorised area validation (MULTI)
-        state_ids = {s.id for s in data["authorised_states"]}
+            data["manufacturer"] = None
 
-        for district in data["authorised_districts"]:
+        authorised_states = data.get(
+            "authorised_states",
+            list(instance.authorised_states.all()) if instance else [],
+        )
+
+        authorised_districts = data.get(
+            "authorised_districts",
+            list(instance.authorised_districts.all()) if instance else [],
+        )
+
+        state_ids = {s.id for s in authorised_states}
+
+        for district in authorised_districts:
             if district.state_id not in state_ids:
                 raise serializers.ValidationError(
                     {
-                        "authorised_districts": (
-                            f"District '{district.name}' does not belong "
-                            f"to selected authorised states."
-                        )
+                        "authorised_districts": f"District '{district.name}' does not belong to selected authorised states."
                     }
                 )
 
