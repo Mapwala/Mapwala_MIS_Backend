@@ -68,6 +68,10 @@ from .models import (
     PostDispatchReturn,
     Quotation,
     Manufacturer,
+    QCInspectorRegistration,
+    PurchaseDepartmentRegistration,
+    RepairTechnicianRegistration,
+    StoreManagerRegistration,
 )
 from .serializers import (
     UserSerializer,
@@ -1825,89 +1829,287 @@ class AccountRegistrationCreateAPIView(APIView):
         )
 
 
-class QCInspectorRegistrationCreateAPIView(APIView):
-    """Register QC inspectors."""
+class QCInspectorViewSet(ModelViewSet):
 
+    queryset = QCInspectorRegistration.objects.select_related(
+        "state", "district"
+    ).order_by("-created_at")
+
+    serializer_class = QCInspectorRegistrationSerializer
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
-    def post(self, request):
-        serializer = QCInspectorRegistrationSerializer(data=request.data)
+    # CREATE
+    def create(self, request, *args, **kwargs):
+
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        qc_inspector = serializer.save()
+
+        inspector = serializer.save()
 
         return Response(
             {
+                "success": True,
                 "message": "QC Inspector registered successfully",
-                "qc_inspector_id": qc_inspector.id,
+                "qc_inspector_id": inspector.id,
+                "name": inspector.qc_inspector_name,
             },
             status=status.HTTP_201_CREATED,
         )
 
+    # UPDATE (PUT / PATCH safe)
+    def update(self, request, *args, **kwargs):
 
-class PurchaseDepartmentRegistrationCreateAPIView(APIView):
-    """Register purchase department users."""
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
 
-    permission_classes = [IsAuthenticated]
-    parser_classes = [MultiPartParser, FormParser]
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
 
-    def post(self, request):
-        serializer = PurchaseDepartmentRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        purchase_department = serializer.save()
+
+        inspector = serializer.save()
 
         return Response(
             {
+                "success": True,
+                "message": "QC Inspector updated successfully",
+                "qc_inspector_id": inspector.id,
+                "name": inspector.qc_inspector_name,
+            }
+        )
+
+    # DELETE
+    def destroy(self, request, *args, **kwargs):
+
+        inspector = self.get_object()
+
+        data = {"id": inspector.id, "name": inspector.qc_inspector_name}
+
+        self.perform_destroy(inspector)
+
+        return Response(
+            {
+                "success": True,
+                "message": f"QC Inspector '{inspector.qc_inspector_name}' deleted successfully.",
+                "qc_inspector": data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class PurchaseDepartmentViewSet(ModelViewSet):
+
+    queryset = PurchaseDepartmentRegistration.objects.select_related(
+        "state", "district"
+    ).order_by("-created_at")
+
+    serializer_class = PurchaseDepartmentRegistrationSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    # CREATE
+    def create(self, request, *args, **kwargs):
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        department = serializer.save()
+
+        return Response(
+            {
+                "success": True,
                 "message": "Purchase Department registered successfully",
-                "purchase_department_id": purchase_department.id,
+                "purchase_department_id": department.id,
+                "name": department.purchase_department_name,
             },
             status=status.HTTP_201_CREATED,
         )
 
+    # UPDATE (PUT / PATCH safe)
+    def update(self, request, *args, **kwargs):
 
-class StoreManagerRegistrationCreateAPIView(APIView):
-    """Register store managers."""
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
 
-    permission_classes = [IsAuthenticated]
-    parser_classes = [MultiPartParser, FormParser]
+        serializer = self.get_serializer(
+            instance,
+            data=request.data,
+            partial=partial,
+        )
 
-    def post(self, request):
-        serializer = StoreManagerRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        store_manager = serializer.save()
+
+        department = serializer.save()
 
         return Response(
             {
+                "success": True,
+                "message": "Purchase Department updated successfully",
+                "purchase_department_id": department.id,
+                "name": department.purchase_department_name,
+            }
+        )
+
+    # DELETE
+    def destroy(self, request, *args, **kwargs):
+
+        department = self.get_object()
+
+        data = {
+            "id": department.id,
+            "name": department.purchase_department_name,
+        }
+
+        self.perform_destroy(department)
+
+        return Response(
+            {
+                "success": True,
+                "message": f"Purchase Department '{department.purchase_department_name}' deleted successfully.",
+                "purchase_department": data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class StoreManagerViewSet(ModelViewSet):
+
+    queryset = StoreManagerRegistration.objects.select_related(
+        "state", "district"
+    ).order_by("-created_at")
+
+    serializer_class = StoreManagerRegistrationSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    # CREATE
+    def create(self, request, *args, **kwargs):
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        manager = serializer.save()
+
+        return Response(
+            {
+                "success": True,
                 "message": "Store Manager registered successfully",
-                "store_manager_id": store_manager.id,
+                "store_manager_id": manager.id,
+                "name": manager.store_manager_name,
             },
             status=status.HTTP_201_CREATED,
         )
 
+    # UPDATE (PUT / PATCH)
+    def update(self, request, *args, **kwargs):
 
-class RepairTechnicianRegistrationCreateAPIView(APIView):
-    """Register repair technicians."""
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
 
-    permission_classes = [IsAuthenticated]
-    parser_classes = [MultiPartParser, FormParser]
+        serializer = self.get_serializer(
+            instance,
+            data=request.data,
+            partial=partial
+        )
 
-    def post(self, request):
-        serializer = RepairTechnicianRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        repair_technician = serializer.save()
+
+        manager = serializer.save()
 
         return Response(
             {
+                "success": True,
+                "message": "Store Manager updated successfully",
+                "store_manager_id": manager.id,
+                "name": manager.store_manager_name,
+            }
+        )
+
+    # DELETE
+    def destroy(self, request, *args, **kwargs):
+
+        manager = self.get_object()
+
+        data = {
+            "id": manager.id,
+            "name": manager.store_manager_name
+        }
+
+        self.perform_destroy(manager)
+
+        return Response(
+            {
+                "success": True,
+                "message": f"Store Manager '{manager.store_manager_name}' deleted successfully.",
+                "store_manager": data
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class RepairTechnicianViewSet(ModelViewSet):
+
+    queryset = RepairTechnicianRegistration.objects.select_related(
+        "state", "district"
+    ).order_by("-created_at")
+
+    serializer_class = RepairTechnicianRegistrationSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    # CREATE
+    def create(self, request, *args, **kwargs):
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        technician = serializer.save()
+
+        return Response(
+            {
+                "success": True,
                 "message": "Repair Technician registered successfully",
-                "repair_technician_id": repair_technician.id,
+                "repair_technician_id": technician.id,
+                "name": technician.repair_technician_name,
             },
             status=status.HTTP_201_CREATED,
+        )
+
+    # UPDATE (PUT / PATCH)
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        technician = serializer.save()
+        return Response(
+            {
+                "success": True,
+                "message": "Repair Technician updated successfully",
+                "repair_technician_id": technician.id,
+                "name": technician.repair_technician_name,
+            }
+        )
+
+    # DELETE
+    def destroy(self, request, *args, **kwargs):
+        technician = self.get_object()
+        data = {
+            "id": technician.id,
+            "name": technician.repair_technician_name,
+        }
+        self.perform_destroy(technician)
+        return Response(
+            {
+                "success": True,
+                "message": f"Repair Technician '{technician.repair_technician_name}' deleted successfully.",
+                "repair_technician": data,
+            },
+            status=status.HTTP_200_OK,
         )
 
 
 # STORE TRANSFERS
-
-
 class StoreTransferViewSet(ModelViewSet):
     """Manage store transfers with filtering and search capabilities."""
 

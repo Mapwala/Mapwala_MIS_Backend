@@ -65,10 +65,6 @@ from .views import (
     DispatchProductDropdownAPIView,
     DispatchBatchDropdownAPIView,
     AccountRegistrationCreateAPIView,
-    QCInspectorRegistrationCreateAPIView,
-    PurchaseDepartmentRegistrationCreateAPIView,
-    StoreManagerRegistrationCreateAPIView,
-    RepairTechnicianRegistrationCreateAPIView,
     SelfOrderCreateAPIView,
     SelfOrderListAPIView,
     SelfOrderDetailAPIView,
@@ -95,6 +91,10 @@ from .views import (
     ManufacturerViewSet,
     LinkedToChoicesAPIView,
     DistributorViewSet,
+    QCInspectorViewSet,
+    PurchaseDepartmentViewSet,
+    StoreManagerViewSet,
+    RepairTechnicianViewSet,
 )
 
 
@@ -119,7 +119,10 @@ router.register("return-requests", ReturnRequestViewSet, basename="return-reques
 router.register("repair-records", RepairRecordViewSet, basename="repair-record")
 router.register("rejected-items", RejectedItemViewSet, basename="rejected-item")
 router.register("devices", DeviceViewSet, basename="devices")
-
+router.register("qc-inspectors", QCInspectorViewSet, basename="qc-inspectors")
+router.register("purchase-departments",PurchaseDepartmentViewSet,basename="purchase-departments")
+router.register("store-managers", StoreManagerViewSet, basename="store-managers")
+router.register("repair-technicians", RepairTechnicianViewSet, basename="repair-technicians")
 
 urlpatterns = [
     # Auth & registration
@@ -195,10 +198,6 @@ urlpatterns = [
     path("dropdowns/dispatch-batches/", DispatchBatchDropdownAPIView.as_view()),
     # Module registrations
     path("account/register/", AccountRegistrationCreateAPIView.as_view()),
-    path("qc-inspectors/register/", QCInspectorRegistrationCreateAPIView.as_view()),
-    path("purchase-departments/register/",PurchaseDepartmentRegistrationCreateAPIView.as_view()),
-    path("store-managers/register/", StoreManagerRegistrationCreateAPIView.as_view()),
-    path("repair-technicians/register/",RepairTechnicianRegistrationCreateAPIView.as_view()),
     # Self orders
     path("self-orders/create/", SelfOrderCreateAPIView.as_view()),
     path("self-orders/", SelfOrderListAPIView.as_view()),

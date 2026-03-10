@@ -1155,11 +1155,17 @@ class QCInspectorRegistrationSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, data):
-        # State → District dependency (implied by dropdown behavior)
-        if data["district"].state_id != data["state"].id:
+
+        instance = getattr(self, "instance", None)
+
+        state = data.get("state", getattr(instance, "state", None))
+        district = data.get("district", getattr(instance, "district", None))
+
+        if state and district and district.state_id != state.id:
             raise serializers.ValidationError(
                 {"district": "Selected district does not belong to selected state."}
             )
+
         return data
 
 
@@ -1185,11 +1191,17 @@ class PurchaseDepartmentRegistrationSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, data):
-        # Enforce State → District dependency (visible in UI)
-        if data["district"].state_id != data["state"].id:
+
+        instance = getattr(self, "instance", None)
+
+        state = data.get("state", getattr(instance, "state", None))
+        district = data.get("district", getattr(instance, "district", None))
+
+        if state and district and district.state_id != state.id:
             raise serializers.ValidationError(
                 {"district": "Selected district does not belong to selected state."}
             )
+
         return data
 
 
@@ -1215,8 +1227,10 @@ class StoreManagerRegistrationSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, data):
-        # Enforce State → District dependency (visible in UI)
-        if data["district"].state_id != data["state"].id:
+        instance = getattr(self, "instance", None)
+        state = data.get("state", getattr(instance, "state", None))
+        district = data.get("district", getattr(instance, "district", None))
+        if state and district and district.state_id != state.id:
             raise serializers.ValidationError(
                 {"district": "Selected district does not belong to selected state."}
             )
@@ -1245,8 +1259,10 @@ class RepairTechnicianRegistrationSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, data):
-        # Enforce State → District dependency (visible in UI)
-        if data["district"].state_id != data["state"].id:
+        instance = getattr(self, "instance", None)
+        state = data.get("state", getattr(instance, "state", None))
+        district = data.get("district", getattr(instance, "district", None))
+        if state and district and district.state_id != state.id:
             raise serializers.ValidationError(
                 {"district": "Selected district does not belong to selected state."}
             )
