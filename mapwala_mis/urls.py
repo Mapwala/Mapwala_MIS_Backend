@@ -1,5 +1,4 @@
 # mapwala_mis/urls.py
-
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
@@ -109,6 +108,7 @@ router.register("b2b-partners", B2BPartnerViewSet, basename="b2b-partners")
 router.register("dealers", DealerViewSet, basename="dealers")
 router.register("parent-companies", ParentCompanyViewSet, basename="parent-companies")
 router.register("vendors", VendorViewSet, basename="vendors")
+router.register("devices", DeviceViewSet, basename="devices")
 router.register("store-transfers", StoreTransferViewSet, basename="store-transfers")
 router.register("product-categories", ProductCategoryViewSet, basename="product-categories")
 router.register("distributors", DistributorViewSet, basename="distributors")
@@ -118,7 +118,6 @@ router.register("credit-notes", CreditNoteViewSet, basename="credit-notes")
 router.register("return-requests", ReturnRequestViewSet, basename="return-request")
 router.register("repair-records", RepairRecordViewSet, basename="repair-record")
 router.register("rejected-items", RejectedItemViewSet, basename="rejected-item")
-router.register("devices", DeviceViewSet, basename="devices")
 router.register("qc-inspectors", QCInspectorViewSet, basename="qc-inspectors")
 router.register("purchase-departments",PurchaseDepartmentViewSet,basename="purchase-departments")
 router.register("store-managers", StoreManagerViewSet, basename="store-managers")
@@ -128,9 +127,8 @@ urlpatterns = [
     # Auth & registration
     path("auth/login/", LoginAPIView.as_view(), name="login"),
     path("dropdowns/linked-to/", LinkedToChoicesAPIView.as_view()),
-
     # Product Dropdowns
-    path("dropdowns/products/",ProductDropdownAPIView.as_view(),name="product-dropdown"),
+    path("dropdowns/products/", ProductDropdownAPIView.as_view(), name="product-dropdown"),
     path("products/", ProductCreateAPIView.as_view(), name="product-create"),
     # Account management
     path("account-management/dashboard/", AccountManagementDashboardAPIView.as_view()),
@@ -140,16 +138,16 @@ urlpatterns = [
     # Device creation (steps)
     path("devices/dropdowns/unit-of-measure/",unit_of_measure_dropdown,name="unit-of-measure-dropdown"),
     path("devices/dropdowns/state-of-supply/",state_of_supply_dropdown,name="state-of-supply-dropdown"),
-    path("devices/step-1/", DeviceStep1APIView.as_view()),
-    path("devices/step-2/", DeviceStep2APIView.as_view()),
-    path("devices/step-3/", DeviceStep3APIView.as_view()),
-    path("devices/step-4/", DeviceStep4APIView.as_view()),
-    path("devices/step-5/", DeviceStep5APIView.as_view()),
-    path("devices/step-6/", DeviceStep6APIView.as_view()),
-    path("devices/step-7/", DeviceStep7APIView.as_view()),
-    path("devices/step-8/", DeviceStep8APIView.as_view()),
-    path("devices/step-9/", DeviceStep9APIView.as_view()),
-    path("devices/step-10/", DeviceAccessoryAPIView.as_view()),
+    path("devices/step-1/", DeviceStep1APIView.as_view(), name="device-step-1"),
+    path("devices/step-2/", DeviceStep2APIView.as_view(), name="device-step-2"),
+    path("devices/step-3/", DeviceStep3APIView.as_view(), name="device-step-3"),
+    path("devices/step-4/", DeviceStep4APIView.as_view(), name="device-step-4"),
+    path("devices/step-5/", DeviceStep5APIView.as_view(), name="device-step-5"),
+    path("devices/step-6/", DeviceStep6APIView.as_view(), name="device-step-6"),
+    path("devices/step-7/", DeviceStep7APIView.as_view(), name="device-step-7"),
+    path("devices/step-8/", DeviceStep8APIView.as_view(), name="device-step-8"),
+    path("devices/step-9/", DeviceStep9APIView.as_view(), name="device-step-9"),
+    path("devices/step-10/", DeviceAccessoryAPIView.as_view(), name="device-step-10"),
     # Proforma invoice
     path("pi/create/", ProformaInvoiceCreateAPIView.as_view()),
     # Order entry
@@ -160,7 +158,11 @@ urlpatterns = [
     path("sales-orders/create/", SalesOrderCreateAPIView.as_view()),
     path("production-orders/add-to-stock/", ProductionOrderCreateAPIView.as_view()),
     # Dropdowns
-    path("dropdowns/order-products/",OrderProductDropdownAPIView.as_view(),name="order-product-dropdown"),
+    path(
+        "dropdowns/order-products/",
+        OrderProductDropdownAPIView.as_view(),
+        name="order-product-dropdown",
+    ),
     path("dropdowns/suppliers/", SupplierVendorDropdownAPIView.as_view()),
     path("dropdowns/product-categories/", ProductCategoryDropdownAPIView.as_view()),
     path("dropdowns/customer-types/", CustomerTypeDropdownAPIView.as_view()),
@@ -208,7 +210,10 @@ urlpatterns = [
     path("quotations/create/", QuotationCreateAPIView.as_view()),
     path("quotations/", QuotationListAPIView.as_view()),
     path("quotations/<int:quotation_id>/", QuotationDetailAPIView.as_view()),
-    path("quotations/<int:quotation_id>/approve-reject/",QuotationApproveRejectAPIView.as_view()),
+    path(
+        "quotations/<int:quotation_id>/approve-reject/",
+        QuotationApproveRejectAPIView.as_view(),
+    ),
 ]
 
 urlpatterns += router.urls

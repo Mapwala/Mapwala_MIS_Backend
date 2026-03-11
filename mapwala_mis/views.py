@@ -1,5 +1,4 @@
 # mapwala_mis/views.py
-
 from datetime import datetime
 from decimal import Decimal
 from collections import defaultdict
@@ -189,11 +188,17 @@ class LoginAPIView(APIView):
         )
 
 
-class UserViewSet(ListModelMixin, RetrieveModelMixin, UpdateModelMixin, DestroyModelMixin, GenericViewSet):
+class UserViewSet(
+    ListModelMixin,
+    RetrieveModelMixin,
+    UpdateModelMixin,
+    DestroyModelMixin,
+    GenericViewSet,
+):
     queryset = User.objects.select_related("profile").all().order_by("-id")
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
-    
+
     def destroy(self, request, *args, **kwargs):
         user = self.get_object()
 
@@ -303,7 +308,7 @@ class ParentCompanyViewSet(ModelViewSet):
     queryset = ParentCompany.objects.all()
     serializer_class = ParentCompanySerializer
     permission_classes = [IsAuthenticated]
-    
+
     def destroy(self, request, *args, **kwargs):
         parent_company = self.get_object()
 
@@ -339,26 +344,25 @@ class VendorViewSet(ModelViewSet):
                 {"detail": "Vendor with this GST number already exists for this user."}
             )
 
-
     def destroy(self, request, *args, **kwargs):
-            vendor = self.get_object()
+        vendor = self.get_object()
 
-            vendor_data = {
-                "id": vendor.id,
-                "name": vendor.name,
-                "gst_number": vendor.gst_number,
-            }
+        vendor_data = {
+            "id": vendor.id,
+            "name": vendor.name,
+            "gst_number": vendor.gst_number,
+        }
 
-            self.perform_destroy(vendor)
+        self.perform_destroy(vendor)
 
-            return Response(
-                {
-                    "success": True,
-                    "message": f"Vendor '{vendor_data['name']}' deleted successfully.",
-                    "vendor": vendor_data,
-                },
-                status=status.HTTP_200_OK,
-            )
+        return Response(
+            {
+                "success": True,
+                "message": f"Vendor '{vendor_data['name']}' deleted successfully.",
+                "vendor": vendor_data,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class B2CCustomerViewSet(ModelViewSet):
@@ -490,10 +494,7 @@ class DistributorViewSet(ModelViewSet):
         from django.db.models import ProtectedError
 
         distributor = self.get_object()
-        distributor_data = {
-            "id": distributor.id,
-            "name": distributor.name
-        }
+        distributor_data = {"id": distributor.id, "name": distributor.name}
         try:
             self.perform_destroy(distributor)
         except ProtectedError:
@@ -501,9 +502,9 @@ class DistributorViewSet(ModelViewSet):
             return Response(
                 {
                     "success": False,
-                    "message": f"Distributor '{distributor.name}' cannot be deleted because it is linked to existing dealers."
+                    "message": f"Distributor '{distributor.name}' cannot be deleted because it is linked to existing dealers.",
                 },
-                status=status.HTTP_409_CONFLICT
+                status=status.HTTP_409_CONFLICT,
             )
 
         return Response(
@@ -724,19 +725,74 @@ def state_of_supply_dropdown(request):
     return Response(data)
 
 
-class DeviceStep1APIView(APIView):
-    """Device creation step 1: Device information."""
+class DeviceViewSet(viewsets.ModelViewSet):
+    """View devices with filtering, search, and detailed information."""
 
     permission_classes = [IsAuthenticated]
 
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    search_fields = ["info__make", "info__model"]
+    ordering_fields = ["created_at", "status"]
+    ordering = ["-created_at"]
+    filterset_fields = ["status"]
+
+    def get_queryset(self):
+        return Device.objects.select_related(
+            "created_by",
+            "info",
+            "bom",
+            "enclosure",
+            "wireharness",
+            "battery",
+            "sosbutton",
+            "usermanual",
+        ).prefetch_related(
+            "sticker_set",
+            "accessories",
+            "bom__components",
+            "wireharness__connectors",
+        )
+
+    def get_serializer_class(self):
+        if self.action == "retrieve":
+            return DeviceDetailSerializer
+        if self.action == "list":
+            return DeviceListSerializer
+        return DeviceDetailSerializer
+
+    def destroy(self, request, *args, **kwargs):
+        device = self.get_object()
+        device_data = {
+            "id": device.id,
+            "device_id": f"DEV-{device.id:04d}",
+        }
+        device.delete()
+
+        return Response(
+            {
+                "success": True,
+                "message": "Device deleted successfully",
+                "device": device_data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class DeviceStep1APIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
     def post(self, request):
-        device = Device.objects.create(created_by=request.user)
+        device = Device.objects.create(created_by=request.user, status="draft")
         serializer = DeviceInformationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(device=device)
-
         return Response(
-            {"device_id": device.id, "message": "Step 1 completed"}, status=201
+            {
+                "device_id": device.id,
+                "message": "Step 1 completed",
+            },
+            status=status.HTTP_201_CREATED,
         )
 
 
@@ -746,7 +802,10 @@ class DeviceStep2APIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        device = get_object_or_404(Device, id=request.data["device_id"])
+        device_id = request.data.get("device_id")
+        if not device_id:
+            return Response({"error": "device_id is required"}, status=400)
+        device = get_object_or_404(Device, id=device_id)
         serializer = BOMSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(device=device)
@@ -760,8 +819,19 @@ class DeviceStep3APIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        bom = get_object_or_404(BOM, device_id=request.data["device_id"])
-        serializer = BOMComponentSerializer(data=request.data["components"], many=True)
+        device_id = request.data.get("device_id")
+        if not device_id:
+            return Response({"error": "device_id is required"}, status=400)
+        bom = get_object_or_404(BOM, device_id=device_id)
+        components = request.data.get("components")
+
+        if not components:
+            return Response(
+                {"error": "components list required"},
+                status=400
+            )
+
+        serializer = BOMComponentSerializer(data=components, many=True)
         serializer.is_valid(raise_exception=True)
         serializer.save(bom=bom)
 
@@ -774,7 +844,10 @@ class DeviceStep4APIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        device = get_object_or_404(Device, id=request.data["device_id"])
+        device_id = request.data.get("device_id")
+        if not device_id:
+            return Response({"error": "device_id is required"}, status=400)
+        device = get_object_or_404(Device, id=device_id)
         serializer = EnclosureSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(device=device)
@@ -788,7 +861,12 @@ class DeviceStep5APIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        device = get_object_or_404(Device, id=request.data["device_id"])
+        device_id = request.data.get("device_id")
+
+        if not device_id:
+            return Response({"error": "device_id is required"}, status=400)
+
+        device = get_object_or_404(Device, id=device_id)
         serializer = WireHarnessSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(device=device)
@@ -802,7 +880,12 @@ class DeviceStep6APIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        device = get_object_or_404(Device, id=request.data["device_id"])
+        device_id = request.data.get("device_id")
+
+        if not device_id:
+            return Response({"error": "device_id is required"}, status=400)
+
+        device = get_object_or_404(Device, id=device_id)
         serializer = BatterySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(device=device)
@@ -816,7 +899,12 @@ class DeviceStep7APIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        device = get_object_or_404(Device, id=request.data["device_id"])
+        device_id = request.data.get("device_id")
+
+        if not device_id:
+            return Response({"error": "device_id is required"}, status=400)
+
+        device = get_object_or_404(Device, id=device_id)
         serializer = SOSButtonSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(device=device)
@@ -831,7 +919,12 @@ class DeviceStep8APIView(APIView):
     parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request):
-        device = get_object_or_404(Device, id=request.data["device_id"])
+        device_id = request.data.get("device_id")
+
+        if not device_id:
+            return Response({"error": "device_id is required"}, status=400)
+
+        device = get_object_or_404(Device, id=device_id)
         stickers_map = defaultdict(dict)
 
         for key, value in request.data.items():
@@ -856,7 +949,12 @@ class DeviceStep9APIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        device = get_object_or_404(Device, id=request.data["device_id"])
+        device_id = request.data.get("device_id")
+
+        if not device_id:
+            return Response({"error": "device_id is required"}, status=400)
+
+        device = get_object_or_404(Device, id=device_id)
         serializer = UserManualSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(device=device)
@@ -870,8 +968,21 @@ class DeviceAccessoryAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        device = get_object_or_404(Device, id=request.data["device_id"])
-        serializer = AccessorySerializer(data=request.data["accessories"], many=True)
+        device_id = request.data.get("device_id")
+
+        if not device_id:
+            return Response({"error": "device_id is required"}, status=400)
+
+        device = get_object_or_404(Device, id=device_id)
+        accessories = request.data.get("accessories")
+
+        if not accessories:
+            return Response(
+                {"error": "accessories required"},
+                status=400
+            )
+
+        serializer = AccessorySerializer(data=accessories, many=True)
         serializer.is_valid(raise_exception=True)
         serializer.save(device=device)
 
@@ -2006,11 +2117,7 @@ class StoreManagerViewSet(ModelViewSet):
         partial = kwargs.pop("partial", False)
         instance = self.get_object()
 
-        serializer = self.get_serializer(
-            instance,
-            data=request.data,
-            partial=partial
-        )
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
 
         serializer.is_valid(raise_exception=True)
 
@@ -2030,10 +2137,7 @@ class StoreManagerViewSet(ModelViewSet):
 
         manager = self.get_object()
 
-        data = {
-            "id": manager.id,
-            "name": manager.store_manager_name
-        }
+        data = {"id": manager.id, "name": manager.store_manager_name}
 
         self.perform_destroy(manager)
 
@@ -2041,7 +2145,7 @@ class StoreManagerViewSet(ModelViewSet):
             {
                 "success": True,
                 "message": f"Store Manager '{manager.store_manager_name}' deleted successfully.",
-                "store_manager": data
+                "store_manager": data,
             },
             status=status.HTTP_200_OK,
         )
@@ -2613,47 +2717,7 @@ class RejectedItemViewSet(viewsets.ModelViewSet):
         )
 
 
-# DEVICE MANAGEMENT
-
-
-class DeviceViewSet(viewsets.ReadOnlyModelViewSet):
-    """View devices with filtering, search, and detailed information."""
-
-    permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    search_fields = ["info__make", "info__model"]
-    ordering_fields = ["created_at", "status"]
-    ordering = ["-created_at"]
-    filterset_fields = ["status"]
-
-    def get_queryset(self):
-        return Device.objects.select_related(
-            "created_by",
-            "info",
-            "bom",
-            "enclosure",
-            "wireharness",
-            "battery",
-            "sosbutton",
-            "usermanual",
-        ).prefetch_related(
-            "sticker_set", "accessories", "bom__components", "wireharness__connectors"
-        )
-
-    def get_serializer_class(self):
-        if self.action == "retrieve":
-            return DeviceDetailSerializer
-        return DeviceListSerializer
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context["request"] = self.request
-        return context
-
-
 # SELF ORDERS
-
-
 class SelfOrderCreateAPIView(APIView):
     """Create a self order for the authenticated user."""
 

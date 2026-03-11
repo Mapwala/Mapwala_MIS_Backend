@@ -940,119 +940,304 @@ class ProductAdmin(admin.ModelAdmin):
 
 
 # ------------------ Device and Inlines ------------------
+# ──────────────────────────────────────────────────────────────────────────────
+# NESTED INLINES
+# BOMComponent lives inside BOM, WireConnector lives inside WireHarness
+# ──────────────────────────────────────────────────────────────────────────────
+class BOMComponentInline(admin.TabularInline):
+    model = BOMComponent
+    extra = 1
+    can_delete = True
+    verbose_name = "BOM Component"
+    verbose_name_plural = "📦 BOM Components"
+    fields = (
+        "identification_mark",
+        "description",
+        "designator",
+        "footprint",
+        "volt",
+        "part_no",
+        "part_make",
+        "per_device_quantity",
+        "remarks",
+    )
+
+
+class WireConnectorInline(admin.TabularInline):
+    model = WireConnector
+    extra = 1
+    can_delete = True
+    verbose_name = "Wire Connector"
+    verbose_name_plural = "🔌 Wire Connectors"
+    fields = ("connector_name", "number_of_pins", "wire_colors")
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# BOM & WIREHARNESS — Hidden from sidebar, support nested inlines via change link
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+@admin.register(BOM)
+class BOMAdmin(admin.ModelAdmin):
+    inlines = [BOMComponentInline]
+
+    def get_model_perms(self, request):
+        return {}  # Hidden from sidebar — managed inside Device
+
+
+@admin.register(WireHarness)
+class WireHarnessAdmin(admin.ModelAdmin):
+    inlines = [WireConnectorInline]
+
+    def get_model_perms(self, request):
+        return {}  # Hidden from sidebar — managed inside Device
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# DEVICE INLINES — One per step
+# ──────────────────────────────────────────────────────────────────────────────
 class DeviceInformationInline(admin.StackedInline):
     model = DeviceInformation
-    extra = 0
+    extra = 1
+    max_num = 1
     can_delete = False
+    verbose_name_plural = "📋 Step 1 — Device Information"
+    fields = (
+        ("make", "model"),
+        ("mrp", "unit_of_measure"),
+        ("version", "variant"),
+        "state_of_supply",
+    )
 
 
 class BOMInline(admin.StackedInline):
     model = BOM
-    extra = 0
+    extra = 1
+    max_num = 1
     can_delete = False
+    show_change_link = True  # Click to manage BOM Components
+    verbose_name_plural = (
+        "📄 Step 2 & 3 — BOM  (click 'Change' after saving to add Components)"
+    )
+    fields = ("upload_type", "bom_file")
 
 
 class EnclosureInline(admin.StackedInline):
     model = Enclosure
-    extra = 0
+    extra = 1
+    max_num = 1
+    can_delete = True
+    verbose_name_plural = "📦 Step 4 — Enclosure"
+    fields = (
+        ("length", "breadth", "height"),
+        ("color", "material"),
+        ("quantity", "make", "part_number"),
+    )
 
 
 class WireHarnessInline(admin.StackedInline):
     model = WireHarness
-    extra = 0
+    extra = 1
+    max_num = 1
+    can_delete = True
+    show_change_link = True  # Click to manage Wire Connectors
+    verbose_name_plural = (
+        "🔌 Step 5 — Wire Harness  (click 'Change' after saving to add Connectors)"
+    )
+    fields = ("number_of_wires", "specification", "make", "part_number")
 
 
 class BatteryInline(admin.StackedInline):
     model = Battery
-    extra = 0
+    extra = 1
+    max_num = 1
+    can_delete = True
+    verbose_name_plural = "🔋 Step 6 — Battery"
+    fields = (
+        "capacity",
+        ("length", "breadth", "height"),
+        ("make", "part_number"),
+    )
 
 
 class SOSButtonInline(admin.StackedInline):
     model = SOSButton
-    extra = 0
-
-
-class UserManualInline(admin.StackedInline):
-    model = UserManual
-    extra = 0
+    extra = 1
+    max_num = 1
+    can_delete = True
+    verbose_name_plural = "🆘 Step 7 — SOS Button"
+    fields = ("total_length", "quantity_per_set", "make", "part_number")
 
 
 class StickerInline(admin.TabularInline):
     model = Sticker
-    extra = 0
+    extra = 1
+    can_delete = True
+    verbose_name_plural = "🏷️ Step 8 — Stickers"
+    fields = ("name", "length", "breadth", "quantity", "make", "part_number", "file")
+
+
+class UserManualInline(admin.StackedInline):
+    model = UserManual
+    extra = 1
+    max_num = 1
+    can_delete = True
+    verbose_name_plural = "📖 Step 9 — User Manual"
+    fields = ("file",)
 
 
 class AccessoryInline(admin.TabularInline):
     model = Accessory
-    extra = 0
+    extra = 1
+    can_delete = True
+    verbose_name_plural = "🎒 Step 10 — Accessories"
+    fields = ("name", "quantity", "specifications", "description")
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# DEVICE ADMIN
+# ──────────────────────────────────────────────────────────────────────────────
 
 
 @admin.register(Device)
 class DeviceAdmin(admin.ModelAdmin):
+
+    # ── List View ──
     list_display = (
-        "id_link",
+        "device_id",
+        "make_model",
         "status_badge",
         "completion_status",
         "created_by",
         "created_at_formatted",
     )
-    list_filter = ("status", "created_at")
-    readonly_fields = ("status", "created_by", "created_at")
+    list_filter = ("status", "created_at", "created_by")
+    search_fields = (
+        "id",
+        "info__make",
+        "info__model",
+        "created_by__username",
+    )
+    ordering = ("-created_at",)
+    date_hierarchy = "created_at"
 
+    # ── Detail View ──
+    readonly_fields = ("id_display", "created_at")
+    fieldsets = (
+        (
+            "🖥️ Device Overview",
+            {
+                "description": (
+                    "Create the device record first, then fill in each step below. "
+                    "Status will be set to 'Completed' manually or via bulk action."
+                ),
+                "fields": ("id_display", "status", "created_by", "created_at"),
+            },
+        ),
+    )
+
+    # All 10 steps
     inlines = [
-        DeviceInformationInline,
-        BOMInline,
-        EnclosureInline,
-        WireHarnessInline,
-        BatteryInline,
-        SOSButtonInline,
-        StickerInline,
-        UserManualInline,
-        AccessoryInline,
+        DeviceInformationInline,  # Step 1
+        BOMInline,  # Step 2+3
+        EnclosureInline,  # Step 4
+        WireHarnessInline,  # Step 5
+        BatteryInline,  # Step 6
+        SOSButtonInline,  # Step 7
+        StickerInline,  # Step 8
+        UserManualInline,  # Step 9
+        AccessoryInline,  # Step 10
     ]
 
-    def has_add_permission(self, request):
-        return False
+    # Bulk Actions
+    actions = ["mark_completed", "mark_draft"]
 
-    def id_link(self, obj):
-        url = reverse(
-            f"admin:{obj._meta.app_label}_{obj._meta.model_name}_change",
-            args=[obj.pk],
-        )
-        return mark_safe(f"<strong>Device-{obj.id}</strong>")
-    id_link.short_description = "Device ID"
+    # ── Auto-set created_by on creation ──
+    def save_model(self, request, obj, form, change):
+        if not obj.pk:
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
+
+    # ── Custom Columns ──
+
+    def device_id(self, obj):
+        return format_html("<strong>Device-{}</strong>", obj.id)
+
+    device_id.short_description = "Device ID"
+    device_id.admin_order_field = "id"
+
+    def make_model(self, obj):
+        if hasattr(obj, "info"):
+            return format_html(
+                "<strong>{}</strong> <span style='color:#888;'>{}</span>",
+                obj.info.make,
+                obj.info.model,
+            )
+        return mark_safe("<span style='color:#bbb;'>Not filled yet</span>")
+
+    make_model.short_description = "Make / Model"
 
     def status_badge(self, obj):
         colors = {"draft": "#ffc107", "completed": "#28a745"}
+        bg = colors.get(obj.status, "#999")
         return mark_safe(
-            f'<span style="background:{colors.get(obj.status)};'
-            f'color:white;padding:4px 8px;border-radius:4px;">'
-            f'{obj.get_status_display()}</span>'
+            f'<span style="background:{bg};color:white;padding:3px 10px;'
+            f'border-radius:4px;font-weight:bold;">'
+            f"{obj.get_status_display()}</span>"
         )
+
     status_badge.short_description = "Status"
+    status_badge.admin_order_field = "status"
 
     def completion_status(self, obj):
-        steps = {
-            "Info": hasattr(obj, "info"),
-            "BOM": hasattr(obj, "bom"),
-            "Enclosure": hasattr(obj, "enclosure"),
-            "Wire": hasattr(obj, "wireharness"),
-            "Battery": hasattr(obj, "battery"),
-            "SOS": hasattr(obj, "sosbutton"),
-            "Manual": hasattr(obj, "usermanual"),
-        }
-
-        return mark_safe(
-            " ".join(
-                f"<span style='color:{'green' if done else 'red'}'>{step}</span>"
-                for step, done in steps.items()
-            )
+        steps = [
+            ("Info", hasattr(obj, "info")),
+            ("BOM", hasattr(obj, "bom")),
+            ("Enclosure", hasattr(obj, "enclosure")),
+            ("Harness", hasattr(obj, "wireharness")),
+            ("Battery", hasattr(obj, "battery")),
+            ("SOS", hasattr(obj, "sosbutton")),
+            ("Stickers", obj.sticker_set.exists()),
+            ("Manual", hasattr(obj, "usermanual")),
+            ("Accessories", obj.accessories.exists()),
+        ]
+        pills = " ".join(
+            f'<span style="background:{"#28a745" if done else "#dc3545"};'
+            f'color:white;padding:2px 7px;border-radius:3px;font-size:11px;">'
+            f"{name}</span>"
+            for name, done in steps
         )
-    completion_status.short_description = "Completion"
+        return mark_safe(pills)
+
+    completion_status.short_description = "Steps Completed"
 
     def created_at_formatted(self, obj):
-        return obj.created_at.strftime("%d %b %Y %I:%M %p")
+        return obj.created_at.strftime("%d %b %Y  %I:%M %p")
+
     created_at_formatted.short_description = "Created At"
+
+    def id_display(self, obj):
+        return f"Device-{obj.id}" if obj.pk else "Will be assigned after saving"
+
+    id_display.short_description = "Device ID"
+
+    # ── Bulk Actions ──
+
+    def mark_completed(self, request, queryset):
+        updated = queryset.update(status="completed")
+        self.message_user(
+            request, f"{updated} device(s) marked as Completed.", messages.SUCCESS
+        )
+
+    mark_completed.short_description = "✅ Mark selected as Completed"
+
+    def mark_draft(self, request, queryset):
+        updated = queryset.update(status="draft")
+        self.message_user(
+            request, f"{updated} device(s) reverted to Draft.", messages.WARNING
+        )
+
+    mark_draft.short_description = "📝 Revert selected to Draft"
 
 
 # ------------------ Proforma Invoice ------------------
