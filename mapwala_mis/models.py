@@ -1931,3 +1931,23 @@ class QuotationItem(models.Model):
         self.gst_amount = self.subtotal_excl_gst * (self.gst_rate / Decimal("100"))
         self.total_incl_gst = self.subtotal_excl_gst + self.gst_amount
         self.save(update_fields=["gst_amount", "total_incl_gst"])
+
+
+class DeviceInventory(models.Model):
+    device = models.ForeignKey(Device, on_delete=models.CASCADE, related_name="units")
+    esn = models.CharField(max_length=50, unique=True)
+    imei = models.CharField(max_length=50, unique=True)
+    iccid = models.CharField(max_length=50)
+    telecom_provider_1 = models.CharField(max_length=100, blank=True)
+    telecom_provider_2 = models.CharField(max_length=100, blank=True)
+    msisdn_1 = models.CharField(max_length=20, blank=True)
+    msisdn_2 = models.CharField(max_length=20, blank=True)
+    esim_status = models.CharField(max_length=20, blank=True)
+    esim_validity = models.DateField(null=True, blank=True)
+    stock_status = models.CharField(max_length=50, default="in_stock")
+    remarks = models.TextField(blank=True)
+    assigned_to = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]

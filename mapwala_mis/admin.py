@@ -1,15 +1,73 @@
 # mapwala_mis/admin.py
-
-from django.contrib import admin, messages
-from .models import *
-from django.utils.safestring import mark_safe
-from django.urls import reverse
-from django.utils.html import format_html
-from django.forms.models import BaseInlineFormSet
 from decimal import Decimal
 
+from django.contrib import admin, messages
+from django.forms.models import BaseInlineFormSet
+from django.urls import reverse
+from django.utils.html import format_html
+from django.utils.safestring import mark_safe
+from .models import (
+    UserProfile,
+    State,
+    District,
+    ProductCategory,
+    SupplierVendor,
+    Product,
+    ProductionOrder,
+    OrderBatch,
+    OrderEntryMakeToOrder,
+    RequestForQuote,
+    PurchaseOrder,
+    MaterialReceiptNote,
+    Dispatch,
+    PostDispatchReturn,
+    B2CCustomer,
+    B2BPartner,
+    Distributor,
+    Dealer,
+    ProformaInvoice,
+    DeviceInformation,
+    BOM,
+    BOMComponent,
+    Enclosure,
+    WireHarness,
+    WireConnector,
+    Battery,
+    SOSButton,
+    Sticker,
+    UserManual,
+    Accessory,
+    AccountRegistration,
+    QCInspectorRegistration,
+    PurchaseDepartmentRegistration,
+    StoreManagerRegistration,
+    RepairTechnicianRegistration,
+    Vendor,
+    ParentCompany,
+    OrderProduct,
+    SalesOrder,
+    StoreTransfer,
+    DebitNote,
+    RejectedItem,
+    CreditNote,
+    ReturnRequest,
+    RepairRecord,
+    Device,
+    SelfOrder,
+    RFQSelection,
+    QuotationItem,
+    Quotation,
+    ProformaInvoice,
+    Manufacturer,
+    PurchaseOrderItem,
+    PurchaseOrderType,
+    RFQQuotation,
+    QuotationSequence,
+    PostDispatchReturnItem,
+    MaterialReceiptItem,
+)
 
-# ------------------ User Profile ------------------
+
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
     list_display = ("user", "accepted_terms", "accepted_at")
@@ -19,46 +77,29 @@ class UserProfileAdmin(admin.ModelAdmin):
     readonly_fields = ("accepted_at",)
 
 
-from django.contrib import admin
-from django.utils.html import format_html, mark_safe
-from django.contrib import messages
-
-from .models import State, District
-
-
-# ─── District Inline (Full Control inside State) ──────────────────────────────
-
-
 class DistrictInline(admin.TabularInline):
     model = District
     extra = 1
-    fields = ("id", "name", "code", "status")  # ← "id" added here
-    readonly_fields = ("id",)  # ← id is read-only (auto assigned)
+    fields = ("id", "name", "code", "status")
+    readonly_fields = ("id",)
     can_delete = True
     min_num = 0
     verbose_name = "District"
     verbose_name_plural = "Districts"
 
 
-# ─── District Admin (Hidden from sidebar, registered only for autocomplete) ───
-
-
 @admin.register(District)
 class DistrictAdmin(admin.ModelAdmin):
-    search_fields = ("name", "code", "state__name")  # Required for autocomplete
+    search_fields = ("name", "code", "state__name")
 
     def get_model_perms(self, request):
         """Return empty perms so District never appears in the sidebar."""
         return {}
 
 
-# ─── State Admin (Single entry point — controls everything) ───────────────────
-
-
 @admin.register(State)
 class StateAdmin(admin.ModelAdmin):
 
-    # ── List View ──
     list_display = (
         "id",
         "name",
@@ -71,7 +112,6 @@ class StateAdmin(admin.ModelAdmin):
     list_filter = ("status", "created_at")
     ordering = ("id",)
 
-    # ── Detail View ──
     readonly_fields = ("id_display", "created_at", "district_count")
     fieldsets = (
         (
@@ -96,18 +136,14 @@ class StateAdmin(admin.ModelAdmin):
         ),
     )
 
-    # Districts fully managed from this page
     inlines = [DistrictInline]
 
-    # ── Bulk Actions ──
     actions = [
         "make_active",
         "make_inactive",
         "make_all_districts_active",
         "make_all_districts_inactive",
     ]
-
-    # ── Custom Columns ──
 
     def status_badge(self, obj):
         colors = {"active": "#28a745", "inactive": "#6c757d"}
@@ -137,8 +173,6 @@ class StateAdmin(admin.ModelAdmin):
 
     id_display.short_description = "ID"
 
-    # ── State Bulk Actions ──
-
     def make_active(self, request, queryset):
         updated = queryset.update(status="active")
         self.message_user(
@@ -154,8 +188,6 @@ class StateAdmin(admin.ModelAdmin):
         )
 
     make_inactive.short_description = "🚫 Mark selected States as Inactive"
-
-    # ── District Bulk Actions (applied from State list) ──
 
     def make_all_districts_active(self, request, queryset):
         updated = District.objects.filter(state__in=queryset).update(status="active")
@@ -181,13 +213,11 @@ class StateAdmin(admin.ModelAdmin):
         "🚫 Mark all Districts of selected States as Inactive"
     )
 
-    # ── Auto-format on save ──
     def save_model(self, request, obj, form, change):
         obj.name = obj.name.strip().title()
         super().save_model(request, obj, form, change)
 
 
-# ------------------ Parent Company ------------------
 @admin.register(ParentCompany)
 class ParentCompanyAdmin(admin.ModelAdmin):
     list_display = (
@@ -207,7 +237,6 @@ class ParentCompanyAdmin(admin.ModelAdmin):
     list_filter = ("state", "district", "created_at")
     ordering = ("-id",)
 
-    # Make critical identifiers read-only after creation
     readonly_fields = (
         "created_at",
         "id_display",
@@ -274,7 +303,6 @@ class ParentCompanyAdmin(admin.ModelAdmin):
         ),
     )
 
-    # Custom display methods
     def id_display(self, obj):
         return obj.id
 
@@ -286,7 +314,6 @@ class ParentCompanyAdmin(admin.ModelAdmin):
     created_at_formatted.short_description = "Created On"
 
     def phone_number_formatted(self, obj):
-        # Simple formatting: e.g., +91 98765 43210
         num = obj.phone_number
         if len(num) == 10:
             return f"+91 {num[:5]} {num[5:]}"
@@ -357,16 +384,14 @@ class ParentCompanyAdmin(admin.ModelAdmin):
             )
 
     has_all_documents.short_description = "Compliance Docs"
-    has_all_documents.admin_order_field = None  # Not sortable
+    has_all_documents.admin_order_field = None
 
-    # Prevent editing of key identifiers after creation (optional but recommended)
     def get_readonly_fields(self, request, obj=None):
-        if obj:  # Editing an existing object
+        if obj:
             return self.readonly_fields + ("gst_number", "pan_number", "tan_number")
         return self.readonly_fields
 
 
-# ------------------ Vendor ------------------
 @admin.register(Vendor)
 class VendorAdmin(admin.ModelAdmin):
     list_display = (
@@ -457,8 +482,6 @@ class VendorAdmin(admin.ModelAdmin):
         ),
     )
 
-    # === Custom Display Methods ===
-
     def id_display(self, obj):
         return obj.id
 
@@ -546,14 +569,12 @@ class VendorAdmin(admin.ModelAdmin):
     has_all_documents.short_description = "Compliance Docs"
     has_all_documents.admin_order_field = None
 
-    # Prevent editing of key identifiers after creation
     def get_readonly_fields(self, request, obj=None):
         if obj:
             return self.readonly_fields + ("gst_number", "pan_number", "tan_number")
         return self.readonly_fields
 
 
-# ------------------ B2C Customer ------------------
 @admin.register(B2CCustomer)
 class B2CCustomerAdmin(admin.ModelAdmin):
     list_display = (
@@ -594,7 +615,6 @@ class B2CCustomerAdmin(admin.ModelAdmin):
     )
 
 
-# ------------------ B2B Partner ------------------
 @admin.register(B2BPartner)
 class B2BPartnerAdmin(admin.ModelAdmin):
     list_display = (
@@ -643,11 +663,8 @@ class B2BPartnerAdmin(admin.ModelAdmin):
     )
 
 
-# ------------------ Manufacturer ------------------
 @admin.register(Manufacturer)
 class ManufacturerAdmin(admin.ModelAdmin):
-
-    # ─── List View ────────────────────────────────────────────────────────────
 
     list_display = (
         "company_name",
@@ -682,8 +699,6 @@ class ManufacturerAdmin(admin.ModelAdmin):
     date_hierarchy = "created_at"
 
     list_per_page = 25
-
-    # ─── Detail View – Fieldsets ───────────────────────────────────────────────
 
     fieldsets = (
         (
@@ -751,7 +766,6 @@ class ManufacturerAdmin(admin.ModelAdmin):
 
     readonly_fields = (
         "created_at",
-        # document preview links
         "self_certified_applicant_link",
         "authorization_letter_link",
         "pan_card_link",
@@ -761,14 +775,10 @@ class ManufacturerAdmin(admin.ModelAdmin):
         "tac_document_link",
     )
 
-    # ─── Auto-fill created_by on save ─────────────────────────────────────────
-
     def save_model(self, request, obj, form, change):
-        if not obj.pk:  # only on creation
+        if not obj.pk:
             obj.created_by = request.user
         super().save_model(request, obj, form, change)
-
-    # ─── Document Preview Helpers ──────────────────────────────────────────────
 
     def _file_link(self, file_field, label):
         if file_field and hasattr(file_field, "url"):
@@ -820,7 +830,6 @@ class ManufacturerAdmin(admin.ModelAdmin):
     tac_document_link.short_description = "Current File"
 
 
-# ------------------ Distributor ------------------
 @admin.register(Distributor)
 class DistributorAdmin(admin.ModelAdmin):
     list_display = (
@@ -867,7 +876,6 @@ class DistributorAdmin(admin.ModelAdmin):
     )
 
 
-# ------------------ Dealer ------------------
 @admin.register(Dealer)
 class DealerAdmin(admin.ModelAdmin):
     list_display = (
@@ -930,7 +938,6 @@ class DealerAdmin(admin.ModelAdmin):
     )
 
 
-# ------------------ Product ------------------
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = ("product_id", "created_at")
@@ -939,11 +946,6 @@ class ProductAdmin(admin.ModelAdmin):
     readonly_fields = ("created_at",)
 
 
-# ------------------ Device and Inlines ------------------
-# ──────────────────────────────────────────────────────────────────────────────
-# NESTED INLINES
-# BOMComponent lives inside BOM, WireConnector lives inside WireHarness
-# ──────────────────────────────────────────────────────────────────────────────
 class BOMComponentInline(admin.TabularInline):
     model = BOMComponent
     extra = 1
@@ -972,17 +974,12 @@ class WireConnectorInline(admin.TabularInline):
     fields = ("connector_name", "number_of_pins", "wire_colors")
 
 
-# ──────────────────────────────────────────────────────────────────────────────
-# BOM & WIREHARNESS — Hidden from sidebar, support nested inlines via change link
-# ──────────────────────────────────────────────────────────────────────────────
-
-
 @admin.register(BOM)
 class BOMAdmin(admin.ModelAdmin):
     inlines = [BOMComponentInline]
 
     def get_model_perms(self, request):
-        return {}  # Hidden from sidebar — managed inside Device
+        return {}
 
 
 @admin.register(WireHarness)
@@ -990,12 +987,9 @@ class WireHarnessAdmin(admin.ModelAdmin):
     inlines = [WireConnectorInline]
 
     def get_model_perms(self, request):
-        return {}  # Hidden from sidebar — managed inside Device
+        return {}
 
 
-# ──────────────────────────────────────────────────────────────────────────────
-# DEVICE INLINES — One per step
-# ──────────────────────────────────────────────────────────────────────────────
 class DeviceInformationInline(admin.StackedInline):
     model = DeviceInformation
     extra = 1
@@ -1015,7 +1009,7 @@ class BOMInline(admin.StackedInline):
     extra = 1
     max_num = 1
     can_delete = False
-    show_change_link = True  # Click to manage BOM Components
+    show_change_link = True
     verbose_name_plural = (
         "📄 Step 2 & 3 — BOM  (click 'Change' after saving to add Components)"
     )
@@ -1040,7 +1034,7 @@ class WireHarnessInline(admin.StackedInline):
     extra = 1
     max_num = 1
     can_delete = True
-    show_change_link = True  # Click to manage Wire Connectors
+    show_change_link = True
     verbose_name_plural = (
         "🔌 Step 5 — Wire Harness  (click 'Change' after saving to add Connectors)"
     )
@@ -1094,15 +1088,8 @@ class AccessoryInline(admin.TabularInline):
     fields = ("name", "quantity", "specifications", "description")
 
 
-# ──────────────────────────────────────────────────────────────────────────────
-# DEVICE ADMIN
-# ──────────────────────────────────────────────────────────────────────────────
-
-
 @admin.register(Device)
 class DeviceAdmin(admin.ModelAdmin):
-
-    # ── List View ──
     list_display = (
         "device_id",
         "make_model",
@@ -1120,8 +1107,6 @@ class DeviceAdmin(admin.ModelAdmin):
     )
     ordering = ("-created_at",)
     date_hierarchy = "created_at"
-
-    # ── Detail View ──
     readonly_fields = ("id_display", "created_at")
     fieldsets = (
         (
@@ -1136,29 +1121,24 @@ class DeviceAdmin(admin.ModelAdmin):
         ),
     )
 
-    # All 10 steps
     inlines = [
-        DeviceInformationInline,  # Step 1
-        BOMInline,  # Step 2+3
-        EnclosureInline,  # Step 4
-        WireHarnessInline,  # Step 5
-        BatteryInline,  # Step 6
-        SOSButtonInline,  # Step 7
-        StickerInline,  # Step 8
-        UserManualInline,  # Step 9
-        AccessoryInline,  # Step 10
+        DeviceInformationInline,
+        BOMInline,
+        EnclosureInline,
+        WireHarnessInline,
+        BatteryInline,
+        SOSButtonInline,
+        StickerInline,
+        UserManualInline,
+        AccessoryInline,
     ]
 
-    # Bulk Actions
     actions = ["mark_completed", "mark_draft"]
 
-    # ── Auto-set created_by on creation ──
     def save_model(self, request, obj, form, change):
         if not obj.pk:
             obj.created_by = request.user
         super().save_model(request, obj, form, change)
-
-    # ── Custom Columns ──
 
     def device_id(self, obj):
         return format_html("<strong>Device-{}</strong>", obj.id)
@@ -1221,8 +1201,6 @@ class DeviceAdmin(admin.ModelAdmin):
 
     id_display.short_description = "Device ID"
 
-    # ── Bulk Actions ──
-
     def mark_completed(self, request, queryset):
         updated = queryset.update(status="completed")
         self.message_user(
@@ -1240,7 +1218,6 @@ class DeviceAdmin(admin.ModelAdmin):
     mark_draft.short_description = "📝 Revert selected to Draft"
 
 
-# ------------------ Proforma Invoice ------------------
 @admin.register(ProformaInvoice)
 class ProformaInvoiceAdmin(admin.ModelAdmin):
     list_display = (
@@ -1310,7 +1287,6 @@ class ProformaInvoiceAdmin(admin.ModelAdmin):
     )
 
 
-# -----------------------Order Batch Inline--------------------------
 class OrderBatchInline(admin.TabularInline):
     """
     Inline batches under a product.
@@ -1328,7 +1304,6 @@ class OrderBatchInline(admin.TabularInline):
     ordering = ("batch_number",)
 
 
-# # -----------------------Order Product Admin--------------------------
 @admin.register(OrderProduct)
 class OrderProductAdmin(admin.ModelAdmin):
     list_display = ("name",)
@@ -1343,7 +1318,6 @@ class OrderProductAdmin(admin.ModelAdmin):
     )
 
 
-# -----------------------Order Batch Admin--------------------------
 @admin.register(OrderBatch)
 class OrderBatchAdmin(admin.ModelAdmin):
     list_display = ("product", "batch_number", "available_stock")
@@ -1375,7 +1349,6 @@ class OrderBatchAdmin(admin.ModelAdmin):
         return ()
 
 
-# ----------------------------Sales Order Admin-------------------------------
 @admin.register(SalesOrder)
 class SalesOrderAdmin(admin.ModelAdmin):
     list_display = (
@@ -1464,7 +1437,6 @@ class SalesOrderAdmin(admin.ModelAdmin):
     )
 
 
-# -----------------------Supplier / Vendor Admin--------------------------
 @admin.register(SupplierVendor)
 class SupplierVendorAdmin(admin.ModelAdmin):
     list_display = ("name",)
@@ -1473,7 +1445,6 @@ class SupplierVendorAdmin(admin.ModelAdmin):
     fieldsets = (("Supplier / Vendor", {"fields": ("name",)}),)
 
 
-# -----------------------Production Order Admin--------------------------
 @admin.register(ProductionOrder)
 class ProductionOrderAdmin(admin.ModelAdmin):
     list_display = (
@@ -1519,7 +1490,6 @@ class ProductionOrderAdmin(admin.ModelAdmin):
     )
 
 
-# ----------------------- Make To Order Admin --------------------------
 @admin.register(OrderEntryMakeToOrder)
 class OrderEntryMakeToOrderAdmin(admin.ModelAdmin):
     list_display = (
@@ -1589,7 +1559,6 @@ class OrderEntryMakeToOrderAdmin(admin.ModelAdmin):
     )
 
 
-# ===================== RFQ SELECTION INLINE =====================
 class RFQSelectionInline(admin.TabularInline):
     model = RFQSelection
     extra = 0
@@ -1598,7 +1567,6 @@ class RFQSelectionInline(admin.TabularInline):
     show_change_link = True
 
 
-# ===================== REQUEST FOR QUOTE ADMIN =====================
 @admin.register(RequestForQuote)
 class RequestForQuoteAdmin(admin.ModelAdmin):
     list_display = (
@@ -1647,7 +1615,6 @@ class RequestForQuoteAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-# -------------------- Inlines --------------------
 class PurchaseOrderTypeInline(admin.TabularInline):
     model = PurchaseOrderType
     extra = 1
@@ -1655,7 +1622,6 @@ class PurchaseOrderTypeInline(admin.TabularInline):
     show_change_link = True
 
 
-# -------------------- Inlines --------------------
 class PurchaseOrderItemInline(admin.TabularInline):
     model = PurchaseOrderItem
     extra = 1
@@ -1672,7 +1638,6 @@ class PurchaseOrderItemInline(admin.TabularInline):
     show_change_link = True
 
 
-# -------------------- Purchase Order Admin --------------------
 @admin.register(PurchaseOrder)
 class PurchaseOrderAdmin(admin.ModelAdmin):
     list_display = (
@@ -1716,7 +1681,6 @@ class PurchaseOrderAdmin(admin.ModelAdmin):
     )
 
 
-# -------------------- Purchase Order Type Admin --------------------
 @admin.register(PurchaseOrderType)
 class PurchaseOrderTypeAdmin(admin.ModelAdmin):
     list_display = ("purchase_order", "order_type")
@@ -1729,7 +1693,6 @@ class PurchaseOrderTypeAdmin(admin.ModelAdmin):
     )
 
 
-# -------------------- Purchase Order Item Admin --------------------
 @admin.register(PurchaseOrderItem)
 class PurchaseOrderItemAdmin(admin.ModelAdmin):
     list_display = (
@@ -1757,7 +1720,6 @@ class PurchaseOrderItemAdmin(admin.ModelAdmin):
     )
 
 
-# -----------------------Material Receipt Item Admin--------------------------
 class MaterialReceiptItemInline(admin.TabularInline):
     model = MaterialReceiptItem
     extra = 1
@@ -1767,7 +1729,6 @@ class MaterialReceiptItemInline(admin.TabularInline):
     show_change_link = True
 
 
-# -----------------------Material Receipt Note Admin--------------------------
 @admin.register(MaterialReceiptNote)
 class MaterialReceiptNoteAdmin(admin.ModelAdmin):
     list_display = (
@@ -1813,7 +1774,6 @@ class MaterialReceiptNoteAdmin(admin.ModelAdmin):
     )
 
 
-# -----------------------Dispatch Admin--------------------------
 @admin.register(Dispatch)
 class DispatchAdmin(admin.ModelAdmin):
     list_display = (
@@ -1890,7 +1850,6 @@ class DispatchAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-# ---------------------- Inline Formset with validation & auto-calculation ----------------------
 class PostDispatchReturnItemInlineFormset(BaseInlineFormSet):
     """
     Ensures:
@@ -1911,12 +1870,9 @@ class PostDispatchReturnItemInlineFormset(BaseInlineFormSet):
 
             if return_qty > dispatched_qty:
                 raise ValueError("Return quantity cannot exceed dispatched quantity.")
-
-            # Auto-calculate return_amount
             form.instance.return_amount = Decimal(return_qty) * unit_price
 
 
-# --------------------------- Post Dispatch Return Item Inline --------------------------
 class PostDispatchReturnItemInline(admin.TabularInline):
     model = PostDispatchReturnItem
     formset = PostDispatchReturnItemInlineFormset
@@ -1932,7 +1888,6 @@ class PostDispatchReturnItemInline(admin.TabularInline):
     )
 
 
-# -----------------------Post Dispatch Return Admin--------------------------
 @admin.register(PostDispatchReturn)
 class PostDispatchReturnAdmin(admin.ModelAdmin):
     """
@@ -1941,7 +1896,6 @@ class PostDispatchReturnAdmin(admin.ModelAdmin):
     """
 
     inlines = [PostDispatchReturnItemInline]
-    # ---------------- List View ----------------
     list_display = (
         "id",
         "dispatch_id",
@@ -1957,7 +1911,6 @@ class PostDispatchReturnAdmin(admin.ModelAdmin):
     search_fields = ("dispatch_id", "invoice_no", "customer_name")
     ordering = ("-id",)
     date_hierarchy = "created_at"
-    # ---------------- Form Layout ----------------
     fieldsets = (
         (
             "Dispatch Information",
@@ -1987,17 +1940,12 @@ class PostDispatchReturnAdmin(admin.ModelAdmin):
         ),
     )
 
-    # ---------------- Readonly ----------------
     readonly_fields = (
         "total_return_amount",
         "created_at",
     )
 
-    # ---------------- Auto fields ----------------
     def save_model(self, request, obj, form, change):
-        """
-        Auto-assign created_by when adding from admin
-        """
         if not change and not obj.created_by:
             obj.created_by = request.user
         super().save_model(request, obj, form, change)
@@ -2015,7 +1963,6 @@ class PostDispatchReturnAdmin(admin.ModelAdmin):
         form.instance.total_return_amount = total
         form.instance.save(update_fields=["total_return_amount"])
 
-    # ---------------- Permissions ----------------
     def has_delete_permission(self, request, obj=None):
         """
         Optional: allow delete only to superusers
@@ -2026,7 +1973,6 @@ class PostDispatchReturnAdmin(admin.ModelAdmin):
     save_on_top = True
 
 
-# -------------------------- BaseRegistrationAdmin --------------------------
 class BaseRegistrationAdmin(admin.ModelAdmin):
     readonly_fields = ("created_at",)
     list_filter = ("state", "district", "created_at")
@@ -2052,7 +1998,6 @@ class BaseRegistrationAdmin(admin.ModelAdmin):
     )
 
 
-# --------------------------------- Account Registration ---------------------------------
 @admin.register(AccountRegistration)
 class AccountRegistrationAdmin(BaseRegistrationAdmin):
     list_display = (
@@ -2069,7 +2014,6 @@ class AccountRegistrationAdmin(BaseRegistrationAdmin):
     ) + BaseRegistrationAdmin.fieldsets
 
 
-# ----------------------- QC Inspector Registration ---------------------------
 @admin.register(QCInspectorRegistration)
 class QCInspectorRegistrationAdmin(BaseRegistrationAdmin):
     list_display = (
@@ -2086,7 +2030,6 @@ class QCInspectorRegistrationAdmin(BaseRegistrationAdmin):
     ) + BaseRegistrationAdmin.fieldsets
 
 
-# ---------------------------- Purchase Department Registration ----------------------------
 @admin.register(PurchaseDepartmentRegistration)
 class PurchaseDepartmentRegistrationAdmin(BaseRegistrationAdmin):
     list_display = (
@@ -2103,7 +2046,6 @@ class PurchaseDepartmentRegistrationAdmin(BaseRegistrationAdmin):
     ) + BaseRegistrationAdmin.fieldsets
 
 
-# ------------------------- Store Manager Registration --------------------------
 @admin.register(StoreManagerRegistration)
 class StoreManagerRegistrationAdmin(BaseRegistrationAdmin):
     list_display = (
@@ -2120,7 +2062,6 @@ class StoreManagerRegistrationAdmin(BaseRegistrationAdmin):
     ) + BaseRegistrationAdmin.fieldsets
 
 
-# ------------------------- Repair Technician Registration --------------------------
 @admin.register(RepairTechnicianRegistration)
 class RepairTechnicianRegistrationAdmin(BaseRegistrationAdmin):
     list_display = (
@@ -2137,7 +2078,6 @@ class RepairTechnicianRegistrationAdmin(BaseRegistrationAdmin):
     ) + BaseRegistrationAdmin.fieldsets
 
 
-# ------------------ Product Category ------------------
 @admin.register(ProductCategory)
 class ProductCategoryAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "created_at")
@@ -2146,7 +2086,6 @@ class ProductCategoryAdmin(admin.ModelAdmin):
     readonly_fields = ("created_at",)
 
 
-# ------------------ Store Transfer ------------------
 @admin.register(StoreTransfer)
 class StoreTransferAdmin(admin.ModelAdmin):
     list_display = (
@@ -2190,12 +2129,6 @@ class StoreTransferAdmin(admin.ModelAdmin):
     )
 
 
-# ============================================================
-# DEBIT NOTES & CREDIT NOTES - ACCOUNT MANAGEMENT
-# ============================================================
-
-
-# ------------------ Debit Note ------------------
 @admin.register(DebitNote)
 class DebitNoteAdmin(admin.ModelAdmin):
     list_display = (
@@ -2270,12 +2203,11 @@ class DebitNoteAdmin(admin.ModelAdmin):
     created_at_formatted.short_description = "Created At"
 
     def save_model(self, request, obj, form, change):
-        if not change:  # New object
+        if not change:
             obj.created_by = request.user
         super().save_model(request, obj, form, change)
 
 
-# ------------------------- Credit Notes --------------------------
 @admin.register(CreditNote)
 class CreditNoteAdmin(admin.ModelAdmin):
     list_display = (
@@ -2350,19 +2282,17 @@ class CreditNoteAdmin(admin.ModelAdmin):
     created_at_formatted.short_description = "Created At"
 
     def save_model(self, request, obj, form, change):
-        if not change:  # New object
+        if not change:
             obj.created_by = request.user
         super().save_model(request, obj, form, change)
 
 
-# ------------------------- Return Request Admin --------------------------
 @admin.register(ReturnRequest)
 class ReturnRequestAdmin(admin.ModelAdmin):
     """
     Admin configuration for Return Requests
     """
 
-    # Columns shown in admin list view
     list_display = (
         "return_number",
         "date",
@@ -2374,19 +2304,14 @@ class ReturnRequestAdmin(admin.ModelAdmin):
         "created_at",
     )
 
-    # Sidebar filters
     list_filter = ("status", "date", "created_at")
 
-    # Search box fields
     search_fields = ("return_number", "reason", "items", "created_by__username")
 
-    # Default ordering
     ordering = ("-date",)
 
-    # Read-only fields (system managed)
     readonly_fields = ("created_at", "updated_at", "created_by")
 
-    # Group fields nicely in admin form
     fieldsets = (
         (
             "Return Information",
@@ -2420,11 +2345,9 @@ class ReturnRequestAdmin(admin.ModelAdmin):
         ),
     )
 
-    # Performance optimization
     list_select_related = ("created_by",)
 
 
-# ---------------------------- Repair Record Admin ----------------------------
 @admin.register(RepairRecord)
 class RepairRecordAdmin(admin.ModelAdmin):
     """
@@ -2514,7 +2437,6 @@ class RepairRecordAdmin(admin.ModelAdmin):
     list_select_related = ("created_by",)
 
 
-# --------------------------- Repair Type Admin ----------------------------
 @admin.register(RejectedItem)
 class RejectedItemAdmin(admin.ModelAdmin):
     """
@@ -2583,9 +2505,6 @@ class RejectedItemAdmin(admin.ModelAdmin):
     list_select_related = ("created_by",)
 
 
-# ============================================================================
-# Self Order
-# ============================================================================
 @admin.register(SelfOrder)
 class SelfOrderAdmin(admin.ModelAdmin):
     list_display = (
@@ -2676,15 +2595,12 @@ class SelfOrderAdmin(admin.ModelAdmin):
     gross_amount_display.short_description = "Gross Amount"
 
 
-# ============================================================================
-# RFQ QUOTATION ADMIN
-# ============================================================================
-
 @admin.register(RFQQuotation)
 class RFQQuotationAdmin(admin.ModelAdmin):
     """
     Admin configuration for vendor quotations against RFQs
     """
+
     list_display = (
         "rfq",
         "vendor",
@@ -2701,27 +2617,21 @@ class RFQQuotationAdmin(admin.ModelAdmin):
     readonly_fields = ("created_at", "updated_at")
 
 
-# ============================================================================
-# QUOTATION SEQUENCE ADMIN
-# ============================================================================
-
 @admin.register(QuotationSequence)
 class QuotationSequenceAdmin(admin.ModelAdmin):
     """
     Maintains year-wise quotation number sequence
     """
+
     list_display = ("year", "last_number")
     ordering = ("-year",)
 
-
-# ============================================================================
-# QUOTATION ITEM INLINE
-# ============================================================================
 
 class QuotationItemInline(admin.TabularInline):
     """
     Inline items displayed inside Quotation admin
     """
+
     model = QuotationItem
     extra = 0
     min_num = 1
@@ -2740,15 +2650,12 @@ class QuotationItemInline(admin.TabularInline):
     readonly_fields = ("gst_amount", "total_incl_gst")
 
 
-# ============================================================================
-# QUOTATION ADMIN
-# ============================================================================
-
 @admin.register(Quotation)
 class QuotationAdmin(admin.ModelAdmin):
     """
     Admin configuration for final quotation documents
     """
+
     list_display = (
         "quotation_number",
         "customer_name",
@@ -2780,22 +2687,22 @@ class QuotationAdmin(admin.ModelAdmin):
     )
 
     fieldsets = (
-        ("Reference Details", {
-            "fields": ("quotation_number", "rfq", "vendor", "customer_name")
-        }),
-        ("Status & Validity", {
-            "fields": ("status", "valid_until")
-        }),
-        ("Pricing Summary", {
-            "fields": (
-                "subtotal_excl_gst",
-                "total_gst",
-                "grand_total_incl_gst",
-            )
-        }),
-        ("Audit Information", {
-            "fields": ("created_by", "created_at", "updated_at")
-        }),
+        (
+            "Reference Details",
+            {"fields": ("quotation_number", "rfq", "vendor", "customer_name")},
+        ),
+        ("Status & Validity", {"fields": ("status", "valid_until")}),
+        (
+            "Pricing Summary",
+            {
+                "fields": (
+                    "subtotal_excl_gst",
+                    "total_gst",
+                    "grand_total_incl_gst",
+                )
+            },
+        ),
+        ("Audit Information", {"fields": ("created_by", "created_at", "updated_at")}),
     )
 
     inlines = [QuotationItemInline]

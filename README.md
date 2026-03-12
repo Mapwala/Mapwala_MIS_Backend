@@ -24,10 +24,12 @@ Mapwala MIS (Management Information System) is a comprehensive backend service d
 
 ## 🏗️ PROJECT STRUCTURE
 
-```
-Mapwala_MIS_Backend/
+``` Mapwala_MIS_Backend/
 ├── 🐳 .dockerignore            # Files excluded from Docker context
 ├── 🔐 .env                     # Active secrets & environment variables
+├── 🐙 .github/                 # GitHub Actions CI/CD workflows
+│   └── ⚙️ workflows/
+│       └── 🚀 deploy-prod.yml  # Production deployment pipeline
 ├── 🙈 .gitignore               # Files ignored by Git
 ├── 🐳 Dockerfile               # Docker image blueprint
 ├── ⚙️ Mapwala_MIS_Backend/     # Core Project Configuration
@@ -36,9 +38,10 @@ Mapwala_MIS_Backend/
 │   ├── 🛠️ settings.py          # Main Django settings
 │   ├── 🛣️ urls.py              # Global URL routing
 │   └── 🔌 wsgi.py              # Sync entry point (WSGI)
-├── 🐙 docker-compose.yml       # Container orchestration config
+├── 🐳 docker-compose.yml       # Container orchestration config
 ├── 🚀 entrypoint.sh            # Container startup & init script
 ├── 📋 env_example              # Template for environment variables
+├── 📡 gunicorn.ctl             # Gunicorn server control script
 ├── 🕹️ manage.py                # Django CLI utility
 ├── 📦 mapwala_mis/             # Main Application Logic
 │   ├── 🐍 __init__.py
@@ -46,13 +49,23 @@ Mapwala_MIS_Backend/
 │   ├── 🧩 apps.py              # App metadata
 │   ├── 🎨 jazzmin_patch.py     # Admin theme customization
 │   ├── 🗃️ migrations/          # Database schema history
+│   │   ├── 📄 0001_initial.py
+│   │   ├── 📄 0002_deviceinventory.py
+│   │   └── 🐍 __init__.py
+│   ├── 🧬 mixins.py            # Reusable class logic/mixins
 │   ├── 🛢️ models.py            # Database models (Schema)
 │   ├── 🔄 serializers.py       # JSON Serializers (DRF)
 │   ├── 🧪 tests.py             # Unit & Integration tests
 │   ├── 🔗 urls.py              # App-specific routes
 │   ├── 🧰 utils.py             # Helper functions
 │   └── 🧠 views.py             # API Business logic
-└── 📥 requirements.txt         # Python dependencies
+├── 📥 requirements.txt         # Python dependencies
+├── 🏃 run.sh                   # Application execution script
+└── 🎨 staticfiles/             # Collected static assets (CSS, JS, Images)
+    ├── 🛡️ admin/               # Django admin static assets
+    ├── 🖌️ jazzmin/             # Jazzmin theme static assets
+    ├── 🌐 rest_framework/      # DRF browsable API static assets
+    └── 📦 vendor/              # Third-party vendor libraries
 ```
 
 ---

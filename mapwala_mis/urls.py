@@ -94,6 +94,7 @@ from .views import (
     PurchaseDepartmentViewSet,
     StoreManagerViewSet,
     RepairTechnicianViewSet,
+    DeviceInventoryViewSet,
 )
 
 
@@ -122,6 +123,7 @@ router.register("qc-inspectors", QCInspectorViewSet, basename="qc-inspectors")
 router.register("purchase-departments",PurchaseDepartmentViewSet,basename="purchase-departments")
 router.register("store-managers", StoreManagerViewSet, basename="store-managers")
 router.register("repair-technicians", RepairTechnicianViewSet, basename="repair-technicians")
+router.register("reports/devices", DeviceInventoryViewSet, basename="device-inventory")
 
 urlpatterns = [
     # Auth & registration
@@ -158,11 +160,7 @@ urlpatterns = [
     path("sales-orders/create/", SalesOrderCreateAPIView.as_view()),
     path("production-orders/add-to-stock/", ProductionOrderCreateAPIView.as_view()),
     # Dropdowns
-    path(
-        "dropdowns/order-products/",
-        OrderProductDropdownAPIView.as_view(),
-        name="order-product-dropdown",
-    ),
+    path("dropdowns/order-products/",OrderProductDropdownAPIView.as_view(),name="order-product-dropdown"),
     path("dropdowns/suppliers/", SupplierVendorDropdownAPIView.as_view()),
     path("dropdowns/product-categories/", ProductCategoryDropdownAPIView.as_view()),
     path("dropdowns/customer-types/", CustomerTypeDropdownAPIView.as_view()),
@@ -210,10 +208,7 @@ urlpatterns = [
     path("quotations/create/", QuotationCreateAPIView.as_view()),
     path("quotations/", QuotationListAPIView.as_view()),
     path("quotations/<int:quotation_id>/", QuotationDetailAPIView.as_view()),
-    path(
-        "quotations/<int:quotation_id>/approve-reject/",
-        QuotationApproveRejectAPIView.as_view(),
-    ),
+    path("quotations/<int:quotation_id>/approve-reject/",QuotationApproveRejectAPIView.as_view()),
 ]
 
 urlpatterns += router.urls

@@ -1,32 +1,35 @@
 # mapwala_mis/views.py
+import uuid
+from collections import defaultdict
 from datetime import datetime
 from decimal import Decimal
-from collections import defaultdict
-from django.db import transaction, IntegrityError, models
+from django.contrib.auth import get_user_model
+from django.db import models, transaction, IntegrityError
 from django.db.models import Count, Q, Sum
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import status, viewsets, serializers
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
-from rest_framework.pagination import PageNumberPagination
-from rest_framework.exceptions import ValidationError
-import uuid
-from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework_simplejwt.tokens import AccessToken
+from openpyxl import Workbook
+
+# Local Imports
 from .utils import generate_note_number
-from django.contrib.auth import get_user_model
+from .mixins import DeleteResponseMixin
 from rest_framework.mixins import (
     ListModelMixin,
     RetrieveModelMixin,
     UpdateModelMixin,
-    DestroyModelMixin,
 )
 from .models import (
     State,
@@ -71,10 +74,10 @@ from .models import (
     PurchaseDepartmentRegistration,
     RepairTechnicianRegistration,
     StoreManagerRegistration,
+    DeviceInventory,
 )
 from .serializers import (
     UserSerializer,
-    UserCreateSerializer,
     LoginSerializer,
     B2CCustomerSerializer,
     B2BPartnerSerializer,
@@ -147,6 +150,7 @@ from .serializers import (
     QuotationApproveRejectSerializer,
     ManufacturerSerializer,
     LinkedToChoicesSerializer,
+    DeviceInventorySerializer
 )
 
 
@@ -189,36 +193,17 @@ class LoginAPIView(APIView):
 
 
 class UserViewSet(
+    DeleteResponseMixin,
     ListModelMixin,
     RetrieveModelMixin,
     UpdateModelMixin,
-    DestroyModelMixin,
     GenericViewSet,
 ):
     queryset = User.objects.select_related("profile").all().order_by("-id")
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
-
-    def destroy(self, request, *args, **kwargs):
-        user = self.get_object()
-
-        user_data = {
-            "id": user.id,
-            "username": user.username,
-            "email": user.email,
-            "is_active": user.is_active,
-        }
-
-        self.perform_destroy(user)
-
-        return Response(
-            {
-                "success": True,
-                "message": f"User '{user_data['username']}' deleted successfully.",
-                "user": user_data,
-            },
-            status=status.HTTP_200_OK,
-        )
+    delete_object_name = "user"
+    delete_display_field = "username"
 
 
 class StateViewSet(ModelViewSet):
@@ -302,39 +287,24 @@ class DistrictViewSet(ModelViewSet):
         return Response(data)
 
 
-class ParentCompanyViewSet(ModelViewSet):
+class ParentCompanyViewSet(DeleteResponseMixin, ModelViewSet):
     """Manage parent companies."""
 
     queryset = ParentCompany.objects.all()
     serializer_class = ParentCompanySerializer
     permission_classes = [IsAuthenticated]
-
-    def destroy(self, request, *args, **kwargs):
-        parent_company = self.get_object()
-
-        company_data = {
-            "id": parent_company.id,
-            "name": parent_company.name,
-        }
-
-        self.perform_destroy(parent_company)
-
-        return Response(
-            {
-                "success": True,
-                "message": f"Parent company '{company_data['name']}' deleted successfully.",
-                "parent_company": company_data,
-            },
-            status=status.HTTP_200_OK,
-        )
+    delete_object_name = "parent_company"
+    delete_display_field = "name"
 
 
-class VendorViewSet(ModelViewSet):
+class VendorViewSet(DeleteResponseMixin, ModelViewSet):
     """Manage vendors with GST number uniqueness check."""
 
     queryset = Vendor.objects.select_related("state", "district")
     serializer_class = VendorSerializer
     permission_classes = [IsAuthenticated]
+    delete_object_name = "vendor"
+    delete_display_field = "name"
 
     def perform_create(self, serializer):
         try:
@@ -344,85 +314,23 @@ class VendorViewSet(ModelViewSet):
                 {"detail": "Vendor with this GST number already exists for this user."}
             )
 
-    def destroy(self, request, *args, **kwargs):
-        vendor = self.get_object()
 
-        vendor_data = {
-            "id": vendor.id,
-            "name": vendor.name,
-            "gst_number": vendor.gst_number,
-        }
-
-        self.perform_destroy(vendor)
-
-        return Response(
-            {
-                "success": True,
-                "message": f"Vendor '{vendor_data['name']}' deleted successfully.",
-                "vendor": vendor_data,
-            },
-            status=status.HTTP_200_OK,
-        )
-
-
-class B2CCustomerViewSet(ModelViewSet):
+class B2CCustomerViewSet(DeleteResponseMixin, ModelViewSet):
     queryset = B2CCustomer.objects.select_related("state", "district").all()
     serializer_class = B2CCustomerSerializer
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
-
-    def destroy(self, request, *args, **kwargs):
-        customer = self.get_object()
-
-        data = {
-            "id": customer.id,
-            "name": customer.name,
-            "phone_number": customer.phone_number,
-            "email": customer.email,
-        }
-
-        self.perform_destroy(customer)
-
-        return Response(
-            {
-                "success": True,
-                "message": f"B2C Customer '{data['name']}' deleted successfully.",
-                "customer": data,
-            },
-            status=status.HTTP_200_OK,
-        )
+    delete_object_name = "customer"
+    delete_display_field = "name"
 
 
-class B2BPartnerViewSet(ModelViewSet):
-    """
-    CRUD API for B2B Partners
-    """
-
+class B2BPartnerViewSet(DeleteResponseMixin, ModelViewSet):
     queryset = B2BPartner.objects.select_related("state", "district").all()
     serializer_class = B2BPartnerSerializer
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
-
-    def destroy(self, request, *args, **kwargs):
-        partner = self.get_object()
-
-        data = {
-            "id": partner.id,
-            "partner_name": partner.partner_name,
-            "phone_number": partner.phone_number,
-            "email": partner.email,
-        }
-
-        self.perform_destroy(partner)
-
-        return Response(
-            {
-                "success": True,
-                "message": f"B2B Partner '{data['partner_name']}' deleted successfully.",
-                "partner": data,
-            },
-            status=status.HTTP_200_OK,
-        )
+    delete_object_name = "partner"
+    delete_display_field = "partner_name"
 
 
 class LinkedToChoicesAPIView(APIView):
@@ -437,8 +345,7 @@ class LinkedToChoicesAPIView(APIView):
         return Response(serializer.data)
 
 
-class DistributorViewSet(ModelViewSet):
-
+class DistributorViewSet(DeleteResponseMixin, ModelViewSet):
     queryset = Distributor.objects.select_related(
         "state", "district", "manufacturer"
     ).prefetch_related("authorised_states", "authorised_districts")
@@ -446,6 +353,8 @@ class DistributorViewSet(ModelViewSet):
     serializer_class = DistributorRegistrationSerializer
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
+    delete_object_name = "distributor"
+    delete_display_field = "name"
 
     # CREATE
     def create(self, request, *args, **kwargs):
@@ -489,33 +398,6 @@ class DistributorViewSet(ModelViewSet):
             }
         )
 
-    # DELETE
-    def destroy(self, request, *args, **kwargs):
-        from django.db.models import ProtectedError
-
-        distributor = self.get_object()
-        distributor_data = {"id": distributor.id, "name": distributor.name}
-        try:
-            self.perform_destroy(distributor)
-        except ProtectedError:
-
-            return Response(
-                {
-                    "success": False,
-                    "message": f"Distributor '{distributor.name}' cannot be deleted because it is linked to existing dealers.",
-                },
-                status=status.HTTP_409_CONFLICT,
-            )
-
-        return Response(
-            {
-                "success": True,
-                "message": f"Distributor '{distributor.name}' deleted successfully.",
-                "distributor": distributor_data,
-            },
-            status=status.HTTP_200_OK,
-        )
-
     # DROPDOWN
     @action(detail=False, methods=["get"], url_path="dropdown")
     def dropdown(self, request):
@@ -527,36 +409,17 @@ class DistributorViewSet(ModelViewSet):
         return Response(data)
 
 
-class ManufacturerViewSet(ModelViewSet):
-    """
-    CRUD API for Manufacturer Registration
-    """
-
+class ManufacturerViewSet(DeleteResponseMixin, ModelViewSet):
     queryset = Manufacturer.objects.all().order_by("-created_at")
     serializer_class = ManufacturerSerializer
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
+    delete_object_name = "manufacturer"
+    delete_display_field = "company_name"
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
-    def destroy(self, request, *args, **kwargs):
-        manufacturer = self.get_object()
-
-        data = {"id": manufacturer.id, "company_name": manufacturer.company_name}
-
-        self.perform_destroy(manufacturer)
-
-        return Response(
-            {
-                "success": True,
-                "message": f"Manufacturer '{data['company_name']}' deleted successfully.",
-                "manufacturer": data,
-            },
-            status=status.HTTP_200_OK,
-        )
-
-    # ✅ DROPDOWN API
     @action(detail=False, methods=["get"], url_path="dropdown")
     def dropdown(self, request):
         """
@@ -578,7 +441,7 @@ class ManufacturerViewSet(ModelViewSet):
         return Response(data)
 
 
-class DealerViewSet(ModelViewSet):
+class DealerViewSet(DeleteResponseMixin, ModelViewSet):
     queryset = Dealer.objects.select_related(
         "state",
         "district",
@@ -592,6 +455,8 @@ class DealerViewSet(ModelViewSet):
     serializer_class = DealerRegistrationSerializer
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
+    delete_object_name = "dealer"
+    delete_display_field = "name"
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -612,17 +477,6 @@ class DealerViewSet(ModelViewSet):
                 "name": dealer.name,
             },
             status=status.HTTP_201_CREATED,
-        )
-
-    def destroy(self, request, *args, **kwargs):
-        dealer = self.get_object()
-        name = dealer.name
-
-        self.perform_destroy(dealer)
-
-        return Response(
-            {"success": True, "message": f"Dealer '{name}' deleted successfully."},
-            status=status.HTTP_200_OK,
         )
 
 
@@ -725,7 +579,7 @@ def state_of_supply_dropdown(request):
     return Response(data)
 
 
-class DeviceViewSet(viewsets.ModelViewSet):
+class DeviceViewSet(DeleteResponseMixin, viewsets.ModelViewSet):
     """View devices with filtering, search, and detailed information."""
 
     permission_classes = [IsAuthenticated]
@@ -735,6 +589,10 @@ class DeviceViewSet(viewsets.ModelViewSet):
     ordering_fields = ["created_at", "status"]
     ordering = ["-created_at"]
     filterset_fields = ["status"]
+    delete_object_name = "device"
+
+    def get_display_value(self, instance):
+        return f"DEV-{instance.id:04d}"
 
     def get_queryset(self):
         return Device.objects.select_related(
@@ -759,23 +617,6 @@ class DeviceViewSet(viewsets.ModelViewSet):
         if self.action == "list":
             return DeviceListSerializer
         return DeviceDetailSerializer
-
-    def destroy(self, request, *args, **kwargs):
-        device = self.get_object()
-        device_data = {
-            "id": device.id,
-            "device_id": f"DEV-{device.id:04d}",
-        }
-        device.delete()
-
-        return Response(
-            {
-                "success": True,
-                "message": "Device deleted successfully",
-                "device": device_data,
-            },
-            status=status.HTTP_200_OK,
-        )
 
 
 class DeviceStep1APIView(APIView):
@@ -1940,7 +1781,7 @@ class AccountRegistrationCreateAPIView(APIView):
         )
 
 
-class QCInspectorViewSet(ModelViewSet):
+class QCInspectorViewSet(DeleteResponseMixin, ModelViewSet):
 
     queryset = QCInspectorRegistration.objects.select_related(
         "state", "district"
@@ -1949,15 +1790,14 @@ class QCInspectorViewSet(ModelViewSet):
     serializer_class = QCInspectorRegistrationSerializer
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
+    delete_object_name = "qc_inspector"
+    delete_display_field = "qc_inspector_name"
 
     # CREATE
     def create(self, request, *args, **kwargs):
-
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
         inspector = serializer.save()
-
         return Response(
             {
                 "success": True,
@@ -1970,16 +1810,11 @@ class QCInspectorViewSet(ModelViewSet):
 
     # UPDATE (PUT / PATCH safe)
     def update(self, request, *args, **kwargs):
-
         partial = kwargs.pop("partial", False)
         instance = self.get_object()
-
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
-
         serializer.is_valid(raise_exception=True)
-
         inspector = serializer.save()
-
         return Response(
             {
                 "success": True,
@@ -1989,27 +1824,8 @@ class QCInspectorViewSet(ModelViewSet):
             }
         )
 
-    # DELETE
-    def destroy(self, request, *args, **kwargs):
 
-        inspector = self.get_object()
-
-        data = {"id": inspector.id, "name": inspector.qc_inspector_name}
-
-        self.perform_destroy(inspector)
-
-        return Response(
-            {
-                "success": True,
-                "message": f"QC Inspector '{inspector.qc_inspector_name}' deleted successfully.",
-                "qc_inspector": data,
-            },
-            status=status.HTTP_200_OK,
-        )
-
-
-class PurchaseDepartmentViewSet(ModelViewSet):
-
+class PurchaseDepartmentViewSet(DeleteResponseMixin, ModelViewSet):
     queryset = PurchaseDepartmentRegistration.objects.select_related(
         "state", "district"
     ).order_by("-created_at")
@@ -2017,6 +1833,8 @@ class PurchaseDepartmentViewSet(ModelViewSet):
     serializer_class = PurchaseDepartmentRegistrationSerializer
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
+    delete_object_name = "purchase_department"
+    delete_display_field = "purchase_department_name"
 
     # CREATE
     def create(self, request, *args, **kwargs):
@@ -2061,29 +1879,8 @@ class PurchaseDepartmentViewSet(ModelViewSet):
             }
         )
 
-    # DELETE
-    def destroy(self, request, *args, **kwargs):
 
-        department = self.get_object()
-
-        data = {
-            "id": department.id,
-            "name": department.purchase_department_name,
-        }
-
-        self.perform_destroy(department)
-
-        return Response(
-            {
-                "success": True,
-                "message": f"Purchase Department '{department.purchase_department_name}' deleted successfully.",
-                "purchase_department": data,
-            },
-            status=status.HTTP_200_OK,
-        )
-
-
-class StoreManagerViewSet(ModelViewSet):
+class StoreManagerViewSet(DeleteResponseMixin, ModelViewSet):
 
     queryset = StoreManagerRegistration.objects.select_related(
         "state", "district"
@@ -2092,6 +1889,8 @@ class StoreManagerViewSet(ModelViewSet):
     serializer_class = StoreManagerRegistrationSerializer
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
+    delete_object_name = "store_manager"
+    delete_display_field = "store_manager_name"
 
     # CREATE
     def create(self, request, *args, **kwargs):
@@ -2132,26 +1931,8 @@ class StoreManagerViewSet(ModelViewSet):
             }
         )
 
-    # DELETE
-    def destroy(self, request, *args, **kwargs):
 
-        manager = self.get_object()
-
-        data = {"id": manager.id, "name": manager.store_manager_name}
-
-        self.perform_destroy(manager)
-
-        return Response(
-            {
-                "success": True,
-                "message": f"Store Manager '{manager.store_manager_name}' deleted successfully.",
-                "store_manager": data,
-            },
-            status=status.HTTP_200_OK,
-        )
-
-
-class RepairTechnicianViewSet(ModelViewSet):
+class RepairTechnicianViewSet(DeleteResponseMixin, ModelViewSet):
 
     queryset = RepairTechnicianRegistration.objects.select_related(
         "state", "district"
@@ -2160,6 +1941,8 @@ class RepairTechnicianViewSet(ModelViewSet):
     serializer_class = RepairTechnicianRegistrationSerializer
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
+    delete_object_name = "repair_technician"
+    delete_display_field = "repair_technician_name"
 
     # CREATE
     def create(self, request, *args, **kwargs):
@@ -2193,23 +1976,6 @@ class RepairTechnicianViewSet(ModelViewSet):
                 "repair_technician_id": technician.id,
                 "name": technician.repair_technician_name,
             }
-        )
-
-    # DELETE
-    def destroy(self, request, *args, **kwargs):
-        technician = self.get_object()
-        data = {
-            "id": technician.id,
-            "name": technician.repair_technician_name,
-        }
-        self.perform_destroy(technician)
-        return Response(
-            {
-                "success": True,
-                "message": f"Repair Technician '{technician.repair_technician_name}' deleted successfully.",
-                "repair_technician": data,
-            },
-            status=status.HTTP_200_OK,
         )
 
 
@@ -3036,3 +2802,77 @@ class QuotationApproveRejectAPIView(APIView):
             {"errors": serializer.errors},
             status=status.HTTP_400_BAD_REQUEST,
         )
+
+
+class DeviceInventoryViewSet(DeleteResponseMixin, ModelViewSet):
+    serializer_class = DeviceInventorySerializer
+    permission_classes = [IsAuthenticated]
+    delete_object_name = "device"
+    delete_display_field = "esn"
+    queryset = (DeviceInventory.objects.select_related("device", "device__info").order_by("-created_at"))
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+
+    search_fields = [
+        "esn",
+        "imei",
+        "iccid",
+        "device__info__make",
+        "device__info__model",
+    ]
+
+    ordering_fields = [
+        "created_at",
+        "esn",
+        "imei",
+    ]
+
+    filterset_fields = [
+        "stock_status",
+        "esim_status",
+    ]
+
+    @action(detail=False, methods=["get"], url_path="export/csv")
+    def export_csv(self, request):
+        queryset = self.filter_queryset(self.get_queryset())
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = 'attachment; filename="device_report.csv"'
+        writer = csv.writer(response)
+        writer.writerow([
+            "Device Name",
+            "Device Model",
+            "ESN",
+            "IMEI",
+            "ICCID",
+            "Telecom Provider 1",
+            "Telecom Provider 2",
+            "MSISDN 1",
+            "MSISDN 2",
+            "eSIM Status",
+            "eSIM Validity",
+            "Stock Status",
+            "Assigned To",
+            "Remarks",
+            "Created At",
+        ])
+
+        for obj in queryset:
+            info = getattr(obj.device, "info", None)
+            writer.writerow([
+                getattr(info, "make", ""),
+                getattr(info, "model", ""),
+                obj.esn,
+                obj.imei,
+                obj.iccid,
+                obj.telecom_provider_1,
+                obj.telecom_provider_2,
+                obj.msisdn_1,
+                obj.msisdn_2,
+                obj.esim_status,
+                obj.esim_validity,
+                obj.stock_status,
+                obj.assigned_to,
+                obj.remarks,
+                obj.created_at.strftime("%Y-%m-%d"),
+            ])
+
+        return response

@@ -59,10 +59,13 @@ from .models import (
     RFQSelection,
     QuotationItem,
     Quotation,
-    ProformaInvoice,Manufacturer
+    ProformaInvoice,
+    Manufacturer,
+    DeviceInventory,
 )
 
 User = get_user_model()
+
 
 # ---------------- File Size Validator ----------------
 def validate_file_size(file):
@@ -72,6 +75,7 @@ def validate_file_size(file):
         raise serializers.ValidationError(
             f"File size must be less than or equal to {max_size // (1024 * 1024)} MB."
         )
+
 
 class UserSerializer(serializers.ModelSerializer):
     accepted_terms = serializers.BooleanField(
@@ -249,7 +253,6 @@ class VendorSerializer(serializers.ModelSerializer):
         return data
 
 
-# ---------------- Registrations ----------------
 class B2CCustomerSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -277,13 +280,16 @@ class B2CCustomerSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at"]
 
     def validate(self, data):
-        state = data.get("state")
-        district = data.get("district")
+        instance = getattr(self, "instance", None)
 
-        if district.state_id != state.id:
-            raise serializers.ValidationError(
-                {"district": "Selected district does not belong to selected state."}
-            )
+        state = data.get("state", instance.state if instance else None)
+        district = data.get("district", instance.district if instance else None)
+
+        if state and district:
+            if district.state_id != state.id:
+                raise serializers.ValidationError(
+                    {"district": "Selected district does not belong to selected state."}
+                )
 
         return data
 
@@ -316,13 +322,16 @@ class B2BPartnerSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at"]
 
     def validate(self, data):
-        state = data.get("state")
-        district = data.get("district")
+        instance = getattr(self, "instance", None)
 
-        if district.state_id != state.id:
-            raise serializers.ValidationError(
-                {"district": "Selected district does not belong to selected state."}
-            )
+        state = data.get("state", instance.state if instance else None)
+        district = data.get("district", instance.district if instance else None)
+
+        if state and district:
+            if district.state_id != state.id:
+                raise serializers.ValidationError(
+                    {"district": "Selected district does not belong to selected state."}
+                )
 
         return data
 
@@ -378,28 +387,7 @@ class DistributorRegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Distributor
-        fields = [
-            "name",
-            "phone_number",
-            "email",
-            "address",
-            "state",
-            "district",
-            "bank_name",
-            "account_holder_name",
-            "account_number",
-            "ifsc_code",
-            "gst_number",
-            "gst_document",
-            "tan_number",
-            "tan_document",
-            "pan_number",
-            "pan_document",
-            "linked_to",
-            "manufacturer",
-            "authorised_states",
-            "authorised_districts",
-        ]
+        fields = "__all__"
 
     def validate(self, data):
         instance = getattr(self, "instance", None)
@@ -679,10 +667,7 @@ class WireHarnessSerializer(serializers.ModelSerializer):
         harness = WireHarness.objects.create(device=device, **validated_data)
 
         for connector in connectors:
-            WireConnector.objects.create(
-                wire_harness=harness,
-                **connector
-            )
+            WireConnector.objects.create(wire_harness=harness, **connector)
 
         return harness
 
@@ -2217,48 +2202,6 @@ class RFQDetailSerializer(serializers.ModelSerializer):
         return vendor_names
 
 
-# ----------------------- RFQ Quotation Serializer -----------------------
-# class RFQQuotationCreateSerializer(serializers.ModelSerializer):
-#     """Serializer for creating/updating quotation rates"""
-
-#     class Meta:
-#         model = RFQQuotation
-#         fields = ["id", "rfq", "vendor", "quotation_rate", "status"]
-#         read_only_fields = ["id"]
-
-#     def validate_quotation_rate(self, value):
-#         if value is not None and value < 0:
-#             raise serializers.ValidationError("Quotation rate cannot be negative.")
-#         return value
-
-
-# class RFQQuotationSerializer(serializers.ModelSerializer):
-#     """Serializer for reading quotation details"""
-#     vendor_name = serializers.CharField(source="vendor.name", read_only=True)
-#     status_display = serializers.CharField(source="get_status_display", read_only=True)
-
-#     class Meta:
-#         model = RFQQuotation
-#         fields = [
-#             "id",
-#             "rfq",
-#             "vendor",
-#             "vendor_name",
-#             "quotation_rate",
-#             "status",
-#             "status_display",
-#             "quotation_date",
-#             "created_at",
-#             "updated_at",
-#         ]
-#         read_only_fields = ["id", "created_at", "updated_at"]
-
-
-# ============================================================================
-# ======================= QUOTATION SERIALIZERS =============================
-# ============================================================================
-
-
 # --------- Quotation Item Serializer ---------
 class QuotationItemSerializer(serializers.ModelSerializer):
     """Serializer for quotation items"""
@@ -2447,3 +2390,32 @@ class QuotationApproveRejectSerializer(serializers.Serializer):
                 "Status must be 'approved' or 'rejected'."
             )
         return value
+
+
+class DeviceInventorySerializer(serializers.ModelSerializer):
+
+    device_name = serializers.CharField(source="device.info.make", read_only=True)
+    device_model = serializers.CharField(source="device.info.model", read_only=True)
+
+    class Meta:
+        model = DeviceInventory
+        fields = [
+            "id",
+            "device",
+            "device_name",
+            "device_model",
+            "esn",
+            "imei",
+            "iccid",
+            "telecom_provider_1",
+            "telecom_provider_2",
+            "msisdn_1",
+            "msisdn_2",
+            "esim_status",
+            "esim_validity",
+            "stock_status",
+            "assigned_to",
+            "remarks",
+            "created_at",
+        ]
+        read_only_fields = ["created_at"]
