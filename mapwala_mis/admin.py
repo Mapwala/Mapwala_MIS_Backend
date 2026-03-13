@@ -6,6 +6,7 @@ from django.forms.models import BaseInlineFormSet
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
+from django.utils.timezone import now
 from .models import (
     UserProfile,
     State,
@@ -65,6 +66,7 @@ from .models import (
     QuotationSequence,
     PostDispatchReturnItem,
     MaterialReceiptItem,
+    DeviceInventory,
 )
 
 
@@ -2719,3 +2721,138 @@ class QuotationAdmin(admin.ModelAdmin):
         self.message_user(request, "Selected quotations recalculated successfully.")
 
     recalculate_totals.short_description = "Recalculate totals for selected quotations"
+
+
+@admin.register(DeviceInventory)
+class DeviceInventoryAdmin(admin.ModelAdmin):
+    list_display = (
+        "esn",
+        "imei",
+        "device",
+        "stock_status_badge",
+        "esim_status",
+        "esim_validity_display",
+        "telecom_provider_1",
+        "telecom_provider_2",
+        "assigned_to",
+        "created_at",
+    )
+    list_display_links = ("esn", "imei")
+    list_filter = (
+        "stock_status",
+        "esim_status",
+        "telecom_provider_1",
+        "telecom_provider_2",
+        "device",
+    )
+    search_fields = (
+        "esn",
+        "imei",
+        "iccid",
+        "assigned_to",
+        "msisdn_1",
+        "msisdn_2",
+        "remarks",
+    )
+    list_per_page = 25
+    list_select_related = ("device",)
+    date_hierarchy = "created_at"
+    ordering = ("-created_at",)
+    list_editable = ("assigned_to",)
+    readonly_fields = ("created_at", "esim_validity_display")
+    fieldsets = (
+        (
+            "🔌 Device Info",
+            {
+                "fields": ("device", "esn", "imei", "iccid"),
+                "description": "Core identifiers for the physical device unit.",
+            },
+        ),
+        (
+            "📡 Telecom Details",
+            {
+                "fields": (
+                    ("telecom_provider_1", "msisdn_1"),
+                    ("telecom_provider_2", "msisdn_2"),
+                ),
+            },
+        ),
+        (
+            "📶 eSIM",
+            {
+                "fields": ("esim_status", "esim_validity", "esim_validity_display"),
+            },
+        ),
+        (
+            "📦 Inventory & Assignment",
+            {
+                "fields": ("stock_status", "assigned_to", "remarks"),
+            },
+        ),
+        (
+            "🕒 Timestamps",
+            {
+                "fields": ("created_at",),
+                "classes": ("collapse",),
+            },
+        ),
+    )
+    
+    @admin.display(description="Stock Status", ordering="stock_status")
+    def stock_status_badge(self, obj):
+        colors = {
+            "in_stock": ("#1a7a1a", "#d4edda"),
+            "assigned": ("#856404", "#fff3cd"),
+            "faulty": ("#721c24", "#f8d7da"),
+            "retired": ("#383d41", "#e2e3e5"),
+        }
+        fg, bg = colors.get(obj.stock_status, ("#333", "#eee"))
+        label = obj.stock_status.replace("_", " ").title()
+        return format_html(
+            '<span style="background:{};color:{};padding:3px 10px;'
+            'border-radius:12px;font-weight:600;font-size:0.82em;">{}</span>',
+            bg,
+            fg,
+            label,
+        )
+
+    @admin.display(description="eSIM Expiry")
+    def esim_validity_display(self, obj):
+        if not obj.esim_validity:
+            return "—"
+        today = now().date()
+        delta = (obj.esim_validity - today).days
+        if delta < 0:
+            color = "#dc3545"
+            label = f"{obj.esim_validity} (expired)"
+        elif delta <= 30:
+            color = "#fd7e14"
+            label = f"{obj.esim_validity} ({delta}d left)"
+        else:
+            color = "#198754"
+            label = str(obj.esim_validity)
+        return format_html(
+            '<span style="color:{};font-weight:600;">{}</span>', color, label
+        )
+
+    actions = ["mark_in_stock", "mark_assigned", "mark_faulty", "mark_retired"]
+
+    @admin.action(description="✅ Mark selected as In Stock")
+    def mark_in_stock(self, request, queryset):
+        updated = queryset.update(stock_status="in_stock")
+        self.message_user(request, f"{updated} device(s) marked as In Stock.")
+
+    @admin.action(description="🔗 Mark selected as Assigned")
+    def mark_assigned(self, request, queryset):
+        updated = queryset.update(stock_status="assigned")
+        self.message_user(request, f"{updated} device(s) marked as Assigned.")
+
+    @admin.action(description="⚠️ Mark selected as Faulty")
+    def mark_faulty(self, request, queryset):
+        updated = queryset.update(stock_status="faulty")
+        self.message_user(request, f"{updated} device(s) marked as Faulty.")
+
+    @admin.action(description="🗄️ Mark selected as Retired")
+    def mark_retired(self, request, queryset):
+        updated = queryset.update(stock_status="retired")
+        self.message_user(request, f"{updated} device(s) marked as Retired.")

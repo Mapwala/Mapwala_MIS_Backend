@@ -1153,6 +1153,113 @@ class RFQStep3Serializer(serializers.Serializer):
     additional_requirements = serializers.CharField(required=False, allow_blank=True)
 
 
+# ----------------------- RFQ List Serializer -----------------------
+class RFQListSerializer(serializers.ModelSerializer):
+    vendor_names = serializers.SerializerMethodField()
+    bom_parts_count = serializers.SerializerMethodField()
+    components_count = serializers.SerializerMethodField()
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+
+    class Meta:
+        model = RequestForQuote
+        fields = [
+            "id",
+            "order_reference",
+            "device_name",
+            "quantity",
+            "assembly_type",
+            "delivery_date",
+            "created_at",
+            "status",
+            "status_display",
+            "vendor_names",
+            "bom_parts_count",
+            "components_count",
+        ]
+
+    def get_vendor_names(self, obj):
+        """Extract unique vendor names from RFQ quotations"""
+        vendor_names = list(
+            obj.quotations.values_list("vendor__name", flat=True).distinct()
+        )
+        return vendor_names
+
+    def get_bom_parts_count(self, obj):
+        """Count BOM parts in selections"""
+        return obj.selections.filter(item_type="bom").count()
+
+    def get_components_count(self, obj):
+        """Count components in selections"""
+        return obj.selections.filter(item_type="component").count()
+
+
+# ----------------------- RFQ Selection Serializer -----------------------
+class RFQSelectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RFQSelection
+        fields = ["id", "item_type", "reference"]
+
+
+# ----------------------- RFQ Detail Serializer -----------------------
+class RFQDetailSerializer(serializers.ModelSerializer):
+    selections = RFQSelectionSerializer(many=True, read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    assembly_type_display = serializers.CharField(
+        source="get_assembly_type_display", read_only=True
+    )
+    bom_parts = serializers.SerializerMethodField()
+    other_components = serializers.SerializerMethodField()
+    vendor_names = serializers.SerializerMethodField()
+
+    class Meta:
+        model = RequestForQuote
+        fields = [
+            "id",
+            "order_reference",
+            "device_name",
+            "quantity",
+            "assembly_type",
+            "assembly_type_display",
+            "delivery_date",
+            "delivery_address",
+            "additional_requirements",
+            "created_at",
+            "status",
+            "status_display",
+            "selections",
+            "bom_parts",
+            "other_components",
+            "vendor_names",
+        ]
+        read_only_fields = [
+            "id",
+            "created_at",
+            "status",
+            "selections",
+        ]
+
+    def get_bom_parts(self, obj):
+        """Extract BOM part references"""
+        return list(
+            obj.selections.filter(item_type="bom").values_list("reference", flat=True)
+        )
+
+    def get_other_components(self, obj):
+        """Extract component references"""
+        return list(
+            obj.selections.filter(item_type="component").values_list(
+                "reference", flat=True
+            )
+        )
+
+    def get_vendor_names(self, obj):
+        """Extract vendor names from RFQ quotations"""
+        vendor_names = list(
+            obj.quotations.values_list("vendor__name", flat=True).distinct()
+        )
+        return vendor_names
+
+
 # ------------------ Create Purchase Order STEP 1 ------------------
 class PurchaseStep1Serializer(serializers.Serializer):
     buyer_name = serializers.CharField()
@@ -2093,113 +2200,6 @@ class SelfOrderSerializer(serializers.ModelSerializer):
         if value < timezone.now().date():
             raise serializers.ValidationError("Delivery date cannot be in the past.")
         return value
-
-
-# ----------------------- RFQ List Serializer -----------------------
-class RFQListSerializer(serializers.ModelSerializer):
-    vendor_names = serializers.SerializerMethodField()
-    bom_parts_count = serializers.SerializerMethodField()
-    components_count = serializers.SerializerMethodField()
-    status_display = serializers.CharField(source="get_status_display", read_only=True)
-
-    class Meta:
-        model = RequestForQuote
-        fields = [
-            "id",
-            "order_reference",
-            "device_name",
-            "quantity",
-            "assembly_type",
-            "delivery_date",
-            "created_at",
-            "status",
-            "status_display",
-            "vendor_names",
-            "bom_parts_count",
-            "components_count",
-        ]
-
-    def get_vendor_names(self, obj):
-        """Extract unique vendor names from RFQ quotations"""
-        vendor_names = list(
-            obj.quotations.values_list("vendor__name", flat=True).distinct()
-        )
-        return vendor_names
-
-    def get_bom_parts_count(self, obj):
-        """Count BOM parts in selections"""
-        return obj.selections.filter(item_type="bom").count()
-
-    def get_components_count(self, obj):
-        """Count components in selections"""
-        return obj.selections.filter(item_type="component").count()
-
-
-# ----------------------- RFQ Selection Serializer -----------------------
-class RFQSelectionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = RFQSelection
-        fields = ["id", "item_type", "reference"]
-
-
-# ----------------------- RFQ Detail Serializer -----------------------
-class RFQDetailSerializer(serializers.ModelSerializer):
-    selections = RFQSelectionSerializer(many=True, read_only=True)
-    status_display = serializers.CharField(source="get_status_display", read_only=True)
-    assembly_type_display = serializers.CharField(
-        source="get_assembly_type_display", read_only=True
-    )
-    bom_parts = serializers.SerializerMethodField()
-    other_components = serializers.SerializerMethodField()
-    vendor_names = serializers.SerializerMethodField()
-
-    class Meta:
-        model = RequestForQuote
-        fields = [
-            "id",
-            "order_reference",
-            "device_name",
-            "quantity",
-            "assembly_type",
-            "assembly_type_display",
-            "delivery_date",
-            "delivery_address",
-            "additional_requirements",
-            "created_at",
-            "status",
-            "status_display",
-            "selections",
-            "bom_parts",
-            "other_components",
-            "vendor_names",
-        ]
-        read_only_fields = [
-            "id",
-            "created_at",
-            "status",
-            "selections",
-        ]
-
-    def get_bom_parts(self, obj):
-        """Extract BOM part references"""
-        return list(
-            obj.selections.filter(item_type="bom").values_list("reference", flat=True)
-        )
-
-    def get_other_components(self, obj):
-        """Extract component references"""
-        return list(
-            obj.selections.filter(item_type="component").values_list(
-                "reference", flat=True
-            )
-        )
-
-    def get_vendor_names(self, obj):
-        """Extract vendor names from RFQ quotations"""
-        vendor_names = list(
-            obj.quotations.values_list("vendor__name", flat=True).distinct()
-        )
-        return vendor_names
 
 
 # --------- Quotation Item Serializer ---------

@@ -37,11 +37,6 @@ from .views import (
     CustomerTypeDropdownAPIView,
     PaymentTermsDropdownAPIView,
     OrderPriorityDropdownAPIView,
-    RFQListAPIView,
-    RFQDetailAPIView,
-    RFQStep1APIView,
-    RFQStep2APIView,
-    RFQStep3APIView,
     QuoteTypeDropdownAPIView,
     AssemblyTypeDropdownAPIView,
     SRNDropdownAPIView,
@@ -95,6 +90,7 @@ from .views import (
     StoreManagerViewSet,
     RepairTechnicianViewSet,
     DeviceInventoryViewSet,
+    RFQViewSet,
 )
 
 
@@ -120,10 +116,11 @@ router.register("return-requests", ReturnRequestViewSet, basename="return-reques
 router.register("repair-records", RepairRecordViewSet, basename="repair-record")
 router.register("rejected-items", RejectedItemViewSet, basename="rejected-item")
 router.register("qc-inspectors", QCInspectorViewSet, basename="qc-inspectors")
-router.register("purchase-departments",PurchaseDepartmentViewSet,basename="purchase-departments")
+router.register("purchase-departments", PurchaseDepartmentViewSet, basename="purchase-departments")
 router.register("store-managers", StoreManagerViewSet, basename="store-managers")
 router.register("repair-technicians", RepairTechnicianViewSet, basename="repair-technicians")
 router.register("reports/devices", DeviceInventoryViewSet, basename="device-inventory")
+router.register("rfq", RFQViewSet, basename="rfq")
 
 urlpatterns = [
     # Auth & registration
@@ -138,8 +135,16 @@ urlpatterns = [
     path("credit-notes/reasons/", CreditNoteReasonsAPIView.as_view()),
     path("notes/statuses/", NoteStatusChoicesAPIView.as_view()),
     # Device creation (steps)
-    path("devices/dropdowns/unit-of-measure/",unit_of_measure_dropdown,name="unit-of-measure-dropdown"),
-    path("devices/dropdowns/state-of-supply/",state_of_supply_dropdown,name="state-of-supply-dropdown"),
+    path(
+        "devices/dropdowns/unit-of-measure/",
+        unit_of_measure_dropdown,
+        name="unit-of-measure-dropdown",
+    ),
+    path(
+        "devices/dropdowns/state-of-supply/",
+        state_of_supply_dropdown,
+        name="state-of-supply-dropdown",
+    ),
     path("devices/step-1/", DeviceStep1APIView.as_view(), name="device-step-1"),
     path("devices/step-2/", DeviceStep2APIView.as_view(), name="device-step-2"),
     path("devices/step-3/", DeviceStep3APIView.as_view(), name="device-step-3"),
@@ -160,18 +165,13 @@ urlpatterns = [
     path("sales-orders/create/", SalesOrderCreateAPIView.as_view()),
     path("production-orders/add-to-stock/", ProductionOrderCreateAPIView.as_view()),
     # Dropdowns
-    path("dropdowns/order-products/",OrderProductDropdownAPIView.as_view(),name="order-product-dropdown"),
+    path("dropdowns/order-products/", OrderProductDropdownAPIView.as_view(), name="order-product-dropdown"),
     path("dropdowns/suppliers/", SupplierVendorDropdownAPIView.as_view()),
     path("dropdowns/product-categories/", ProductCategoryDropdownAPIView.as_view()),
     path("dropdowns/customer-types/", CustomerTypeDropdownAPIView.as_view()),
     path("dropdowns/payment-terms/", PaymentTermsDropdownAPIView.as_view()),
     path("dropdowns/order-priority/", OrderPriorityDropdownAPIView.as_view()),
     # RFQ
-    path("rfq/", RFQListAPIView.as_view()),
-    path("rfq/<int:rfq_id>/", RFQDetailAPIView.as_view()),
-    path("rfq/step-1/", RFQStep1APIView.as_view()),
-    path("rfq/step-2/", RFQStep2APIView.as_view()),
-    path("rfq/step-3/", RFQStep3APIView.as_view()),
     path("dropdowns/quote-types/", QuoteTypeDropdownAPIView.as_view()),
     path("dropdowns/assembly-types/", AssemblyTypeDropdownAPIView.as_view()),
     path("dropdowns/srn/", SRNDropdownAPIView.as_view()),
@@ -208,7 +208,10 @@ urlpatterns = [
     path("quotations/create/", QuotationCreateAPIView.as_view()),
     path("quotations/", QuotationListAPIView.as_view()),
     path("quotations/<int:quotation_id>/", QuotationDetailAPIView.as_view()),
-    path("quotations/<int:quotation_id>/approve-reject/",QuotationApproveRejectAPIView.as_view()),
+    path(
+        "quotations/<int:quotation_id>/approve-reject/",
+        QuotationApproveRejectAPIView.as_view(),
+    ),
 ]
 
 urlpatterns += router.urls

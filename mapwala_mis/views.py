@@ -22,6 +22,8 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework_simplejwt.tokens import AccessToken
 from openpyxl import Workbook
+import csv
+from django.http import HttpResponse
 
 # Local Imports
 from .utils import generate_note_number
@@ -150,7 +152,7 @@ from .serializers import (
     QuotationApproveRejectSerializer,
     ManufacturerSerializer,
     LinkedToChoicesSerializer,
-    DeviceInventorySerializer
+    DeviceInventorySerializer,
 )
 
 
@@ -667,10 +669,7 @@ class DeviceStep3APIView(APIView):
         components = request.data.get("components")
 
         if not components:
-            return Response(
-                {"error": "components list required"},
-                status=400
-            )
+            return Response({"error": "components list required"}, status=400)
 
         serializer = BOMComponentSerializer(data=components, many=True)
         serializer.is_valid(raise_exception=True)
@@ -818,10 +817,7 @@ class DeviceAccessoryAPIView(APIView):
         accessories = request.data.get("accessories")
 
         if not accessories:
-            return Response(
-                {"error": "accessories required"},
-                status=400
-            )
+            return Response({"error": "accessories required"}, status=400)
 
         serializer = AccessorySerializer(data=accessories, many=True)
         serializer.is_valid(raise_exception=True)
@@ -973,74 +969,196 @@ class SupplierVendorDropdownAPIView(APIView):
 
 
 # RFQ (REQUEST FOR QUOTATION)
-
-
-class RFQListAPIView(APIView):
-    """List RFQs with filtering by status, vendor, and search."""
+class RFQViewSet(viewsets.ModelViewSet):
 
     permission_classes = [IsAuthenticated]
     pagination_class = PageNumberPagination
 
-    def get(self, request):
-        queryset = RequestForQuote.objects.filter(status="submitted").order_by(
-            "-created_at"
+    def get_queryset(self):
+        return (
+            RequestForQuote.objects.select_related()
+            .prefetch_related("selections", "quotations__vendor")
+            .order_by("-created_at")
         )
 
+    def get_serializer_class(self):
+
+        if self.action == "list":
+            return RFQListSerializer
+
+        if self.action == "retrieve":
+            return RFQDetailSerializer
+
+        if self.action == "step1":
+            return RFQStep1Serializer
+
+        if self.action == "step2":
+            return RFQStep2Serializer
+
+        if self.action == "step3":
+            return RFQStep3Serializer
+
+        return RFQDetailSerializer
+
+    def list(self, request):
+
+        queryset = self.get_queryset().filter(status="submitted")
+
         vendor_filter = request.query_params.get("vendor")
+
         if vendor_filter and vendor_filter != "all":
             queryset = queryset.filter(
                 quotations__vendor__name__iexact=vendor_filter
             ).distinct()
 
         status_filter = request.query_params.get("status")
+
         if status_filter and status_filter != "all":
+
             if status_filter == "pending":
                 queryset = queryset.filter(quotations__isnull=True).distinct()
+
             elif status_filter in ["quoted", "rejected"]:
                 queryset = queryset.filter(quotations__status=status_filter).distinct()
 
         search_query = request.query_params.get("search", "").strip()
+
         if search_query:
             queryset = queryset.filter(
                 Q(order_reference__icontains=search_query)
                 | Q(device_name__icontains=search_query)
             )
 
-        total_rfqs = RequestForQuote.objects.filter(status="submitted")
-        total_count = total_rfqs.count()
-        pending_count = total_rfqs.filter(quotations__isnull=True).distinct().count()
-        quoted_count = total_rfqs.filter(quotations__status="quoted").distinct().count()
-        rejected_count = (
-            total_rfqs.filter(quotations__status="rejected").distinct().count()
-        )
-
         paginator = PageNumberPagination()
         paginator.page_size = 10
-        paginated_queryset = paginator.paginate_queryset(queryset, request)
 
-        serializer = RFQListSerializer(paginated_queryset, many=True)
+        page = paginator.paginate_queryset(queryset, request)
+
+        serializer = RFQListSerializer(page, many=True)
+
+        total_rfqs = RequestForQuote.objects.filter(status="submitted")
 
         return Response(
             {
                 "count": paginator.page.paginator.count,
-                "total": total_count,
-                "pending": pending_count,
-                "quoted": quoted_count,
-                "rejected": rejected_count,
+                "total": total_rfqs.count(),
+                "pending": total_rfqs.filter(quotations__isnull=True)
+                .distinct()
+                .count(),
+                "quoted": total_rfqs.filter(quotations__status="quoted")
+                .distinct()
+                .count(),
+                "rejected": total_rfqs.filter(quotations__status="rejected")
+                .distinct()
+                .count(),
                 "results": serializer.data,
             }
         )
 
+    def retrieve(self, request, pk=None):
 
-class RFQDetailAPIView(APIView):
-    """Get detailed information about a specific RFQ."""
+        rfq = get_object_or_404(self.get_queryset(), id=pk)
 
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, rfq_id):
-        rfq = get_object_or_404(RequestForQuote, id=rfq_id)
         serializer = RFQDetailSerializer(rfq)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(serializer.data)
+
+    def partial_update(self, request, pk=None):
+
+        rfq = get_object_or_404(RequestForQuote, id=pk)
+
+        if rfq.status != "draft":
+            return Response(
+                {"error": "Only draft RFQs can be updated"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = RFQStep1Serializer(rfq, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response({"message": "RFQ updated successfully", "rfq_id": rfq.id})
+
+    def destroy(self, request, pk=None):
+
+        rfq = get_object_or_404(RequestForQuote, id=pk)
+
+        if rfq.status != "draft":
+            return Response(
+                {"error": "Submitted RFQs cannot be deleted"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        rfq.delete()
+
+        return Response({"message": "RFQ deleted successfully"})
+
+    @action(detail=False, methods=["post"], url_path="step-1")
+    def step1(self, request):
+
+        serializer = RFQStep1Serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        rfq = serializer.save(created_by=request.user)
+
+        return Response(
+            {"rfq_id": rfq.id, "message": "Step 1 completed"},
+            status=status.HTTP_201_CREATED,
+        )
+
+    @action(detail=False, methods=["post"], url_path="step-2")
+    @transaction.atomic
+    def step2(self, request):
+
+        rfq = get_object_or_404(
+            RequestForQuote,
+            id=request.data.get("rfq_id"),
+            status="draft",
+        )
+
+        serializer = RFQStep2Serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        rfq.selections.all().delete()
+
+        for ref in serializer.validated_data.get("bom_parts", []):
+            RFQSelection.objects.create(rfq=rfq, item_type="bom", reference=ref)
+
+        for ref in serializer.validated_data.get("components", []):
+            RFQSelection.objects.create(rfq=rfq, item_type="component", reference=ref)
+
+        for ref in serializer.validated_data.get("services", []):
+            RFQSelection.objects.create(rfq=rfq, item_type="service", reference=ref)
+
+        return Response({"message": "Step 2 completed"})
+
+    @action(detail=False, methods=["post"], url_path="step-3")
+    @transaction.atomic
+    def step3(self, request):
+
+        rfq = get_object_or_404(
+            RequestForQuote,
+            id=request.data.get("rfq_id"),
+            status="draft",
+        )
+
+        serializer = RFQStep3Serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        rfq.srn_no = serializer.validated_data["srn_no"]
+        rfq.delivery_date = serializer.validated_data["delivery_date"]
+        rfq.delivery_address = serializer.validated_data["delivery_address"]
+        rfq.additional_requirements = serializer.validated_data.get(
+            "additional_requirements", ""
+        )
+
+        rfq.status = "submitted"
+        rfq.save()
+
+        return Response(
+            {"message": "RFQ submitted successfully"},
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class ProductCategoryDropdownAPIView(APIView):
@@ -1175,73 +1293,6 @@ class OrderPriorityDropdownAPIView(APIView):
                 {"key": "urgent", "label": "Urgent"},
             ]
         )
-
-
-# RFQ WORKFLOW
-class RFQStep1APIView(APIView):
-    """RFQ creation step 1: Initial RFQ specification."""
-
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        serializer = RFQStep1Serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        rfq = serializer.save(created_by=request.user)
-        return Response({"rfq_id": rfq.id, "message": "Step 1 completed"}, status=201)
-
-
-class RFQStep2APIView(APIView):
-    """RFQ creation step 2: Add BOM parts, components, and services."""
-
-    permission_classes = [IsAuthenticated]
-
-    @transaction.atomic
-    def post(self, request):
-        rfq = get_object_or_404(
-            RequestForQuote, id=request.data.get("rfq_id"), status="draft"
-        )
-
-        serializer = RFQStep2Serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        rfq.selections.all().delete()
-
-        for ref in serializer.validated_data.get("bom_parts", []):
-            RFQSelection.objects.create(rfq=rfq, item_type="bom", reference=ref)
-
-        for ref in serializer.validated_data.get("components", []):
-            RFQSelection.objects.create(rfq=rfq, item_type="component", reference=ref)
-
-        for ref in serializer.validated_data.get("services", []):
-            RFQSelection.objects.create(rfq=rfq, item_type="service", reference=ref)
-
-        return Response({"message": "Step 2 completed"})
-
-
-class RFQStep3APIView(APIView):
-    """RFQ creation step 3: Finalize RFQ with delivery details and submit."""
-
-    permission_classes = [IsAuthenticated]
-
-    @transaction.atomic
-    def post(self, request):
-        rfq = get_object_or_404(
-            RequestForQuote, id=request.data.get("rfq_id"), status="draft"
-        )
-
-        serializer = RFQStep3Serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        rfq.srn_no = serializer.validated_data["srn_no"]
-        rfq.delivery_date = serializer.validated_data["delivery_date"]
-        rfq.delivery_address = serializer.validated_data["delivery_address"]
-        rfq.additional_requirements = serializer.validated_data.get(
-            "additional_requirements", ""
-        )
-        rfq.status = "submitted"
-        rfq.save()
-
-        return Response({"message": "RFQ submitted successfully"}, status=201)
 
 
 class QuoteTypeDropdownAPIView(APIView):
@@ -2809,7 +2860,9 @@ class DeviceInventoryViewSet(DeleteResponseMixin, ModelViewSet):
     permission_classes = [IsAuthenticated]
     delete_object_name = "device"
     delete_display_field = "esn"
-    queryset = (DeviceInventory.objects.select_related("device", "device__info").order_by("-created_at"))
+    queryset = DeviceInventory.objects.select_related(
+        "device", "device__info"
+    ).order_by("-created_at")
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
 
     search_fields = [
@@ -2837,7 +2890,60 @@ class DeviceInventoryViewSet(DeleteResponseMixin, ModelViewSet):
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = 'attachment; filename="device_report.csv"'
         writer = csv.writer(response)
-        writer.writerow([
+        writer.writerow(
+            [
+                "Device Name",
+                "Device Model",
+                "ESN",
+                "IMEI",
+                "ICCID",
+                "Telecom Provider 1",
+                "Telecom Provider 2",
+                "MSISDN 1",
+                "MSISDN 2",
+                "eSIM Status",
+                "eSIM Validity",
+                "Stock Status",
+                "Assigned To",
+                "Remarks",
+                "Created At",
+            ]
+        )
+
+        for obj in queryset:
+            info = getattr(obj.device, "info", None)
+            writer.writerow(
+                [
+                    getattr(info, "make", ""),
+                    getattr(info, "model", ""),
+                    obj.esn,
+                    obj.imei,
+                    obj.iccid,
+                    obj.telecom_provider_1,
+                    obj.telecom_provider_2,
+                    obj.msisdn_1,
+                    obj.msisdn_2,
+                    obj.esim_status,
+                    obj.esim_validity,
+                    obj.stock_status,
+                    obj.assigned_to,
+                    obj.remarks,
+                    obj.created_at.strftime("%Y-%m-%d"),
+                ]
+            )
+
+        return response
+
+    @action(detail=False, methods=["get"], url_path="export/excel")
+    def export_excel(self, request):
+
+        queryset = self.filter_queryset(self.get_queryset())
+
+        workbook = Workbook()
+        sheet = workbook.active
+        sheet.title = "Device Report"
+
+        headers = [
             "Device Name",
             "Device Model",
             "ESN",
@@ -2853,26 +2959,40 @@ class DeviceInventoryViewSet(DeleteResponseMixin, ModelViewSet):
             "Assigned To",
             "Remarks",
             "Created At",
-        ])
+        ]
+
+        sheet.append(headers)
 
         for obj in queryset:
+
             info = getattr(obj.device, "info", None)
-            writer.writerow([
-                getattr(info, "make", ""),
-                getattr(info, "model", ""),
-                obj.esn,
-                obj.imei,
-                obj.iccid,
-                obj.telecom_provider_1,
-                obj.telecom_provider_2,
-                obj.msisdn_1,
-                obj.msisdn_2,
-                obj.esim_status,
-                obj.esim_validity,
-                obj.stock_status,
-                obj.assigned_to,
-                obj.remarks,
-                obj.created_at.strftime("%Y-%m-%d"),
-            ])
+
+            sheet.append(
+                [
+                    getattr(info, "make", ""),
+                    getattr(info, "model", ""),
+                    obj.esn,
+                    obj.imei,
+                    obj.iccid,
+                    obj.telecom_provider_1,
+                    obj.telecom_provider_2,
+                    obj.msisdn_1,
+                    obj.msisdn_2,
+                    obj.esim_status,
+                    str(obj.esim_validity) if obj.esim_validity else "",
+                    obj.stock_status,
+                    obj.assigned_to,
+                    obj.remarks,
+                    obj.created_at.strftime("%Y-%m-%d"),
+                ]
+            )
+
+        response = HttpResponse(
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+        response["Content-Disposition"] = 'attachment; filename="device_report.xlsx"'
+
+        workbook.save(response)
 
         return response

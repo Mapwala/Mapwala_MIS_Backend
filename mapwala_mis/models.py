@@ -206,20 +206,32 @@ class Manufacturer(models.Model):
     company_pin = models.CharField(max_length=10)
     company_gst_no = models.CharField(max_length=50)
     company_pan_no = models.CharField(max_length=20)
-    company_registration_number = models.CharField(max_length=100, blank=True, null=True)
+    company_registration_number = models.CharField(
+        max_length=100, blank=True, null=True
+    )
     # TAC Information
     tac_no = models.CharField(max_length=100)
     tac_validity = models.DateField()
     # Document Uploads
-    self_certified_applicant = models.FileField(upload_to="manufacturers/self_certified/")
-    authorization_letter = models.FileField(upload_to="manufacturers/authorization_letter/")
+    self_certified_applicant = models.FileField(
+        upload_to="manufacturers/self_certified/"
+    )
+    authorization_letter = models.FileField(
+        upload_to="manufacturers/authorization_letter/"
+    )
     pan_card = models.FileField(upload_to="manufacturers/pan_card/")
     gst_certificate = models.FileField(upload_to="manufacturers/gst_certificate/")
-    company_registration_certificate = models.FileField(upload_to="manufacturers/company_registration/", blank=True, null=True)
-    technical_onboarding_request_letter = models.FileField(upload_to="manufacturers/technical_onboarding/")
+    company_registration_certificate = models.FileField(
+        upload_to="manufacturers/company_registration/", blank=True, null=True
+    )
+    technical_onboarding_request_letter = models.FileField(
+        upload_to="manufacturers/technical_onboarding/"
+    )
     tac_document = models.FileField(upload_to="manufacturers/tac/")
     created_at = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey("auth.User", on_delete=models.SET_NULL, null=True, blank=True)
+    created_by = models.ForeignKey(
+        "auth.User", on_delete=models.SET_NULL, null=True, blank=True
+    )
 
     class Meta:
         ordering = ["-created_at"]
@@ -340,16 +352,24 @@ class Dealer(models.Model):
     )
     # Bank details
     bank_name = models.CharField(max_length=255, verbose_name="Bank Name")
-    account_holder_name = models.CharField(max_length=255, verbose_name="Account Holder Name")
+    account_holder_name = models.CharField(
+        max_length=255, verbose_name="Account Holder Name"
+    )
     account_number = models.CharField(max_length=50, verbose_name="Bank Account Number")
     ifsc_code = models.CharField(max_length=20, verbose_name="IFSC Code")
     # Tax details
     gst_number = models.CharField(max_length=20, verbose_name="GST Number")
-    gst_document = models.FileField(upload_to="documents/dealer/gst/", verbose_name="GST Document")
+    gst_document = models.FileField(
+        upload_to="documents/dealer/gst/", verbose_name="GST Document"
+    )
     tan_number = models.CharField(max_length=20, verbose_name="TAN Number")
-    tan_document = models.FileField(upload_to="documents/dealer/tan/", verbose_name="TAN Document")
+    tan_document = models.FileField(
+        upload_to="documents/dealer/tan/", verbose_name="TAN Document"
+    )
     pan_number = models.CharField(max_length=20, verbose_name="PAN Number")
-    pan_document = models.FileField(upload_to="documents/dealer/pan/", verbose_name="PAN Document")
+    pan_document = models.FileField(
+        upload_to="documents/dealer/pan/", verbose_name="PAN Document"
+    )
     # Business linking
     linked_to = models.CharField(
         max_length=20,
@@ -407,7 +427,12 @@ class Dealer(models.Model):
 
 # ---------------- Product ----------------
 class Product(models.Model):
-    product_id = models.CharField(max_length=20,unique=True,verbose_name="Product ID",help_text="Numeric Product ID shown in PI screen (e.g. 101, 102)")
+    product_id = models.CharField(
+        max_length=20,
+        unique=True,
+        verbose_name="Product ID",
+        help_text="Numeric Product ID shown in PI screen (e.g. 101, 102)",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -932,6 +957,45 @@ class RFQSelection(models.Model):
     reference = models.CharField(
         max_length=255, help_text="Selected BOM ID / Component name / Service name"
     )
+
+
+# ---------------- RFQ Quotation ----------------
+class RFQQuotation(models.Model):
+    """
+    Stores quotation rates for vendors in response to RFQs
+    """
+
+    STATUS_CHOICES = (
+        ("pending", "Pending"),
+        ("quoted", "Quoted"),
+        ("rejected", "Rejected"),
+        ("accepted", "Accepted"),
+    )
+
+    rfq = models.ForeignKey(
+        RequestForQuote, on_delete=models.CASCADE, related_name="quotations"
+    )
+    vendor = models.ForeignKey(
+        Vendor, on_delete=models.CASCADE, related_name="rfq_quotations"
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    quotation_rate = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal("0.00"))],
+        null=True,
+        blank=True,
+    )
+    quotation_date = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("rfq", "vendor")
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Quotation-RFQ{self.rfq.id}-Vendor{self.vendor.id}"
 
 
 # ---------------- Create Purchase Order ----------------
@@ -1727,45 +1791,6 @@ class SelfOrder(models.Model):
 
     def __str__(self):
         return f"SelfOrder-{self.id} ({self.device.id})"
-
-
-# ---------------- RFQ Quotation ----------------
-class RFQQuotation(models.Model):
-    """
-    Stores quotation rates for vendors in response to RFQs
-    """
-
-    STATUS_CHOICES = (
-        ("pending", "Pending"),
-        ("quoted", "Quoted"),
-        ("rejected", "Rejected"),
-        ("accepted", "Accepted"),
-    )
-
-    rfq = models.ForeignKey(
-        RequestForQuote, on_delete=models.CASCADE, related_name="quotations"
-    )
-    vendor = models.ForeignKey(
-        Vendor, on_delete=models.CASCADE, related_name="rfq_quotations"
-    )
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
-    quotation_rate = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        validators=[MinValueValidator(Decimal("0.00"))],
-        null=True,
-        blank=True,
-    )
-    quotation_date = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        unique_together = ("rfq", "vendor")
-        ordering = ["-created_at"]
-
-    def __str__(self):
-        return f"Quotation-RFQ{self.rfq.id}-Vendor{self.vendor.id}"
 
 
 # ============================================================================
