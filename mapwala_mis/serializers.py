@@ -954,137 +954,294 @@ class DeviceDetailSerializer(serializers.ModelSerializer):
         return obj.created_at.strftime("%Y-%m-%d") if obj.created_at else None
 
 
-# ---------------- Order Entry ----------------
+# ──────────────────────────────────────────────
+# ORDER ENTRY
+# ──────────────────────────────────────────────
+
 class OrderEntryStep1Serializer(serializers.ModelSerializer):
     class Meta:
         model = OrderEntry
         fields = ["order_type", "production_type", "assembly_type"]
 
     def validate(self, data):
-        if data["order_type"] == "production" and not data.get("production_type"):
+        # Safe .get() — avoids KeyError if order_type is absent in partial update
+        if data.get("order_type") == "production" and not data.get("production_type"):
             raise serializers.ValidationError(
-                {"production_type": "Required for production order"}
+                {"production_type": "Required for production order."}
             )
         return data
 
 
-# ---------------- Order Product ----------------
+class OrderEntryReadSerializer(serializers.ModelSerializer):
+    """Used for list / retrieve only — all fields are read-only."""
+
+    class Meta:
+        model = OrderEntry
+        fields = [
+            "id",
+            "order_type",
+            "production_type",
+            "assembly_type",
+            "is_step1_complete",
+            "is_step2_complete",
+            "created_at",
+        ]
+        read_only_fields = (
+            "id",
+            "order_type",
+            "production_type",
+            "assembly_type",
+            "is_step1_complete",
+            "is_step2_complete",
+            "created_at",
+        )
+
+# ──────────────────────────────────────────────
+# ORDER PRODUCT
+# ──────────────────────────────────────────────
+
 class OrderProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderProduct
         fields = ["id", "name"]
 
 
-# ---------------- Order Batch ----------------
+# ──────────────────────────────────────────────
+# ORDER BATCH
+# ──────────────────────────────────────────────
+
+
 class OrderBatchSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderBatch
-        fields = ["id", "batch_number", "available_stock"]
+        fields = ["id", "product", "batch_number", "available_stock"]
 
 
-# ---------------- Sales Order ----------------
+# ──────────────────────────────────────────────
+# SALES ORDER — WRITE
+# ──────────────────────────────────────────────
+
+
 class SalesOrderCreateSerializer(serializers.ModelSerializer):
-    """
-    Accepts:
-    - product-device_model (string)
-    - batch (string: batch_number)
-    """
-
-    product_device_model = serializers.CharField(write_only=True, required=True)
-    batch = serializers.CharField(write_only=True, required=True)
+    # required=False — PATCH requests don't need to send these
+    product_device_model = serializers.CharField(write_only=True, required=False)
+    batch_number = serializers.CharField(write_only=True, required=False)
 
     class Meta:
         model = SalesOrder
         exclude = ("product", "batch")
 
     def validate(self, data):
-        product_name = data.pop("product_device_model")
-        batch_number = data.pop("batch")
+        product_name = data.pop("product_device_model", None)
+        batch_number = data.pop("batch_number", None)
 
-        # 1️ Resolve product
-        try:
-            product = OrderProduct.objects.get(name=product_name)
-        except OrderProduct.DoesNotExist:
-            raise serializers.ValidationError(
-                {"product-device_model": "Invalid product / device model."}
-            )
+        if product_name is not None or batch_number is not None:
+            instance = self.instance 
+            if product_name is None and instance:
+                product_name = instance.product.name
+            if batch_number is None and instance:
+                batch_number = instance.batch.batch_number
 
-        # 2️ Resolve batch (must belong to product)
-        try:
-            batch = OrderBatch.objects.get(product=product, batch_number=batch_number)
-        except OrderBatch.DoesNotExist:
-            raise serializers.ValidationError(
-                {"batch": "Invalid batch for selected product."}
-            )
+            # Both must be present to resolve (either from request or from instance)
+            if not product_name or not batch_number:
+                raise serializers.ValidationError(
+                    {
+                        "product_device_model": "Both product and batch_number are required together."
+                    }
+                )
 
-        data["product"] = product
-        data["batch"] = batch
+            try:
+                product = OrderProduct.objects.get(name=product_name)
+            except OrderProduct.DoesNotExist:
+                raise serializers.ValidationError(
+                    {"product_device_model": "Invalid product / device model."}
+                )
 
-        # 3️ Stock validation
-        if data["quantity"] > batch.available_stock:
-            raise serializers.ValidationError(
-                {"quantity": f"Only {batch.available_stock} units available."}
-            )
+            try:
+                batch = OrderBatch.objects.get(
+                    product=product, batch_number=batch_number
+                )
+            except OrderBatch.DoesNotExist:
+                raise serializers.ValidationError(
+                    {"batch_number": "Invalid batch for selected product."}
+                )
 
-        # 4️ Grand total validation
-        calculated = SalesOrder(**data).calculate_grand_total()
-        if calculated != data["grand_total"]:
-            raise serializers.ValidationError(
-                {"grand_total": "Grand total mismatch with backend calculation."}
-            )
+            data["product"] = product
+            data["batch"] = batch
+
+        # Stock check — only when quantity is being changed
+        # Use incoming quantity or fall back to instance quantity
+        instance = self.instance
+        quantity = data.get("quantity", instance.quantity if instance else None)
+        batch = data.get("batch", instance.batch if instance else None)
+
+        if quantity is not None and batch is not None:
+            # On update, restore the instance's own quantity before checking
+            # (those units are being "released" back to stock during update)
+            effective_stock = batch.available_stock
+            if instance and instance.batch == batch:
+                effective_stock += instance.quantity  # units being returned
+
+            if quantity > effective_stock:
+                raise serializers.ValidationError(
+                    {"quantity": f"Only {effective_stock} units available."}
+                )
+
+        if instance:
+            merged = {
+                "quantity": data.get("quantity", instance.quantity),
+                "unit_price": data.get("unit_price", instance.unit_price),
+                "discount_percent": data.get(
+                    "discount_percent", instance.discount_percent
+                ),
+                "gst_percent": data.get("gst_percent", instance.gst_percent),
+                "shipping_charges": data.get(
+                    "shipping_charges", instance.shipping_charges
+                ),
+                "product": data.get("product", instance.product),
+                "batch": data.get("batch", instance.batch),
+            }
+        else:
+            merged = data
+
+        if "grand_total" in data:
+            calculated = SalesOrder(**merged).calculate_grand_total()
+            if calculated != data["grand_total"]:
+                raise serializers.ValidationError(
+                    {
+                        "grand_total": (
+                            f"Grand total mismatch. "
+                            f"Backend calculated: {calculated}, "
+                            f"Frontend sent: {data['grand_total']}."
+                        )
+                    }
+                )
 
         return data
 
 
-# ---------------- Production Order ----------------
+# ──────────────────────────────────────────────
+# SALES ORDER — READ
+# ──────────────────────────────────────────────
+
+
+class SalesOrderReadSerializer(serializers.ModelSerializer):
+    product = OrderProductSerializer(read_only=True)
+    batch = OrderBatchSerializer(read_only=True)
+
+    class Meta:
+        model = SalesOrder
+        fields = "__all__"
+
+
+# ──────────────────────────────────────────────
+# PRODUCTION ORDER — WRITE
+# ──────────────────────────────────────────────
 class ProductionOrderCreateSerializer(serializers.ModelSerializer):
-    product_device_model = serializers.CharField(write_only=True)
-    batch_number = serializers.CharField(write_only=True)
-    supplier_vendor_id = serializers.IntegerField(write_only=True)
+    # required=False — PATCH requests don't need to send these
+    product_device_model = serializers.CharField(write_only=True, required=False)
+    batch_number = serializers.CharField(write_only=True, required=False)
+    supplier_vendor_id = serializers.IntegerField(write_only=True, required=False)
 
     class Meta:
         model = ProductionOrder
         exclude = ("product", "batch", "supplier_vendor")
 
     def validate(self, data):
-        # Resolve product
-        try:
-            product = OrderProduct.objects.get(name=data.pop("product_device_model"))
-        except OrderProduct.DoesNotExist:
+        instance = self.instance  # None on CREATE, ProductionOrder on UPDATE/PATCH
+
+        product_name = data.pop("product_device_model", None)
+        batch_number = data.pop("batch_number", None)
+        supplier_vendor_id = data.pop("supplier_vendor_id", None)
+
+        # ── Resolve product ──────────────────────────────────────
+        if product_name is not None:
+            try:
+                product = OrderProduct.objects.get(name=product_name)
+            except OrderProduct.DoesNotExist:
+                raise serializers.ValidationError(
+                    {"product_device_model": "Invalid product / device model."}
+                )
+            data["product"] = product
+        elif instance:
+            product = instance.product  # keep existing — not reassigned to data
+        else:
             raise serializers.ValidationError(
-                {"product_device_model": "Invalid product/device model."}
+                {"product_device_model": "This field is required."}
             )
 
-        # Resolve supplier
-        try:
-            supplier = SupplierVendor.objects.get(id=data.pop("supplier_vendor_id"))
-        except SupplierVendor.DoesNotExist:
+        # ── Resolve supplier / vendor ────────────────────────────
+        if supplier_vendor_id is not None:
+            try:
+                supplier = SupplierVendor.objects.get(id=supplier_vendor_id)
+            except SupplierVendor.DoesNotExist:
+                raise serializers.ValidationError(
+                    {"supplier_vendor_id": "Invalid supplier / vendor ID."}
+                )
+            data["supplier_vendor"] = supplier
+        elif not instance:
             raise serializers.ValidationError(
-                {"supplier_vendor": "Invalid supplier/vendor."}
+                {"supplier_vendor_id": "This field is required."}
             )
 
-        # Resolve or create batch per product
-        batch, _ = OrderBatch.objects.get_or_create(
-            product=product,
-            batch_number=data.pop("batch_number"),
-            defaults={"available_stock": 0},
+        # ── Resolve batch ────────────────────────────────────────
+        if batch_number is not None:
+            batch, _ = OrderBatch.objects.get_or_create(
+                product=product,
+                batch_number=batch_number,
+                defaults={"available_stock": 0},
+            )
+            data["batch"] = batch
+        elif not instance:
+            raise serializers.ValidationError(
+                {"batch_number": "This field is required."}
+            )
+
+        # ── Total value check ────────────────────────────────────
+        # Only validate when at least one pricing field is being changed
+        quantity_added = data.get(
+            "quantity_added", instance.quantity_added if instance else None
+        )
+        unit_price = data.get("unit_price", instance.unit_price if instance else None)
+        total_value = data.get(
+            "total_value", instance.total_value if instance else None
         )
 
-        data["product"] = product
-        data["supplier_vendor"] = supplier
-        data["batch"] = batch
-
-        # Validate total value
-        calculated = data["quantity_added"] * data["unit_price"]
-        if calculated != data["total_value"]:
-            raise serializers.ValidationError(
-                {"total_value": "Total value mismatch with backend calculation."}
-            )
+        if "quantity_added" in data or "unit_price" in data or "total_value" in data:
+            calculated = quantity_added * unit_price
+            if calculated != total_value:
+                raise serializers.ValidationError(
+                    {
+                        "total_value": (
+                            f"Total value mismatch. "
+                            f"Backend calculated: {calculated}, "
+                            f"Frontend sent: {total_value}."
+                        )
+                    }
+                )
 
         return data
 
 
-# ---------------- Step-2 (Make To Order) ----------------
+# ──────────────────────────────────────────────
+# PRODUCTION ORDER — READ
+# ──────────────────────────────────────────────
+
+
+class ProductionOrderReadSerializer(serializers.ModelSerializer):
+    product = OrderProductSerializer(read_only=True)
+    batch = OrderBatchSerializer(read_only=True)
+    supplier_vendor = serializers.StringRelatedField()
+
+    class Meta:
+        model = ProductionOrder
+        fields = "__all__"
+
+
+# ──────────────────────────────────────────────
+# ORDER ENTRY — STEP 2 (MAKE TO ORDER)
+# ──────────────────────────────────────────────
+
 class OrderEntryStep2MakeToOrderSerializer(serializers.ModelSerializer):
     product_device_model = serializers.CharField(write_only=True)
 
@@ -1093,17 +1250,17 @@ class OrderEntryStep2MakeToOrderSerializer(serializers.ModelSerializer):
         exclude = ("order_entry", "product")
 
     def validate(self, data):
-        # 1. Resolve product from UI value
+        # Resolve product
         try:
             product = OrderProduct.objects.get(name=data.pop("product_device_model"))
         except OrderProduct.DoesNotExist:
             raise serializers.ValidationError(
-                {"product_device_model": "Invalid Product / Device Model"}
+                {"product_device_model": "Invalid Product / Device Model."}
             )
 
         data["product"] = product
 
-        # 2. Backend grand total calculation
+        # Grand total calculation
         base = data["quantity"] * data["unit_price"]
         discount = (base * data["discount_percent"]) / Decimal("100")
         taxable = base - discount
@@ -1112,13 +1269,15 @@ class OrderEntryStep2MakeToOrderSerializer(serializers.ModelSerializer):
 
         if calculated_total != data["grand_total"]:
             raise serializers.ValidationError(
-                {"grand_total": "Grand total mismatch with backend calculation"}
+                {
+                    "grand_total": f"Grand total mismatch with backend calculation. Backend calculated: {calculated_total} and frontend calculated: {data['grand_total']}."
+                }
             )
 
-        # 3. Advance payment check
+        # Advance payment cannot exceed grand total
         if data["advance_payment"] > data["grand_total"]:
             raise serializers.ValidationError(
-                {"advance_payment": "Advance payment cannot exceed grand total"}
+                {"advance_payment": "Advance payment cannot exceed grand total."}
             )
 
         return data

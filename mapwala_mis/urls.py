@@ -23,16 +23,8 @@ from .views import (
     DeviceStep9APIView,
     DeviceAccessoryAPIView,
     ProformaInvoiceCreateAPIView,
-    OrderEntryStep1APIView,
-    OrderEntryStep2APIView,
-    OrderProductListAPIView,
-    OrderBatchListAPIView,
-    SalesOrderCreateAPIView,
-    ProductionOrderCreateAPIView,
     ProductDropdownAPIView,
     ProductCreateAPIView,
-    OrderProductDropdownAPIView,
-    SupplierVendorDropdownAPIView,
     ProductCategoryDropdownAPIView,
     CustomerTypeDropdownAPIView,
     PaymentTermsDropdownAPIView,
@@ -91,36 +83,48 @@ from .views import (
     RepairTechnicianViewSet,
     DeviceInventoryViewSet,
     RFQViewSet,
+    OrderEntryViewSet,
+    OrderProductViewSet,
+    SalesOrderViewSet,
+    OrderBatchViewSet,
+    ProductionOrderViewSet,
 )
 
 
 router = DefaultRouter()
 
 # Master data
-router.register("users", UserViewSet, basename="users")
-router.register("states", StateViewSet, basename="states")
-router.register("districts", DistrictViewSet, basename="districts")
-router.register("b2c-customers", B2CCustomerViewSet, basename="b2c-customers")
-router.register("b2b-partners", B2BPartnerViewSet, basename="b2b-partners")
-router.register("dealers", DealerViewSet, basename="dealers")
-router.register("parent-companies", ParentCompanyViewSet, basename="parent-companies")
-router.register("vendors", VendorViewSet, basename="vendors")
-router.register("devices", DeviceViewSet, basename="devices")
-router.register("store-transfers", StoreTransferViewSet, basename="store-transfers")
-router.register("product-categories", ProductCategoryViewSet, basename="product-categories")
-router.register("distributors", DistributorViewSet, basename="distributors")
-router.register("manufacturers", ManufacturerViewSet, basename="manufacturers")
-router.register("debit-notes", DebitNoteViewSet, basename="debit-notes")
-router.register("credit-notes", CreditNoteViewSet, basename="credit-notes")
-router.register("return-requests", ReturnRequestViewSet, basename="return-request")
-router.register("repair-records", RepairRecordViewSet, basename="repair-record")
-router.register("rejected-items", RejectedItemViewSet, basename="rejected-item")
-router.register("qc-inspectors", QCInspectorViewSet, basename="qc-inspectors")
-router.register("purchase-departments", PurchaseDepartmentViewSet, basename="purchase-departments")
-router.register("store-managers", StoreManagerViewSet, basename="store-managers")
-router.register("repair-technicians", RepairTechnicianViewSet, basename="repair-technicians")
-router.register("reports/devices", DeviceInventoryViewSet, basename="device-inventory")
-router.register("rfq", RFQViewSet, basename="rfq")
+router.register(r"users", UserViewSet, basename="users")
+router.register(r"states", StateViewSet, basename="states")
+router.register(r"districts", DistrictViewSet, basename="districts")
+router.register(r"b2c-customers", B2CCustomerViewSet, basename="b2c-customers")
+router.register(r"b2b-partners", B2BPartnerViewSet, basename="b2b-partners")
+router.register(r"dealers", DealerViewSet, basename="dealers")
+router.register(r"parent-companies", ParentCompanyViewSet, basename="parent-companies")
+router.register(r"vendors", VendorViewSet, basename="vendors")
+router.register(r"devices", DeviceViewSet, basename="devices")
+router.register(r"store-transfers", StoreTransferViewSet, basename="store-transfers")
+router.register(r"product-categories", ProductCategoryViewSet, basename="product-categories")
+router.register(r"distributors", DistributorViewSet, basename="distributors")
+router.register(r"manufacturers", ManufacturerViewSet, basename="manufacturers")
+router.register(r"debit-notes", DebitNoteViewSet, basename="debit-notes")
+router.register(r"credit-notes", CreditNoteViewSet, basename="credit-notes")
+router.register(r"return-requests", ReturnRequestViewSet, basename="return-request")
+router.register(r"repair-records", RepairRecordViewSet, basename="repair-record")
+router.register(r"rejected-items", RejectedItemViewSet, basename="rejected-item")
+router.register(r"qc-inspectors", QCInspectorViewSet, basename="qc-inspectors")
+router.register(r"purchase-departments", PurchaseDepartmentViewSet, basename="purchase-departments")
+router.register(r"store-managers", StoreManagerViewSet, basename="store-managers")
+router.register(r"repair-technicians", RepairTechnicianViewSet, basename="repair-technicians")
+router.register(r"reports/devices", DeviceInventoryViewSet, basename="device-inventory")
+router.register(r"rfq", RFQViewSet, basename="rfq")
+# Order Entry
+router.register(r"order-entries", OrderEntryViewSet, basename="order-entry")
+router.register(r"order-products", OrderProductViewSet, basename="order-product")
+router.register(r"order-batches", OrderBatchViewSet, basename="order-batch")
+router.register(r"sales-orders", SalesOrderViewSet, basename="sales-order")
+router.register(r"production-orders", ProductionOrderViewSet, basename="production-order")
+
 
 urlpatterns = [
     # Auth & registration
@@ -135,16 +139,8 @@ urlpatterns = [
     path("credit-notes/reasons/", CreditNoteReasonsAPIView.as_view()),
     path("notes/statuses/", NoteStatusChoicesAPIView.as_view()),
     # Device creation (steps)
-    path(
-        "devices/dropdowns/unit-of-measure/",
-        unit_of_measure_dropdown,
-        name="unit-of-measure-dropdown",
-    ),
-    path(
-        "devices/dropdowns/state-of-supply/",
-        state_of_supply_dropdown,
-        name="state-of-supply-dropdown",
-    ),
+    path("devices/dropdowns/unit-of-measure/",unit_of_measure_dropdown,name="unit-of-measure-dropdown"),
+    path("devices/dropdowns/state-of-supply/",state_of_supply_dropdown,name="state-of-supply-dropdown"),
     path("devices/step-1/", DeviceStep1APIView.as_view(), name="device-step-1"),
     path("devices/step-2/", DeviceStep2APIView.as_view(), name="device-step-2"),
     path("devices/step-3/", DeviceStep3APIView.as_view(), name="device-step-3"),
@@ -157,20 +153,13 @@ urlpatterns = [
     path("devices/step-10/", DeviceAccessoryAPIView.as_view(), name="device-step-10"),
     # Proforma invoice
     path("pi/create/", ProformaInvoiceCreateAPIView.as_view()),
-    # Order entry
-    path("order-entry/step-1/", OrderEntryStep1APIView.as_view()),
-    path("order-entry/step-2/", OrderEntryStep2APIView.as_view()),
-    path("order-products/", OrderProductListAPIView.as_view()),
-    path("order-batches/", OrderBatchListAPIView.as_view()),
-    path("sales-orders/create/", SalesOrderCreateAPIView.as_view()),
-    path("production-orders/add-to-stock/", ProductionOrderCreateAPIView.as_view()),
-    # Dropdowns
-    path("dropdowns/order-products/", OrderProductDropdownAPIView.as_view(), name="order-product-dropdown"),
-    path("dropdowns/suppliers/", SupplierVendorDropdownAPIView.as_view()),
-    path("dropdowns/product-categories/", ProductCategoryDropdownAPIView.as_view()),
+    
+    # # Order Entry Dropdowns
     path("dropdowns/customer-types/", CustomerTypeDropdownAPIView.as_view()),
-    path("dropdowns/payment-terms/", PaymentTermsDropdownAPIView.as_view()),
-    path("dropdowns/order-priority/", OrderPriorityDropdownAPIView.as_view()),
+    path("dropdowns/product-categories/", ProductCategoryDropdownAPIView.as_view()),
+    path("dropdowns/payment-terms/", PaymentTermsDropdownAPIView.as_view()), 
+    path("dropdowns/order-priority/", OrderPriorityDropdownAPIView.as_view()), 
+    
     # RFQ
     path("dropdowns/quote-types/", QuoteTypeDropdownAPIView.as_view()),
     path("dropdowns/assembly-types/", AssemblyTypeDropdownAPIView.as_view()),

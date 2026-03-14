@@ -77,6 +77,8 @@ from .models import (
     RepairTechnicianRegistration,
     StoreManagerRegistration,
     DeviceInventory,
+    ProductionOrder,
+    OrderEntryMakeToOrder,
 )
 from .serializers import (
     UserSerializer,
@@ -153,6 +155,9 @@ from .serializers import (
     ManufacturerSerializer,
     LinkedToChoicesSerializer,
     DeviceInventorySerializer,
+    SalesOrderReadSerializer,
+    ProductionOrderReadSerializer,
+    OrderEntryReadSerializer,
 )
 
 
@@ -290,8 +295,6 @@ class DistrictViewSet(ModelViewSet):
 
 
 class ParentCompanyViewSet(DeleteResponseMixin, ModelViewSet):
-    """Manage parent companies."""
-
     queryset = ParentCompany.objects.all()
     serializer_class = ParentCompanySerializer
     permission_classes = [IsAuthenticated]
@@ -300,8 +303,6 @@ class ParentCompanyViewSet(DeleteResponseMixin, ModelViewSet):
 
 
 class VendorViewSet(DeleteResponseMixin, ModelViewSet):
-    """Manage vendors with GST number uniqueness check."""
-
     queryset = Vendor.objects.select_related("state", "district")
     serializer_class = VendorSerializer
     permission_classes = [IsAuthenticated]
@@ -337,7 +338,6 @@ class B2BPartnerViewSet(DeleteResponseMixin, ModelViewSet):
 
 class LinkedToChoicesAPIView(APIView):
     permission_classes = [IsAuthenticated]
-
     def get(self, request):
         data = [
             {"value": key, "label": label}
@@ -360,10 +360,8 @@ class DistributorViewSet(DeleteResponseMixin, ModelViewSet):
 
     # CREATE
     def create(self, request, *args, **kwargs):
-
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
         distributor = serializer.save()
 
         return Response(
@@ -378,19 +376,15 @@ class DistributorViewSet(DeleteResponseMixin, ModelViewSet):
 
     # UPDATE (PUT/PATCH safe)
     def update(self, request, *args, **kwargs):
-
         partial = kwargs.pop("partial", False)
         instance = self.get_object()
-
         serializer = self.get_serializer(
             instance,
             data=request.data,
             partial=partial,
         )
-
         serializer.is_valid(raise_exception=True)
         distributor = serializer.save()
-
         return Response(
             {
                 "success": True,
@@ -403,11 +397,8 @@ class DistributorViewSet(DeleteResponseMixin, ModelViewSet):
     # DROPDOWN
     @action(detail=False, methods=["get"], url_path="dropdown")
     def dropdown(self, request):
-
         distributors = Distributor.objects.only("id", "name").order_by("name")
-
         data = [{"id": d.id, "label": d.name} for d in distributors]
-
         return Response(data)
 
 
@@ -424,14 +415,9 @@ class ManufacturerViewSet(DeleteResponseMixin, ModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="dropdown")
     def dropdown(self, request):
-        """
-        Returns manufacturers for dropdown selection
-        """
-
         manufacturers = Manufacturer.objects.only("id", "company_name").order_by(
             "company_name"
         )
-
         data = [
             {
                 "id": m.id,
@@ -439,7 +425,6 @@ class ManufacturerViewSet(DeleteResponseMixin, ModelViewSet):
             }
             for m in manufacturers
         ]
-
         return Response(data)
 
 
@@ -463,10 +448,8 @@ class DealerViewSet(DeleteResponseMixin, ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
         authorised_states = serializer.validated_data.pop("authorised_states")
         authorised_districts = serializer.validated_data.pop("authorised_districts")
-
         dealer = Dealer.objects.create(**serializer.validated_data)
         dealer.authorised_states.set(authorised_states)
         dealer.authorised_districts.set(authorised_districts)
@@ -487,7 +470,6 @@ class ProductCreateAPIView(APIView):
 
     def post(self, request):
         serializer = ProductCreateSerializer(data=request.data)
-
         if not serializer.is_valid():
             return Response(
                 {
@@ -496,11 +478,9 @@ class ProductCreateAPIView(APIView):
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
         try:
             with transaction.atomic():
                 product = serializer.save()
-
             return Response(
                 {
                     "message": "Product created successfully",
@@ -508,7 +488,6 @@ class ProductCreateAPIView(APIView):
                 },
                 status=status.HTTP_201_CREATED,
             )
-
         except IntegrityError:
             # Handles DB-level unique constraint failure
             return Response(
@@ -518,7 +497,6 @@ class ProductCreateAPIView(APIView):
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
         except Exception as e:
             # Catch unexpected errors
             return Response(
@@ -532,7 +510,6 @@ class ProductCreateAPIView(APIView):
 
 class ProductDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
-
     def get(self, request):
         queryset = Product.objects.all().order_by("product_id")
         serializer = ProductDropdownSerializer(queryset, many=True)
@@ -541,8 +518,6 @@ class ProductDropdownAPIView(APIView):
 
 # PROFORMA INVOICE
 class ProformaInvoiceCreateAPIView(APIView):
-    """Create proforma invoices."""
-
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -582,10 +557,7 @@ def state_of_supply_dropdown(request):
 
 
 class DeviceViewSet(DeleteResponseMixin, viewsets.ModelViewSet):
-    """View devices with filtering, search, and detailed information."""
-
     permission_classes = [IsAuthenticated]
-
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     search_fields = ["info__make", "info__model"]
     ordering_fields = ["created_at", "status"]
@@ -640,8 +612,6 @@ class DeviceStep1APIView(APIView):
 
 
 class DeviceStep2APIView(APIView):
-    """Device creation step 2: BOM specification."""
-
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -657,8 +627,6 @@ class DeviceStep2APIView(APIView):
 
 
 class DeviceStep3APIView(APIView):
-    """Device creation step 3: BOM components."""
-
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -679,8 +647,6 @@ class DeviceStep3APIView(APIView):
 
 
 class DeviceStep4APIView(APIView):
-    """Device creation step 4: Enclosure selection."""
-
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -696,8 +662,6 @@ class DeviceStep4APIView(APIView):
 
 
 class DeviceStep5APIView(APIView):
-    """Device creation step 5: Wire harness configuration."""
-
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -715,8 +679,6 @@ class DeviceStep5APIView(APIView):
 
 
 class DeviceStep6APIView(APIView):
-    """Device creation step 6: Battery specification."""
-
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -734,8 +696,6 @@ class DeviceStep6APIView(APIView):
 
 
 class DeviceStep7APIView(APIView):
-    """Device creation step 7: SOS button configuration."""
-
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -753,8 +713,6 @@ class DeviceStep7APIView(APIView):
 
 
 class DeviceStep8APIView(APIView):
-    """Device creation step 8: Sticker placement and configuration."""
-
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
@@ -784,8 +742,6 @@ class DeviceStep8APIView(APIView):
 
 
 class DeviceStep9APIView(APIView):
-    """Device creation step 9: User manual attachment."""
-
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -803,8 +759,6 @@ class DeviceStep9APIView(APIView):
 
 
 class DeviceAccessoryAPIView(APIView):
-    """Device creation step 10: Accessory attachment and device completion."""
-
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -829,18 +783,42 @@ class DeviceAccessoryAPIView(APIView):
         return Response({"message": "Device creation completed"})
 
 
-# ORDER MANAGEMENT
+# ──────────────────────────────────────────────
+# ORDER ENTRY VIEWSET
+# ──────────────────────────────────────────────
 
 
-class OrderEntryStep1APIView(APIView):
-    """Order entry step 1: Initial order configuration."""
-
+class OrderEntryViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        entry, _ = OrderEntry.objects.get_or_create(
-            user=request.user, is_step2_complete=False
+    def get_queryset(self):
+        return OrderEntry.objects.filter(user=self.request.user).order_by("-created_at")
+
+    def get_serializer_class(self):
+
+        if self.action == "step_1":
+            return OrderEntryStep1Serializer
+        if self.action == "step_2":
+            return OrderEntryStep2MakeToOrderSerializer
+        if self.action in ("update", "partial_update"):
+            return OrderEntryStep1Serializer
+        return OrderEntryReadSerializer
+
+    def create(self, request, *args, **kwargs):
+        return Response(
+            {"detail": "Use POST /order-entries/step-1/ to create an order entry."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
         )
+
+    @action(detail=False, methods=["post"], url_path="step-1")
+    def step_1(self, request):
+        entry = (
+            OrderEntry.objects.filter(user=request.user, is_step2_complete=False)
+            .order_by("-created_at")
+            .first()
+        )
+        if entry is None:
+            entry = OrderEntry(user=request.user)
 
         serializer = OrderEntryStep1Serializer(entry, data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -848,343 +826,9 @@ class OrderEntryStep1APIView(APIView):
 
         return Response({"entry_id": entry.id}, status=status.HTTP_200_OK)
 
-
-class OrderProductListAPIView(APIView):
-    """List all order products for dropdown selection."""
-
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        products = OrderProduct.objects.all()
-        return Response(OrderProductSerializer(products, many=True).data)
-
-
-class OrderBatchListAPIView(APIView):
-    """List order batches filtered by product."""
-
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        product_id = request.query_params.get("product_id")
-
-        if not product_id:
-            return Response(
-                {"product_id": "product_id query param is required"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        batches = OrderBatch.objects.filter(product_id=product_id)
-        return Response(OrderBatchSerializer(batches, many=True).data)
-
-
-class SalesOrderCreateAPIView(APIView):
-    """Create a sales order and update batch stock."""
-
-    permission_classes = [IsAuthenticated]
-
-    @transaction.atomic
-    def post(self, request):
-        serializer = SalesOrderCreateSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        order = serializer.save()
-        batch = OrderBatch.objects.select_for_update().get(id=order.batch.id)
-        batch.available_stock -= order.quantity
-        batch.save(update_fields=["available_stock"])
-
-        return Response(
-            {
-                "message": "Sales order created successfully",
-                "order_id": order.id,
-                "product": {
-                    "id": order.product.id,
-                    "name": order.product.name,
-                },
-                "batch": {
-                    "id": order.batch.id,
-                    "batch_number": order.batch.batch_number,
-                },
-                "remaining_stock": batch.available_stock,
-                "grand_total": float(order.grand_total),
-            },
-            status=status.HTTP_201_CREATED,
-        )
-
-
-class ProductionOrderCreateAPIView(APIView):
-    """Create a production order and add stock to batch."""
-
-    permission_classes = [IsAuthenticated]
-
-    @transaction.atomic
-    def post(self, request):
-        serializer = ProductionOrderCreateSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        order = serializer.save()
-        batch = OrderBatch.objects.select_for_update().get(id=order.batch.id)
-        batch.available_stock += order.quantity_added
-        batch.save(update_fields=["available_stock"])
-
-        return Response(
-            {
-                "message": "Production order created and stock added successfully",
-                "production_order_id": order.id,
-                "product": {
-                    "id": order.product.id,
-                    "name": order.product.name,
-                },
-                "batch": {
-                    "id": batch.id,
-                    "batch_number": batch.batch_number,
-                },
-                "added_quantity": order.quantity_added,
-                "current_stock": batch.available_stock,
-                "total_value": float(order.total_value),
-            },
-            status=status.HTTP_201_CREATED,
-        )
-
-
-class OrderProductDropdownAPIView(APIView):
-    """List all order products for dropdown."""
-
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        return Response(
-            [{"id": p.id, "name": p.name} for p in OrderProduct.objects.all()]
-        )
-
-
-class SupplierVendorDropdownAPIView(APIView):
-    """List all supplier vendors for dropdown."""
-
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        return Response(
-            [{"id": v.id, "name": v.name} for v in SupplierVendor.objects.all()]
-        )
-
-
-# RFQ (REQUEST FOR QUOTATION)
-class RFQViewSet(viewsets.ModelViewSet):
-
-    permission_classes = [IsAuthenticated]
-    pagination_class = PageNumberPagination
-
-    def get_queryset(self):
-        return (
-            RequestForQuote.objects.select_related()
-            .prefetch_related("selections", "quotations__vendor")
-            .order_by("-created_at")
-        )
-
-    def get_serializer_class(self):
-
-        if self.action == "list":
-            return RFQListSerializer
-
-        if self.action == "retrieve":
-            return RFQDetailSerializer
-
-        if self.action == "step1":
-            return RFQStep1Serializer
-
-        if self.action == "step2":
-            return RFQStep2Serializer
-
-        if self.action == "step3":
-            return RFQStep3Serializer
-
-        return RFQDetailSerializer
-
-    def list(self, request):
-
-        queryset = self.get_queryset().filter(status="submitted")
-
-        vendor_filter = request.query_params.get("vendor")
-
-        if vendor_filter and vendor_filter != "all":
-            queryset = queryset.filter(
-                quotations__vendor__name__iexact=vendor_filter
-            ).distinct()
-
-        status_filter = request.query_params.get("status")
-
-        if status_filter and status_filter != "all":
-
-            if status_filter == "pending":
-                queryset = queryset.filter(quotations__isnull=True).distinct()
-
-            elif status_filter in ["quoted", "rejected"]:
-                queryset = queryset.filter(quotations__status=status_filter).distinct()
-
-        search_query = request.query_params.get("search", "").strip()
-
-        if search_query:
-            queryset = queryset.filter(
-                Q(order_reference__icontains=search_query)
-                | Q(device_name__icontains=search_query)
-            )
-
-        paginator = PageNumberPagination()
-        paginator.page_size = 10
-
-        page = paginator.paginate_queryset(queryset, request)
-
-        serializer = RFQListSerializer(page, many=True)
-
-        total_rfqs = RequestForQuote.objects.filter(status="submitted")
-
-        return Response(
-            {
-                "count": paginator.page.paginator.count,
-                "total": total_rfqs.count(),
-                "pending": total_rfqs.filter(quotations__isnull=True)
-                .distinct()
-                .count(),
-                "quoted": total_rfqs.filter(quotations__status="quoted")
-                .distinct()
-                .count(),
-                "rejected": total_rfqs.filter(quotations__status="rejected")
-                .distinct()
-                .count(),
-                "results": serializer.data,
-            }
-        )
-
-    def retrieve(self, request, pk=None):
-
-        rfq = get_object_or_404(self.get_queryset(), id=pk)
-
-        serializer = RFQDetailSerializer(rfq)
-
-        return Response(serializer.data)
-
-    def partial_update(self, request, pk=None):
-
-        rfq = get_object_or_404(RequestForQuote, id=pk)
-
-        if rfq.status != "draft":
-            return Response(
-                {"error": "Only draft RFQs can be updated"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        serializer = RFQStep1Serializer(rfq, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-
-        return Response({"message": "RFQ updated successfully", "rfq_id": rfq.id})
-
-    def destroy(self, request, pk=None):
-
-        rfq = get_object_or_404(RequestForQuote, id=pk)
-
-        if rfq.status != "draft":
-            return Response(
-                {"error": "Submitted RFQs cannot be deleted"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        rfq.delete()
-
-        return Response({"message": "RFQ deleted successfully"})
-
-    @action(detail=False, methods=["post"], url_path="step-1")
-    def step1(self, request):
-
-        serializer = RFQStep1Serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        rfq = serializer.save(created_by=request.user)
-
-        return Response(
-            {"rfq_id": rfq.id, "message": "Step 1 completed"},
-            status=status.HTTP_201_CREATED,
-        )
-
     @action(detail=False, methods=["post"], url_path="step-2")
     @transaction.atomic
-    def step2(self, request):
-
-        rfq = get_object_or_404(
-            RequestForQuote,
-            id=request.data.get("rfq_id"),
-            status="draft",
-        )
-
-        serializer = RFQStep2Serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        rfq.selections.all().delete()
-
-        for ref in serializer.validated_data.get("bom_parts", []):
-            RFQSelection.objects.create(rfq=rfq, item_type="bom", reference=ref)
-
-        for ref in serializer.validated_data.get("components", []):
-            RFQSelection.objects.create(rfq=rfq, item_type="component", reference=ref)
-
-        for ref in serializer.validated_data.get("services", []):
-            RFQSelection.objects.create(rfq=rfq, item_type="service", reference=ref)
-
-        return Response({"message": "Step 2 completed"})
-
-    @action(detail=False, methods=["post"], url_path="step-3")
-    @transaction.atomic
-    def step3(self, request):
-
-        rfq = get_object_or_404(
-            RequestForQuote,
-            id=request.data.get("rfq_id"),
-            status="draft",
-        )
-
-        serializer = RFQStep3Serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        rfq.srn_no = serializer.validated_data["srn_no"]
-        rfq.delivery_date = serializer.validated_data["delivery_date"]
-        rfq.delivery_address = serializer.validated_data["delivery_address"]
-        rfq.additional_requirements = serializer.validated_data.get(
-            "additional_requirements", ""
-        )
-
-        rfq.status = "submitted"
-        rfq.save()
-
-        return Response(
-            {"message": "RFQ submitted successfully"},
-            status=status.HTTP_201_CREATED,
-        )
-
-
-class ProductCategoryDropdownAPIView(APIView):
-    """List product categories for dropdown."""
-
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        return Response(
-            [
-                {"key": "gps_devices", "label": "GPS Devices"},
-                {"key": "tracking_devices", "label": "Tracking Devices"},
-                {"key": "iot_devices", "label": "IoT Devices"},
-                {"key": "accessories", "label": "Accessories"},
-                {"key": "components", "label": "Components"},
-            ]
-        )
-
-
-class OrderEntryStep2APIView(APIView):
-    """Order entry step 2: Make-to-order customer and product details."""
-
-    permission_classes = [IsAuthenticated]
-
-    @transaction.atomic
-    def post(self, request):
+    def step_2(self, request):
         order_entry = get_object_or_404(
             OrderEntry,
             id=request.data.get("entry_id"),
@@ -1195,18 +839,20 @@ class OrderEntryStep2APIView(APIView):
 
         if hasattr(order_entry, "make_to_order"):
             return Response(
-                {"detail": "Step 2 already completed"}, status=status.HTTP_409_CONFLICT
+                {"detail": "Step 2 already completed."},
+                status=status.HTTP_409_CONFLICT,
             )
 
         serializer = OrderEntryStep2MakeToOrderSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         make_to_order = serializer.save(order_entry=order_entry)
+
         order_entry.is_step2_complete = True
         order_entry.save(update_fields=["is_step2_complete"])
 
         return Response(
             {
-                "message": "Order Entry completed successfully",
+                "message": "Order Entry completed successfully.",
                 "order_entry": {
                     "id": order_entry.id,
                     "order_type": order_entry.order_type,
@@ -1244,62 +890,421 @@ class OrderEntryStep2APIView(APIView):
         )
 
 
-# DROPDOWN APIS
-class CustomerTypeDropdownAPIView(APIView):
-    """List customer types for dropdown."""
+# ──────────────────────────────────────────────
+# ORDER PRODUCT VIEWSET
+# ──────────────────────────────────────────────
 
+
+class OrderProductViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    queryset = OrderProduct.objects.all()
+    serializer_class = OrderProductSerializer
+
+
+# ──────────────────────────────────────────────
+# ORDER BATCH VIEWSET
+# ──────────────────────────────────────────────
+
+
+class OrderBatchViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = OrderBatchSerializer
+
+    def get_queryset(self):
+        qs = OrderBatch.objects.select_related("product").all()
+        product_id = self.request.query_params.get("product_id")
+        if product_id:
+            qs = qs.filter(product_id=product_id)
+        return qs
+
+
+# ──────────────────────────────────────────────
+# SALES ORDER VIEWSET
+# ──────────────────────────────────────────────
+
+
+class SalesOrderViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    queryset = SalesOrder.objects.select_related("product", "batch").order_by(
+        "-created_at"
+    )
+
+    def get_serializer_class(self):
+        if self.action in ("list", "retrieve"):
+            return SalesOrderReadSerializer
+        return SalesOrderCreateSerializer
+
+    @transaction.atomic
+    def create(self, request, *args, **kwargs):
+        serializer = SalesOrderCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        order = serializer.save()
+
+        batch = OrderBatch.objects.select_for_update().get(id=order.batch.id)
+        batch.available_stock -= order.quantity
+        batch.save(update_fields=["available_stock"])
+
+        return Response(
+            {
+                "message": "Sales order created successfully.",
+                "order_id": order.id,
+                "product": {"id": order.product.id, "name": order.product.name},
+                "batch": {"id": batch.id, "batch_number": batch.batch_number},
+                "remaining_stock": batch.available_stock,
+                "grand_total": float(order.grand_total),
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+    @transaction.atomic
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+
+        old_batch = OrderBatch.objects.select_for_update().get(id=instance.batch.id)
+        old_batch.available_stock += instance.quantity
+        old_batch.save(update_fields=["available_stock"])
+
+        serializer = SalesOrderCreateSerializer(
+            instance, data=request.data, partial=partial
+        )
+        serializer.is_valid(raise_exception=True)
+        order = serializer.save()
+
+        new_batch = OrderBatch.objects.select_for_update().get(id=order.batch.id)
+        new_batch.available_stock -= order.quantity
+        new_batch.save(update_fields=["available_stock"])
+
+        return Response(
+            {
+                "message": "Sales order updated successfully.",
+                "order_id": order.id,
+                "remaining_stock": new_batch.available_stock,
+                "grand_total": float(order.grand_total),
+            }
+        )
+
+    @transaction.atomic
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        batch = OrderBatch.objects.select_for_update().get(id=instance.batch.id)
+        batch.available_stock += instance.quantity
+        batch.save(update_fields=["available_stock"])
+        instance.delete()
+
+        return Response(
+            {"message": "Sales order deleted and stock restored."},
+            status=status.HTTP_200_OK,
+        )
+
+
+# ──────────────────────────────────────────────
+# PRODUCTION ORDER VIEWSET
+# ──────────────────────────────────────────────
+
+
+class ProductionOrderViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    queryset = ProductionOrder.objects.select_related(
+        "product", "batch", "supplier_vendor"
+    ).order_by("-created_at")
+
+    def get_serializer_class(self):
+        if self.action in ("list", "retrieve"):
+            return ProductionOrderReadSerializer
+        return ProductionOrderCreateSerializer
+
+    @transaction.atomic
+    def create(self, request, *args, **kwargs):
+        serializer = ProductionOrderCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        order = serializer.save()
+
+        batch = OrderBatch.objects.select_for_update().get(id=order.batch.id)
+        batch.available_stock += order.quantity_added
+        batch.save(update_fields=["available_stock"])
+
+        return Response(
+            {
+                "message": "Production order created and stock added successfully.",
+                "production_order_id": order.id,
+                "product": {"id": order.product.id, "name": order.product.name},
+                "batch": {"id": batch.id, "batch_number": batch.batch_number},
+                "added_quantity": order.quantity_added,
+                "current_stock": batch.available_stock,
+                "total_value": float(order.total_value),
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+    @transaction.atomic
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+
+        old_batch = OrderBatch.objects.select_for_update().get(id=instance.batch.id)
+        if old_batch.available_stock < instance.quantity_added:
+            return Response(
+                {
+                    "detail": (
+                        f"Cannot update: only {old_batch.available_stock} units remain "
+                        f"but this order originally added {instance.quantity_added}. "
+                        "Some stock has already been consumed by sales orders."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        old_batch.available_stock -= instance.quantity_added
+        old_batch.save(update_fields=["available_stock"])
+
+        serializer = ProductionOrderCreateSerializer(
+            instance, data=request.data, partial=partial
+        )
+        serializer.is_valid(raise_exception=True)
+        order = serializer.save()
+
+        new_batch = OrderBatch.objects.select_for_update().get(id=order.batch.id)
+        new_batch.available_stock += order.quantity_added
+        new_batch.save(update_fields=["available_stock"])
+
+        return Response(
+            {
+                "message": "Production order updated successfully.",
+                "production_order_id": order.id,
+                "current_stock": new_batch.available_stock,
+                "total_value": float(order.total_value),
+            }
+        )
+
+    @transaction.atomic
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        batch = OrderBatch.objects.select_for_update().get(id=instance.batch.id)
+        if batch.available_stock < instance.quantity_added:
+            return Response(
+                {
+                    "detail": (
+                        f"Cannot delete: only {batch.available_stock} units remain but "
+                        f"this order added {instance.quantity_added}. "
+                        "Consumed stock cannot be reversed."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        batch.available_stock -= instance.quantity_added
+        batch.save(update_fields=["available_stock"])
+        instance.delete()
+
+        return Response(
+            {"message": "Production order deleted and stock reversed."},
+            status=status.HTTP_200_OK,
+        )
+
+
+class CustomerTypeDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         return Response(
             [
-                {"key": "b2b", "label": "B2B Partner"},
-                {"key": "b2c", "label": "B2C Customer"},
-                {"key": "distributor", "label": "Distributor"},
-                {"key": "dealer", "label": "Dealer"},
+                {"key": k, "label": v}
+                for k, v in OrderEntryMakeToOrder.CUSTOMER_TYPE_CHOICES
+            ]
+        )
+
+
+class ProductCategoryDropdownAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response(
+            [
+                {"key": k, "label": v}
+                for k, v in ProductionOrder.PRODUCT_CATEGORY_CHOICES
             ]
         )
 
 
 class PaymentTermsDropdownAPIView(APIView):
-    """List payment terms for dropdown."""
-
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         return Response(
             [
-                {"key": "100_advance", "label": "100% Advance"},
-                {"key": "50_50", "label": "50% Advance, 50% on Delivery"},
-                {"key": "30_70", "label": "30% Advance, 70% on Delivery"},
-                {"key": "net_30", "label": "Net 30 Days"},
-                {"key": "net_60", "label": "Net 60 Days"},
-                {"key": "custom", "label": "Custom Terms"},
+                {"key": k, "label": v}
+                for k, v in OrderEntryMakeToOrder.PAYMENT_TERMS_CHOICES
             ]
         )
 
 
 class OrderPriorityDropdownAPIView(APIView):
-    """List order priorities for dropdown."""
-
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         return Response(
-            [
-                {"key": "low", "label": "Low"},
-                {"key": "medium", "label": "Medium"},
-                {"key": "high", "label": "High"},
-                {"key": "urgent", "label": "Urgent"},
-            ]
+            [{"key": k, "label": v} for k, v in OrderEntryMakeToOrder.PRIORITY_CHOICES]
+        )
+
+
+# RFQ (REQUEST FOR QUOTATION)
+class RFQViewSet(viewsets.ModelViewSet):
+
+    permission_classes = [IsAuthenticated]
+    pagination_class = PageNumberPagination
+
+    def get_queryset(self):
+        return (
+            RequestForQuote.objects.select_related()
+            .prefetch_related("selections", "quotations__vendor")
+            .order_by("-created_at")
+        )
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return RFQListSerializer
+        if self.action == "retrieve":
+            return RFQDetailSerializer
+        if self.action == "step1":
+            return RFQStep1Serializer
+        if self.action == "step2":
+            return RFQStep2Serializer
+        if self.action == "step3":
+            return RFQStep3Serializer
+
+        return RFQDetailSerializer
+
+    def list(self, request):
+        queryset = self.get_queryset().filter(status="submitted")
+        vendor_filter = request.query_params.get("vendor")
+        if vendor_filter and vendor_filter != "all":
+            queryset = queryset.filter(
+                quotations__vendor__name__iexact=vendor_filter
+            ).distinct()
+
+        status_filter = request.query_params.get("status")
+        if status_filter and status_filter != "all":
+            if status_filter == "pending":
+                queryset = queryset.filter(quotations__isnull=True).distinct()
+            elif status_filter in ["quoted", "rejected"]:
+                queryset = queryset.filter(quotations__status=status_filter).distinct()
+        search_query = request.query_params.get("search", "").strip()
+
+        if search_query:
+            queryset = queryset.filter(
+                Q(order_reference__icontains=search_query)
+                | Q(device_name__icontains=search_query)
+            )
+
+        paginator = PageNumberPagination()
+        paginator.page_size = 10
+        page = paginator.paginate_queryset(queryset, request)
+        serializer = RFQListSerializer(page, many=True)
+        total_rfqs = RequestForQuote.objects.filter(status="submitted")
+        return Response(
+            {
+                "count": paginator.page.paginator.count,
+                "total": total_rfqs.count(),
+                "pending": total_rfqs.filter(quotations__isnull=True)
+                .distinct()
+                .count(),
+                "quoted": total_rfqs.filter(quotations__status="quoted")
+                .distinct()
+                .count(),
+                "rejected": total_rfqs.filter(quotations__status="rejected")
+                .distinct()
+                .count(),
+                "results": serializer.data,
+            }
+        )
+
+    def retrieve(self, request, pk=None):
+        rfq = get_object_or_404(self.get_queryset(), id=pk)
+        serializer = RFQDetailSerializer(rfq)
+        return Response(serializer.data)
+
+    def partial_update(self, request, pk=None):
+        rfq = get_object_or_404(RequestForQuote, id=pk)
+        if rfq.status != "draft":
+            return Response(
+                {"error": "Only draft RFQs can be updated"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        serializer = RFQStep1Serializer(rfq, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response({"message": "RFQ updated successfully", "rfq_id": rfq.id})
+
+    def destroy(self, request, pk=None):
+        rfq = get_object_or_404(RequestForQuote, id=pk)
+        if rfq.status != "draft":
+            return Response(
+                {"error": "Submitted RFQs cannot be deleted"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        rfq.delete()
+        return Response({"message": "RFQ deleted successfully"})
+
+    @action(detail=False, methods=["post"], url_path="step-1")
+    def step1(self, request):
+        serializer = RFQStep1Serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        rfq = serializer.save(created_by=request.user)
+        return Response(
+            {"rfq_id": rfq.id, "message": "Step 1 completed"},
+            status=status.HTTP_201_CREATED,
+        )
+
+    @action(detail=False, methods=["post"], url_path="step-2")
+    @transaction.atomic
+    def step2(self, request):
+        rfq = get_object_or_404(
+            RequestForQuote,
+            id=request.data.get("rfq_id"),
+            status="draft",
+        )
+        serializer = RFQStep2Serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        rfq.selections.all().delete()
+        for ref in serializer.validated_data.get("bom_parts", []):
+            RFQSelection.objects.create(rfq=rfq, item_type="bom", reference=ref)
+        for ref in serializer.validated_data.get("components", []):
+            RFQSelection.objects.create(rfq=rfq, item_type="component", reference=ref)
+        for ref in serializer.validated_data.get("services", []):
+            RFQSelection.objects.create(rfq=rfq, item_type="service", reference=ref)
+        return Response({"message": "Step 2 completed"})
+
+    @action(detail=False, methods=["post"], url_path="step-3")
+    @transaction.atomic
+    def step3(self, request):
+
+        rfq = get_object_or_404(
+            RequestForQuote,
+            id=request.data.get("rfq_id"),
+            status="draft",
+        )
+        serializer = RFQStep3Serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        rfq.srn_no = serializer.validated_data["srn_no"]
+        rfq.delivery_date = serializer.validated_data["delivery_date"]
+        rfq.delivery_address = serializer.validated_data["delivery_address"]
+        rfq.additional_requirements = serializer.validated_data.get(
+            "additional_requirements", ""
+        )
+        rfq.status = "submitted"
+        rfq.save()
+        return Response(
+            {"message": "RFQ submitted successfully"},
+            status=status.HTTP_201_CREATED,
         )
 
 
 class QuoteTypeDropdownAPIView(APIView):
-    """List quote types for RFQ."""
-
     permission_classes = [IsAuthenticated]
-
     def get(self, request):
         return Response(
             [
@@ -1311,8 +1316,6 @@ class QuoteTypeDropdownAPIView(APIView):
 
 
 class AssemblyTypeDropdownAPIView(APIView):
-    """List assembly types for RFQ."""
-
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -1325,8 +1328,6 @@ class AssemblyTypeDropdownAPIView(APIView):
 
 
 class SRNDropdownAPIView(APIView):
-    """List SRN choices for RFQ."""
-
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -1336,8 +1337,6 @@ class SRNDropdownAPIView(APIView):
 
 
 class VendorDropdownAPIView(APIView):
-    """List vendors for RFQ vendor selection."""
-
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -1354,8 +1353,6 @@ class VendorDropdownAPIView(APIView):
 
 # PURCHASE ORDER WORKFLOW
 class Step1APIView(APIView):
-    """Purchase order creation step 1: Buyer details and order types."""
-
     permission_classes = [IsAuthenticated]
 
     @transaction.atomic
@@ -1380,8 +1377,6 @@ class Step1APIView(APIView):
 
 
 class Step2APIView(APIView):
-    """Purchase order creation step 2: Vendor selection and line items."""
-
     permission_classes = [IsAuthenticated]
 
     @transaction.atomic
@@ -1409,8 +1404,6 @@ class Step2APIView(APIView):
 
 
 class OrderTypeDropdown(APIView):
-    """List order types for purchase order."""
-
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -1424,8 +1417,6 @@ class OrderTypeDropdown(APIView):
 
 
 class AssemblyTypeDropdown(APIView):
-    """List assembly types for purchase order."""
-
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -1438,8 +1429,6 @@ class AssemblyTypeDropdown(APIView):
 
 
 class PaymentTermsDropdown(APIView):
-    """List payment terms for purchase order."""
-
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -1452,8 +1441,6 @@ class PaymentTermsDropdown(APIView):
 
 
 class MRNCreateAPIView(APIView):
-    """Create a material receipt note for inward goods."""
-
     permission_classes = [IsAuthenticated]
 
     @transaction.atomic
@@ -1525,8 +1512,6 @@ class PurchaseOrderDropdown(APIView):
 
 # ---------------- Inward Type Dropdown APIView ----------------
 class InwardTypeDropdown(APIView):
-    """List inward types for MRN."""
-
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -1564,17 +1549,12 @@ class PurchaseOrderItemsAPIView(APIView):
 
 
 # DISPATCH WORKFLOW
-
-
 class DispatchStep1APIView(APIView):
-    """Dispatch step 1: Create dispatch and select sales order."""
-
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
         serializer = DispatchStep1Serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
         dispatch = Dispatch.objects.create(
             **serializer.validated_data, created_by=request.user
         )
@@ -1583,27 +1563,20 @@ class DispatchStep1APIView(APIView):
 
 
 class DispatchStep2APIView(APIView):
-    """Dispatch step 2: Verify stock availability."""
-
     permission_classes = [IsAuthenticated]
 
     def post(self, request, dispatch_id):
         dispatch = get_object_or_404(Dispatch, id=dispatch_id)
-
         serializer = DispatchStep2Serializer(dispatch, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-
         remaining_stock = dispatch.batch.available_stock - dispatch.dispatch_quantity
-
         return Response(
             {"message": "Stock verified", "remaining_stock": remaining_stock}
         )
 
 
 class DispatchStep3APIView(APIView):
-    """Dispatch step 3: Set dispatch date and packaging details."""
-
     permission_classes = [IsAuthenticated]
 
     def post(self, request, dispatch_id):
@@ -1614,17 +1587,13 @@ class DispatchStep3APIView(APIView):
                 {"error": "Step-2 (Stock Verification) must be completed first."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
         serializer = DispatchStep3Serializer(dispatch, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-
         return Response({"message": "Dispatch details saved"})
 
 
 class DispatchStep4APIView(APIView):
-    """Dispatch step 4: Finalize dispatch and deduct stock."""
-
     permission_classes = [IsAuthenticated]
 
     @transaction.atomic
@@ -1643,21 +1612,16 @@ class DispatchStep4APIView(APIView):
 
         if not dispatch.stock_deducted:
             batch = dispatch.batch
-
             if dispatch.dispatch_quantity > batch.available_stock:
                 return Response(
                     {"error": "Insufficient stock at final dispatch."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-
             batch.available_stock -= dispatch.dispatch_quantity
             batch.save(update_fields=["available_stock"])
-
             dispatch.stock_deducted = True
-
         dispatch.status = "completed"
         dispatch.save(update_fields=["status", "stock_deducted"])
-
         return Response(
             {"message": "Dispatch completed successfully", "dispatch_id": dispatch.id},
             status=status.HTTP_200_OK,
@@ -1665,8 +1629,6 @@ class DispatchStep4APIView(APIView):
 
 
 class SalesOrderDropdownAPIView(APIView):
-    """List sales orders for dispatch order selection."""
-
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -2113,18 +2075,6 @@ class ProductCategoryViewSet(ModelViewSet):
 
 # ---------------- Debit Note ViewSet ----------------
 class DebitNoteViewSet(ModelViewSet):
-    """
-    ViewSet for managing Debit Notes.
-
-    Supports:
-    - LIST: Get all debit notes with search and status filtering
-    - RETRIEVE: Get detailed information about a specific debit note
-    - CREATE: Create a new debit note
-    - UPDATE/PARTIAL_UPDATE: Update debit note information
-    - DESTROY: Delete a debit note
-    - SUMMARY: Get dashboard summary (pending amount, total amount)
-    """
-
     queryset = DebitNote.objects.select_related("created_by").all()
     permission_classes = [IsAuthenticated]
     filter_backends = [SearchFilter]
@@ -2795,8 +2745,6 @@ class QuotationListAPIView(APIView):
 
 
 class QuotationDetailAPIView(APIView):
-    """Get detailed information about a specific quotation."""
-
     permission_classes = [IsAuthenticated]
 
     def get(self, request, quotation_id):
@@ -2815,8 +2763,6 @@ class QuotationDetailAPIView(APIView):
 
 
 class QuotationApproveRejectAPIView(APIView):
-    """Approve or reject a quotation."""
-
     permission_classes = [IsAuthenticated]
 
     def post(self, request, quotation_id):

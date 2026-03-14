@@ -1594,11 +1594,6 @@ class NoteSequence(models.Model):
         return f"{self.note_type.upper()}-{self.year}: {self.last_number}"
 
 
-# ============================================================
-# ========================== Vendor ==========================
-# ============================================================
-
-
 # ----------------------------- RETURN REQUEST MANAGEMENT -----------------------------
 class ReturnRequest(models.Model):
     STATUS_CHOICES = (

@@ -7,6 +7,7 @@ from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.timezone import now
+from django.db.models import Sum, Count
 from .models import (
     UserProfile,
     State,
@@ -67,6 +68,7 @@ from .models import (
     PostDispatchReturnItem,
     MaterialReceiptItem,
     DeviceInventory,
+    OrderEntry,
 )
 
 
@@ -1289,66 +1291,341 @@ class ProformaInvoiceAdmin(admin.ModelAdmin):
     )
 
 
+# ══════════════════════════════════════════════════════════════
+# INLINE ADMINS
+# ══════════════════════════════════════════════════════════════
+
+
 class OrderBatchInline(admin.TabularInline):
-    """
-    Inline batches under a product.
-    IMPORTANT:
-    - product FK is implicitly set by parent
-    - fk_name explicitly tells Django which FK to use
-    """
+    """Shows all batches directly inside the OrderProduct page."""
 
     model = OrderBatch
-    fk_name = "product"
-    extra = 1
+    extra = 0
     fields = ("batch_number", "available_stock")
-    can_delete = True
+    readonly_fields = ("available_stock",)
     show_change_link = True
-    ordering = ("batch_number",)
+
+
+class OrderEntryMakeToOrderInline(admin.StackedInline):
+    """Shows Make-to-Order details inside the OrderEntry page."""
+
+    model = OrderEntryMakeToOrder
+    extra = 0
+    can_delete = False
+    readonly_fields = ("created_at",)
+    fieldsets = (
+        (
+            "Customer",
+            {
+                "fields": (
+                    "customer_name",
+                    "customer_type",
+                    "contact_person",
+                    "mobile_no",
+                ),
+            },
+        ),
+        (
+            "Product",
+            {
+                "fields": (
+                    "product",
+                    "product_specifications",
+                    "customization_details",
+                ),
+            },
+        ),
+        (
+            "Order Summary",
+            {
+                "fields": (
+                    "quantity",
+                    "unit_price",
+                    "discount_percent",
+                    "gst_percent",
+                    "shipping_charges",
+                    "grand_total",
+                    "advance_payment",
+                ),
+            },
+        ),
+        (
+            "Delivery & Terms",
+            {
+                "fields": (
+                    "expected_delivery_date",
+                    "payment_terms",
+                    "order_priority",
+                    "special_instructions",
+                ),
+            },
+        ),
+        (
+            "Meta",
+            {
+                "fields": ("created_at",),
+                "classes": ("collapse",),
+            },
+        ),
+    )
+
+
+# ══════════════════════════════════════════════════════════════
+# ORDER PRODUCT
+# ══════════════════════════════════════════════════════════════
 
 
 @admin.register(OrderProduct)
 class OrderProductAdmin(admin.ModelAdmin):
-    list_display = ("name",)
+    list_display = ("id", "name", "batch_count", "total_stock")
     search_fields = ("name",)
     ordering = ("name",)
     inlines = [OrderBatchInline]
-    fieldsets = (
-        (
-            "Product / Device Model",
-            {"fields": ("name",)},
-        ),
-    )
+
+    # ── Custom columns ──────────────────────────────────────────
+
+    @admin.display(description="Batches")
+    def batch_count(self, obj):
+        return obj.batches.count()
+
+    @admin.display(description="Total Stock")
+    def total_stock(self, obj):
+        total = obj.batches.aggregate(t=Sum("available_stock"))["t"] or 0
+        color = "green" if total > 0 else "red"
+        return format_html('<b style="color:{}">{}</b>', color, total)
+
+
+# ══════════════════════════════════════════════════════════════
+# ORDER BATCH
+# ══════════════════════════════════════════════════════════════
 
 
 @admin.register(OrderBatch)
 class OrderBatchAdmin(admin.ModelAdmin):
-    list_display = ("product", "batch_number", "available_stock")
+    list_display = ("id", "product", "batch_number", "stock_display", "stock_status")
     list_filter = ("product",)
-    search_fields = ("product__name", "batch_number")
+    search_fields = ("batch_number", "product__name")
     ordering = ("product__name", "batch_number")
+    list_per_page = 25
+
+    # ── Custom columns ──────────────────────────────────────────
+
+    @admin.display(description="Available Stock")
+    def stock_display(self, obj):
+        return obj.available_stock
+
+    @admin.display(description="Status")
+    def stock_status(self, obj):
+        if obj.available_stock == 0:
+            return format_html(
+                '<span style="color:red; font-weight:bold;">⚠ Out of Stock</span>'
+            )
+        elif obj.available_stock <= 10:
+            return format_html(
+                '<span style="color:orange; font-weight:bold;">⚡ Low Stock</span>'
+            )
+        return format_html('<span style="color:green;">✔ In Stock</span>')
+
+
+# ══════════════════════════════════════════════════════════════
+# SUPPLIER / VENDOR
+# ══════════════════════════════════════════════════════════════
+
+
+@admin.register(SupplierVendor)
+class SupplierVendorAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "production_order_count")
+    search_fields = ("name",)
+    ordering = ("name",)
+
+    @admin.display(description="Production Orders")
+    def production_order_count(self, obj):
+        return obj.productionorder_set.count()
+
+
+# ══════════════════════════════════════════════════════════════
+# ORDER ENTRY
+# ══════════════════════════════════════════════════════════════
+
+
+@admin.register(OrderEntry)
+class OrderEntryAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "user",
+        "order_type",
+        "production_type",
+        "assembly_type",
+        "step1_badge",
+        "step2_badge",
+        "created_at",
+    )
+    list_filter = (
+        "order_type",
+        "production_type",
+        "assembly_type",
+        "is_step1_complete",
+        "is_step2_complete",
+    )
+    search_fields = ("user__username", "user__email")
+    ordering = ("-created_at",)
+    readonly_fields = ("created_at",)
+    list_per_page = 25
+    inlines = [OrderEntryMakeToOrderInline]
+
     fieldsets = (
         (
-            "Product Reference",
+            "Order Configuration",
             {
-                "fields": ("product",),
+                "fields": ("user", "order_type", "production_type", "assembly_type"),
             },
         ),
         (
-            "Batch Details",
+            "Progress",
             {
-                "fields": ("batch_number", "available_stock"),
+                "fields": ("is_step1_complete", "is_step2_complete"),
+            },
+        ),
+        (
+            "Meta",
+            {
+                "fields": ("created_at",),
+                "classes": ("collapse",),
             },
         ),
     )
 
-    def get_readonly_fields(self, request, obj=None):
-        """
-        Prevent changing product on existing batches.
-        This avoids duplicate validation bugs.
-        """
-        if obj:
-            return ("product",)
-        return ()
+    # ── Custom columns ──────────────────────────────────────────
+
+    @admin.display(description="Step 1", boolean=False)
+    def step1_badge(self, obj):
+        if obj.is_step1_complete:
+            return format_html(
+                '<span style="color:green; font-weight:bold;">✔ Done</span>'
+            )
+        return format_html('<span style="color:gray;">○ Pending</span>')
+
+    @admin.display(description="Step 2", boolean=False)
+    def step2_badge(self, obj):
+        if obj.is_step2_complete:
+            return format_html(
+                '<span style="color:green; font-weight:bold;">✔ Done</span>'
+            )
+        return format_html('<span style="color:gray;">○ Pending</span>')
+
+
+# ══════════════════════════════════════════════════════════════
+# ORDER ENTRY — MAKE TO ORDER
+# ══════════════════════════════════════════════════════════════
+
+
+@admin.register(OrderEntryMakeToOrder)
+class OrderEntryMakeToOrderAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "customer_name",
+        "customer_type",
+        "product",
+        "quantity",
+        "grand_total",
+        "order_priority",
+        "priority_badge",
+        "expected_delivery_date",
+        "created_at",
+    )
+    list_filter = ("customer_type", "order_priority", "payment_terms")
+    search_fields = (
+        "customer_name",
+        "contact_person",
+        "mobile_no",
+        "product__name",
+        "order_entry__id",
+    )
+    ordering = ("-created_at",)
+    readonly_fields = ("created_at",)
+    list_per_page = 25
+
+    fieldsets = (
+        (
+            "Order Entry Reference",
+            {
+                "fields": ("order_entry",),
+            },
+        ),
+        (
+            "Customer Details",
+            {
+                "fields": (
+                    "customer_name",
+                    "customer_type",
+                    "contact_person",
+                    "mobile_no",
+                ),
+            },
+        ),
+        (
+            "Product Details",
+            {
+                "fields": (
+                    "product",
+                    "product_specifications",
+                    "customization_details",
+                ),
+            },
+        ),
+        (
+            "Pricing",
+            {
+                "fields": (
+                    "quantity",
+                    "unit_price",
+                    "discount_percent",
+                    "gst_percent",
+                    "shipping_charges",
+                    "grand_total",
+                    "advance_payment",
+                ),
+            },
+        ),
+        (
+            "Delivery & Priority",
+            {
+                "fields": (
+                    "expected_delivery_date",
+                    "payment_terms",
+                    "order_priority",
+                    "special_instructions",
+                ),
+            },
+        ),
+        (
+            "Meta",
+            {
+                "fields": ("created_at",),
+                "classes": ("collapse",),
+            },
+        ),
+    )
+
+    # ── Custom columns ──────────────────────────────────────────
+
+    @admin.display(description="Priority")
+    def priority_badge(self, obj):
+        colors = {
+            "low": ("gray", "▼ Low"),
+            "medium": ("blue", "● Medium"),
+            "high": ("orange", "▲ High"),
+            "urgent": ("red", "🔴 Urgent"),
+        }
+        color, label = colors.get(obj.order_priority, ("black", obj.order_priority))
+        return format_html(
+            '<span style="color:{}; font-weight:bold;">{}</span>', color, label
+        )
+
+
+# ══════════════════════════════════════════════════════════════
+# SALES ORDER
+# ══════════════════════════════════════════════════════════════
 
 
 @admin.register(SalesOrder)
@@ -1361,7 +1638,8 @@ class SalesOrderAdmin(admin.ModelAdmin):
         "batch",
         "quantity",
         "grand_total",
-        "payment_status",
+        "payment_mode",
+        "payment_status_badge",
         "delivery_date",
         "created_at",
     )
@@ -1369,11 +1647,10 @@ class SalesOrderAdmin(admin.ModelAdmin):
         "customer_type",
         "payment_mode",
         "payment_status",
+        "product",
         "delivery_date",
-        "created_at",
     )
     search_fields = (
-        "id",
         "customer_name",
         "contact_person",
         "mobile_no",
@@ -1383,9 +1660,12 @@ class SalesOrderAdmin(admin.ModelAdmin):
     )
     ordering = ("-created_at",)
     readonly_fields = ("created_at",)
+    list_per_page = 25
+    date_hierarchy = "delivery_date"
+
     fieldsets = (
         (
-            "Customer Information",
+            "Customer Details",
             {
                 "fields": (
                     "customer_name",
@@ -1398,150 +1678,9 @@ class SalesOrderAdmin(admin.ModelAdmin):
         (
             "Product & Batch",
             {
-                "fields": ("product", "batch", "quantity", "unit_price"),
+                "fields": ("product", "batch", "quantity"),
             },
         ),
-        (
-            "Pricing & Taxes",
-            {
-                "fields": (
-                    "discount_percent",
-                    "gst_percent",
-                    "shipping_charges",
-                    "grand_total",
-                ),
-            },
-        ),
-        (
-            "Delivery Information",
-            {
-                "fields": ("delivery_date", "delivery_address"),
-            },
-        ),
-        (
-            "Payment Information",
-            {
-                "fields": ("payment_mode", "payment_status", "invoice_number"),
-            },
-        ),
-        (
-            "Additional Notes",
-            {
-                "fields": ("remarks",),
-            },
-        ),
-        (
-            "System Information",
-            {
-                "fields": ("created_at",),
-            },
-        ),
-    )
-
-
-@admin.register(SupplierVendor)
-class SupplierVendorAdmin(admin.ModelAdmin):
-    list_display = ("name",)
-    search_fields = ("name",)
-    ordering = ("name",)
-    fieldsets = (("Supplier / Vendor", {"fields": ("name",)}),)
-
-
-@admin.register(ProductionOrder)
-class ProductionOrderAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "production_type",
-        "product",
-        "product_category",
-        "quantity_added",
-        "total_value",
-        "supplier_vendor",
-        "purchase_date",
-        "manufacturing_date",
-        "batch",
-        "created_at",
-    )
-    list_filter = (
-        "production_type",
-        "product_category",
-        "purchase_date",
-        "manufacturing_date",
-        "supplier_vendor",
-        "created_at",
-    )
-    search_fields = (
-        "id",
-        "product__name",
-        "supplier_vendor__name",
-        "batch__batch_number",
-    )
-    ordering = ("-created_at",)
-    readonly_fields = ("created_at",)
-    fieldsets = (
-        ("Production Type", {"fields": ("production_type",)}),
-        ("Product Information", {"fields": ("product", "product_category", "batch")}),
-        (
-            "Quantity & Pricing",
-            {"fields": ("quantity_added", "unit_price", "total_value")},
-        ),
-        ("Supplier", {"fields": ("supplier_vendor",)}),
-        ("Dates", {"fields": ("purchase_date", "manufacturing_date")}),
-        ("Additional Notes", {"fields": ("remarks",)}),
-        ("System Information", {"fields": ("created_at",)}),
-    )
-
-
-@admin.register(OrderEntryMakeToOrder)
-class OrderEntryMakeToOrderAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "order_entry",
-        "customer_name",
-        "customer_type",
-        "product",
-        "quantity",
-        "grand_total",
-        "payment_terms",
-        "order_priority",
-        "expected_delivery_date",
-        "created_at",
-    )
-    list_filter = (
-        "customer_type",
-        "payment_terms",
-        "order_priority",
-        "expected_delivery_date",
-        "created_at",
-    )
-    search_fields = (
-        "id",
-        "order_entry__id",
-        "customer_name",
-        "contact_person",
-        "mobile_no",
-        "product__name",
-    )
-    ordering = ("-created_at",)
-    readonly_fields = ("created_at",)
-    fieldsets = (
-        ("Order Reference", {"fields": ("order_entry",)}),
-        (
-            "Customer Information",
-            {
-                "fields": (
-                    "customer_name",
-                    "customer_type",
-                    "contact_person",
-                    "mobile_no",
-                )
-            },
-        ),
-        (
-            "Product & Customization",
-            {"fields": ("product", "product_specifications", "customization_details")},
-        ),
-        ("Quantity & Delivery", {"fields": ("quantity", "expected_delivery_date")}),
         (
             "Pricing",
             {
@@ -1551,14 +1690,166 @@ class OrderEntryMakeToOrderAdmin(admin.ModelAdmin):
                     "gst_percent",
                     "shipping_charges",
                     "grand_total",
-                    "advance_payment",
-                )
+                ),
             },
         ),
-        ("Payment & Priority", {"fields": ("payment_terms", "order_priority")}),
-        ("Special Instructions", {"fields": ("special_instructions",)}),
-        ("System Information", {"fields": ("created_at",)}),
+        (
+            "Delivery",
+            {
+                "fields": ("delivery_date", "delivery_address"),
+            },
+        ),
+        (
+            "Payment",
+            {
+                "fields": ("payment_mode", "payment_status", "invoice_number"),
+            },
+        ),
+        (
+            "Notes",
+            {
+                "fields": ("remarks",),
+                "classes": ("collapse",),
+            },
+        ),
+        (
+            "Meta",
+            {
+                "fields": ("created_at",),
+                "classes": ("collapse",),
+            },
+        ),
     )
+
+    # ── Custom columns ──────────────────────────────────────────
+
+    @admin.display(description="Payment Status")
+    def payment_status_badge(self, obj):
+        styles = {
+            "paid": ("green", "✔ Paid"),
+            "partially_paid": ("orange", "◑ Partial"),
+            "pending": ("red", "✖ Pending"),
+            "on_credit": ("blue", "$ Credit"),
+        }
+        color, label = styles.get(obj.payment_status, ("black", obj.payment_status))
+        return format_html(
+            '<span style="color:{}; font-weight:bold;">{}</span>', color, label
+        )
+
+    # ── Bulk actions ─────────────────────────────────────────────
+
+    actions = ["mark_as_paid", "mark_as_pending"]
+
+    @admin.action(description="Mark selected orders as Paid")
+    def mark_as_paid(self, request, queryset):
+        updated = queryset.update(payment_status="paid")
+        self.message_user(request, f"{updated} order(s) marked as Paid.")
+
+    @admin.action(description="Mark selected orders as Pending")
+    def mark_as_pending(self, request, queryset):
+        updated = queryset.update(payment_status="pending")
+        self.message_user(request, f"{updated} order(s) marked as Pending.")
+
+
+# ══════════════════════════════════════════════════════════════
+# PRODUCTION ORDER
+# ══════════════════════════════════════════════════════════════
+
+
+@admin.register(ProductionOrder)
+class ProductionOrderAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "product",
+        "product_category",
+        "batch",
+        "quantity_added",
+        "unit_price",
+        "total_value",
+        "supplier_vendor",
+        "purchase_date",
+        "manufacturing_date",
+        "created_at",
+    )
+    list_filter = (
+        "production_type",
+        "product_category",
+        "supplier_vendor",
+        "product",
+        "purchase_date",
+        "manufacturing_date",
+    )
+    search_fields = (
+        "product__name",
+        "batch__batch_number",
+        "supplier_vendor__name",
+    )
+    ordering = ("-created_at",)
+    readonly_fields = ("created_at",)
+    list_per_page = 25
+    date_hierarchy = "purchase_date"
+
+    fieldsets = (
+        (
+            "Production Details",
+            {
+                "fields": (
+                    "production_type",
+                    "product",
+                    "product_category",
+                ),
+            },
+        ),
+        (
+            "Batch & Quantity",
+            {
+                "fields": ("batch", "quantity_added"),
+            },
+        ),
+        (
+            "Pricing",
+            {
+                "fields": ("unit_price", "total_value"),
+            },
+        ),
+        (
+            "Supplier & Dates",
+            {
+                "fields": (
+                    "supplier_vendor",
+                    "purchase_date",
+                    "manufacturing_date",
+                ),
+            },
+        ),
+        (
+            "Notes",
+            {
+                "fields": ("remarks",),
+                "classes": ("collapse",),
+            },
+        ),
+        (
+            "Meta",
+            {
+                "fields": ("created_at",),
+                "classes": ("collapse",),
+            },
+        ),
+    )
+
+    # ── Bulk actions ─────────────────────────────────────────────
+
+    actions = ["export_summary"]
+
+    @admin.action(description="Show total value of selected production orders")
+    def export_summary(self, request, queryset):
+        total = queryset.aggregate(t=Sum("total_value"))["t"] or 0
+        count = queryset.count()
+        self.message_user(
+            request,
+            f"Selected {count} production order(s) — Total Value: ₹{total:,.2f}",
+        )
 
 
 class RFQSelectionInline(admin.TabularInline):
@@ -2797,7 +3088,7 @@ class DeviceInventoryAdmin(admin.ModelAdmin):
             },
         ),
     )
-    
+
     @admin.display(description="Stock Status", ordering="stock_status")
     def stock_status_badge(self, obj):
         colors = {
