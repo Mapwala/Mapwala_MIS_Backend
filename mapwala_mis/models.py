@@ -1,5 +1,5 @@
 # mapwala_mis/models.py
-from django.db import models
+from django.db import models, transaction
 from django.core.validators import MinValueValidator, MaxValueValidator
 from decimal import Decimal
 from django.contrib.auth import get_user_model
@@ -1126,22 +1126,30 @@ class MaterialReceiptItem(models.Model):
     balance_qty = models.PositiveIntegerField()
 
     def save(self, *args, **kwargs):
-        """
-        Balance Qty = Ordered Qty - Total Received Qty (across all MRNs)
-        """
-        ordered_qty = self.purchase_order_item.quantity
-        total_received = (
-            MaterialReceiptItem.objects.filter(
-                purchase_order_item=self.purchase_order_item
+        with transaction.atomic():
+            poi = PurchaseOrderItem.objects.select_for_update().get(
+                pk=self.purchase_order_item_id
             )
-            .exclude(pk=self.pk)
-            .aggregate(models.Sum("received_qty"))["received_qty__sum"]
-            or 0
-        )
-        self.balance_qty = ordered_qty - (total_received + self.received_qty)
-        if self.balance_qty < 0:
-            raise ValueError("Received quantity exceeds ordered quantity")
-        super().save(*args, **kwargs)
+            total_received = (
+                MaterialReceiptItem.objects.filter(purchase_order_item=poi)
+                .exclude(pk=self.pk)  # exclude self on update
+                .aggregate(models.Sum("received_qty"))["received_qty__sum"]
+                or 0
+            )
+
+            incoming = self.received_qty
+            self.balance_qty = poi.quantity - (total_received + incoming)
+
+            if self.balance_qty < 0:
+                raise ValueError(
+                    f"Received quantity exceeds ordered quantity. "
+                    f"Ordered: {poi.quantity}, "
+                    f"Already received: {total_received}, "
+                    f"Attempting to receive: {incoming}. "
+                    f"Maximum allowed: {poi.quantity - total_received}."
+                )
+
+            super().save(*args, **kwargs)
 
 
 # ---------------- Dispatch Workflow ----------------
@@ -1971,3 +1979,90 @@ class DeviceInventory(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+
+
+class B2BOrder(models.Model):
+    GST_RATE_CHOICES = (
+        (Decimal("0.00"), "0%"),
+        (Decimal("5.00"), "5%"),
+        (Decimal("12.00"), "12%"),
+        (Decimal("18.00"), "18%"),
+        (Decimal("28.00"), "28%"),
+    )
+
+    # Select PO — FK to existing PurchaseOrder
+    purchase_order = models.ForeignKey(
+        PurchaseOrder,
+        on_delete=models.PROTECT,
+        related_name="b2b_orders",
+        verbose_name="Purchase Order",
+    )
+
+    # Supply State — FK to existing State
+    supply_state = models.ForeignKey(
+        State,
+        on_delete=models.PROTECT,
+        related_name="b2b_orders",
+        verbose_name="Supply State",
+    )
+
+    # Rate (₹)
+    rate = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal("0.00"))],
+        verbose_name="Rate (₹)",
+    )
+
+    # GST Rate — dropdown choices identical to SelfOrder
+    gst_rate = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        choices=GST_RATE_CHOICES,
+        verbose_name="GST Rate",
+    )
+
+    # Quantity
+    quantity = models.PositiveIntegerField(
+        validators=[MinValueValidator(1)],
+        verbose_name="Quantity",
+    )
+
+    # Gross Amount (₹) — auto-calculated on save
+    gross_amount = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal("0.00"))],
+        verbose_name="Gross Amount (₹)",
+    )
+
+    # Delivery Date
+    delivery_date = models.DateField(verbose_name="Delivery Date")
+
+    # Remarks
+    remarks = models.TextField(
+        blank=True,
+        verbose_name="Remarks",
+    )
+
+    # System fields
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name="b2b_orders",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "B2B Order"
+        verbose_name_plural = "B2B Orders"
+        indexes = [
+            models.Index(fields=["purchase_order"]),
+            models.Index(fields=["supply_state"]),
+            models.Index(fields=["-created_at"]),
+        ]
+
+    def __str__(self):
+        return f"B2BOrder-{self.id} | PO-{self.purchase_order.order_id}"

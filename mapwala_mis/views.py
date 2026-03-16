@@ -79,6 +79,7 @@ from .models import (
     DeviceInventory,
     ProductionOrder,
     OrderEntryMakeToOrder,
+    B2BOrder,
 )
 from .serializers import (
     UserSerializer,
@@ -158,6 +159,13 @@ from .serializers import (
     SalesOrderReadSerializer,
     ProductionOrderReadSerializer,
     OrderEntryReadSerializer,
+    B2BOrderCreateSerializer,
+    B2BOrderReadSerializer,
+    POOrderIDDropdownSerializer,
+    POSelectRFQDropdownSerializer,
+    PurchaseStep2GetSerializer,
+    AvailableVendorSummarySerializer,
+    RFQCardSerializer,
 )
 
 
@@ -1351,31 +1359,167 @@ class VendorDropdownAPIView(APIView):
         )
 
 
-# PURCHASE ORDER WORKFLOW
+# ─────────────────────────────────────────────────────────────
+# STEP 1 — DROPDOWNS
+# ─────────────────────────────────────────────────────────────
+class POOrderIDDropdownAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        rfqs = RequestForQuote.objects.filter(status="submitted").order_by(
+            "order_reference"
+        )
+
+        serializer = POOrderIDDropdownSerializer(rfqs, many=True)
+        return Response(serializer.data)
+
+
+class POSelectRFQDropdownAPIView(APIView):
+    """
+    Image 3: Populate 'Select RFQs' multi-select dropdown.
+    Filtered by order_reference when order_id is provided.
+    GET /purchase/dropdowns/rfqs/?order_reference=RFQ-MW-2024-001
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        order_reference = request.query_params.get("order_reference")
+        rfqs = RequestForQuote.objects.filter(status="submitted").prefetch_related(
+            "selections"
+        )
+
+        if order_reference:
+            rfqs = rfqs.filter(order_reference=order_reference)
+
+        serializer = POSelectRFQDropdownSerializer(rfqs, many=True)
+        return Response(serializer.data)
+
+
+# ─────────────────────────────────────────────────────────────
+# STEP 1 — CREATE (UPDATED)
+# ─────────────────────────────────────────────────────────────
+
+
 class Step1APIView(APIView):
+    """
+    Image 1: Step 1 — Buyer, RFQ selection, Order Types, Assembly Type.
+    POST /purchase/step-1/
+    """
+
     permission_classes = [IsAuthenticated]
 
     @transaction.atomic
     def post(self, request):
         serializer = PurchaseStep1Serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        # Store rfq_ids as comma-separated in existing rfq_id CharField
+        # (no model change — existing field reused)
+        rfq_ids_str = ",".join(str(i) for i in data["rfq_ids"])
 
         po = PurchaseOrder.objects.create(
-            buyer_name=serializer.validated_data["buyer_name"],
-            order_id=serializer.validated_data["order_id"],
-            rfq_id=serializer.validated_data["rfq_id"],
-            assembly_type=serializer.validated_data["assembly_type"],
+            buyer_name=data["buyer_name"],
+            order_id=data["order_id"],
+            rfq_id=rfq_ids_str,
+            assembly_type=data["assembly_type"],
             created_by=request.user,
         )
 
-        for ot in serializer.validated_data["order_types"]:
-            PurchaseOrderType.objects.create(purchase_order=po, order_type=ot)
+        # Bulk create order types
+        PurchaseOrderType.objects.bulk_create(
+            [
+                PurchaseOrderType(purchase_order=po, order_type=ot)
+                for ot in data["order_types"]
+            ]
+        )
 
         return Response(
-            {"purchase_order_id": po.id, "message": "Step 1 completed"}, status=201
+            {
+                "purchase_order_id": po.id,
+                "message": "Step 1 completed",
+                "rfq_count": len(data["rfq_ids"]),
+                "order_types": data["order_types"],
+            },
+            status=status.HTTP_201_CREATED,
         )
 
 
+# ─────────────────────────────────────────────────────────────
+# STEP 2 — GET (NEW: populate the Step 2 form)
+# ─────────────────────────────────────────────────────────────
+class Step2GetAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, po_id):
+        po = get_object_or_404(
+            PurchaseOrder.objects.prefetch_related("order_types"),
+            id=po_id,
+        )
+
+        # ── Selected Order Types (Image 6) ──────────────────
+        order_type_map = {
+            "bom": "Items (BOM Parts)",
+            "component": "Components (Enclosure, Battery, etc.)",
+            "service": "Services (Assembly, Quality Check, etc.)",
+        }
+        selected_order_types = [
+            order_type_map.get(ot.order_type, ot.order_type)
+            for ot in po.order_types.all()
+        ]
+
+        # ── RFQ IDs stored in po.rfq_id (comma-separated) ──
+        rfq_id_list = [
+            int(i.strip()) for i in po.rfq_id.split(",") if i.strip().isdigit()
+        ]
+
+        rfqs = RequestForQuote.objects.filter(id__in=rfq_id_list).prefetch_related(
+            "selections",
+            "quotations__vendor",
+        )
+
+        # ── Available Vendors summary (Images 11-12) ────────
+        # Collect all vendors who have quoted on these RFQs
+        vendor_totals = {}
+        for rfq in rfqs:
+            for q in rfq.quotations.filter(
+                status__in=["quoted", "accepted"]
+            ).select_related("vendor"):
+                if q.quotation_rate is None:
+                    continue
+                vid = q.vendor.id
+                if vid not in vendor_totals:
+                    vendor_totals[vid] = {
+                        "vendor_id": q.vendor.id,
+                        "vendor_name": q.vendor.name,
+                        "vendor_code": f"VND{q.vendor.id:03d}",
+                        "total_price": Decimal("0.00"),
+                    }
+                vendor_totals[vid]["total_price"] += q.quotation_rate
+
+        available_vendors = list(vendor_totals.values())
+
+        # ── Build response ───────────────────────────────────
+        rfq_items_data = RFQCardSerializer(rfqs, many=True).data
+
+        return Response(
+            {
+                "purchase_order_id": po.id,
+                "buyer_name": po.buyer_name,
+                "order_id": po.order_id,
+                "assembly_type": po.assembly_type,
+                "selected_order_types": selected_order_types,
+                "rfq_items_label": f"RFQ Items - {po.buyer_name} ({len(rfq_id_list)} RFQ{'s' if len(rfq_id_list) > 1 else ''})",
+                "rfq_items": rfq_items_data,
+                "available_vendors": available_vendors,
+            }
+        )
+
+
+# ─────────────────────────────────────────────────────────────
+# STEP 2 — POST (UPDATED — no model change)
+# ─────────────────────────────────────────────────────────────
 class Step2APIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -1385,22 +1529,36 @@ class Step2APIView(APIView):
 
         serializer = PurchaseStep2Serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
 
-        po.wastage_percentage = serializer.validated_data["wastage_percentage"]
-        po.selected_vendor_id = serializer.validated_data["selected_vendor_id"]
-        po.delivery_date = serializer.validated_data["delivery_date"]
-        po.payment_terms = serializer.validated_data["payment_terms"]
-        po.save()
+        po.wastage_percentage = data["wastage_percentage"]
+        po.selected_vendor_id = data["selected_vendor_id"]
+        po.delivery_date = data["delivery_date"]
+        po.payment_terms = data["payment_terms"]
+        po.save(
+            update_fields=[
+                "wastage_percentage",
+                "selected_vendor_id",
+                "delivery_date",
+                "payment_terms",
+            ]
+        )
 
+        # Replace items
         po.items.all().delete()
+        PurchaseOrderItem.objects.bulk_create(
+            [PurchaseOrderItem(purchase_order=po, **item) for item in data["items"]],
+            batch_size=500,
+        )
 
-        items_list = [
-            PurchaseOrderItem(purchase_order=po, **item)
-            for item in serializer.validated_data["items"]
-        ]
-        PurchaseOrderItem.objects.bulk_create(items_list, batch_size=500)
-
-        return Response({"message": "Purchase Order created successfully"}, status=201)
+        return Response(
+            {
+                "message": "Purchase Order created successfully",
+                "purchase_order_id": po.id,
+                "items_count": len(data["items"]),
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class OrderTypeDropdown(APIView):
@@ -1438,8 +1596,6 @@ class PaymentTermsDropdown(APIView):
 
 
 # MATERIAL RECEIPT NOTE (MRN)
-
-
 class MRNCreateAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -1611,19 +1767,35 @@ class DispatchStep4APIView(APIView):
         serializer.save()
 
         if not dispatch.stock_deducted:
-            batch = dispatch.batch
+            batch = OrderBatch.objects.select_for_update().get(pk=dispatch.batch_id)
             if dispatch.dispatch_quantity > batch.available_stock:
                 return Response(
-                    {"error": "Insufficient stock at final dispatch."},
+                    {
+                        "error": (
+                            f"Insufficient stock. "
+                            f"Available: {batch.available_stock}, "
+                            f"Requested: {dispatch.dispatch_quantity}."
+                        )
+                    },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+
             batch.available_stock -= dispatch.dispatch_quantity
             batch.save(update_fields=["available_stock"])
+            dispatch.refresh_from_db()
             dispatch.stock_deducted = True
+
         dispatch.status = "completed"
         dispatch.save(update_fields=["status", "stock_deducted"])
+
         return Response(
-            {"message": "Dispatch completed successfully", "dispatch_id": dispatch.id},
+            {
+                "message": "Dispatch completed successfully.",
+                "dispatch_id": dispatch.id,
+                "remaining_stock": (
+                    batch.available_stock if not dispatch.stock_deducted else None
+                ),
+            },
             status=status.HTTP_200_OK,
         )
 
@@ -2942,3 +3114,30 @@ class DeviceInventoryViewSet(DeleteResponseMixin, ModelViewSet):
         workbook.save(response)
 
         return response
+
+
+class B2BOrderViewSet(DeleteResponseMixin, ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    queryset = B2BOrder.objects.select_related(
+        "purchase_order",
+        "supply_state",
+        "created_by",
+    ).order_by("-created_at")
+    
+    # Required by DeleteResponseMixin
+    delete_object_name = "b2b_order"
+    delete_display_field = None
+
+    def get_serializer_class(self):
+        if self.action in ("list", "retrieve"):
+            return B2BOrderReadSerializer
+        return B2BOrderCreateSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+    def perform_update(self, serializer):
+        serializer.save()
+
+    def get_display_value(self, instance):
+        return f"B2BOrder-{instance.id}"

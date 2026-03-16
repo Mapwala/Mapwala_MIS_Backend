@@ -8,11 +8,13 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.timezone import now
 from django.db.models import Sum, Count
+
 from .models import (
     UserProfile,
     State,
     District,
     ProductCategory,
+    B2BOrder,
     SupplierVendor,
     Product,
     ProductionOrder,
@@ -1291,11 +1293,6 @@ class ProformaInvoiceAdmin(admin.ModelAdmin):
     )
 
 
-# ══════════════════════════════════════════════════════════════
-# INLINE ADMINS
-# ══════════════════════════════════════════════════════════════
-
-
 class OrderBatchInline(admin.TabularInline):
     """Shows all batches directly inside the OrderProduct page."""
 
@@ -1370,11 +1367,6 @@ class OrderEntryMakeToOrderInline(admin.StackedInline):
     )
 
 
-# ══════════════════════════════════════════════════════════════
-# ORDER PRODUCT
-# ══════════════════════════════════════════════════════════════
-
-
 @admin.register(OrderProduct)
 class OrderProductAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "batch_count", "total_stock")
@@ -1393,11 +1385,6 @@ class OrderProductAdmin(admin.ModelAdmin):
         total = obj.batches.aggregate(t=Sum("available_stock"))["t"] or 0
         color = "green" if total > 0 else "red"
         return format_html('<b style="color:{}">{}</b>', color, total)
-
-
-# ══════════════════════════════════════════════════════════════
-# ORDER BATCH
-# ══════════════════════════════════════════════════════════════
 
 
 @admin.register(OrderBatch)
@@ -1426,12 +1413,6 @@ class OrderBatchAdmin(admin.ModelAdmin):
             )
         return format_html('<span style="color:green;">✔ In Stock</span>')
 
-
-# ══════════════════════════════════════════════════════════════
-# SUPPLIER / VENDOR
-# ══════════════════════════════════════════════════════════════
-
-
 @admin.register(SupplierVendor)
 class SupplierVendorAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "production_order_count")
@@ -1441,11 +1422,6 @@ class SupplierVendorAdmin(admin.ModelAdmin):
     @admin.display(description="Production Orders")
     def production_order_count(self, obj):
         return obj.productionorder_set.count()
-
-
-# ══════════════════════════════════════════════════════════════
-# ORDER ENTRY
-# ══════════════════════════════════════════════════════════════
 
 
 @admin.register(OrderEntry)
@@ -1512,11 +1488,6 @@ class OrderEntryAdmin(admin.ModelAdmin):
                 '<span style="color:green; font-weight:bold;">✔ Done</span>'
             )
         return format_html('<span style="color:gray;">○ Pending</span>')
-
-
-# ══════════════════════════════════════════════════════════════
-# ORDER ENTRY — MAKE TO ORDER
-# ══════════════════════════════════════════════════════════════
 
 
 @admin.register(OrderEntryMakeToOrder)
@@ -1621,11 +1592,6 @@ class OrderEntryMakeToOrderAdmin(admin.ModelAdmin):
         return format_html(
             '<span style="color:{}; font-weight:bold;">{}</span>', color, label
         )
-
-
-# ══════════════════════════════════════════════════════════════
-# SALES ORDER
-# ══════════════════════════════════════════════════════════════
 
 
 @admin.register(SalesOrder)
@@ -1749,11 +1715,6 @@ class SalesOrderAdmin(admin.ModelAdmin):
     def mark_as_pending(self, request, queryset):
         updated = queryset.update(payment_status="pending")
         self.message_user(request, f"{updated} order(s) marked as Pending.")
-
-
-# ══════════════════════════════════════════════════════════════
-# PRODUCTION ORDER
-# ══════════════════════════════════════════════════════════════
 
 
 @admin.register(ProductionOrder)
@@ -3147,3 +3108,177 @@ class DeviceInventoryAdmin(admin.ModelAdmin):
     def mark_retired(self, request, queryset):
         updated = queryset.update(stock_status="retired")
         self.message_user(request, f"{updated} device(s) marked as Retired.")
+
+
+@admin.register(B2BOrder)
+class B2BOrderAdmin(admin.ModelAdmin):
+    list_display = (
+        "order_id_display",
+        "purchase_order",
+        "supply_state",
+        "rate_display",
+        "gst_rate_display",
+        "quantity",
+        "gross_amount_display",
+        "delivery_date",
+        "created_by",
+        "created_at",
+    )
+
+    list_filter = (
+        "gst_rate",
+        "supply_state",
+        "delivery_date",
+        "created_at",
+        "created_by",
+    )
+
+    search_fields = (
+        "id",
+        "purchase_order__order_id",
+        "supply_state__name",
+        "created_by__username",
+        "created_by__email",
+        "remarks",
+    )
+
+    date_hierarchy = "created_at"
+    ordering = ("-created_at",)
+    list_per_page = 25
+    show_full_result_count = True
+    readonly_fields = (
+        "gross_amount",
+        "created_by",
+        "created_at",
+        "updated_at",
+        "order_summary_panel",
+    )
+
+    fieldsets = (
+        (
+            "🧾 Order Reference",
+            {
+                "fields": ("purchase_order",),
+            },
+        ),
+        (
+            "📦 Order Details",
+            {
+                "fields": (
+                    "supply_state",
+                    "rate",
+                    "gst_rate",
+                    "quantity",
+                    "gross_amount",  # auto-calculated, readonly
+                    "delivery_date",
+                ),
+            },
+        ),
+        (
+            "📝 Remarks",
+            {
+                "fields": ("remarks",),
+                "classes": ("collapse",),  # collapsed by default to save space
+            },
+        ),
+        (
+            "📊 Summary Panel",
+            {
+                "fields": ("order_summary_panel",),
+                "classes": ("collapse",),
+            },
+        ),
+        (
+            "🔒 System Info",
+            {
+                "fields": ("created_by", "created_at", "updated_at"),
+                "classes": ("collapse",),
+            },
+        ),
+    )
+
+    autocomplete_fields = ("purchase_order", "supply_state")  # fast FK search
+
+    @admin.display(description="Order ID", ordering="id")
+    def order_id_display(self, obj):
+        return format_html('<strong style="color:#1a73e8;">B2B-{}</strong>', obj.id)
+
+    @admin.display(description="Rate (₹)", ordering="rate")
+    def rate_display(self, obj):
+        return format_html("₹ {}", f"{obj.rate:,.2f}")
+
+    @admin.display(description="GST Rate", ordering="gst_rate")
+    def gst_rate_display(self, obj):
+        color = {
+            "0.00": "#6c757d",
+            "5.00": "#28a745",
+            "12.00": "#fd7e14",
+            "18.00": "#dc3545",
+            "28.00": "#6f42c1",
+        }.get(str(obj.gst_rate), "#000")
+        return format_html(
+            '<span style="color:{}; font-weight:bold;">{}%</span>',
+            color,
+            obj.gst_rate,
+        )
+
+    @admin.display(description="Gross Amount (₹)", ordering="gross_amount")
+    def gross_amount_display(self, obj):
+        return format_html("<strong>₹ {}</strong>", f"{obj.gross_amount:,.2f}")
+
+    @admin.display(description="Order Summary")
+    def order_summary_panel(self, obj):
+        """A quick at-a-glance summary shown inside the detail page."""
+        taxable = obj.rate * obj.quantity
+        gst_amt = taxable * obj.gst_rate / 100
+        total = taxable + gst_amt
+        return format_html(
+            """
+            <table style="border-collapse:collapse; min-width:320px;">
+              <tr style="background:#f0f4ff;">
+                <td style="padding:6px 12px; border:1px solid #ddd;"><b>Taxable Amount</b></td>
+                <td style="padding:6px 12px; border:1px solid #ddd;">₹ {taxable}</td>
+              </tr>
+              <tr>
+                <td style="padding:6px 12px; border:1px solid #ddd;"><b>GST ({gst_rate}%)</b></td>
+                <td style="padding:6px 12px; border:1px solid #ddd;">₹ {gst_amt}</td>
+              </tr>
+              <tr style="background:#e6ffe6;">
+                <td style="padding:6px 12px; border:1px solid #ddd;"><b>Total (incl. GST)</b></td>
+                <td style="padding:6px 12px; border:1px solid #ddd;"><b>₹ {total}</b></td>
+              </tr>
+            </table>
+            """,
+            taxable=f"{taxable:,.2f}",
+            gst_rate=obj.gst_rate,
+            gst_amt=f"{gst_amt:,.2f}",
+            total=f"{total:,.2f}",
+        )
+
+    actions = ("export_gross_summary",)
+
+    @admin.action(description="📊 Show total Gross Amount for selected orders")
+    def export_gross_summary(self, request, queryset):
+        total = queryset.aggregate(total=Sum("gross_amount"))["total"] or 0
+        count = queryset.count()
+        self.message_user(
+            request,
+            f"✅ {count} order(s) selected — Total Gross Amount: ₹ {total:,.2f}",
+        )
+
+    def has_add_permission(self, request):
+        return request.user.is_staff
+
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_staff
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_staff
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_staff
+
+    def save_model(self, request, obj, form, change):
+        if not change:  # only on first creation
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)

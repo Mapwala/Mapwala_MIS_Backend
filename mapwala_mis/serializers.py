@@ -7,6 +7,7 @@ from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
 from rest_framework import serializers
 from django.db import transaction
+from django.utils import timezone
 from .models import (
     UserProfile,
     State,
@@ -62,6 +63,7 @@ from .models import (
     ProformaInvoice,
     Manufacturer,
     DeviceInventory,
+    B2BOrder,
 )
 
 User = get_user_model()
@@ -1420,10 +1422,67 @@ class RFQDetailSerializer(serializers.ModelSerializer):
 
 
 # ------------------ Create Purchase Order STEP 1 ------------------
+
+# ─────────────────────────────────────────────────────────────
+# PURCHASE ORDER — STEP 1 DROPDOWNS
+# ─────────────────────────────────────────────────────────────
+class POOrderIDDropdownSerializer(serializers.ModelSerializer):
+    """
+    Image 2: Select Order ID dropdown.
+    Shows: order_reference, rfq_count (always 1 per RFQ), total_units
+    """
+
+    rfq_count = serializers.SerializerMethodField()
+    total_units = serializers.IntegerField(source="quantity")
+    label = serializers.CharField(source="order_reference")
+
+    class Meta:
+        model = RequestForQuote
+        fields = ["id", "label", "rfq_count", "total_units"]
+
+    def get_rfq_count(self, obj):
+        return 1  
+
+
+class POSelectRFQDropdownSerializer(serializers.ModelSerializer):
+    label = serializers.SerializerMethodField()
+    type_badge = serializers.SerializerMethodField()
+    total_units = serializers.IntegerField(source="quantity")
+    date = serializers.DateField(source="delivery_date")
+
+    class Meta:
+        model = RequestForQuote
+        fields = ["id", "label", "type_badge", "total_units", "date"]
+
+    def get_label(self, obj):
+        # Image 3: "RFQ-MW-2024-002 - Vehicle-Monitor-X"
+        return f"{obj.order_reference} - {obj.device_name}"
+
+    def get_type_badge(self, obj):
+        # Image 3: "Items + Components" — derived from RFQSelection types
+        types = obj.selections.values_list("item_type", flat=True).distinct()
+        type_map = {
+            "bom": "Items",
+            "component": "Components",
+            "service": "Services",
+        }
+        parts = [type_map[t] for t in types if t in type_map]
+        return " + ".join(parts) if parts else "Items"
+
+
+# ─────────────────────────────────────────────────────────────
+# PURCHASE ORDER — STEP 1 (UPDATED)
+# ─────────────────────────────────────────────────────────────
 class PurchaseStep1Serializer(serializers.Serializer):
     buyer_name = serializers.CharField()
     order_id = serializers.CharField()
-    rfq_id = serializers.CharField()
+
+    # Image 1: "Select RFQs" — at least one required
+    rfq_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        min_length=1,
+        error_messages={"min_length": "At least one RFQ is required."},
+    )
 
     assembly_type = serializers.ChoiceField(choices=PurchaseOrder.ASSEMBLY_TYPE_CHOICES)
 
@@ -1432,18 +1491,269 @@ class PurchaseStep1Serializer(serializers.Serializer):
         min_length=1,
     )
 
+    def validate_rfq_ids(self, value):
+        """Ensure all submitted RFQ IDs exist and are submitted status."""
+        existing = RequestForQuote.objects.filter(
+            id__in=value, status="submitted"
+        ).values_list("id", flat=True)
 
-# ---------- Create Purchase Order STEP 2 ----------
+        missing = set(value) - set(existing)
+        if missing:
+            raise serializers.ValidationError(
+                f"Invalid or non-submitted RFQ IDs: {sorted(missing)}"
+            )
+        return value
+
+
+# ─────────────────────────────────────────────────────────────
+# PURCHASE ORDER — STEP 2 GET: RFQ DETAILS
+# ─────────────────────────────────────────────────────────────
+class VendorQuoteForItemSerializer(serializers.Serializer):
+    vendor_id = serializers.IntegerField()
+    vendor_name = serializers.CharField()
+    unit_price = serializers.DecimalField(max_digits=12, decimal_places=2)
+    gst_rate = serializers.DecimalField(max_digits=5, decimal_places=2)
+    total_price = serializers.DecimalField(max_digits=12, decimal_places=2)
+    delivery_days = serializers.IntegerField()
+    is_lowest = serializers.BooleanField()
+
+
+class RFQBOMItemSerializer(serializers.ModelSerializer):
+    item_name = serializers.CharField(source="reference")
+    description = serializers.SerializerMethodField()
+    vendor_quotes = serializers.SerializerMethodField()
+
+    class Meta:
+        model = RFQSelection
+        fields = ["id", "item_name", "description", "item_type", "vendor_quotes"]
+
+    def get_description(self, obj):
+        # Image 8: "BOM Part - PCB-002" — constructed from type + reference
+        type_label = {
+            "bom": "BOM Part",
+            "component": "Component",
+            "service": "Service",
+        }.get(obj.item_type, obj.item_type)
+        return f"{type_label} - {obj.reference}"
+
+    def get_vendor_quotes(self, obj):
+        """
+        Image 8: Multiple vendor quotes per item.
+        Derive from RFQQuotation for this RFQ, mark lowest price.
+        """
+        quotations = obj.rfq.quotations.filter(
+            status__in=["quoted", "accepted"]
+        ).select_related("vendor")
+
+        if not quotations:
+            return []
+
+        quotes = []
+        for q in quotations:
+            quotes.append(
+                {
+                    "vendor_id": q.vendor.id,
+                    "vendor_name": q.vendor.name,
+                    "unit_price": q.quotation_rate,
+                    "gst_rate": Decimal("18.00"),  # standard GST shown in images
+                    "total_price": (
+                        q.quotation_rate * Decimal("1.18")
+                        if q.quotation_rate
+                        else Decimal("0.00")
+                    ),
+                    "delivery_days": 0,  # not stored per-item in RFQQuotation
+                    "is_lowest": False,
+                }
+            )
+
+        # Mark lowest price vendor
+        valid = [q for q in quotes if q["unit_price"] is not None]
+        if valid:
+            min_price = min(q["unit_price"] for q in valid)
+            for q in quotes:
+                if q["unit_price"] == min_price:
+                    q["is_lowest"] = True
+                    break
+
+        return quotes
+
+
+class ComponentVendorQuoteSerializer(serializers.Serializer):
+    vendor_id = serializers.IntegerField()
+    vendor_name = serializers.CharField()
+    unit_price = serializers.DecimalField(max_digits=10, decimal_places=2)
+    gst = serializers.DecimalField(max_digits=10, decimal_places=2)
+    total = serializers.DecimalField(max_digits=10, decimal_places=2)
+    delivery_days = serializers.IntegerField()
+    is_lowest = serializers.BooleanField()
+
+
+class DeviceComponentSerializer(serializers.Serializer):
+    component_type = (
+        serializers.CharField()
+    )  # enclosure, wire_harness, battery, accessories
+    description = serializers.CharField()
+    vendor_quotes = ComponentVendorQuoteSerializer(many=True)
+
+
+class RFQCardSerializer(serializers.ModelSerializer):
+    rfq_id = serializers.CharField(source="order_reference")
+    device = serializers.CharField(source="device_name")
+    quantity_display = serializers.SerializerMethodField()
+    bom_items = serializers.SerializerMethodField()
+    device_components = serializers.SerializerMethodField()
+
+    class Meta:
+        model = RequestForQuote
+        fields = [
+            "id",
+            "rfq_id",
+            "device",
+            "quantity",
+            "quantity_display",
+            "delivery_date",
+            "delivery_address",
+            "additional_requirements",
+            "bom_items",
+            "device_components",
+        ]
+
+    def get_quantity_display(self, obj):
+        return f"{obj.quantity} units"
+
+    def get_bom_items(self, obj):
+        """Images 7-8: BOM items from RFQSelection with vendor quotes."""
+        selections = obj.selections.filter(item_type="bom")
+        return RFQBOMItemSerializer(selections, many=True).data
+
+    def get_device_components(self, obj):
+        from .models import Device
+
+        # Find device by name matching rfq.device_name
+        try:
+            device = (
+                Device.objects.select_related("enclosure", "wireharness", "battery")
+                .prefetch_related("accessories")
+                .filter(info__model__icontains=obj.device_name, status="completed")
+                .first()
+            )
+        except Exception:
+            device = None
+
+        if not device:
+            return []
+
+        components = []
+        vendors = list(
+            obj.quotations.filter(status__in=["quoted", "accepted"]).select_related(
+                "vendor"
+            )
+        )
+
+        def make_vendor_quotes(vendor_list):
+            """Build vendor quote list and mark lowest."""
+            quotes = []
+            for q in vendor_list:
+                if not q.quotation_rate:
+                    continue
+                gst = (q.quotation_rate * Decimal("18")) / Decimal("100")
+                quotes.append(
+                    {
+                        "vendor_id": q.vendor.id,
+                        "vendor_name": q.vendor.name,
+                        "unit_price": q.quotation_rate,
+                        "gst": gst.quantize(Decimal("0.01")),
+                        "total": (q.quotation_rate + gst).quantize(Decimal("0.01")),
+                        "delivery_days": 0,
+                        "is_lowest": False,
+                    }
+                )
+            if quotes:
+                min_price = min(q["unit_price"] for q in quotes)
+                for q in quotes:
+                    if q["unit_price"] == min_price:
+                        q["is_lowest"] = True
+                        break
+            return quotes
+
+        # Image 8-9: Enclosure
+        if hasattr(device, "enclosure"):
+            enc = device.enclosure
+            components.append(
+                {
+                    "component_type": "enclosure",
+                    "description": (
+                        f"{enc.length}×{enc.breadth}×{enc.height}mm"
+                        f" - {enc.material} ({enc.color})"
+                    ),
+                    "vendor_quotes": make_vendor_quotes(vendors),
+                }
+            )
+
+        # Image 10: Wire Harness
+        if hasattr(device, "wireharness"):
+            wh = device.wireharness
+            components.append(
+                {
+                    "component_type": "wire_harness",
+                    "description": (f"{wh.number_of_wires} wires - {wh.specification}"),
+                    "vendor_quotes": make_vendor_quotes(vendors),
+                }
+            )
+
+        # Image 10: Battery
+        if hasattr(device, "battery"):
+            bat = device.battery
+            components.append(
+                {
+                    "component_type": "battery",
+                    "description": f"{bat.capacity} (Part: {bat.part_number})",
+                    "vendor_quotes": make_vendor_quotes(vendors),
+                }
+            )
+
+        # Image 10-11: Accessories
+        accessories = device.accessories.all()
+        if accessories.exists():
+            desc = ", ".join([f"{a.name}" for a in accessories]) + " - Complete package"
+            components.append(
+                {
+                    "component_type": "accessories",
+                    "description": desc,
+                    "vendor_quotes": make_vendor_quotes(vendors),
+                }
+            )
+
+        return components
+
+
+class PurchaseStep2GetSerializer(serializers.Serializer):
+    selected_order_types = serializers.ListField(child=serializers.CharField())
+    rfq_items = RFQCardSerializer(many=True)
+    available_vendors = serializers.SerializerMethodField()
+
+    def get_available_vendors(self, obj):
+        return obj.get("available_vendors", [])
+
+
+class AvailableVendorSummarySerializer(serializers.Serializer):
+    vendor_id = serializers.IntegerField()
+    vendor_name = serializers.CharField()
+    vendor_code = serializers.CharField()
+    total_price = serializers.DecimalField(max_digits=14, decimal_places=2)
+
+
+# ─────────────────────────────────────────────────────────────
+# PURCHASE ORDER — STEP 2 POST (UPDATED)
+# ─────────────────────────────────────────────────────────────
 class PurchaseLineSerializer(serializers.Serializer):
     item_code = serializers.CharField()
     item_type = serializers.ChoiceField(choices=["bom", "component", "service"])
     vendor_id = serializers.CharField()
     vendor_name = serializers.CharField()
-
     unit_price = serializers.DecimalField(max_digits=10, decimal_places=2)
     gst_amount = serializers.DecimalField(max_digits=10, decimal_places=2)
     total_price = serializers.DecimalField(max_digits=10, decimal_places=2)
-
     delivery_days = serializers.IntegerField(min_value=1)
 
 
@@ -1452,11 +1762,9 @@ class PurchaseStep2Serializer(serializers.Serializer):
     wastage_percentage = serializers.IntegerField(min_value=0, max_value=100)
     selected_vendor_id = serializers.CharField()
     delivery_date = serializers.DateField()
-
     payment_terms = serializers.ChoiceField(
         choices=[c[0] for c in PurchaseOrder.PAYMENT_TERMS_CHOICES]
     )
-
     items = PurchaseLineSerializer(many=True, min_length=1)
 
 
@@ -2578,3 +2886,102 @@ class DeviceInventorySerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = ["created_at"]
+
+
+class B2BOrderCreateSerializer(serializers.ModelSerializer):
+    """
+    Write serializer for B2B Order creation.
+    Matches the /b2b-order form fields exactly:
+      - purchase_order  (Select PO dropdown)
+      - supply_state    (Supply State dropdown)
+      - rate            (Rate ₹)
+      - gst_rate        (GST Rate dropdown)
+      - quantity        (Quantity)
+      - gross_amount    (Gross Amount ₹ — validated against backend calculation)
+      - delivery_date   (Delivery Date)
+      - remarks         (Remarks — optional)
+    gross_amount is read_only in response (auto-calculated).
+    """
+
+    class Meta:
+        model = B2BOrder
+        fields = [
+            "purchase_order",
+            "supply_state",
+            "rate",
+            "gst_rate",
+            "quantity",
+            "gross_amount",
+            "delivery_date",
+            "remarks",
+        ]
+        read_only_fields = ["gross_amount"]
+
+    def validate_quantity(self, value):
+        if value < 1:
+            raise serializers.ValidationError("Quantity must be at least 1.")
+        return value
+
+    def validate_rate(self, value):
+        if value < 0:
+            raise serializers.ValidationError("Rate cannot be negative.")
+        return value
+
+    def validate_delivery_date(self, value):
+        if value < timezone.now().date():
+            raise serializers.ValidationError("Delivery date cannot be in the past.")
+        return value
+
+    def validate(self, attrs):
+        """
+        Auto-calculate gross_amount from quantity, rate, gst_rate.
+        Formula (same as SelfOrder): gross = (qty × rate) + GST amount
+        """
+        quantity = attrs.get("quantity", getattr(self.instance, "quantity", None))
+        rate = attrs.get("rate", getattr(self.instance, "rate", None))
+        gst_rate = attrs.get("gst_rate", getattr(self.instance, "gst_rate", None))
+
+        if quantity is not None and rate is not None and gst_rate is not None:
+            base_amount = Decimal(quantity) * rate
+            gst_amount = (base_amount * gst_rate) / Decimal("100")
+            attrs["gross_amount"] = (base_amount + gst_amount).quantize(Decimal("0.01"))
+
+        return attrs
+
+
+class B2BOrderReadSerializer(serializers.ModelSerializer):
+    """
+    Read serializer for B2B Order list and detail views.
+    Exposes human-readable names alongside FK IDs.
+    """
+
+    purchase_order_label = serializers.SerializerMethodField()
+    supply_state_name = serializers.CharField(
+        source="supply_state.name", read_only=True
+    )
+    created_by_username = serializers.CharField(
+        source="created_by.username", read_only=True
+    )
+
+    class Meta:
+        model = B2BOrder
+        fields = [
+            "id",
+            "purchase_order",
+            "purchase_order_label",
+            "supply_state",
+            "supply_state_name",
+            "rate",
+            "gst_rate",
+            "quantity",
+            "gross_amount",
+            "delivery_date",
+            "remarks",
+            "created_by_username",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = fields
+
+    def get_purchase_order_label(self, obj):
+        return f"{obj.purchase_order.order_id} ({obj.purchase_order.assembly_type})"

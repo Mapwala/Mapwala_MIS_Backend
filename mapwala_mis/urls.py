@@ -88,6 +88,11 @@ from .views import (
     SalesOrderViewSet,
     OrderBatchViewSet,
     ProductionOrderViewSet,
+    B2BOrderViewSet,
+    POOrderIDDropdownAPIView,
+    POSelectRFQDropdownAPIView,
+    Step2GetAPIView,
+    OrderTypeDropdown,
 )
 
 
@@ -124,6 +129,7 @@ router.register(r"order-products", OrderProductViewSet, basename="order-product"
 router.register(r"order-batches", OrderBatchViewSet, basename="order-batch")
 router.register(r"sales-orders", SalesOrderViewSet, basename="sales-order")
 router.register(r"production-orders", ProductionOrderViewSet, basename="production-order")
+router.register(r"b2b-orders", B2BOrderViewSet, basename="b2b-order")
 
 
 urlpatterns = [
@@ -166,9 +172,13 @@ urlpatterns = [
     path("dropdowns/srn/", SRNDropdownAPIView.as_view()),
     path("dropdowns/vendors/", VendorDropdownAPIView.as_view()),
     # Purchase & MRN
+    path("purchase/dropdowns/order-ids/",POOrderIDDropdownAPIView.as_view(),name="purchase-dropdown-order-ids"),
+    path("purchase/dropdowns/rfqs/",POSelectRFQDropdownAPIView.as_view(),name="purchase-dropdown-rfqs"),
+    path("purchase/<int:po_id>/step-2/",Step2GetAPIView.as_view(),name="purchase-step-2-get"),
     path("purchase/step-1/", Step1APIView.as_view()),
     path("purchase/step-2/", Step2APIView.as_view()),
     path("mrn/create/", MRNCreateAPIView.as_view()),
+    path("dropdowns/order-types/",    OrderTypeDropdown.as_view(),    name="dropdown-order-types"),
     path("dropdowns/purchase-orders/", PurchaseOrderDropdown.as_view()),
     path("dropdowns/inward-types/", InwardTypeDropdown.as_view()),
     path("purchase/<int:po_id>/items/", PurchaseOrderItemsAPIView.as_view()),
@@ -197,10 +207,7 @@ urlpatterns = [
     path("quotations/create/", QuotationCreateAPIView.as_view()),
     path("quotations/", QuotationListAPIView.as_view()),
     path("quotations/<int:quotation_id>/", QuotationDetailAPIView.as_view()),
-    path(
-        "quotations/<int:quotation_id>/approve-reject/",
-        QuotationApproveRejectAPIView.as_view(),
-    ),
+    path("quotations/<int:quotation_id>/approve-reject/", QuotationApproveRejectAPIView.as_view()),
 ]
 
 urlpatterns += router.urls
