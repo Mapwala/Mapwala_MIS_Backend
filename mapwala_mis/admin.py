@@ -1,3284 +1,3284 @@
-# mapwala_mis/admin.py
-from decimal import Decimal
-
-from django.contrib import admin, messages
-from django.forms.models import BaseInlineFormSet
-from django.urls import reverse
-from django.utils.html import format_html
-from django.utils.safestring import mark_safe
-from django.utils.timezone import now
-from django.db.models import Sum, Count
-
-from .models import (
-    UserProfile,
-    State,
-    District,
-    ProductCategory,
-    B2BOrder,
-    SupplierVendor,
-    Product,
-    ProductionOrder,
-    OrderBatch,
-    OrderEntryMakeToOrder,
-    RequestForQuote,
-    PurchaseOrder,
-    MaterialReceiptNote,
-    Dispatch,
-    PostDispatchReturn,
-    B2CCustomer,
-    B2BPartner,
-    Distributor,
-    Dealer,
-    ProformaInvoice,
-    DeviceInformation,
-    BOM,
-    BOMComponent,
-    Enclosure,
-    WireHarness,
-    WireConnector,
-    Battery,
-    SOSButton,
-    Sticker,
-    UserManual,
-    Accessory,
-    AccountRegistration,
-    QCInspectorRegistration,
-    PurchaseDepartmentRegistration,
-    StoreManagerRegistration,
-    RepairTechnicianRegistration,
-    Vendor,
-    ParentCompany,
-    OrderProduct,
-    SalesOrder,
-    StoreTransfer,
-    DebitNote,
-    RejectedItem,
-    CreditNote,
-    ReturnRequest,
-    RepairRecord,
-    Device,
-    SelfOrder,
-    RFQSelection,
-    QuotationItem,
-    Quotation,
-    ProformaInvoice,
-    Manufacturer,
-    PurchaseOrderItem,
-    PurchaseOrderType,
-    RFQQuotation,
-    QuotationSequence,
-    PostDispatchReturnItem,
-    MaterialReceiptItem,
-    DeviceInventory,
-    OrderEntry,
-)
-
-
-@admin.register(UserProfile)
-class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "accepted_terms", "accepted_at")
-    search_fields = ("user__username",)
-    list_filter = ("accepted_terms",)
-    ordering = ("user__username",)
-    readonly_fields = ("accepted_at",)
-
-
-class DistrictInline(admin.TabularInline):
-    model = District
-    extra = 1
-    fields = ("id", "name", "code", "status")
-    readonly_fields = ("id",)
-    can_delete = True
-    min_num = 0
-    verbose_name = "District"
-    verbose_name_plural = "Districts"
-
-
-@admin.register(District)
-class DistrictAdmin(admin.ModelAdmin):
-    search_fields = ("name", "code", "state__name")
-
-    def get_model_perms(self, request):
-        """Return empty perms so District never appears in the sidebar."""
-        return {}
-
-
-@admin.register(State)
-class StateAdmin(admin.ModelAdmin):
-
-    list_display = (
-        "id",
-        "name",
-        "status_badge",
-        "district_count",
-        "created_at_formatted",
-    )
-    list_display_links = ("name",)
-    search_fields = ("name", "districts__name", "districts__code")
-    list_filter = ("status", "created_at")
-    ordering = ("id",)
-
-    readonly_fields = ("id_display", "created_at", "district_count")
-    fieldsets = (
-        (
-            "🗺️ State Details",
-            {
-                "description": "Enter the official name of the state and set its status.",
-                "fields": ("id_display", "name", "status"),
-            },
-        ),
-        (
-            "📊 Stats",
-            {
-                "fields": ("district_count",),
-            },
-        ),
-        (
-            "🕒 Metadata",
-            {
-                "classes": ("collapse",),
-                "fields": ("created_at",),
-            },
-        ),
-    )
-
-    inlines = [DistrictInline]
-
-    actions = [
-        "make_active",
-        "make_inactive",
-        "make_all_districts_active",
-        "make_all_districts_inactive",
-    ]
-
-    def status_badge(self, obj):
-        colors = {"active": "#28a745", "inactive": "#6c757d"}
-        bg = colors.get(obj.status, "#000")
-        return mark_safe(
-            f'<span style="background:{bg};color:white;padding:3px 10px;'
-            f'border-radius:4px;font-weight:bold;">'
-            f"{obj.get_status_display()}</span>"
-        )
-
-    status_badge.short_description = "Status"
-    status_badge.admin_order_field = "status"
-
-    def district_count(self, obj):
-        count = obj.districts.count()
-        return format_html("<strong>{}</strong> District(s)", count)
-
-    district_count.short_description = "Total Districts"
-
-    def created_at_formatted(self, obj):
-        return obj.created_at.strftime("%b %d, %Y  %I:%M %p") if obj.created_at else "—"
-
-    created_at_formatted.short_description = "Created At"
-
-    def id_display(self, obj):
-        return obj.id or "—"
-
-    id_display.short_description = "ID"
-
-    def make_active(self, request, queryset):
-        updated = queryset.update(status="active")
-        self.message_user(
-            request, f"{updated} state(s) marked as Active.", messages.SUCCESS
-        )
-
-    make_active.short_description = "✅ Mark selected States as Active"
-
-    def make_inactive(self, request, queryset):
-        updated = queryset.update(status="inactive")
-        self.message_user(
-            request, f"{updated} state(s) marked as Inactive.", messages.WARNING
-        )
-
-    make_inactive.short_description = "🚫 Mark selected States as Inactive"
-
-    def make_all_districts_active(self, request, queryset):
-        updated = District.objects.filter(state__in=queryset).update(status="active")
-        self.message_user(
-            request,
-            f"{updated} district(s) under selected state(s) marked as Active.",
-            messages.SUCCESS,
-        )
-
-    make_all_districts_active.short_description = (
-        "✅ Mark all Districts of selected States as Active"
-    )
-
-    def make_all_districts_inactive(self, request, queryset):
-        updated = District.objects.filter(state__in=queryset).update(status="inactive")
-        self.message_user(
-            request,
-            f"{updated} district(s) under selected state(s) marked as Inactive.",
-            messages.WARNING,
-        )
-
-    make_all_districts_inactive.short_description = (
-        "🚫 Mark all Districts of selected States as Inactive"
-    )
-
-    def save_model(self, request, obj, form, change):
-        obj.name = obj.name.strip().title()
-        super().save_model(request, obj, form, change)
-
-
-@admin.register(ParentCompany)
-class ParentCompanyAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "name",
-        "email",
-        "phone_number_formatted",
-        "state_link",
-        "district_link",
-        "gst_number",
-        "pan_number",
-        "created_at_formatted",
-        "has_all_documents",
-    )
-    list_display_links = ("name",)
-    search_fields = ("name", "phone_number", "email", "gst_number", "pan_number")
-    list_filter = ("state", "district", "created_at")
-    ordering = ("-id",)
-
-    readonly_fields = (
-        "created_at",
-        "id_display",
-        "gst_document_link",
-        "tan_document_link",
-        "pan_document_link",
-        "account_number_masked",
-    )
-
-    fieldsets = (
-        (
-            "Company Details",
-            {
-                "fields": ("id_display", "name", "phone_number", "email", "address"),
-                "description": "Primary contact and address information.",
-            },
-        ),
-        (
-            "Location",
-            {
-                "fields": ("state", "district"),
-                "description": "Administrative region of the company.",
-            },
-        ),
-        (
-            "Bank Details",
-            {
-                "fields": (
-                    "bank_name",
-                    "account_holder_name",
-                    "account_number_masked",
-                    "account_number",
-                    "ifsc_code",
-                ),
-                "classes": ("collapse",),
-            },
-        ),
-        (
-            "GST Details",
-            {
-                "fields": ("gst_number", "gst_document", "gst_document_link"),
-                "description": "Mandatory for B2B invoicing in India.",
-            },
-        ),
-        (
-            "TAN Details",
-            {
-                "fields": ("tan_number", "tan_document", "tan_document_link"),
-            },
-        ),
-        (
-            "PAN Details",
-            {
-                "fields": ("pan_number", "pan_document", "pan_document_link"),
-                "description": "Permanent Account Number – must match GST records.",
-            },
-        ),
-        (
-            "System Info",
-            {
-                "fields": ("created_at",),
-                "classes": ("collapse",),
-            },
-        ),
-    )
-
-    def id_display(self, obj):
-        return obj.id
-
-    id_display.short_description = "ID"
-
-    def created_at_formatted(self, obj):
-        return obj.created_at.strftime("%b %d, %Y") if obj.created_at else "—"
-
-    created_at_formatted.short_description = "Created On"
-
-    def phone_number_formatted(self, obj):
-        num = obj.phone_number
-        if len(num) == 10:
-            return f"+91 {num[:5]} {num[5:]}"
-        elif len(num) == 12 and num.startswith("91"):
-            return f"+{num[:2]} {num[2:7]} {num[7:]}"
-        return num
-
-    phone_number_formatted.short_description = "Phone"
-
-    def state_link(self, obj):
-        url = reverse("admin:mapwala_mis_state_change", args=[obj.state.id])
-        return mark_safe(f'<a href="{url}" target="_blank">{obj.state.name}</a>')
-
-    state_link.short_description = "State"
-
-    def district_link(self, obj):
-        url = reverse("admin:mapwala_mis_district_change", args=[obj.district.id])
-        return mark_safe(f'<a href="{url}" target="_blank">{obj.district.name}</a>')
-
-    district_link.short_description = "District"
-
-    def _document_link(self, doc_field, label):
-        if doc_field:
-            url = doc_field.url
-            return mark_safe(
-                f'<a href="{url}" target="_blank" style="color:#17a2b8;">📄 View {label}</a>'
-            )
-        return mark_safe('<span style="color:#dc3545;">⚠️ Missing</span>')
-
-    def gst_document_link(self, obj):
-        return self._document_link(obj.gst_document, "GST Doc")
-
-    gst_document_link.short_description = "GST Document"
-
-    def tan_document_link(self, obj):
-        return self._document_link(obj.tan_document, "TAN Doc")
-
-    tan_document_link.short_description = "TAN Document"
-
-    def pan_document_link(self, obj):
-        return self._document_link(obj.pan_document, "PAN Doc")
-
-    pan_document_link.short_description = "PAN Document"
-
-    def account_number_masked(self, obj):
-        """Show only last 4 digits for security."""
-        if obj.account_number:
-            return "•" * (len(obj.account_number) - 4) + obj.account_number[-4:]
-        return "—"
-
-    account_number_masked.short_description = "Account Number (Masked)"
-
-    def has_all_documents(self, obj):
-        """Quick visual check if all compliance docs are uploaded."""
-        missing = []
-        if not obj.gst_document:
-            missing.append("GST")
-        if not obj.tan_document:
-            missing.append("TAN")
-        if not obj.pan_document:
-            missing.append("PAN")
-
-        if not missing:
-            return mark_safe('<span style="color:green;">✓ Complete</span>')
-        else:
-            return mark_safe(
-                f'<span style="color:orange;">⚠️ Missing: {", ".join(missing)}</span>'
-            )
-
-    has_all_documents.short_description = "Compliance Docs"
-    has_all_documents.admin_order_field = None
-
-    def get_readonly_fields(self, request, obj=None):
-        if obj:
-            return self.readonly_fields + ("gst_number", "pan_number", "tan_number")
-        return self.readonly_fields
-
-
-@admin.register(Vendor)
-class VendorAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "name",
-        "email",
-        "phone_number_formatted",
-        "state_link",
-        "district_link",
-        "gst_number",
-        "pan_number",
-        "created_at_formatted",
-        "has_all_documents",
-    )
-    list_display_links = ("name",)
-    search_fields = ("name", "phone_number", "email", "gst_number", "pan_number")
-    list_filter = ("state", "district", "created_at")
-    ordering = ("-id",)
-    readonly_fields = (
-        "created_at",
-        "id_display",
-        "gst_document_link",
-        "tan_document_link",
-        "pan_document_link",
-        "account_number_masked",
-    )
-    fieldsets = (
-        (
-            "Vendor Details",
-            {
-                "fields": ("id_display", "name", "phone_number", "email", "address"),
-                "description": "Primary contact and business address.",
-            },
-        ),
-        (
-            "Location",
-            {
-                "fields": ("state", "district"),
-                "description": "Administrative region of the vendor.",
-            },
-        ),
-        (
-            "Bank Details",
-            {
-                "fields": (
-                    "bank_name",
-                    "account_holder_name",
-                    "account_number_masked",
-                    "ifsc_code",
-                ),
-                "classes": ("collapse",),
-            },
-        ),
-        (
-            "Sensitive Data (Edit with caution)",
-            {
-                "fields": ("account_number",),
-                "classes": ("collapse",),
-                "description": "Full account number. Edit only if absolutely necessary.",
-            },
-        ),
-        (
-            "GST Details",
-            {
-                "fields": ("gst_number", "gst_document", "gst_document_link"),
-                "description": "Mandatory for B2B transactions in India.",
-            },
-        ),
-        (
-            "TAN Details",
-            {
-                "fields": ("tan_number", "tan_document", "tan_document_link"),
-            },
-        ),
-        (
-            "PAN Details",
-            {
-                "fields": ("pan_number", "pan_document", "pan_document_link"),
-                "description": "Must match GST registration records.",
-            },
-        ),
-        (
-            "System Info",
-            {
-                "fields": ("created_at",),
-                "classes": ("collapse",),
-            },
-        ),
-    )
-
-    def id_display(self, obj):
-        return obj.id
-
-    id_display.short_description = "ID"
-
-    def created_at_formatted(self, obj):
-        return obj.created_at.strftime("%b %d, %Y") if obj.created_at else "—"
-
-    created_at_formatted.short_description = "Created On"
-
-    def phone_number_formatted(self, obj):
-        num = obj.phone_number
-        if len(num) == 10:
-            return f"+91 {num[:5]} {num[5:]}"
-        elif len(num) == 12 and num.startswith("91"):
-            return f"+{num[:2]} {num[2:7]} {num[7:]}"
-        return num
-
-    phone_number_formatted.short_description = "Phone"
-
-    def state_link(self, obj):
-        url = reverse(
-            f"admin:{obj.state._meta.app_label}_{obj.state._meta.model_name}_change",
-            args=[obj.state.pk],
-        )
-        return mark_safe(f'<a href="{url}" target="_blank">{obj.state.name}</a>')
-
-    state_link.short_description = "State"
-
-    def district_link(self, obj):
-        url = reverse(
-            f"admin:{obj.district._meta.app_label}_{obj.district._meta.model_name}_change",
-            args=[obj.district.pk],
-        )
-        return mark_safe(f'<a href="{url}" target="_blank">{obj.district.name}</a>')
-
-    district_link.short_description = "District"
-
-    def _document_link(self, doc_field, label):
-        if doc_field:
-            url = doc_field.url
-            return mark_safe(
-                f'<a href="{url}" target="_blank" style="color:#17a2b8;">View {label}</a>'
-            )
-        return mark_safe('<span style="color:#dc3545;">Missing</span>')
-
-    def gst_document_link(self, obj):
-        return self._document_link(obj.gst_document, "GST Doc")
-
-    gst_document_link.short_description = "GST Document"
-
-    def tan_document_link(self, obj):
-        return self._document_link(obj.tan_document, "TAN Doc")
-
-    tan_document_link.short_description = "TAN Document"
-
-    def pan_document_link(self, obj):
-        return self._document_link(obj.pan_document, "PAN Doc")
-
-    pan_document_link.short_description = "PAN Document"
-
-    def account_number_masked(self, obj):
-        if obj.account_number:
-            return "•" * (len(obj.account_number) - 4) + obj.account_number[-4:]
-        return "—"
-
-    account_number_masked.short_description = "Account Number (Masked)"
-
-    def has_all_documents(self, obj):
-        missing = []
-        if not obj.gst_document:
-            missing.append("GST")
-        if not obj.tan_document:
-            missing.append("TAN")
-        if not obj.pan_document:
-            missing.append("PAN")
-
-        if not missing:
-            return mark_safe('<span style="color:green;">✓ Complete</span>')
-        else:
-            return mark_safe(
-                f'<span style="color:orange;">⚠️ Missing: {", ".join(missing)}</span>'
-            )
-
-    has_all_documents.short_description = "Compliance Docs"
-    has_all_documents.admin_order_field = None
-
-    def get_readonly_fields(self, request, obj=None):
-        if obj:
-            return self.readonly_fields + ("gst_number", "pan_number", "tan_number")
-        return self.readonly_fields
-
-
-@admin.register(B2CCustomer)
-class B2CCustomerAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "name",
-        "phone_number",
-        "email",
-        "state",
-        "district",
-        "gst_number",
-        "pan_number",
-        "created_at",
-    )
-    search_fields = ("name", "phone_number", "email", "gst_number", "pan_number")
-    list_filter = ("state", "district", "created_at")
-    ordering = ("-id",)
-    readonly_fields = ("created_at",)
-    list_per_page = 25
-
-    fieldsets = (
-        ("Customer Details", {"fields": ("name", "phone_number", "email", "address")}),
-        ("Location", {"fields": ("state", "district")}),
-        (
-            "Bank Details",
-            {
-                "fields": (
-                    "bank_name",
-                    "account_holder_name",
-                    "account_number",
-                    "ifsc_code",
-                )
-            },
-        ),
-        ("GST Details", {"fields": ("gst_number", "gst_document")}),
-        ("TAN Details", {"fields": ("tan_number", "tan_document")}),
-        ("PAN Details", {"fields": ("pan_number", "pan_document")}),
-        ("System Info", {"fields": ("created_at",)}),
-    )
-
-
-@admin.register(B2BPartner)
-class B2BPartnerAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "partner_name",
-        "phone_number",
-        "email",
-        "state",
-        "district",
-        "gst_number",
-        "pan_number",
-        "created_at",
-    )
-    search_fields = (
-        "partner_name",
-        "phone_number",
-        "email",
-        "gst_number",
-        "pan_number",
-    )
-    list_filter = ("state", "district", "created_at")
-    ordering = ("-id",)
-    readonly_fields = ("created_at",)
-
-    fieldsets = (
-        (
-            "Partner Details",
-            {"fields": ("partner_name", "phone_number", "email", "address")},
-        ),
-        ("Location", {"fields": ("state", "district")}),
-        (
-            "Bank Details",
-            {
-                "fields": (
-                    "bank_name",
-                    "account_holder_name",
-                    "account_number",
-                    "ifsc_code",
-                )
-            },
-        ),
-        ("GST Details", {"fields": ("gst_number", "gst_document")}),
-        ("TAN Details", {"fields": ("tan_number", "tan_document")}),
-        ("PAN Details", {"fields": ("pan_number", "pan_document")}),
-        ("System Info", {"fields": ("created_at",)}),
-    )
-
-
-@admin.register(Manufacturer)
-class ManufacturerAdmin(admin.ModelAdmin):
-
-    list_display = (
-        "company_name",
-        "applicant_name",
-        "applicant_email",
-        "company_phone",
-        "tac_no",
-        "tac_validity",
-        "created_at",
-        "created_by",
-    )
-
-    list_filter = (
-        "tac_validity",
-        "created_at",
-        "created_by",
-    )
-
-    search_fields = (
-        "company_name",
-        "applicant_name",
-        "applicant_email",
-        "company_email",
-        "company_gst_no",
-        "company_pan_no",
-        "tac_no",
-        "company_registration_number",
-    )
-
-    ordering = ("-created_at",)
-
-    date_hierarchy = "created_at"
-
-    list_per_page = 25
-
-    fieldsets = (
-        (
-            "👤 Applicant Information",
-            {
-                "fields": (
-                    ("applicant_name", "applicant_email"),
-                    ("applicant_mobile", "applicant_dob"),
-                    "applicant_id_proof_no",
-                    "applicant_address",
-                    "applicant_pin",
-                )
-            },
-        ),
-        (
-            "🏢 Company Information",
-            {
-                "fields": (
-                    ("company_name", "company_email"),
-                    "company_phone",
-                    "company_address",
-                    "company_pin",
-                    ("company_gst_no", "company_pan_no"),
-                    "company_registration_number",
-                )
-            },
-        ),
-        (
-            "📋 TAC Information",
-            {"fields": (("tac_no", "tac_validity"),)},
-        ),
-        (
-            "📁 Document Uploads",
-            {
-                "description": "Upload required documents below. Existing files are shown as download links.",
-                "fields": (
-                    "self_certified_applicant",
-                    "self_certified_applicant_link",
-                    "authorization_letter",
-                    "authorization_letter_link",
-                    "pan_card",
-                    "pan_card_link",
-                    "gst_certificate",
-                    "gst_certificate_link",
-                    "company_registration_certificate",
-                    "company_registration_certificate_link",
-                    "technical_onboarding_request_letter",
-                    "technical_onboarding_request_letter_link",
-                    "tac_document",
-                    "tac_document_link",
-                ),
-            },
-        ),
-        (
-            "🔐 Meta",
-            {
-                "classes": ("collapse",),
-                "fields": (
-                    "created_by",
-                    "created_at",
-                ),
-            },
-        ),
-    )
-
-    readonly_fields = (
-        "created_at",
-        "self_certified_applicant_link",
-        "authorization_letter_link",
-        "pan_card_link",
-        "gst_certificate_link",
-        "company_registration_certificate_link",
-        "technical_onboarding_request_letter_link",
-        "tac_document_link",
-    )
-
-    def save_model(self, request, obj, form, change):
-        if not obj.pk:
-            obj.created_by = request.user
-        super().save_model(request, obj, form, change)
-
-    def _file_link(self, file_field, label):
-        if file_field and hasattr(file_field, "url"):
-            return format_html(
-                '<a href="{}" target="_blank">📄 View / Download {}</a>',
-                file_field.url,
-                label,
-            )
-        return "No file uploaded"
-
-    def self_certified_applicant_link(self, obj):
-        return self._file_link(obj.self_certified_applicant, "Self Certified Document")
-
-    self_certified_applicant_link.short_description = "Current File"
-
-    def authorization_letter_link(self, obj):
-        return self._file_link(obj.authorization_letter, "Authorization Letter")
-
-    authorization_letter_link.short_description = "Current File"
-
-    def pan_card_link(self, obj):
-        return self._file_link(obj.pan_card, "PAN Card")
-
-    pan_card_link.short_description = "Current File"
-
-    def gst_certificate_link(self, obj):
-        return self._file_link(obj.gst_certificate, "GST Certificate")
-
-    gst_certificate_link.short_description = "Current File"
-
-    def company_registration_certificate_link(self, obj):
-        return self._file_link(
-            obj.company_registration_certificate, "Company Registration Certificate"
-        )
-
-    company_registration_certificate_link.short_description = "Current File"
-
-    def technical_onboarding_request_letter_link(self, obj):
-        return self._file_link(
-            obj.technical_onboarding_request_letter,
-            "Technical Onboarding Request Letter",
-        )
-
-    technical_onboarding_request_letter_link.short_description = "Current File"
-
-    def tac_document_link(self, obj):
-        return self._file_link(obj.tac_document, "TAC Document")
-
-    tac_document_link.short_description = "Current File"
-
-
-@admin.register(Distributor)
-class DistributorAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "name",
-        "phone_number",
-        "email",
-        "linked_to",
-        "manufacturer",
-        "created_at",
-    )
-    search_fields = (
-        "name",
-        "phone_number",
-        "email",
-        "gst_number",
-        "pan_number",
-        "manufacturer__name",
-    )
-    list_filter = ("linked_to", "state", "district", "created_at")
-    ordering = ("-id",)
-    readonly_fields = ("created_at",)
-    filter_horizontal = ("authorised_states", "authorised_districts")
-    fieldsets = (
-        ("Basic Information", {"fields": ("name", "phone_number", "email", "address")}),
-        ("Address Location", {"fields": ("state", "district")}),
-        ("Linking Information", {"fields": ("linked_to", "manufacturer")}),
-        ("Authorised Area", {"fields": ("authorised_states", "authorised_districts")}),
-        (
-            "Bank Details",
-            {
-                "fields": (
-                    "bank_name",
-                    "account_holder_name",
-                    "account_number",
-                    "ifsc_code",
-                )
-            },
-        ),
-        ("GST Details", {"fields": ("gst_number", "gst_document")}),
-        ("TAN Details", {"fields": ("tan_number", "tan_document")}),
-        ("PAN Details", {"fields": ("pan_number", "pan_document")}),
-        ("System Info", {"fields": ("created_at",)}),
-    )
-
-
-@admin.register(Dealer)
-class DealerAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "name",
-        "phone_number",
-        "email",
-        "linked_to",
-        "manufacturer",
-        "distributor",
-        "state",
-        "district",
-        "created_at",
-    )
-    search_fields = ("name", "phone_number", "email", "gst_number", "pan_number")
-    list_filter = (
-        "linked_to",
-        "state",
-        "district",
-        "manufacturer",
-        "distributor",
-        "created_at",
-    )
-    ordering = ("-id",)
-    readonly_fields = ("created_at",)
-    filter_horizontal = ("authorised_states", "authorised_districts")
-    fieldsets = (
-        ("Basic Information", {"fields": ("name", "phone_number", "email", "address")}),
-        ("Address Location", {"fields": ("state", "district")}),
-        (
-            "Bank Details",
-            {
-                "fields": (
-                    "bank_name",
-                    "account_holder_name",
-                    "account_number",
-                    "ifsc_code",
-                )
-            },
-        ),
-        (
-            "Tax Documents",
-            {
-                "fields": (
-                    "gst_number",
-                    "gst_document",
-                    "tan_number",
-                    "tan_document",
-                    "pan_number",
-                    "pan_document",
-                )
-            },
-        ),
-        ("Business Linking", {"fields": ("linked_to", "manufacturer", "distributor")}),
-        (
-            "Authorised Area",
-            {"fields": ("authorised_states", "authorised_districts")},
-        ),
-        ("System Info", {"fields": ("created_at",)}),
-    )
-
-
-@admin.register(Product)
-class ProductAdmin(admin.ModelAdmin):
-    list_display = ("product_id", "created_at")
-    search_fields = ("product_id",)
-    ordering = ("product_id",)
-    readonly_fields = ("created_at",)
-
-
-class BOMComponentInline(admin.TabularInline):
-    model = BOMComponent
-    extra = 1
-    can_delete = True
-    verbose_name = "BOM Component"
-    verbose_name_plural = "📦 BOM Components"
-    fields = (
-        "identification_mark",
-        "description",
-        "designator",
-        "footprint",
-        "volt",
-        "part_no",
-        "part_make",
-        "per_device_quantity",
-        "remarks",
-    )
-
-
-class WireConnectorInline(admin.TabularInline):
-    model = WireConnector
-    extra = 1
-    can_delete = True
-    verbose_name = "Wire Connector"
-    verbose_name_plural = "🔌 Wire Connectors"
-    fields = ("connector_name", "number_of_pins", "wire_colors")
-
-
-@admin.register(BOM)
-class BOMAdmin(admin.ModelAdmin):
-    inlines = [BOMComponentInline]
-
-    def get_model_perms(self, request):
-        return {}
-
-
-@admin.register(WireHarness)
-class WireHarnessAdmin(admin.ModelAdmin):
-    inlines = [WireConnectorInline]
-
-    def get_model_perms(self, request):
-        return {}
-
-
-class DeviceInformationInline(admin.StackedInline):
-    model = DeviceInformation
-    extra = 1
-    max_num = 1
-    can_delete = False
-    verbose_name_plural = "📋 Step 1 — Device Information"
-    fields = (
-        ("make", "model"),
-        ("mrp", "unit_of_measure"),
-        ("version", "variant"),
-        "state_of_supply",
-    )
-
-
-class BOMInline(admin.StackedInline):
-    model = BOM
-    extra = 1
-    max_num = 1
-    can_delete = False
-    show_change_link = True
-    verbose_name_plural = (
-        "📄 Step 2 & 3 — BOM  (click 'Change' after saving to add Components)"
-    )
-    fields = ("upload_type", "bom_file")
-
-
-class EnclosureInline(admin.StackedInline):
-    model = Enclosure
-    extra = 1
-    max_num = 1
-    can_delete = True
-    verbose_name_plural = "📦 Step 4 — Enclosure"
-    fields = (
-        ("length", "breadth", "height"),
-        ("color", "material"),
-        ("quantity", "make", "part_number"),
-    )
-
-
-class WireHarnessInline(admin.StackedInline):
-    model = WireHarness
-    extra = 1
-    max_num = 1
-    can_delete = True
-    show_change_link = True
-    verbose_name_plural = (
-        "🔌 Step 5 — Wire Harness  (click 'Change' after saving to add Connectors)"
-    )
-    fields = ("number_of_wires", "specification", "make", "part_number")
-
-
-class BatteryInline(admin.StackedInline):
-    model = Battery
-    extra = 1
-    max_num = 1
-    can_delete = True
-    verbose_name_plural = "🔋 Step 6 — Battery"
-    fields = (
-        "capacity",
-        ("length", "breadth", "height"),
-        ("make", "part_number"),
-    )
-
-
-class SOSButtonInline(admin.StackedInline):
-    model = SOSButton
-    extra = 1
-    max_num = 1
-    can_delete = True
-    verbose_name_plural = "🆘 Step 7 — SOS Button"
-    fields = ("total_length", "quantity_per_set", "make", "part_number")
-
-
-class StickerInline(admin.TabularInline):
-    model = Sticker
-    extra = 1
-    can_delete = True
-    verbose_name_plural = "🏷️ Step 8 — Stickers"
-    fields = ("name", "length", "breadth", "quantity", "make", "part_number", "file")
-
-
-class UserManualInline(admin.StackedInline):
-    model = UserManual
-    extra = 1
-    max_num = 1
-    can_delete = True
-    verbose_name_plural = "📖 Step 9 — User Manual"
-    fields = ("file",)
-
-
-class AccessoryInline(admin.TabularInline):
-    model = Accessory
-    extra = 1
-    can_delete = True
-    verbose_name_plural = "🎒 Step 10 — Accessories"
-    fields = ("name", "quantity", "specifications", "description")
-
-
-@admin.register(Device)
-class DeviceAdmin(admin.ModelAdmin):
-    list_display = (
-        "device_id",
-        "make_model",
-        "status_badge",
-        "completion_status",
-        "created_by",
-        "created_at_formatted",
-    )
-    list_filter = ("status", "created_at", "created_by")
-    search_fields = (
-        "id",
-        "info__make",
-        "info__model",
-        "created_by__username",
-    )
-    ordering = ("-created_at",)
-    date_hierarchy = "created_at"
-    readonly_fields = ("id_display", "created_at")
-    fieldsets = (
-        (
-            "🖥️ Device Overview",
-            {
-                "description": (
-                    "Create the device record first, then fill in each step below. "
-                    "Status will be set to 'Completed' manually or via bulk action."
-                ),
-                "fields": ("id_display", "status", "created_by", "created_at"),
-            },
-        ),
-    )
-
-    inlines = [
-        DeviceInformationInline,
-        BOMInline,
-        EnclosureInline,
-        WireHarnessInline,
-        BatteryInline,
-        SOSButtonInline,
-        StickerInline,
-        UserManualInline,
-        AccessoryInline,
-    ]
-
-    actions = ["mark_completed", "mark_draft"]
-
-    def save_model(self, request, obj, form, change):
-        if not obj.pk:
-            obj.created_by = request.user
-        super().save_model(request, obj, form, change)
-
-    def device_id(self, obj):
-        return format_html("<strong>Device-{}</strong>", obj.id)
-
-    device_id.short_description = "Device ID"
-    device_id.admin_order_field = "id"
-
-    def make_model(self, obj):
-        if hasattr(obj, "info"):
-            return format_html(
-                "<strong>{}</strong> <span style='color:#888;'>{}</span>",
-                obj.info.make,
-                obj.info.model,
-            )
-        return mark_safe("<span style='color:#bbb;'>Not filled yet</span>")
-
-    make_model.short_description = "Make / Model"
-
-    def status_badge(self, obj):
-        colors = {"draft": "#ffc107", "completed": "#28a745"}
-        bg = colors.get(obj.status, "#999")
-        return mark_safe(
-            f'<span style="background:{bg};color:white;padding:3px 10px;'
-            f'border-radius:4px;font-weight:bold;">'
-            f"{obj.get_status_display()}</span>"
-        )
-
-    status_badge.short_description = "Status"
-    status_badge.admin_order_field = "status"
-
-    def completion_status(self, obj):
-        steps = [
-            ("Info", hasattr(obj, "info")),
-            ("BOM", hasattr(obj, "bom")),
-            ("Enclosure", hasattr(obj, "enclosure")),
-            ("Harness", hasattr(obj, "wireharness")),
-            ("Battery", hasattr(obj, "battery")),
-            ("SOS", hasattr(obj, "sosbutton")),
-            ("Stickers", obj.sticker_set.exists()),
-            ("Manual", hasattr(obj, "usermanual")),
-            ("Accessories", obj.accessories.exists()),
-        ]
-        pills = " ".join(
-            f'<span style="background:{"#28a745" if done else "#dc3545"};'
-            f'color:white;padding:2px 7px;border-radius:3px;font-size:11px;">'
-            f"{name}</span>"
-            for name, done in steps
-        )
-        return mark_safe(pills)
-
-    completion_status.short_description = "Steps Completed"
-
-    def created_at_formatted(self, obj):
-        return obj.created_at.strftime("%d %b %Y  %I:%M %p")
-
-    created_at_formatted.short_description = "Created At"
-
-    def id_display(self, obj):
-        return f"Device-{obj.id}" if obj.pk else "Will be assigned after saving"
-
-    id_display.short_description = "Device ID"
-
-    def mark_completed(self, request, queryset):
-        updated = queryset.update(status="completed")
-        self.message_user(
-            request, f"{updated} device(s) marked as Completed.", messages.SUCCESS
-        )
-
-    mark_completed.short_description = "✅ Mark selected as Completed"
-
-    def mark_draft(self, request, queryset):
-        updated = queryset.update(status="draft")
-        self.message_user(
-            request, f"{updated} device(s) reverted to Draft.", messages.WARNING
-        )
-
-    mark_draft.short_description = "📝 Revert selected to Draft"
-
-
-@admin.register(ProformaInvoice)
-class ProformaInvoiceAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "party_type",
-        "product",
-        "quantity",
-        "selling_price",
-        "discount_percent",
-        "grand_total",
-        "payment_terms",
-        "delivery_date",
-        "state",
-        "created_at",
-    )
-    search_fields = (
-        "id",
-        "product__product_id",
-        "contact_person_name",
-        "mobile_no",
-        "gstn",
-    )
-    list_filter = (
-        "party_type",
-        "payment_terms",
-        "state",
-        "delivery_date",
-        "created_at",
-    )
-    ordering = ("-id",)
-    readonly_fields = ("created_at",)
-    fieldsets = (
-        (
-            "Party Information",
-            {
-                "fields": (
-                    "party_type",
-                    "b2b_partner",
-                    "b2c_customer",
-                    "dealer",
-                    "distributor",
-                )
-            },
-        ),
-        (
-            "Product & Pricing",
-            {
-                "fields": (
-                    "product",
-                    "selling_price",
-                    "discount_percent",
-                    "quantity",
-                    "shipping_charges",
-                    "grand_total",
-                )
-            },
-        ),
-        (
-            "Payment & Delivery",
-            {"fields": ("payment_terms", "delivery_date", "delivery_address", "state")},
-        ),
-        (
-            "Contact Information",
-            {"fields": ("contact_person_name", "mobile_no", "gstn")},
-        ),
-        ("System Info", {"fields": ("created_at",)}),
-    )
-
-
-class OrderBatchInline(admin.TabularInline):
-    """Shows all batches directly inside the OrderProduct page."""
-
-    model = OrderBatch
-    extra = 0
-    fields = ("batch_number", "available_stock")
-    readonly_fields = ("available_stock",)
-    show_change_link = True
-
-
-class OrderEntryMakeToOrderInline(admin.StackedInline):
-    """Shows Make-to-Order details inside the OrderEntry page."""
-
-    model = OrderEntryMakeToOrder
-    extra = 0
-    can_delete = False
-    readonly_fields = ("created_at",)
-    fieldsets = (
-        (
-            "Customer",
-            {
-                "fields": (
-                    "customer_name",
-                    "customer_type",
-                    "contact_person",
-                    "mobile_no",
-                ),
-            },
-        ),
-        (
-            "Product",
-            {
-                "fields": (
-                    "product",
-                    "product_specifications",
-                    "customization_details",
-                ),
-            },
-        ),
-        (
-            "Order Summary",
-            {
-                "fields": (
-                    "quantity",
-                    "unit_price",
-                    "discount_percent",
-                    "gst_percent",
-                    "shipping_charges",
-                    "grand_total",
-                    "advance_payment",
-                ),
-            },
-        ),
-        (
-            "Delivery & Terms",
-            {
-                "fields": (
-                    "expected_delivery_date",
-                    "payment_terms",
-                    "order_priority",
-                    "special_instructions",
-                ),
-            },
-        ),
-        (
-            "Meta",
-            {
-                "fields": ("created_at",),
-                "classes": ("collapse",),
-            },
-        ),
-    )
-
-
-@admin.register(OrderProduct)
-class OrderProductAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "batch_count", "total_stock")
-    search_fields = ("name",)
-    ordering = ("name",)
-    inlines = [OrderBatchInline]
-
-    # ── Custom columns ──────────────────────────────────────────
-
-    @admin.display(description="Batches")
-    def batch_count(self, obj):
-        return obj.batches.count()
-
-    @admin.display(description="Total Stock")
-    def total_stock(self, obj):
-        total = obj.batches.aggregate(t=Sum("available_stock"))["t"] or 0
-        color = "green" if total > 0 else "red"
-        return format_html('<b style="color:{}">{}</b>', color, total)
-
-
-@admin.register(OrderBatch)
-class OrderBatchAdmin(admin.ModelAdmin):
-    list_display = ("id", "product", "batch_number", "stock_display", "stock_status")
-    list_filter = ("product",)
-    search_fields = ("batch_number", "product__name")
-    ordering = ("product__name", "batch_number")
-    list_per_page = 25
-
-    # ── Custom columns ──────────────────────────────────────────
-
-    @admin.display(description="Available Stock")
-    def stock_display(self, obj):
-        return obj.available_stock
-
-    @admin.display(description="Status")
-    def stock_status(self, obj):
-        if obj.available_stock == 0:
-            return format_html(
-                '<span style="color:red; font-weight:bold;">⚠ Out of Stock</span>'
-            )
-        elif obj.available_stock <= 10:
-            return format_html(
-                '<span style="color:orange; font-weight:bold;">⚡ Low Stock</span>'
-            )
-        return format_html('<span style="color:green;">✔ In Stock</span>')
-
-@admin.register(SupplierVendor)
-class SupplierVendorAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "production_order_count")
-    search_fields = ("name",)
-    ordering = ("name",)
-
-    @admin.display(description="Production Orders")
-    def production_order_count(self, obj):
-        return obj.productionorder_set.count()
-
-
-@admin.register(OrderEntry)
-class OrderEntryAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "user",
-        "order_type",
-        "production_type",
-        "assembly_type",
-        "step1_badge",
-        "step2_badge",
-        "created_at",
-    )
-    list_filter = (
-        "order_type",
-        "production_type",
-        "assembly_type",
-        "is_step1_complete",
-        "is_step2_complete",
-    )
-    search_fields = ("user__username", "user__email")
-    ordering = ("-created_at",)
-    readonly_fields = ("created_at",)
-    list_per_page = 25
-    inlines = [OrderEntryMakeToOrderInline]
-
-    fieldsets = (
-        (
-            "Order Configuration",
-            {
-                "fields": ("user", "order_type", "production_type", "assembly_type"),
-            },
-        ),
-        (
-            "Progress",
-            {
-                "fields": ("is_step1_complete", "is_step2_complete"),
-            },
-        ),
-        (
-            "Meta",
-            {
-                "fields": ("created_at",),
-                "classes": ("collapse",),
-            },
-        ),
-    )
-
-    # ── Custom columns ──────────────────────────────────────────
-
-    @admin.display(description="Step 1", boolean=False)
-    def step1_badge(self, obj):
-        if obj.is_step1_complete:
-            return format_html(
-                '<span style="color:green; font-weight:bold;">✔ Done</span>'
-            )
-        return format_html('<span style="color:gray;">○ Pending</span>')
-
-    @admin.display(description="Step 2", boolean=False)
-    def step2_badge(self, obj):
-        if obj.is_step2_complete:
-            return format_html(
-                '<span style="color:green; font-weight:bold;">✔ Done</span>'
-            )
-        return format_html('<span style="color:gray;">○ Pending</span>')
-
-
-@admin.register(OrderEntryMakeToOrder)
-class OrderEntryMakeToOrderAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "customer_name",
-        "customer_type",
-        "product",
-        "quantity",
-        "grand_total",
-        "order_priority",
-        "priority_badge",
-        "expected_delivery_date",
-        "created_at",
-    )
-    list_filter = ("customer_type", "order_priority", "payment_terms")
-    search_fields = (
-        "customer_name",
-        "contact_person",
-        "mobile_no",
-        "product__name",
-        "order_entry__id",
-    )
-    ordering = ("-created_at",)
-    readonly_fields = ("created_at",)
-    list_per_page = 25
-
-    fieldsets = (
-        (
-            "Order Entry Reference",
-            {
-                "fields": ("order_entry",),
-            },
-        ),
-        (
-            "Customer Details",
-            {
-                "fields": (
-                    "customer_name",
-                    "customer_type",
-                    "contact_person",
-                    "mobile_no",
-                ),
-            },
-        ),
-        (
-            "Product Details",
-            {
-                "fields": (
-                    "product",
-                    "product_specifications",
-                    "customization_details",
-                ),
-            },
-        ),
-        (
-            "Pricing",
-            {
-                "fields": (
-                    "quantity",
-                    "unit_price",
-                    "discount_percent",
-                    "gst_percent",
-                    "shipping_charges",
-                    "grand_total",
-                    "advance_payment",
-                ),
-            },
-        ),
-        (
-            "Delivery & Priority",
-            {
-                "fields": (
-                    "expected_delivery_date",
-                    "payment_terms",
-                    "order_priority",
-                    "special_instructions",
-                ),
-            },
-        ),
-        (
-            "Meta",
-            {
-                "fields": ("created_at",),
-                "classes": ("collapse",),
-            },
-        ),
-    )
-
-    # ── Custom columns ──────────────────────────────────────────
-
-    @admin.display(description="Priority")
-    def priority_badge(self, obj):
-        colors = {
-            "low": ("gray", "▼ Low"),
-            "medium": ("blue", "● Medium"),
-            "high": ("orange", "▲ High"),
-            "urgent": ("red", "🔴 Urgent"),
-        }
-        color, label = colors.get(obj.order_priority, ("black", obj.order_priority))
-        return format_html(
-            '<span style="color:{}; font-weight:bold;">{}</span>', color, label
-        )
-
-
-@admin.register(SalesOrder)
-class SalesOrderAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "customer_name",
-        "customer_type",
-        "product",
-        "batch",
-        "quantity",
-        "grand_total",
-        "payment_mode",
-        "payment_status_badge",
-        "delivery_date",
-        "created_at",
-    )
-    list_filter = (
-        "customer_type",
-        "payment_mode",
-        "payment_status",
-        "product",
-        "delivery_date",
-    )
-    search_fields = (
-        "customer_name",
-        "contact_person",
-        "mobile_no",
-        "invoice_number",
-        "product__name",
-        "batch__batch_number",
-    )
-    ordering = ("-created_at",)
-    readonly_fields = ("created_at",)
-    list_per_page = 25
-    date_hierarchy = "delivery_date"
-
-    fieldsets = (
-        (
-            "Customer Details",
-            {
-                "fields": (
-                    "customer_name",
-                    "customer_type",
-                    "contact_person",
-                    "mobile_no",
-                ),
-            },
-        ),
-        (
-            "Product & Batch",
-            {
-                "fields": ("product", "batch", "quantity"),
-            },
-        ),
-        (
-            "Pricing",
-            {
-                "fields": (
-                    "unit_price",
-                    "discount_percent",
-                    "gst_percent",
-                    "shipping_charges",
-                    "grand_total",
-                ),
-            },
-        ),
-        (
-            "Delivery",
-            {
-                "fields": ("delivery_date", "delivery_address"),
-            },
-        ),
-        (
-            "Payment",
-            {
-                "fields": ("payment_mode", "payment_status", "invoice_number"),
-            },
-        ),
-        (
-            "Notes",
-            {
-                "fields": ("remarks",),
-                "classes": ("collapse",),
-            },
-        ),
-        (
-            "Meta",
-            {
-                "fields": ("created_at",),
-                "classes": ("collapse",),
-            },
-        ),
-    )
-
-    # ── Custom columns ──────────────────────────────────────────
-
-    @admin.display(description="Payment Status")
-    def payment_status_badge(self, obj):
-        styles = {
-            "paid": ("green", "✔ Paid"),
-            "partially_paid": ("orange", "◑ Partial"),
-            "pending": ("red", "✖ Pending"),
-            "on_credit": ("blue", "$ Credit"),
-        }
-        color, label = styles.get(obj.payment_status, ("black", obj.payment_status))
-        return format_html(
-            '<span style="color:{}; font-weight:bold;">{}</span>', color, label
-        )
-
-    # ── Bulk actions ─────────────────────────────────────────────
-
-    actions = ["mark_as_paid", "mark_as_pending"]
-
-    @admin.action(description="Mark selected orders as Paid")
-    def mark_as_paid(self, request, queryset):
-        updated = queryset.update(payment_status="paid")
-        self.message_user(request, f"{updated} order(s) marked as Paid.")
-
-    @admin.action(description="Mark selected orders as Pending")
-    def mark_as_pending(self, request, queryset):
-        updated = queryset.update(payment_status="pending")
-        self.message_user(request, f"{updated} order(s) marked as Pending.")
-
-
-@admin.register(ProductionOrder)
-class ProductionOrderAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "product",
-        "product_category",
-        "batch",
-        "quantity_added",
-        "unit_price",
-        "total_value",
-        "supplier_vendor",
-        "purchase_date",
-        "manufacturing_date",
-        "created_at",
-    )
-    list_filter = (
-        "production_type",
-        "product_category",
-        "supplier_vendor",
-        "product",
-        "purchase_date",
-        "manufacturing_date",
-    )
-    search_fields = (
-        "product__name",
-        "batch__batch_number",
-        "supplier_vendor__name",
-    )
-    ordering = ("-created_at",)
-    readonly_fields = ("created_at",)
-    list_per_page = 25
-    date_hierarchy = "purchase_date"
-
-    fieldsets = (
-        (
-            "Production Details",
-            {
-                "fields": (
-                    "production_type",
-                    "product",
-                    "product_category",
-                ),
-            },
-        ),
-        (
-            "Batch & Quantity",
-            {
-                "fields": ("batch", "quantity_added"),
-            },
-        ),
-        (
-            "Pricing",
-            {
-                "fields": ("unit_price", "total_value"),
-            },
-        ),
-        (
-            "Supplier & Dates",
-            {
-                "fields": (
-                    "supplier_vendor",
-                    "purchase_date",
-                    "manufacturing_date",
-                ),
-            },
-        ),
-        (
-            "Notes",
-            {
-                "fields": ("remarks",),
-                "classes": ("collapse",),
-            },
-        ),
-        (
-            "Meta",
-            {
-                "fields": ("created_at",),
-                "classes": ("collapse",),
-            },
-        ),
-    )
-
-    # ── Bulk actions ─────────────────────────────────────────────
-
-    actions = ["export_summary"]
-
-    @admin.action(description="Show total value of selected production orders")
-    def export_summary(self, request, queryset):
-        total = queryset.aggregate(t=Sum("total_value"))["t"] or 0
-        count = queryset.count()
-        self.message_user(
-            request,
-            f"Selected {count} production order(s) — Total Value: ₹{total:,.2f}",
-        )
-
-
-class RFQSelectionInline(admin.TabularInline):
-    model = RFQSelection
-    extra = 0
-    fields = ("item_type", "reference")
-    autocomplete_fields = ()
-    show_change_link = True
-
-
-@admin.register(RequestForQuote)
-class RequestForQuoteAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "order_reference",
-        "device_name",
-        "assembly_type",
-        "quantity",
-        "srn_no",
-        "delivery_date",
-        "status",
-        "created_by",
-        "created_at",
-    )
-    list_filter = ("assembly_type", "srn_no", "status", "delivery_date", "created_by")
-    search_fields = ("order_reference", "device_name", "created_by__username")
-    ordering = ("-created_at",)
-    readonly_fields = ("created_by", "created_at")
-    inlines = [RFQSelectionInline]
-    fieldsets = (
-        (
-            "STEP 1 — Order Selection (UI Driven)",
-            {"fields": ("order_reference", "device_name", "assembly_type", "quantity")},
-        ),
-        (
-            "STEP 3 — Quote Details (UI Driven)",
-            {
-                "fields": (
-                    "srn_no",
-                    "delivery_date",
-                    "delivery_address",
-                    "additional_requirements",
-                )
-            },
-        ),
-        ("System Status", {"fields": ("status",)}),
-        ("Audit Fields", {"fields": ("created_by", "created_at")}),
-    )
-
-    def save_model(self, request, obj, form, change):
-        """
-        Automatically assign logged-in admin user
-        """
-        if not obj.pk:
-            obj.created_by = request.user
-        super().save_model(request, obj, form, change)
-
-
-class PurchaseOrderTypeInline(admin.TabularInline):
-    model = PurchaseOrderType
-    extra = 1
-    fields = ("order_type",)
-    show_change_link = True
-
-
-class PurchaseOrderItemInline(admin.TabularInline):
-    model = PurchaseOrderItem
-    extra = 1
-    fields = (
-        "item_code",
-        "item_type",
-        "vendor_id",
-        "vendor_name",
-        "unit_price",
-        "gst_amount",
-        "total_price",
-        "delivery_days",
-    )
-    show_change_link = True
-
-
-@admin.register(PurchaseOrder)
-class PurchaseOrderAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "order_id",
-        "buyer_name",
-        "rfq_id",
-        "assembly_type",
-        "delivery_date",
-        "payment_terms",
-        "created_by",
-        "created_at",
-    )
-    list_filter = ("assembly_type", "payment_terms", "delivery_date", "created_at")
-    search_fields = (
-        "order_id",
-        "rfq_id",
-        "buyer_name",
-        "created_by__username",
-    )
-    ordering = ("-created_at",)
-    readonly_fields = ("created_at",)
-    inlines = [PurchaseOrderTypeInline, PurchaseOrderItemInline]
-    fieldsets = (
-        (
-            "Step 1 — Order Details",
-            {"fields": ("buyer_name", "order_id", "rfq_id", "assembly_type")},
-        ),
-        (
-            "Step 2 — Vendor & Delivery",
-            {
-                "fields": (
-                    "wastage_percentage",
-                    "selected_vendor_id",
-                    "delivery_date",
-                    "payment_terms",
-                )
-            },
-        ),
-        ("System Information", {"fields": ("created_by", "created_at")}),
-    )
-
-
-@admin.register(PurchaseOrderType)
-class PurchaseOrderTypeAdmin(admin.ModelAdmin):
-    list_display = ("purchase_order", "order_type")
-    list_filter = ("order_type",)
-    search_fields = ("purchase_order__order_id",)
-
-    fieldsets = (
-        ("Purchase Order", {"fields": ("purchase_order",)}),
-        ("Order Type", {"fields": ("order_type",)}),
-    )
-
-
-@admin.register(PurchaseOrderItem)
-class PurchaseOrderItemAdmin(admin.ModelAdmin):
-    list_display = (
-        "purchase_order",
-        "item_code",
-        "item_type",
-        "quantity",
-        "vendor_name",
-        "unit_price",
-        "total_price",
-        "delivery_days",
-    )
-
-    list_filter = ("item_type",)
-    search_fields = ("item_code", "vendor_name", "purchase_order__order_id")
-
-    fieldsets = (
-        ("Purchase Order", {"fields": ("purchase_order",)}),
-        (
-            "Item Details",
-            {"fields": ("item_code", "item_type", "quantity", "delivery_days")},
-        ),
-        ("Vendor", {"fields": ("vendor_id", "vendor_name")}),
-        ("Pricing", {"fields": ("unit_price", "gst_amount", "total_price")}),
-    )
-
-
-class MaterialReceiptItemInline(admin.TabularInline):
-    model = MaterialReceiptItem
-    extra = 1
-    fields = ("purchase_order_item", "received_qty", "serial_numbers", "balance_qty")
-    readonly_fields = ("balance_qty",)
-    autocomplete_fields = ("purchase_order_item",)
-    show_change_link = True
-
-
-@admin.register(MaterialReceiptNote)
-class MaterialReceiptNoteAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "purchase_order",
-        "vendor",
-        "inward_type",
-        "receipt_date",
-        "batch_number",
-        "created_at",
-    )
-    list_filter = ("inward_type", "receipt_date", "vendor")
-    search_fields = (
-        "batch_number",
-        "invoice_number",
-        "purchase_order__order_id",
-        "vendor__name",
-    )
-    autocomplete_fields = ("purchase_order", "vendor")
-    readonly_fields = ("created_at",)
-    inlines = [MaterialReceiptItemInline]
-    fieldsets = (
-        (
-            "Order & Vendor",
-            {"fields": ("purchase_order", "po_date", "vendor", "inward_type")},
-        ),
-        ("Receipt", {"fields": ("receipt_date", "batch_number")}),
-        (
-            "Documents",
-            {
-                "fields": (
-                    "invoice_number",
-                    "invoice_file",
-                    "delivery_challan_number",
-                    "challan_file",
-                    "eway_bill_number",
-                    "eway_bill_file",
-                )
-            },
-        ),
-        ("Additional Info", {"fields": ("remarks",)}),
-        ("System", {"fields": ("created_by", "created_at")}),
-    )
-
-
-@admin.register(Dispatch)
-class DispatchAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "sales_order",
-        "order_type",
-        "product",
-        "batch",
-        "dispatch_quantity",
-        "dispatch_date",
-        "created_by",
-        "created_at",
-    )
-    list_filter = (
-        "order_type",
-        "dispatch_date",
-        "urgent_delivery_required",
-        "insurance_required",
-    )
-    search_fields = (
-        "sales_order__id",
-        "customer_name",
-        "customer_contact",
-        "customer_email",
-    )
-    readonly_fields = ("created_by", "created_at")
-    fieldsets = (
-        (
-            "STEP 1: Sales Order Selection",
-            {"fields": ("sales_order", "order_type")},
-        ),
-        (
-            "STEP 2: Stock Verification",
-            {
-                "fields": (
-                    "product",
-                    "batch",
-                    "dispatch_quantity",
-                    "imei_number",
-                    "serial_number",
-                    "iccid_number",
-                )
-            },
-        ),
-        (
-            "STEP 3: Dispatch Details",
-            {"fields": ("dispatch_date", "dispatch_remarks")},
-        ),
-        (
-            "STEP 4: Customer Details & Review",
-            {
-                "fields": (
-                    "customer_name",
-                    "customer_contact",
-                    "customer_email",
-                    "customer_address",
-                    "urgent_delivery_required",
-                    "insurance_required",
-                )
-            },
-        ),
-        (
-            "System Information",
-            {"fields": ("created_by", "created_at")},
-        ),
-    )
-
-    def save_model(self, request, obj, form, change):
-        """
-        Auto-assign created_by on first save
-        """
-        if not obj.pk:
-            obj.created_by = request.user
-        super().save_model(request, obj, form, change)
-
-
-class PostDispatchReturnItemInlineFormset(BaseInlineFormSet):
-    """
-    Ensures:
-    - return_qty <= dispatched_qty
-    - return_amount is auto-calculated
-    """
-
-    def clean(self):
-        super().clean()
-
-        for form in self.forms:
-            if not form.cleaned_data or form.cleaned_data.get("DELETE"):
-                continue
-
-            dispatched_qty = form.cleaned_data.get("dispatched_qty")
-            return_qty = form.cleaned_data.get("return_qty")
-            unit_price = form.cleaned_data.get("unit_price")
-
-            if return_qty > dispatched_qty:
-                raise ValueError("Return quantity cannot exceed dispatched quantity.")
-            form.instance.return_amount = Decimal(return_qty) * unit_price
-
-
-class PostDispatchReturnItemInline(admin.TabularInline):
-    model = PostDispatchReturnItem
-    formset = PostDispatchReturnItemInlineFormset
-    extra = 1
-    readonly_fields = ("return_amount",)
-    fields = (
-        "product_id",
-        "description",
-        "dispatched_qty",
-        "unit_price",
-        "return_qty",
-        "return_amount",
-    )
-
-
-@admin.register(PostDispatchReturn)
-class PostDispatchReturnAdmin(admin.ModelAdmin):
-    """
-    Admin panel for Post-Dispatch Returns
-    Allows controlled raw data insertion.
-    """
-
-    inlines = [PostDispatchReturnItemInline]
-    list_display = (
-        "id",
-        "dispatch_id",
-        "invoice_no",
-        "customer_name",
-        "return_type",
-        "return_reason",
-        "total_return_amount",
-        "created_by",
-        "created_at",
-    )
-    list_filter = ("return_type", "return_reason", "created_at")
-    search_fields = ("dispatch_id", "invoice_no", "customer_name")
-    ordering = ("-id",)
-    date_hierarchy = "created_at"
-    fieldsets = (
-        (
-            "Dispatch Information",
-            {
-                "fields": (
-                    "dispatch_id",
-                    "invoice_no",
-                    "customer_name",
-                    "dispatch_total_value",
-                )
-            },
-        ),
-        (
-            "Return Details",
-            {
-                "fields": (
-                    "return_type",
-                    "return_reason",
-                    "return_date",
-                    "return_remarks",
-                )
-            },
-        ),
-        (
-            "System Information",
-            {"fields": ("total_return_amount", "created_by")},
-        ),
-    )
-
-    readonly_fields = (
-        "total_return_amount",
-        "created_at",
-    )
-
-    def save_model(self, request, obj, form, change):
-        if not change and not obj.created_by:
-            obj.created_by = request.user
-        super().save_model(request, obj, form, change)
-
-    def save_related(self, request, form, formsets, change):
-        """
-        Recalculate total_return_amount after saving items
-        """
-        super().save_related(request, form, formsets, change)
-
-        total = Decimal("0.00")
-        for item in form.instance.items.all():
-            total += item.return_amount
-
-        form.instance.total_return_amount = total
-        form.instance.save(update_fields=["total_return_amount"])
-
-    def has_delete_permission(self, request, obj=None):
-        """
-        Optional: allow delete only to superusers
-        """
-        return request.user.is_superuser
-
-    list_per_page = 25
-    save_on_top = True
-
-
-class BaseRegistrationAdmin(admin.ModelAdmin):
-    readonly_fields = ("created_at",)
-    list_filter = ("state", "district", "created_at")
-    search_fields = ("phone_number", "email")
-
-    autocomplete_fields = ("state", "district")
-
-    fieldsets = (
-        ("Basic Information", {"fields": ("phone_number", "email", "address")}),
-        ("Location Details", {"fields": ("state", "district")}),
-        (
-            "Identity Details",
-            {
-                "fields": (
-                    "aadhar_number",
-                    "aadhar_document",
-                    "pan_number",
-                    "pan_document",
-                )
-            },
-        ),
-        ("System Information", {"fields": ("created_at",)}),
-    )
-
-
-@admin.register(AccountRegistration)
-class AccountRegistrationAdmin(BaseRegistrationAdmin):
-    list_display = (
-        "account_name",
-        "phone_number",
-        "email",
-        "state",
-        "district",
-        "created_at",
-    )
-    search_fields = BaseRegistrationAdmin.search_fields + ("account_name",)
-    fieldsets = (
-        ("Account Information", {"fields": ("account_name",)}),
-    ) + BaseRegistrationAdmin.fieldsets
-
-
-@admin.register(QCInspectorRegistration)
-class QCInspectorRegistrationAdmin(BaseRegistrationAdmin):
-    list_display = (
-        "qc_inspector_name",
-        "phone_number",
-        "email",
-        "state",
-        "district",
-        "created_at",
-    )
-    search_fields = BaseRegistrationAdmin.search_fields + ("qc_inspector_name",)
-    fieldsets = (
-        ("QC Inspector Information", {"fields": ("qc_inspector_name",)}),
-    ) + BaseRegistrationAdmin.fieldsets
-
-
-@admin.register(PurchaseDepartmentRegistration)
-class PurchaseDepartmentRegistrationAdmin(BaseRegistrationAdmin):
-    list_display = (
-        "purchase_department_name",
-        "phone_number",
-        "email",
-        "state",
-        "district",
-        "created_at",
-    )
-    search_fields = BaseRegistrationAdmin.search_fields + ("purchase_department_name",)
-    fieldsets = (
-        ("Purchase Department Information", {"fields": ("purchase_department_name",)}),
-    ) + BaseRegistrationAdmin.fieldsets
-
-
-@admin.register(StoreManagerRegistration)
-class StoreManagerRegistrationAdmin(BaseRegistrationAdmin):
-    list_display = (
-        "store_manager_name",
-        "phone_number",
-        "email",
-        "state",
-        "district",
-        "created_at",
-    )
-    search_fields = BaseRegistrationAdmin.search_fields + ("store_manager_name",)
-    fieldsets = (
-        ("Store Manager Information", {"fields": ("store_manager_name",)}),
-    ) + BaseRegistrationAdmin.fieldsets
-
-
-@admin.register(RepairTechnicianRegistration)
-class RepairTechnicianRegistrationAdmin(BaseRegistrationAdmin):
-    list_display = (
-        "repair_technician_name",
-        "phone_number",
-        "email",
-        "state",
-        "district",
-        "created_at",
-    )
-    search_fields = BaseRegistrationAdmin.search_fields + ("repair_technician_name",)
-    fieldsets = (
-        ("Repair Technician Information", {"fields": ("repair_technician_name",)}),
-    ) + BaseRegistrationAdmin.fieldsets
-
-
-@admin.register(ProductCategory)
-class ProductCategoryAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "created_at")
-    search_fields = ("name",)
-    ordering = ("name",)
-    readonly_fields = ("created_at",)
-
-
-@admin.register(StoreTransfer)
-class StoreTransferAdmin(admin.ModelAdmin):
-    list_display = (
-        "transfer_id",
-        "product_name",
-        "product",
-        "category",
-        "vendor",
-        "quantity",
-        "total_value",
-        "dispatch_status",
-        "transfer_date",
-        "created_at",
-    )
-    search_fields = (
-        "transfer_id",
-        "product_name",
-        "batch_number",
-        "mrn_number",
-        "vendor__name",
-        "product__product_id",
-    )
-    list_filter = (
-        "dispatch_status",
-        "transfer_date",
-        "category",
-        "vendor",
-        "created_at",
-    )
-    ordering = ("-created_at",)
-    readonly_fields = ("created_at", "updated_at")
-    fieldsets = (
-        ("Product Information", {"fields": ("product", "product_name", "category")}),
-        ("Transfer Details", {"fields": ("transfer_id", "mrn_number", "batch_number")}),
-        (
-            "Vendor & Quantity",
-            {"fields": ("vendor", "quantity", "unit_price", "total_value")},
-        ),
-        ("Dates & Status", {"fields": ("transfer_date", "dispatch_status")}),
-        ("System Info", {"fields": ("created_by", "created_at", "updated_at")}),
-    )
-
-
-@admin.register(DebitNote)
-class DebitNoteAdmin(admin.ModelAdmin):
-    list_display = (
-        "number",
-        "date",
-        "vendor",
-        "get_reason_display",
-        "amount_formatted",
-        "status_badge",
-        "created_by",
-        "created_at_formatted",
-    )
-    list_display_links = ("number",)
-    search_fields = ("number", "vendor", "reference_document")
-    list_filter = ("status", "reason", "date", "created_at")
-    ordering = ("-created_at",)
-    readonly_fields = ("number", "created_at", "updated_at", "created_by")
-    date_hierarchy = "created_at"
-
-    fieldsets = (
-        (
-            "Basic Information",
-            {
-                "fields": ("number", "date", "vendor", "reason", "amount"),
-                "description": "Core debit note information",
-            },
-        ),
-        (
-            "Status & References",
-            {
-                "fields": ("status", "reference_document"),
-            },
-        ),
-        (
-            "Additional Details",
-            {
-                "fields": ("remarks",),
-            },
-        ),
-        (
-            "System Info",
-            {
-                "fields": ("created_by", "created_at", "updated_at"),
-                "classes": ("collapse",),
-            },
-        ),
-    )
-
-    def amount_formatted(self, obj):
-        return f"₹{obj.amount:,.2f}"
-
-    amount_formatted.short_description = "Amount"
-
-    def status_badge(self, obj):
-        colors = {
-            "pending": "#FFA500",
-            "approved": "#28a745",
-            "rejected": "#dc3545",
-            "processed": "#007bff",
-        }
-        return format_html(
-            '<span style="background-color: {}; color: white; padding: 5px 10px; border-radius: 3px;">{}</span>',
-            colors.get(obj.status, "#6c757d"),
-            obj.get_status_display(),
-        )
-
-    status_badge.short_description = "Status"
-
-    def created_at_formatted(self, obj):
-        return obj.created_at.strftime("%d-%m-%Y %H:%M")
-
-    created_at_formatted.short_description = "Created At"
-
-    def save_model(self, request, obj, form, change):
-        if not change:
-            obj.created_by = request.user
-        super().save_model(request, obj, form, change)
-
-
-@admin.register(CreditNote)
-class CreditNoteAdmin(admin.ModelAdmin):
-    list_display = (
-        "number",
-        "date",
-        "customer",
-        "get_reason_display",
-        "amount_formatted",
-        "status_badge",
-        "created_by",
-        "created_at_formatted",
-    )
-    list_display_links = ("number",)
-    search_fields = ("number", "customer", "reference_document")
-    list_filter = ("status", "reason", "date", "created_at")
-    ordering = ("-created_at",)
-    readonly_fields = ("number", "created_at", "updated_at", "created_by")
-    date_hierarchy = "created_at"
-
-    fieldsets = (
-        (
-            "Basic Information",
-            {
-                "fields": ("number", "date", "customer", "reason", "amount"),
-                "description": "Core credit note information",
-            },
-        ),
-        (
-            "Status & References",
-            {
-                "fields": ("status", "reference_document"),
-            },
-        ),
-        (
-            "Additional Details",
-            {
-                "fields": ("remarks",),
-            },
-        ),
-        (
-            "System Info",
-            {
-                "fields": ("created_by", "created_at", "updated_at"),
-                "classes": ("collapse",),
-            },
-        ),
-    )
-
-    def amount_formatted(self, obj):
-        return f"₹{obj.amount:,.2f}"
-
-    amount_formatted.short_description = "Amount"
-
-    def status_badge(self, obj):
-        colors = {
-            "pending": "#FFA500",
-            "approved": "#28a745",
-            "rejected": "#dc3545",
-            "processed": "#007bff",
-        }
-        return format_html(
-            '<span style="background-color: {}; color: white; padding: 5px 10px; border-radius: 3px;">{}</span>',
-            colors.get(obj.status, "#6c757d"),
-            obj.get_status_display(),
-        )
-
-    status_badge.short_description = "Status"
-
-    def created_at_formatted(self, obj):
-        return obj.created_at.strftime("%d-%m-%Y %H:%M")
-
-    created_at_formatted.short_description = "Created At"
-
-    def save_model(self, request, obj, form, change):
-        if not change:
-            obj.created_by = request.user
-        super().save_model(request, obj, form, change)
-
-
-@admin.register(ReturnRequest)
-class ReturnRequestAdmin(admin.ModelAdmin):
-    """
-    Admin configuration for Return Requests
-    """
-
-    list_display = (
-        "return_number",
-        "date",
-        "items",
-        "reason",
-        "status",
-        "amount",
-        "created_by",
-        "created_at",
-    )
-
-    list_filter = ("status", "date", "created_at")
-
-    search_fields = ("return_number", "reason", "items", "created_by__username")
-
-    ordering = ("-date",)
-
-    readonly_fields = ("created_at", "updated_at", "created_by")
-
-    fieldsets = (
-        (
-            "Return Information",
-            {
-                "fields": (
-                    "return_number",
-                    "date",
-                    "status",
-                )
-            },
-        ),
-        (
-            "Return Details",
-            {
-                "fields": (
-                    "items",
-                    "reason",
-                    "amount",
-                )
-            },
-        ),
-        (
-            "Audit Information",
-            {
-                "fields": (
-                    "created_by",
-                    "created_at",
-                    "updated_at",
-                )
-            },
-        ),
-    )
-
-    list_select_related = ("created_by",)
-
-
-@admin.register(RepairRecord)
-class RepairRecordAdmin(admin.ModelAdmin):
-    """
-    Admin configuration for Repair Records
-    """
-
-    list_display = (
-        "product_id",
-        "product_name",
-        "vendor",
-        "mrn_number",
-        "failed_qty",
-        "repaired_qty",
-        "rejected_qty",
-        "repair_pending",
-        "repair_type",
-        "repair_center",
-        "status",
-        "created_by",
-        "created_at",
-    )
-    list_filter = ("status", "repair_type", "vendor", "created_at")
-    search_fields = (
-        "product_id",
-        "product_name",
-        "vendor",
-        "mrn_number",
-        "repair_type",
-        "repair_center",
-        "created_by__username",
-    )
-    ordering = ("-created_at",)
-    readonly_fields = ("created_at", "updated_at", "created_by")
-
-    fieldsets = (
-        (
-            "Product Information",
-            {
-                "fields": (
-                    "product_id",
-                    "product_name",
-                )
-            },
-        ),
-        (
-            "Vendor & MRN",
-            {
-                "fields": (
-                    "vendor",
-                    "mrn_number",
-                )
-            },
-        ),
-        (
-            "Repair Quantities",
-            {
-                "fields": (
-                    "failed_qty",
-                    "repaired_qty",
-                    "rejected_qty",
-                    "repair_pending",
-                )
-            },
-        ),
-        (
-            "Repair Details",
-            {
-                "fields": (
-                    "repair_type",
-                    "repair_center",
-                    "status",
-                )
-            },
-        ),
-        (
-            "Audit Information",
-            {
-                "fields": (
-                    "created_by",
-                    "created_at",
-                    "updated_at",
-                )
-            },
-        ),
-    )
-
-    list_select_related = ("created_by",)
-
-
-@admin.register(RejectedItem)
-class RejectedItemAdmin(admin.ModelAdmin):
-    """
-    Admin configuration for Rejected Items
-    """
-
-    list_display = (
-        "product_id",
-        "product_name",
-        "vendor",
-        "mrn_number",
-        "rejected_qty",
-        "qc_date",
-        "created_by",
-    )
-    list_filter = ("vendor", "qc_date", "created_at")
-    search_fields = (
-        "product_id",
-        "product_name",
-        "vendor",
-        "mrn_number",
-        "created_by__username",
-    )
-    ordering = ("-qc_date",)
-    readonly_fields = ("created_at", "updated_at", "created_by")
-    fieldsets = (
-        (
-            "Product Information",
-            {
-                "fields": (
-                    "product_id",
-                    "product_name",
-                )
-            },
-        ),
-        (
-            "Vendor & MRN",
-            {
-                "fields": (
-                    "vendor",
-                    "mrn_number",
-                )
-            },
-        ),
-        (
-            "Rejection Details",
-            {
-                "fields": (
-                    "rejected_qty",
-                    "qc_date",
-                )
-            },
-        ),
-        (
-            "Audit Information",
-            {
-                "fields": (
-                    "created_by",
-                    "created_at",
-                    "updated_at",
-                )
-            },
-        ),
-    )
-
-    list_select_related = ("created_by",)
-
-
-@admin.register(SelfOrder)
-class SelfOrderAdmin(admin.ModelAdmin):
-    list_display = (
-        "id",
-        "device_info",
-        "quantity",
-        "supply_state",
-        "rate_display",
-        "gst_rate_display",
-        "gross_amount_display",
-        "delivery_date",
-        "user",
-        "created_at",
-    )
-    list_display_links = ("id",)
-    search_fields = ("user__username", "delivery_address", "device__info__model")
-    list_filter = ("supply_state", "gst_rate", "created_at", "user")
-    readonly_fields = ("user", "created_at", "updated_at")
-    ordering = ("-created_at",)
-
-    fieldsets = (
-        (
-            "Order Information",
-            {
-                "fields": (
-                    "device",
-                    "quantity",
-                )
-            },
-        ),
-        (
-            "Pricing & Taxes",
-            {
-                "fields": (
-                    "rate",
-                    "gst_rate",
-                    "gross_amount",
-                )
-            },
-        ),
-        (
-            "Delivery Details",
-            {
-                "fields": (
-                    "supply_state",
-                    "delivery_date",
-                    "delivery_address",
-                )
-            },
-        ),
-        ("Additional Information", {"fields": ("purpose_remark",)}),
-        (
-            "Audit Information",
-            {
-                "fields": (
-                    "user",
-                    "created_at",
-                    "updated_at",
-                ),
-                "classes": ("collapse",),
-            },
-        ),
-    )
-    list_select_related = ("device", "supply_state", "user")
-
-    def device_info(self, obj):
-        """Display device model name"""
-        return obj.device.info.model if obj.device.info else f"Device {obj.device.id}"
-
-    device_info.short_description = "Device"
-
-    def rate_display(self, obj):
-        """Display rate with currency"""
-        return f"₹{obj.rate:,.2f}"
-
-    rate_display.short_description = "Rate"
-
-    def gst_rate_display(self, obj):
-        """Display GST rate as percentage"""
-        return f"{obj.gst_rate}%"
-
-    gst_rate_display.short_description = "GST Rate"
-
-    def gross_amount_display(self, obj):
-        """Display gross amount with currency"""
-        return f"₹{obj.gross_amount:,.2f}"
-
-    gross_amount_display.short_description = "Gross Amount"
-
-
-@admin.register(RFQQuotation)
-class RFQQuotationAdmin(admin.ModelAdmin):
-    """
-    Admin configuration for vendor quotations against RFQs
-    """
-
-    list_display = (
-        "rfq",
-        "vendor",
-        "status",
-        "quotation_rate",
-        "quotation_date",
-        "created_at",
-    )
-    list_filter = ("status", "quotation_date", "created_at")
-    search_fields = ("rfq__id", "vendor__name")
-    ordering = ("-created_at",)
-    autocomplete_fields = ("rfq", "vendor")
-
-    readonly_fields = ("created_at", "updated_at")
-
-
-@admin.register(QuotationSequence)
-class QuotationSequenceAdmin(admin.ModelAdmin):
-    """
-    Maintains year-wise quotation number sequence
-    """
-
-    list_display = ("year", "last_number")
-    ordering = ("-year",)
-
-
-class QuotationItemInline(admin.TabularInline):
-    """
-    Inline items displayed inside Quotation admin
-    """
-
-    model = QuotationItem
-    extra = 0
-    min_num = 1
-
-    fields = (
-        "item_name",
-        "item_type",
-        "quantity",
-        "net_unit_price_excl_gst",
-        "gst_rate",
-        "subtotal_excl_gst",
-        "gst_amount",
-        "total_incl_gst",
-    )
-
-    readonly_fields = ("gst_amount", "total_incl_gst")
-
-
-@admin.register(Quotation)
-class QuotationAdmin(admin.ModelAdmin):
-    """
-    Admin configuration for final quotation documents
-    """
-
-    list_display = (
-        "quotation_number",
-        "customer_name",
-        "vendor",
-        "status",
-        "grand_total_incl_gst",
-        "valid_until",
-        "created_at",
-    )
-
-    list_filter = ("status", "created_at", "valid_until")
-    search_fields = (
-        "quotation_number",
-        "customer_name",
-        "vendor__name",
-        "rfq__id",
-    )
-
-    ordering = ("-created_at",)
-    autocomplete_fields = ("rfq", "vendor", "created_by")
-
-    readonly_fields = (
-        "quotation_number",
-        "subtotal_excl_gst",
-        "total_gst",
-        "grand_total_incl_gst",
-        "created_at",
-        "updated_at",
-    )
-
-    fieldsets = (
-        (
-            "Reference Details",
-            {"fields": ("quotation_number", "rfq", "vendor", "customer_name")},
-        ),
-        ("Status & Validity", {"fields": ("status", "valid_until")}),
-        (
-            "Pricing Summary",
-            {
-                "fields": (
-                    "subtotal_excl_gst",
-                    "total_gst",
-                    "grand_total_incl_gst",
-                )
-            },
-        ),
-        ("Audit Information", {"fields": ("created_by", "created_at", "updated_at")}),
-    )
-
-    inlines = [QuotationItemInline]
-
-    actions = ["recalculate_totals"]
-
-    def recalculate_totals(self, request, queryset):
-        """
-        Admin action to recalculate quotation totals
-        """
-        for quotation in queryset:
-            quotation.calculate_totals()
-
-        self.message_user(request, "Selected quotations recalculated successfully.")
-
-    recalculate_totals.short_description = "Recalculate totals for selected quotations"
-
-
-@admin.register(DeviceInventory)
-class DeviceInventoryAdmin(admin.ModelAdmin):
-    list_display = (
-        "esn",
-        "imei",
-        "device",
-        "stock_status_badge",
-        "esim_status",
-        "esim_validity_display",
-        "telecom_provider_1",
-        "telecom_provider_2",
-        "assigned_to",
-        "created_at",
-    )
-    list_display_links = ("esn", "imei")
-    list_filter = (
-        "stock_status",
-        "esim_status",
-        "telecom_provider_1",
-        "telecom_provider_2",
-        "device",
-    )
-    search_fields = (
-        "esn",
-        "imei",
-        "iccid",
-        "assigned_to",
-        "msisdn_1",
-        "msisdn_2",
-        "remarks",
-    )
-    list_per_page = 25
-    list_select_related = ("device",)
-    date_hierarchy = "created_at"
-    ordering = ("-created_at",)
-    list_editable = ("assigned_to",)
-    readonly_fields = ("created_at", "esim_validity_display")
-    fieldsets = (
-        (
-            "🔌 Device Info",
-            {
-                "fields": ("device", "esn", "imei", "iccid"),
-                "description": "Core identifiers for the physical device unit.",
-            },
-        ),
-        (
-            "📡 Telecom Details",
-            {
-                "fields": (
-                    ("telecom_provider_1", "msisdn_1"),
-                    ("telecom_provider_2", "msisdn_2"),
-                ),
-            },
-        ),
-        (
-            "📶 eSIM",
-            {
-                "fields": ("esim_status", "esim_validity", "esim_validity_display"),
-            },
-        ),
-        (
-            "📦 Inventory & Assignment",
-            {
-                "fields": ("stock_status", "assigned_to", "remarks"),
-            },
-        ),
-        (
-            "🕒 Timestamps",
-            {
-                "fields": ("created_at",),
-                "classes": ("collapse",),
-            },
-        ),
-    )
-
-    @admin.display(description="Stock Status", ordering="stock_status")
-    def stock_status_badge(self, obj):
-        colors = {
-            "in_stock": ("#1a7a1a", "#d4edda"),
-            "assigned": ("#856404", "#fff3cd"),
-            "faulty": ("#721c24", "#f8d7da"),
-            "retired": ("#383d41", "#e2e3e5"),
-        }
-        fg, bg = colors.get(obj.stock_status, ("#333", "#eee"))
-        label = obj.stock_status.replace("_", " ").title()
-        return format_html(
-            '<span style="background:{};color:{};padding:3px 10px;'
-            'border-radius:12px;font-weight:600;font-size:0.82em;">{}</span>',
-            bg,
-            fg,
-            label,
-        )
-
-    @admin.display(description="eSIM Expiry")
-    def esim_validity_display(self, obj):
-        if not obj.esim_validity:
-            return "—"
-        today = now().date()
-        delta = (obj.esim_validity - today).days
-        if delta < 0:
-            color = "#dc3545"
-            label = f"{obj.esim_validity} (expired)"
-        elif delta <= 30:
-            color = "#fd7e14"
-            label = f"{obj.esim_validity} ({delta}d left)"
-        else:
-            color = "#198754"
-            label = str(obj.esim_validity)
-        return format_html(
-            '<span style="color:{};font-weight:600;">{}</span>', color, label
-        )
-
-    actions = ["mark_in_stock", "mark_assigned", "mark_faulty", "mark_retired"]
-
-    @admin.action(description="✅ Mark selected as In Stock")
-    def mark_in_stock(self, request, queryset):
-        updated = queryset.update(stock_status="in_stock")
-        self.message_user(request, f"{updated} device(s) marked as In Stock.")
-
-    @admin.action(description="🔗 Mark selected as Assigned")
-    def mark_assigned(self, request, queryset):
-        updated = queryset.update(stock_status="assigned")
-        self.message_user(request, f"{updated} device(s) marked as Assigned.")
-
-    @admin.action(description="⚠️ Mark selected as Faulty")
-    def mark_faulty(self, request, queryset):
-        updated = queryset.update(stock_status="faulty")
-        self.message_user(request, f"{updated} device(s) marked as Faulty.")
-
-    @admin.action(description="🗄️ Mark selected as Retired")
-    def mark_retired(self, request, queryset):
-        updated = queryset.update(stock_status="retired")
-        self.message_user(request, f"{updated} device(s) marked as Retired.")
-
-
-@admin.register(B2BOrder)
-class B2BOrderAdmin(admin.ModelAdmin):
-    list_display = (
-        "order_id_display",
-        "purchase_order",
-        "supply_state",
-        "rate_display",
-        "gst_rate_display",
-        "quantity",
-        "gross_amount_display",
-        "delivery_date",
-        "created_by",
-        "created_at",
-    )
-
-    list_filter = (
-        "gst_rate",
-        "supply_state",
-        "delivery_date",
-        "created_at",
-        "created_by",
-    )
-
-    search_fields = (
-        "id",
-        "purchase_order__order_id",
-        "supply_state__name",
-        "created_by__username",
-        "created_by__email",
-        "remarks",
-    )
-
-    date_hierarchy = "created_at"
-    ordering = ("-created_at",)
-    list_per_page = 25
-    show_full_result_count = True
-    readonly_fields = (
-        "gross_amount",
-        "created_by",
-        "created_at",
-        "updated_at",
-        "order_summary_panel",
-    )
-
-    fieldsets = (
-        (
-            "🧾 Order Reference",
-            {
-                "fields": ("purchase_order",),
-            },
-        ),
-        (
-            "📦 Order Details",
-            {
-                "fields": (
-                    "supply_state",
-                    "rate",
-                    "gst_rate",
-                    "quantity",
-                    "gross_amount",  # auto-calculated, readonly
-                    "delivery_date",
-                ),
-            },
-        ),
-        (
-            "📝 Remarks",
-            {
-                "fields": ("remarks",),
-                "classes": ("collapse",),  # collapsed by default to save space
-            },
-        ),
-        (
-            "📊 Summary Panel",
-            {
-                "fields": ("order_summary_panel",),
-                "classes": ("collapse",),
-            },
-        ),
-        (
-            "🔒 System Info",
-            {
-                "fields": ("created_by", "created_at", "updated_at"),
-                "classes": ("collapse",),
-            },
-        ),
-    )
-
-    autocomplete_fields = ("purchase_order", "supply_state")  # fast FK search
-
-    @admin.display(description="Order ID", ordering="id")
-    def order_id_display(self, obj):
-        return format_html('<strong style="color:#1a73e8;">B2B-{}</strong>', obj.id)
-
-    @admin.display(description="Rate (₹)", ordering="rate")
-    def rate_display(self, obj):
-        return format_html("₹ {}", f"{obj.rate:,.2f}")
-
-    @admin.display(description="GST Rate", ordering="gst_rate")
-    def gst_rate_display(self, obj):
-        color = {
-            "0.00": "#6c757d",
-            "5.00": "#28a745",
-            "12.00": "#fd7e14",
-            "18.00": "#dc3545",
-            "28.00": "#6f42c1",
-        }.get(str(obj.gst_rate), "#000")
-        return format_html(
-            '<span style="color:{}; font-weight:bold;">{}%</span>',
-            color,
-            obj.gst_rate,
-        )
-
-    @admin.display(description="Gross Amount (₹)", ordering="gross_amount")
-    def gross_amount_display(self, obj):
-        return format_html("<strong>₹ {}</strong>", f"{obj.gross_amount:,.2f}")
-
-    @admin.display(description="Order Summary")
-    def order_summary_panel(self, obj):
-        """A quick at-a-glance summary shown inside the detail page."""
-        taxable = obj.rate * obj.quantity
-        gst_amt = taxable * obj.gst_rate / 100
-        total = taxable + gst_amt
-        return format_html(
-            """
-            <table style="border-collapse:collapse; min-width:320px;">
-              <tr style="background:#f0f4ff;">
-                <td style="padding:6px 12px; border:1px solid #ddd;"><b>Taxable Amount</b></td>
-                <td style="padding:6px 12px; border:1px solid #ddd;">₹ {taxable}</td>
-              </tr>
-              <tr>
-                <td style="padding:6px 12px; border:1px solid #ddd;"><b>GST ({gst_rate}%)</b></td>
-                <td style="padding:6px 12px; border:1px solid #ddd;">₹ {gst_amt}</td>
-              </tr>
-              <tr style="background:#e6ffe6;">
-                <td style="padding:6px 12px; border:1px solid #ddd;"><b>Total (incl. GST)</b></td>
-                <td style="padding:6px 12px; border:1px solid #ddd;"><b>₹ {total}</b></td>
-              </tr>
-            </table>
-            """,
-            taxable=f"{taxable:,.2f}",
-            gst_rate=obj.gst_rate,
-            gst_amt=f"{gst_amt:,.2f}",
-            total=f"{total:,.2f}",
-        )
-
-    actions = ("export_gross_summary",)
-
-    @admin.action(description="📊 Show total Gross Amount for selected orders")
-    def export_gross_summary(self, request, queryset):
-        total = queryset.aggregate(total=Sum("gross_amount"))["total"] or 0
-        count = queryset.count()
-        self.message_user(
-            request,
-            f"✅ {count} order(s) selected — Total Gross Amount: ₹ {total:,.2f}",
-        )
-
-    def has_add_permission(self, request):
-        return request.user.is_staff
-
-    def has_change_permission(self, request, obj=None):
-        return request.user.is_staff
-
-    def has_delete_permission(self, request, obj=None):
-        return request.user.is_staff
-
-    def has_view_permission(self, request, obj=None):
-        return request.user.is_staff
-
-    def save_model(self, request, obj, form, change):
-        if not change:  # only on first creation
-            obj.created_by = request.user
-        super().save_model(request, obj, form, change)
+# # mapwala_mis/admin.py
+# from decimal import Decimal
+
+# from django.contrib import admin, messages
+# from django.forms.models import BaseInlineFormSet
+# from django.urls import reverse
+# from django.utils.html import format_html
+# from django.utils.safestring import mark_safe
+# from django.utils.timezone import now
+# from django.db.models import Sum, Count
+
+# from .models import (
+#     UserProfile,
+#     State,
+#     District,
+#     ProductCategory,
+#     B2BOrder,
+#     SupplierVendor,
+#     Product,
+#     ProductionOrder,
+#     OrderBatch,
+#     OrderEntryMakeToOrder,
+#     RequestForQuote,
+#     PurchaseOrder,
+#     MaterialReceiptNote,
+#     Dispatch,
+#     PostDispatchReturn,
+#     B2CCustomer,
+#     B2BPartner,
+#     Distributor,
+#     Dealer,
+#     ProformaInvoice,
+#     DeviceInformation,
+#     BOM,
+#     BOMComponent,
+#     Enclosure,
+#     WireHarness,
+#     WireConnector,
+#     Battery,
+#     SOSButton,
+#     Sticker,
+#     UserManual,
+#     Accessory,
+#     AccountRegistration,
+#     QCInspectorRegistration,
+#     PurchaseDepartmentRegistration,
+#     StoreManagerRegistration,
+#     RepairTechnicianRegistration,
+#     Vendor,
+#     ParentCompany,
+#     OrderProduct,
+#     SalesOrder,
+#     StoreTransfer,
+#     DebitNote,
+#     RejectedItem,
+#     CreditNote,
+#     ReturnRequest,
+#     RepairRecord,
+#     Device,
+#     SelfOrder,
+#     RFQSelection,
+#     QuotationItem,
+#     Quotation,
+#     ProformaInvoice,
+#     Manufacturer,
+#     PurchaseOrderItem,
+#     PurchaseOrderType,
+#     RFQQuotation,
+#     QuotationSequence,
+#     PostDispatchReturnItem,
+#     MaterialReceiptItem,
+#     DeviceInventory,
+#     OrderEntry,
+# )
+
+
+# @admin.register(UserProfile)
+# class UserProfileAdmin(admin.ModelAdmin):
+#     list_display = ("user", "accepted_terms", "accepted_at")
+#     search_fields = ("user__username",)
+#     list_filter = ("accepted_terms",)
+#     ordering = ("user__username",)
+#     readonly_fields = ("accepted_at",)
+
+
+# class DistrictInline(admin.TabularInline):
+#     model = District
+#     extra = 1
+#     fields = ("id", "name", "code", "status")
+#     readonly_fields = ("id",)
+#     can_delete = True
+#     min_num = 0
+#     verbose_name = "District"
+#     verbose_name_plural = "Districts"
+
+
+# @admin.register(District)
+# class DistrictAdmin(admin.ModelAdmin):
+#     search_fields = ("name", "code", "state__name")
+
+#     def get_model_perms(self, request):
+#         """Return empty perms so District never appears in the sidebar."""
+#         return {}
+
+
+# @admin.register(State)
+# class StateAdmin(admin.ModelAdmin):
+
+#     list_display = (
+#         "id",
+#         "name",
+#         "status_badge",
+#         "district_count",
+#         "created_at_formatted",
+#     )
+#     list_display_links = ("name",)
+#     search_fields = ("name", "districts__name", "districts__code")
+#     list_filter = ("status", "created_at")
+#     ordering = ("id",)
+
+#     readonly_fields = ("id_display", "created_at", "district_count")
+#     fieldsets = (
+#         (
+#             "🗺️ State Details",
+#             {
+#                 "description": "Enter the official name of the state and set its status.",
+#                 "fields": ("id_display", "name", "status"),
+#             },
+#         ),
+#         (
+#             "📊 Stats",
+#             {
+#                 "fields": ("district_count",),
+#             },
+#         ),
+#         (
+#             "🕒 Metadata",
+#             {
+#                 "classes": ("collapse",),
+#                 "fields": ("created_at",),
+#             },
+#         ),
+#     )
+
+#     inlines = [DistrictInline]
+
+#     actions = [
+#         "make_active",
+#         "make_inactive",
+#         "make_all_districts_active",
+#         "make_all_districts_inactive",
+#     ]
+
+#     def status_badge(self, obj):
+#         colors = {"active": "#28a745", "inactive": "#6c757d"}
+#         bg = colors.get(obj.status, "#000")
+#         return mark_safe(
+#             f'<span style="background:{bg};color:white;padding:3px 10px;'
+#             f'border-radius:4px;font-weight:bold;">'
+#             f"{obj.get_status_display()}</span>"
+#         )
+
+#     status_badge.short_description = "Status"
+#     status_badge.admin_order_field = "status"
+
+#     def district_count(self, obj):
+#         count = obj.districts.count()
+#         return format_html("<strong>{}</strong> District(s)", count)
+
+#     district_count.short_description = "Total Districts"
+
+#     def created_at_formatted(self, obj):
+#         return obj.created_at.strftime("%b %d, %Y  %I:%M %p") if obj.created_at else "—"
+
+#     created_at_formatted.short_description = "Created At"
+
+#     def id_display(self, obj):
+#         return obj.id or "—"
+
+#     id_display.short_description = "ID"
+
+#     def make_active(self, request, queryset):
+#         updated = queryset.update(status="active")
+#         self.message_user(
+#             request, f"{updated} state(s) marked as Active.", messages.SUCCESS
+#         )
+
+#     make_active.short_description = "✅ Mark selected States as Active"
+
+#     def make_inactive(self, request, queryset):
+#         updated = queryset.update(status="inactive")
+#         self.message_user(
+#             request, f"{updated} state(s) marked as Inactive.", messages.WARNING
+#         )
+
+#     make_inactive.short_description = "🚫 Mark selected States as Inactive"
+
+#     def make_all_districts_active(self, request, queryset):
+#         updated = District.objects.filter(state__in=queryset).update(status="active")
+#         self.message_user(
+#             request,
+#             f"{updated} district(s) under selected state(s) marked as Active.",
+#             messages.SUCCESS,
+#         )
+
+#     make_all_districts_active.short_description = (
+#         "✅ Mark all Districts of selected States as Active"
+#     )
+
+#     def make_all_districts_inactive(self, request, queryset):
+#         updated = District.objects.filter(state__in=queryset).update(status="inactive")
+#         self.message_user(
+#             request,
+#             f"{updated} district(s) under selected state(s) marked as Inactive.",
+#             messages.WARNING,
+#         )
+
+#     make_all_districts_inactive.short_description = (
+#         "🚫 Mark all Districts of selected States as Inactive"
+#     )
+
+#     def save_model(self, request, obj, form, change):
+#         obj.name = obj.name.strip().title()
+#         super().save_model(request, obj, form, change)
+
+
+# @admin.register(ParentCompany)
+# class ParentCompanyAdmin(admin.ModelAdmin):
+#     list_display = (
+#         "id",
+#         "name",
+#         "email",
+#         "phone_number_formatted",
+#         "state_link",
+#         "district_link",
+#         "gst_number",
+#         "pan_number",
+#         "created_at_formatted",
+#         "has_all_documents",
+#     )
+#     list_display_links = ("name",)
+#     search_fields = ("name", "phone_number", "email", "gst_number", "pan_number")
+#     list_filter = ("state", "district", "created_at")
+#     ordering = ("-id",)
+
+#     readonly_fields = (
+#         "created_at",
+#         "id_display",
+#         "gst_document_link",
+#         "tan_document_link",
+#         "pan_document_link",
+#         "account_number_masked",
+#     )
+
+#     fieldsets = (
+#         (
+#             "Company Details",
+#             {
+#                 "fields": ("id_display", "name", "phone_number", "email", "address"),
+#                 "description": "Primary contact and address information.",
+#             },
+#         ),
+#         (
+#             "Location",
+#             {
+#                 "fields": ("state", "district"),
+#                 "description": "Administrative region of the company.",
+#             },
+#         ),
+#         (
+#             "Bank Details",
+#             {
+#                 "fields": (
+#                     "bank_name",
+#                     "account_holder_name",
+#                     "account_number_masked",
+#                     "account_number",
+#                     "ifsc_code",
+#                 ),
+#                 "classes": ("collapse",),
+#             },
+#         ),
+#         (
+#             "GST Details",
+#             {
+#                 "fields": ("gst_number", "gst_document", "gst_document_link"),
+#                 "description": "Mandatory for B2B invoicing in India.",
+#             },
+#         ),
+#         (
+#             "TAN Details",
+#             {
+#                 "fields": ("tan_number", "tan_document", "tan_document_link"),
+#             },
+#         ),
+#         (
+#             "PAN Details",
+#             {
+#                 "fields": ("pan_number", "pan_document", "pan_document_link"),
+#                 "description": "Permanent Account Number – must match GST records.",
+#             },
+#         ),
+#         (
+#             "System Info",
+#             {
+#                 "fields": ("created_at",),
+#                 "classes": ("collapse",),
+#             },
+#         ),
+#     )
+
+#     def id_display(self, obj):
+#         return obj.id
+
+#     id_display.short_description = "ID"
+
+#     def created_at_formatted(self, obj):
+#         return obj.created_at.strftime("%b %d, %Y") if obj.created_at else "—"
+
+#     created_at_formatted.short_description = "Created On"
+
+#     def phone_number_formatted(self, obj):
+#         num = obj.phone_number
+#         if len(num) == 10:
+#             return f"+91 {num[:5]} {num[5:]}"
+#         elif len(num) == 12 and num.startswith("91"):
+#             return f"+{num[:2]} {num[2:7]} {num[7:]}"
+#         return num
+
+#     phone_number_formatted.short_description = "Phone"
+
+#     def state_link(self, obj):
+#         url = reverse("admin:mapwala_mis_state_change", args=[obj.state.id])
+#         return mark_safe(f'<a href="{url}" target="_blank">{obj.state.name}</a>')
+
+#     state_link.short_description = "State"
+
+#     def district_link(self, obj):
+#         url = reverse("admin:mapwala_mis_district_change", args=[obj.district.id])
+#         return mark_safe(f'<a href="{url}" target="_blank">{obj.district.name}</a>')
+
+#     district_link.short_description = "District"
+
+#     def _document_link(self, doc_field, label):
+#         if doc_field:
+#             url = doc_field.url
+#             return mark_safe(
+#                 f'<a href="{url}" target="_blank" style="color:#17a2b8;">📄 View {label}</a>'
+#             )
+#         return mark_safe('<span style="color:#dc3545;">⚠️ Missing</span>')
+
+#     def gst_document_link(self, obj):
+#         return self._document_link(obj.gst_document, "GST Doc")
+
+#     gst_document_link.short_description = "GST Document"
+
+#     def tan_document_link(self, obj):
+#         return self._document_link(obj.tan_document, "TAN Doc")
+
+#     tan_document_link.short_description = "TAN Document"
+
+#     def pan_document_link(self, obj):
+#         return self._document_link(obj.pan_document, "PAN Doc")
+
+#     pan_document_link.short_description = "PAN Document"
+
+#     def account_number_masked(self, obj):
+#         """Show only last 4 digits for security."""
+#         if obj.account_number:
+#             return "•" * (len(obj.account_number) - 4) + obj.account_number[-4:]
+#         return "—"
+
+#     account_number_masked.short_description = "Account Number (Masked)"
+
+#     def has_all_documents(self, obj):
+#         """Quick visual check if all compliance docs are uploaded."""
+#         missing = []
+#         if not obj.gst_document:
+#             missing.append("GST")
+#         if not obj.tan_document:
+#             missing.append("TAN")
+#         if not obj.pan_document:
+#             missing.append("PAN")
+
+#         if not missing:
+#             return mark_safe('<span style="color:green;">✓ Complete</span>')
+#         else:
+#             return mark_safe(
+#                 f'<span style="color:orange;">⚠️ Missing: {", ".join(missing)}</span>'
+#             )
+
+#     has_all_documents.short_description = "Compliance Docs"
+#     has_all_documents.admin_order_field = None
+
+#     def get_readonly_fields(self, request, obj=None):
+#         if obj:
+#             return self.readonly_fields + ("gst_number", "pan_number", "tan_number")
+#         return self.readonly_fields
+
+
+# @admin.register(Vendor)
+# class VendorAdmin(admin.ModelAdmin):
+#     list_display = (
+#         "id",
+#         "name",
+#         "email",
+#         "phone_number_formatted",
+#         "state_link",
+#         "district_link",
+#         "gst_number",
+#         "pan_number",
+#         "created_at_formatted",
+#         "has_all_documents",
+#     )
+#     list_display_links = ("name",)
+#     search_fields = ("name", "phone_number", "email", "gst_number", "pan_number")
+#     list_filter = ("state", "district", "created_at")
+#     ordering = ("-id",)
+#     readonly_fields = (
+#         "created_at",
+#         "id_display",
+#         "gst_document_link",
+#         "tan_document_link",
+#         "pan_document_link",
+#         "account_number_masked",
+#     )
+#     fieldsets = (
+#         (
+#             "Vendor Details",
+#             {
+#                 "fields": ("id_display", "name", "phone_number", "email", "address"),
+#                 "description": "Primary contact and business address.",
+#             },
+#         ),
+#         (
+#             "Location",
+#             {
+#                 "fields": ("state", "district"),
+#                 "description": "Administrative region of the vendor.",
+#             },
+#         ),
+#         (
+#             "Bank Details",
+#             {
+#                 "fields": (
+#                     "bank_name",
+#                     "account_holder_name",
+#                     "account_number_masked",
+#                     "ifsc_code",
+#                 ),
+#                 "classes": ("collapse",),
+#             },
+#         ),
+#         (
+#             "Sensitive Data (Edit with caution)",
+#             {
+#                 "fields": ("account_number",),
+#                 "classes": ("collapse",),
+#                 "description": "Full account number. Edit only if absolutely necessary.",
+#             },
+#         ),
+#         (
+#             "GST Details",
+#             {
+#                 "fields": ("gst_number", "gst_document", "gst_document_link"),
+#                 "description": "Mandatory for B2B transactions in India.",
+#             },
+#         ),
+#         (
+#             "TAN Details",
+#             {
+#                 "fields": ("tan_number", "tan_document", "tan_document_link"),
+#             },
+#         ),
+#         (
+#             "PAN Details",
+#             {
+#                 "fields": ("pan_number", "pan_document", "pan_document_link"),
+#                 "description": "Must match GST registration records.",
+#             },
+#         ),
+#         (
+#             "System Info",
+#             {
+#                 "fields": ("created_at",),
+#                 "classes": ("collapse",),
+#             },
+#         ),
+#     )
+
+#     def id_display(self, obj):
+#         return obj.id
+
+#     id_display.short_description = "ID"
+
+#     def created_at_formatted(self, obj):
+#         return obj.created_at.strftime("%b %d, %Y") if obj.created_at else "—"
+
+#     created_at_formatted.short_description = "Created On"
+
+#     def phone_number_formatted(self, obj):
+#         num = obj.phone_number
+#         if len(num) == 10:
+#             return f"+91 {num[:5]} {num[5:]}"
+#         elif len(num) == 12 and num.startswith("91"):
+#             return f"+{num[:2]} {num[2:7]} {num[7:]}"
+#         return num
+
+#     phone_number_formatted.short_description = "Phone"
+
+#     def state_link(self, obj):
+#         url = reverse(
+#             f"admin:{obj.state._meta.app_label}_{obj.state._meta.model_name}_change",
+#             args=[obj.state.pk],
+#         )
+#         return mark_safe(f'<a href="{url}" target="_blank">{obj.state.name}</a>')
+
+#     state_link.short_description = "State"
+
+#     def district_link(self, obj):
+#         url = reverse(
+#             f"admin:{obj.district._meta.app_label}_{obj.district._meta.model_name}_change",
+#             args=[obj.district.pk],
+#         )
+#         return mark_safe(f'<a href="{url}" target="_blank">{obj.district.name}</a>')
+
+#     district_link.short_description = "District"
+
+#     def _document_link(self, doc_field, label):
+#         if doc_field:
+#             url = doc_field.url
+#             return mark_safe(
+#                 f'<a href="{url}" target="_blank" style="color:#17a2b8;">View {label}</a>'
+#             )
+#         return mark_safe('<span style="color:#dc3545;">Missing</span>')
+
+#     def gst_document_link(self, obj):
+#         return self._document_link(obj.gst_document, "GST Doc")
+
+#     gst_document_link.short_description = "GST Document"
+
+#     def tan_document_link(self, obj):
+#         return self._document_link(obj.tan_document, "TAN Doc")
+
+#     tan_document_link.short_description = "TAN Document"
+
+#     def pan_document_link(self, obj):
+#         return self._document_link(obj.pan_document, "PAN Doc")
+
+#     pan_document_link.short_description = "PAN Document"
+
+#     def account_number_masked(self, obj):
+#         if obj.account_number:
+#             return "•" * (len(obj.account_number) - 4) + obj.account_number[-4:]
+#         return "—"
+
+#     account_number_masked.short_description = "Account Number (Masked)"
+
+#     def has_all_documents(self, obj):
+#         missing = []
+#         if not obj.gst_document:
+#             missing.append("GST")
+#         if not obj.tan_document:
+#             missing.append("TAN")
+#         if not obj.pan_document:
+#             missing.append("PAN")
+
+#         if not missing:
+#             return mark_safe('<span style="color:green;">✓ Complete</span>')
+#         else:
+#             return mark_safe(
+#                 f'<span style="color:orange;">⚠️ Missing: {", ".join(missing)}</span>'
+#             )
+
+#     has_all_documents.short_description = "Compliance Docs"
+#     has_all_documents.admin_order_field = None
+
+#     def get_readonly_fields(self, request, obj=None):
+#         if obj:
+#             return self.readonly_fields + ("gst_number", "pan_number", "tan_number")
+#         return self.readonly_fields
+
+
+# @admin.register(B2CCustomer)
+# class B2CCustomerAdmin(admin.ModelAdmin):
+#     list_display = (
+#         "id",
+#         "name",
+#         "phone_number",
+#         "email",
+#         "state",
+#         "district",
+#         "gst_number",
+#         "pan_number",
+#         "created_at",
+#     )
+#     search_fields = ("name", "phone_number", "email", "gst_number", "pan_number")
+#     list_filter = ("state", "district", "created_at")
+#     ordering = ("-id",)
+#     readonly_fields = ("created_at",)
+#     list_per_page = 25
+
+#     fieldsets = (
+#         ("Customer Details", {"fields": ("name", "phone_number", "email", "address")}),
+#         ("Location", {"fields": ("state", "district")}),
+#         (
+#             "Bank Details",
+#             {
+#                 "fields": (
+#                     "bank_name",
+#                     "account_holder_name",
+#                     "account_number",
+#                     "ifsc_code",
+#                 )
+#             },
+#         ),
+#         ("GST Details", {"fields": ("gst_number", "gst_document")}),
+#         ("TAN Details", {"fields": ("tan_number", "tan_document")}),
+#         ("PAN Details", {"fields": ("pan_number", "pan_document")}),
+#         ("System Info", {"fields": ("created_at",)}),
+#     )
+
+
+# @admin.register(B2BPartner)
+# class B2BPartnerAdmin(admin.ModelAdmin):
+#     list_display = (
+#         "id",
+#         "partner_name",
+#         "phone_number",
+#         "email",
+#         "state",
+#         "district",
+#         "gst_number",
+#         "pan_number",
+#         "created_at",
+#     )
+#     search_fields = (
+#         "partner_name",
+#         "phone_number",
+#         "email",
+#         "gst_number",
+#         "pan_number",
+#     )
+#     list_filter = ("state", "district", "created_at")
+#     ordering = ("-id",)
+#     readonly_fields = ("created_at",)
+
+#     fieldsets = (
+#         (
+#             "Partner Details",
+#             {"fields": ("partner_name", "phone_number", "email", "address")},
+#         ),
+#         ("Location", {"fields": ("state", "district")}),
+#         (
+#             "Bank Details",
+#             {
+#                 "fields": (
+#                     "bank_name",
+#                     "account_holder_name",
+#                     "account_number",
+#                     "ifsc_code",
+#                 )
+#             },
+#         ),
+#         ("GST Details", {"fields": ("gst_number", "gst_document")}),
+#         ("TAN Details", {"fields": ("tan_number", "tan_document")}),
+#         ("PAN Details", {"fields": ("pan_number", "pan_document")}),
+#         ("System Info", {"fields": ("created_at",)}),
+#     )
+
+
+# @admin.register(Manufacturer)
+# class ManufacturerAdmin(admin.ModelAdmin):
+
+#     list_display = (
+#         "company_name",
+#         "applicant_name",
+#         "applicant_email",
+#         "company_phone",
+#         "tac_no",
+#         "tac_validity",
+#         "created_at",
+#         "created_by",
+#     )
+
+#     list_filter = (
+#         "tac_validity",
+#         "created_at",
+#         "created_by",
+#     )
+
+#     search_fields = (
+#         "company_name",
+#         "applicant_name",
+#         "applicant_email",
+#         "company_email",
+#         "company_gst_no",
+#         "company_pan_no",
+#         "tac_no",
+#         "company_registration_number",
+#     )
+
+#     ordering = ("-created_at",)
+
+#     date_hierarchy = "created_at"
+
+#     list_per_page = 25
+
+#     fieldsets = (
+#         (
+#             "👤 Applicant Information",
+#             {
+#                 "fields": (
+#                     ("applicant_name", "applicant_email"),
+#                     ("applicant_mobile", "applicant_dob"),
+#                     "applicant_id_proof_no",
+#                     "applicant_address",
+#                     "applicant_pin",
+#                 )
+#             },
+#         ),
+#         (
+#             "🏢 Company Information",
+#             {
+#                 "fields": (
+#                     ("company_name", "company_email"),
+#                     "company_phone",
+#                     "company_address",
+#                     "company_pin",
+#                     ("company_gst_no", "company_pan_no"),
+#                     "company_registration_number",
+#                 )
+#             },
+#         ),
+#         (
+#             "📋 TAC Information",
+#             {"fields": (("tac_no", "tac_validity"),)},
+#         ),
+#         (
+#             "📁 Document Uploads",
+#             {
+#                 "description": "Upload required documents below. Existing files are shown as download links.",
+#                 "fields": (
+#                     "self_certified_applicant",
+#                     "self_certified_applicant_link",
+#                     "authorization_letter",
+#                     "authorization_letter_link",
+#                     "pan_card",
+#                     "pan_card_link",
+#                     "gst_certificate",
+#                     "gst_certificate_link",
+#                     "company_registration_certificate",
+#                     "company_registration_certificate_link",
+#                     "technical_onboarding_request_letter",
+#                     "technical_onboarding_request_letter_link",
+#                     "tac_document",
+#                     "tac_document_link",
+#                 ),
+#             },
+#         ),
+#         (
+#             "🔐 Meta",
+#             {
+#                 "classes": ("collapse",),
+#                 "fields": (
+#                     "created_by",
+#                     "created_at",
+#                 ),
+#             },
+#         ),
+#     )
+
+#     readonly_fields = (
+#         "created_at",
+#         "self_certified_applicant_link",
+#         "authorization_letter_link",
+#         "pan_card_link",
+#         "gst_certificate_link",
+#         "company_registration_certificate_link",
+#         "technical_onboarding_request_letter_link",
+#         "tac_document_link",
+#     )
+
+#     def save_model(self, request, obj, form, change):
+#         if not obj.pk:
+#             obj.created_by = request.user
+#         super().save_model(request, obj, form, change)
+
+#     def _file_link(self, file_field, label):
+#         if file_field and hasattr(file_field, "url"):
+#             return format_html(
+#                 '<a href="{}" target="_blank">📄 View / Download {}</a>',
+#                 file_field.url,
+#                 label,
+#             )
+#         return "No file uploaded"
+
+#     def self_certified_applicant_link(self, obj):
+#         return self._file_link(obj.self_certified_applicant, "Self Certified Document")
+
+#     self_certified_applicant_link.short_description = "Current File"
+
+#     def authorization_letter_link(self, obj):
+#         return self._file_link(obj.authorization_letter, "Authorization Letter")
+
+#     authorization_letter_link.short_description = "Current File"
+
+#     def pan_card_link(self, obj):
+#         return self._file_link(obj.pan_card, "PAN Card")
+
+#     pan_card_link.short_description = "Current File"
+
+#     def gst_certificate_link(self, obj):
+#         return self._file_link(obj.gst_certificate, "GST Certificate")
+
+#     gst_certificate_link.short_description = "Current File"
+
+#     def company_registration_certificate_link(self, obj):
+#         return self._file_link(
+#             obj.company_registration_certificate, "Company Registration Certificate"
+#         )
+
+#     company_registration_certificate_link.short_description = "Current File"
+
+#     def technical_onboarding_request_letter_link(self, obj):
+#         return self._file_link(
+#             obj.technical_onboarding_request_letter,
+#             "Technical Onboarding Request Letter",
+#         )
+
+#     technical_onboarding_request_letter_link.short_description = "Current File"
+
+#     def tac_document_link(self, obj):
+#         return self._file_link(obj.tac_document, "TAC Document")
+
+#     tac_document_link.short_description = "Current File"
+
+
+# @admin.register(Distributor)
+# class DistributorAdmin(admin.ModelAdmin):
+#     list_display = (
+#         "id",
+#         "name",
+#         "phone_number",
+#         "email",
+#         "linked_to",
+#         "manufacturer",
+#         "created_at",
+#     )
+#     search_fields = (
+#         "name",
+#         "phone_number",
+#         "email",
+#         "gst_number",
+#         "pan_number",
+#         "manufacturer__name",
+#     )
+#     list_filter = ("linked_to", "state", "district", "created_at")
+#     ordering = ("-id",)
+#     readonly_fields = ("created_at",)
+#     filter_horizontal = ("authorised_states", "authorised_districts")
+#     fieldsets = (
+#         ("Basic Information", {"fields": ("name", "phone_number", "email", "address")}),
+#         ("Address Location", {"fields": ("state", "district")}),
+#         ("Linking Information", {"fields": ("linked_to", "manufacturer")}),
+#         ("Authorised Area", {"fields": ("authorised_states", "authorised_districts")}),
+#         (
+#             "Bank Details",
+#             {
+#                 "fields": (
+#                     "bank_name",
+#                     "account_holder_name",
+#                     "account_number",
+#                     "ifsc_code",
+#                 )
+#             },
+#         ),
+#         ("GST Details", {"fields": ("gst_number", "gst_document")}),
+#         ("TAN Details", {"fields": ("tan_number", "tan_document")}),
+#         ("PAN Details", {"fields": ("pan_number", "pan_document")}),
+#         ("System Info", {"fields": ("created_at",)}),
+#     )
+
+
+# @admin.register(Dealer)
+# class DealerAdmin(admin.ModelAdmin):
+#     list_display = (
+#         "id",
+#         "name",
+#         "phone_number",
+#         "email",
+#         "linked_to",
+#         "manufacturer",
+#         "distributor",
+#         "state",
+#         "district",
+#         "created_at",
+#     )
+#     search_fields = ("name", "phone_number", "email", "gst_number", "pan_number")
+#     list_filter = (
+#         "linked_to",
+#         "state",
+#         "district",
+#         "manufacturer",
+#         "distributor",
+#         "created_at",
+#     )
+#     ordering = ("-id",)
+#     readonly_fields = ("created_at",)
+#     filter_horizontal = ("authorised_states", "authorised_districts")
+#     fieldsets = (
+#         ("Basic Information", {"fields": ("name", "phone_number", "email", "address")}),
+#         ("Address Location", {"fields": ("state", "district")}),
+#         (
+#             "Bank Details",
+#             {
+#                 "fields": (
+#                     "bank_name",
+#                     "account_holder_name",
+#                     "account_number",
+#                     "ifsc_code",
+#                 )
+#             },
+#         ),
+#         (
+#             "Tax Documents",
+#             {
+#                 "fields": (
+#                     "gst_number",
+#                     "gst_document",
+#                     "tan_number",
+#                     "tan_document",
+#                     "pan_number",
+#                     "pan_document",
+#                 )
+#             },
+#         ),
+#         ("Business Linking", {"fields": ("linked_to", "manufacturer", "distributor")}),
+#         (
+#             "Authorised Area",
+#             {"fields": ("authorised_states", "authorised_districts")},
+#         ),
+#         ("System Info", {"fields": ("created_at",)}),
+#     )
+
+
+# @admin.register(Product)
+# class ProductAdmin(admin.ModelAdmin):
+#     list_display = ("product_id", "created_at")
+#     search_fields = ("product_id",)
+#     ordering = ("product_id",)
+#     readonly_fields = ("created_at",)
+
+
+# class BOMComponentInline(admin.TabularInline):
+#     model = BOMComponent
+#     extra = 1
+#     can_delete = True
+#     verbose_name = "BOM Component"
+#     verbose_name_plural = "📦 BOM Components"
+#     fields = (
+#         "identification_mark",
+#         "description",
+#         "designator",
+#         "footprint",
+#         "volt",
+#         "part_no",
+#         "part_make",
+#         "per_device_quantity",
+#         "remarks",
+#     )
+
+
+# class WireConnectorInline(admin.TabularInline):
+#     model = WireConnector
+#     extra = 1
+#     can_delete = True
+#     verbose_name = "Wire Connector"
+#     verbose_name_plural = "🔌 Wire Connectors"
+#     fields = ("connector_name", "number_of_pins", "wire_colors")
+
+
+# @admin.register(BOM)
+# class BOMAdmin(admin.ModelAdmin):
+#     inlines = [BOMComponentInline]
+
+#     def get_model_perms(self, request):
+#         return {}
+
+
+# @admin.register(WireHarness)
+# class WireHarnessAdmin(admin.ModelAdmin):
+#     inlines = [WireConnectorInline]
+
+#     def get_model_perms(self, request):
+#         return {}
+
+
+# class DeviceInformationInline(admin.StackedInline):
+#     model = DeviceInformation
+#     extra = 1
+#     max_num = 1
+#     can_delete = False
+#     verbose_name_plural = "📋 Step 1 — Device Information"
+#     fields = (
+#         ("make", "model"),
+#         ("mrp", "unit_of_measure"),
+#         ("version", "variant"),
+#         "state_of_supply",
+#     )
+
+
+# class BOMInline(admin.StackedInline):
+#     model = BOM
+#     extra = 1
+#     max_num = 1
+#     can_delete = False
+#     show_change_link = True
+#     verbose_name_plural = (
+#         "📄 Step 2 & 3 — BOM  (click 'Change' after saving to add Components)"
+#     )
+#     fields = ("upload_type", "bom_file")
+
+
+# class EnclosureInline(admin.StackedInline):
+#     model = Enclosure
+#     extra = 1
+#     max_num = 1
+#     can_delete = True
+#     verbose_name_plural = "📦 Step 4 — Enclosure"
+#     fields = (
+#         ("length", "breadth", "height"),
+#         ("color", "material"),
+#         ("quantity", "make", "part_number"),
+#     )
+
+
+# class WireHarnessInline(admin.StackedInline):
+#     model = WireHarness
+#     extra = 1
+#     max_num = 1
+#     can_delete = True
+#     show_change_link = True
+#     verbose_name_plural = (
+#         "🔌 Step 5 — Wire Harness  (click 'Change' after saving to add Connectors)"
+#     )
+#     fields = ("number_of_wires", "specification", "make", "part_number")
+
+
+# class BatteryInline(admin.StackedInline):
+#     model = Battery
+#     extra = 1
+#     max_num = 1
+#     can_delete = True
+#     verbose_name_plural = "🔋 Step 6 — Battery"
+#     fields = (
+#         "capacity",
+#         ("length", "breadth", "height"),
+#         ("make", "part_number"),
+#     )
+
+
+# class SOSButtonInline(admin.StackedInline):
+#     model = SOSButton
+#     extra = 1
+#     max_num = 1
+#     can_delete = True
+#     verbose_name_plural = "🆘 Step 7 — SOS Button"
+#     fields = ("total_length", "quantity_per_set", "make", "part_number")
+
+
+# class StickerInline(admin.TabularInline):
+#     model = Sticker
+#     extra = 1
+#     can_delete = True
+#     verbose_name_plural = "🏷️ Step 8 — Stickers"
+#     fields = ("name", "length", "breadth", "quantity", "make", "part_number", "file")
+
+
+# class UserManualInline(admin.StackedInline):
+#     model = UserManual
+#     extra = 1
+#     max_num = 1
+#     can_delete = True
+#     verbose_name_plural = "📖 Step 9 — User Manual"
+#     fields = ("file",)
+
+
+# class AccessoryInline(admin.TabularInline):
+#     model = Accessory
+#     extra = 1
+#     can_delete = True
+#     verbose_name_plural = "🎒 Step 10 — Accessories"
+#     fields = ("name", "quantity", "specifications", "description")
+
+
+# @admin.register(Device)
+# class DeviceAdmin(admin.ModelAdmin):
+#     list_display = (
+#         "device_id",
+#         "make_model",
+#         "status_badge",
+#         "completion_status",
+#         "created_by",
+#         "created_at_formatted",
+#     )
+#     list_filter = ("status", "created_at", "created_by")
+#     search_fields = (
+#         "id",
+#         "info__make",
+#         "info__model",
+#         "created_by__username",
+#     )
+#     ordering = ("-created_at",)
+#     date_hierarchy = "created_at"
+#     readonly_fields = ("id_display", "created_at")
+#     fieldsets = (
+#         (
+#             "🖥️ Device Overview",
+#             {
+#                 "description": (
+#                     "Create the device record first, then fill in each step below. "
+#                     "Status will be set to 'Completed' manually or via bulk action."
+#                 ),
+#                 "fields": ("id_display", "status", "created_by", "created_at"),
+#             },
+#         ),
+#     )
+
+#     inlines = [
+#         DeviceInformationInline,
+#         BOMInline,
+#         EnclosureInline,
+#         WireHarnessInline,
+#         BatteryInline,
+#         SOSButtonInline,
+#         StickerInline,
+#         UserManualInline,
+#         AccessoryInline,
+#     ]
+
+#     actions = ["mark_completed", "mark_draft"]
+
+#     def save_model(self, request, obj, form, change):
+#         if not obj.pk:
+#             obj.created_by = request.user
+#         super().save_model(request, obj, form, change)
+
+#     def device_id(self, obj):
+#         return format_html("<strong>Device-{}</strong>", obj.id)
+
+#     device_id.short_description = "Device ID"
+#     device_id.admin_order_field = "id"
+
+#     def make_model(self, obj):
+#         if hasattr(obj, "info"):
+#             return format_html(
+#                 "<strong>{}</strong> <span style='color:#888;'>{}</span>",
+#                 obj.info.make,
+#                 obj.info.model,
+#             )
+#         return mark_safe("<span style='color:#bbb;'>Not filled yet</span>")
+
+#     make_model.short_description = "Make / Model"
+
+#     def status_badge(self, obj):
+#         colors = {"draft": "#ffc107", "completed": "#28a745"}
+#         bg = colors.get(obj.status, "#999")
+#         return mark_safe(
+#             f'<span style="background:{bg};color:white;padding:3px 10px;'
+#             f'border-radius:4px;font-weight:bold;">'
+#             f"{obj.get_status_display()}</span>"
+#         )
+
+#     status_badge.short_description = "Status"
+#     status_badge.admin_order_field = "status"
+
+#     def completion_status(self, obj):
+#         steps = [
+#             ("Info", hasattr(obj, "info")),
+#             ("BOM", hasattr(obj, "bom")),
+#             ("Enclosure", hasattr(obj, "enclosure")),
+#             ("Harness", hasattr(obj, "wireharness")),
+#             ("Battery", hasattr(obj, "battery")),
+#             ("SOS", hasattr(obj, "sosbutton")),
+#             ("Stickers", obj.sticker_set.exists()),
+#             ("Manual", hasattr(obj, "usermanual")),
+#             ("Accessories", obj.accessories.exists()),
+#         ]
+#         pills = " ".join(
+#             f'<span style="background:{"#28a745" if done else "#dc3545"};'
+#             f'color:white;padding:2px 7px;border-radius:3px;font-size:11px;">'
+#             f"{name}</span>"
+#             for name, done in steps
+#         )
+#         return mark_safe(pills)
+
+#     completion_status.short_description = "Steps Completed"
+
+#     def created_at_formatted(self, obj):
+#         return obj.created_at.strftime("%d %b %Y  %I:%M %p")
+
+#     created_at_formatted.short_description = "Created At"
+
+#     def id_display(self, obj):
+#         return f"Device-{obj.id}" if obj.pk else "Will be assigned after saving"
+
+#     id_display.short_description = "Device ID"
+
+#     def mark_completed(self, request, queryset):
+#         updated = queryset.update(status="completed")
+#         self.message_user(
+#             request, f"{updated} device(s) marked as Completed.", messages.SUCCESS
+#         )
+
+#     mark_completed.short_description = "✅ Mark selected as Completed"
+
+#     def mark_draft(self, request, queryset):
+#         updated = queryset.update(status="draft")
+#         self.message_user(
+#             request, f"{updated} device(s) reverted to Draft.", messages.WARNING
+#         )
+
+#     mark_draft.short_description = "📝 Revert selected to Draft"
+
+
+# @admin.register(ProformaInvoice)
+# class ProformaInvoiceAdmin(admin.ModelAdmin):
+#     list_display = (
+#         "id",
+#         "party_type",
+#         "product",
+#         "quantity",
+#         "selling_price",
+#         "discount_percent",
+#         "grand_total",
+#         "payment_terms",
+#         "delivery_date",
+#         "state",
+#         "created_at",
+#     )
+#     search_fields = (
+#         "id",
+#         "product__product_id",
+#         "contact_person_name",
+#         "mobile_no",
+#         "gstn",
+#     )
+#     list_filter = (
+#         "party_type",
+#         "payment_terms",
+#         "state",
+#         "delivery_date",
+#         "created_at",
+#     )
+#     ordering = ("-id",)
+#     readonly_fields = ("created_at",)
+#     fieldsets = (
+#         (
+#             "Party Information",
+#             {
+#                 "fields": (
+#                     "party_type",
+#                     "b2b_partner",
+#                     "b2c_customer",
+#                     "dealer",
+#                     "distributor",
+#                 )
+#             },
+#         ),
+#         (
+#             "Product & Pricing",
+#             {
+#                 "fields": (
+#                     "product",
+#                     "selling_price",
+#                     "discount_percent",
+#                     "quantity",
+#                     "shipping_charges",
+#                     "grand_total",
+#                 )
+#             },
+#         ),
+#         (
+#             "Payment & Delivery",
+#             {"fields": ("payment_terms", "delivery_date", "delivery_address", "state")},
+#         ),
+#         (
+#             "Contact Information",
+#             {"fields": ("contact_person_name", "mobile_no", "gstn")},
+#         ),
+#         ("System Info", {"fields": ("created_at",)}),
+#     )
+
+
+# class OrderBatchInline(admin.TabularInline):
+#     """Shows all batches directly inside the OrderProduct page."""
+
+#     model = OrderBatch
+#     extra = 0
+#     fields = ("batch_number", "available_stock")
+#     readonly_fields = ("available_stock",)
+#     show_change_link = True
+
+
+# class OrderEntryMakeToOrderInline(admin.StackedInline):
+#     """Shows Make-to-Order details inside the OrderEntry page."""
+
+#     model = OrderEntryMakeToOrder
+#     extra = 0
+#     can_delete = False
+#     readonly_fields = ("created_at",)
+#     fieldsets = (
+#         (
+#             "Customer",
+#             {
+#                 "fields": (
+#                     "customer_name",
+#                     "customer_type",
+#                     "contact_person",
+#                     "mobile_no",
+#                 ),
+#             },
+#         ),
+#         (
+#             "Product",
+#             {
+#                 "fields": (
+#                     "product",
+#                     "product_specifications",
+#                     "customization_details",
+#                 ),
+#             },
+#         ),
+#         (
+#             "Order Summary",
+#             {
+#                 "fields": (
+#                     "quantity",
+#                     "unit_price",
+#                     "discount_percent",
+#                     "gst_percent",
+#                     "shipping_charges",
+#                     "grand_total",
+#                     "advance_payment",
+#                 ),
+#             },
+#         ),
+#         (
+#             "Delivery & Terms",
+#             {
+#                 "fields": (
+#                     "expected_delivery_date",
+#                     "payment_terms",
+#                     "order_priority",
+#                     "special_instructions",
+#                 ),
+#             },
+#         ),
+#         (
+#             "Meta",
+#             {
+#                 "fields": ("created_at",),
+#                 "classes": ("collapse",),
+#             },
+#         ),
+#     )
+
+
+# @admin.register(OrderProduct)
+# class OrderProductAdmin(admin.ModelAdmin):
+#     list_display = ("id", "name", "batch_count", "total_stock")
+#     search_fields = ("name",)
+#     ordering = ("name",)
+#     inlines = [OrderBatchInline]
+
+#     # ── Custom columns ──────────────────────────────────────────
+
+#     @admin.display(description="Batches")
+#     def batch_count(self, obj):
+#         return obj.batches.count()
+
+#     @admin.display(description="Total Stock")
+#     def total_stock(self, obj):
+#         total = obj.batches.aggregate(t=Sum("available_stock"))["t"] or 0
+#         color = "green" if total > 0 else "red"
+#         return format_html('<b style="color:{}">{}</b>', color, total)
+
+
+# @admin.register(OrderBatch)
+# class OrderBatchAdmin(admin.ModelAdmin):
+#     list_display = ("id", "product", "batch_number", "stock_display", "stock_status")
+#     list_filter = ("product",)
+#     search_fields = ("batch_number", "product__name")
+#     ordering = ("product__name", "batch_number")
+#     list_per_page = 25
+
+#     # ── Custom columns ──────────────────────────────────────────
+
+#     @admin.display(description="Available Stock")
+#     def stock_display(self, obj):
+#         return obj.available_stock
+
+#     @admin.display(description="Status")
+#     def stock_status(self, obj):
+#         if obj.available_stock == 0:
+#             return format_html(
+#                 '<span style="color:red; font-weight:bold;">⚠ Out of Stock</span>'
+#             )
+#         elif obj.available_stock <= 10:
+#             return format_html(
+#                 '<span style="color:orange; font-weight:bold;">⚡ Low Stock</span>'
+#             )
+#         return format_html('<span style="color:green;">✔ In Stock</span>')
+
+# @admin.register(SupplierVendor)
+# class SupplierVendorAdmin(admin.ModelAdmin):
+#     list_display = ("id", "name", "production_order_count")
+#     search_fields = ("name",)
+#     ordering = ("name",)
+
+#     @admin.display(description="Production Orders")
+#     def production_order_count(self, obj):
+#         return obj.productionorder_set.count()
+
+
+# @admin.register(OrderEntry)
+# class OrderEntryAdmin(admin.ModelAdmin):
+#     list_display = (
+#         "id",
+#         "user",
+#         "order_type",
+#         "production_type",
+#         "assembly_type",
+#         "step1_badge",
+#         "step2_badge",
+#         "created_at",
+#     )
+#     list_filter = (
+#         "order_type",
+#         "production_type",
+#         "assembly_type",
+#         "is_step1_complete",
+#         "is_step2_complete",
+#     )
+#     search_fields = ("user__username", "user__email")
+#     ordering = ("-created_at",)
+#     readonly_fields = ("created_at",)
+#     list_per_page = 25
+#     inlines = [OrderEntryMakeToOrderInline]
+
+#     fieldsets = (
+#         (
+#             "Order Configuration",
+#             {
+#                 "fields": ("user", "order_type", "production_type", "assembly_type"),
+#             },
+#         ),
+#         (
+#             "Progress",
+#             {
+#                 "fields": ("is_step1_complete", "is_step2_complete"),
+#             },
+#         ),
+#         (
+#             "Meta",
+#             {
+#                 "fields": ("created_at",),
+#                 "classes": ("collapse",),
+#             },
+#         ),
+#     )
+
+#     # ── Custom columns ──────────────────────────────────────────
+
+#     @admin.display(description="Step 1", boolean=False)
+#     def step1_badge(self, obj):
+#         if obj.is_step1_complete:
+#             return format_html(
+#                 '<span style="color:green; font-weight:bold;">✔ Done</span>'
+#             )
+#         return format_html('<span style="color:gray;">○ Pending</span>')
+
+#     @admin.display(description="Step 2", boolean=False)
+#     def step2_badge(self, obj):
+#         if obj.is_step2_complete:
+#             return format_html(
+#                 '<span style="color:green; font-weight:bold;">✔ Done</span>'
+#             )
+#         return format_html('<span style="color:gray;">○ Pending</span>')
+
+
+# @admin.register(OrderEntryMakeToOrder)
+# class OrderEntryMakeToOrderAdmin(admin.ModelAdmin):
+#     list_display = (
+#         "id",
+#         "customer_name",
+#         "customer_type",
+#         "product",
+#         "quantity",
+#         "grand_total",
+#         "order_priority",
+#         "priority_badge",
+#         "expected_delivery_date",
+#         "created_at",
+#     )
+#     list_filter = ("customer_type", "order_priority", "payment_terms")
+#     search_fields = (
+#         "customer_name",
+#         "contact_person",
+#         "mobile_no",
+#         "product__name",
+#         "order_entry__id",
+#     )
+#     ordering = ("-created_at",)
+#     readonly_fields = ("created_at",)
+#     list_per_page = 25
+
+#     fieldsets = (
+#         (
+#             "Order Entry Reference",
+#             {
+#                 "fields": ("order_entry",),
+#             },
+#         ),
+#         (
+#             "Customer Details",
+#             {
+#                 "fields": (
+#                     "customer_name",
+#                     "customer_type",
+#                     "contact_person",
+#                     "mobile_no",
+#                 ),
+#             },
+#         ),
+#         (
+#             "Product Details",
+#             {
+#                 "fields": (
+#                     "product",
+#                     "product_specifications",
+#                     "customization_details",
+#                 ),
+#             },
+#         ),
+#         (
+#             "Pricing",
+#             {
+#                 "fields": (
+#                     "quantity",
+#                     "unit_price",
+#                     "discount_percent",
+#                     "gst_percent",
+#                     "shipping_charges",
+#                     "grand_total",
+#                     "advance_payment",
+#                 ),
+#             },
+#         ),
+#         (
+#             "Delivery & Priority",
+#             {
+#                 "fields": (
+#                     "expected_delivery_date",
+#                     "payment_terms",
+#                     "order_priority",
+#                     "special_instructions",
+#                 ),
+#             },
+#         ),
+#         (
+#             "Meta",
+#             {
+#                 "fields": ("created_at",),
+#                 "classes": ("collapse",),
+#             },
+#         ),
+#     )
+
+#     # ── Custom columns ──────────────────────────────────────────
+
+#     @admin.display(description="Priority")
+#     def priority_badge(self, obj):
+#         colors = {
+#             "low": ("gray", "▼ Low"),
+#             "medium": ("blue", "● Medium"),
+#             "high": ("orange", "▲ High"),
+#             "urgent": ("red", "🔴 Urgent"),
+#         }
+#         color, label = colors.get(obj.order_priority, ("black", obj.order_priority))
+#         return format_html(
+#             '<span style="color:{}; font-weight:bold;">{}</span>', color, label
+#         )
+
+
+# @admin.register(SalesOrder)
+# class SalesOrderAdmin(admin.ModelAdmin):
+#     list_display = (
+#         "id",
+#         "customer_name",
+#         "customer_type",
+#         "product",
+#         "batch",
+#         "quantity",
+#         "grand_total",
+#         "payment_mode",
+#         "payment_status_badge",
+#         "delivery_date",
+#         "created_at",
+#     )
+#     list_filter = (
+#         "customer_type",
+#         "payment_mode",
+#         "payment_status",
+#         "product",
+#         "delivery_date",
+#     )
+#     search_fields = (
+#         "customer_name",
+#         "contact_person",
+#         "mobile_no",
+#         "invoice_number",
+#         "product__name",
+#         "batch__batch_number",
+#     )
+#     ordering = ("-created_at",)
+#     readonly_fields = ("created_at",)
+#     list_per_page = 25
+#     date_hierarchy = "delivery_date"
+
+#     fieldsets = (
+#         (
+#             "Customer Details",
+#             {
+#                 "fields": (
+#                     "customer_name",
+#                     "customer_type",
+#                     "contact_person",
+#                     "mobile_no",
+#                 ),
+#             },
+#         ),
+#         (
+#             "Product & Batch",
+#             {
+#                 "fields": ("product", "batch", "quantity"),
+#             },
+#         ),
+#         (
+#             "Pricing",
+#             {
+#                 "fields": (
+#                     "unit_price",
+#                     "discount_percent",
+#                     "gst_percent",
+#                     "shipping_charges",
+#                     "grand_total",
+#                 ),
+#             },
+#         ),
+#         (
+#             "Delivery",
+#             {
+#                 "fields": ("delivery_date", "delivery_address"),
+#             },
+#         ),
+#         (
+#             "Payment",
+#             {
+#                 "fields": ("payment_mode", "payment_status", "invoice_number"),
+#             },
+#         ),
+#         (
+#             "Notes",
+#             {
+#                 "fields": ("remarks",),
+#                 "classes": ("collapse",),
+#             },
+#         ),
+#         (
+#             "Meta",
+#             {
+#                 "fields": ("created_at",),
+#                 "classes": ("collapse",),
+#             },
+#         ),
+#     )
+
+#     # ── Custom columns ──────────────────────────────────────────
+
+#     @admin.display(description="Payment Status")
+#     def payment_status_badge(self, obj):
+#         styles = {
+#             "paid": ("green", "✔ Paid"),
+#             "partially_paid": ("orange", "◑ Partial"),
+#             "pending": ("red", "✖ Pending"),
+#             "on_credit": ("blue", "$ Credit"),
+#         }
+#         color, label = styles.get(obj.payment_status, ("black", obj.payment_status))
+#         return format_html(
+#             '<span style="color:{}; font-weight:bold;">{}</span>', color, label
+#         )
+
+#     # ── Bulk actions ─────────────────────────────────────────────
+
+#     actions = ["mark_as_paid", "mark_as_pending"]
+
+#     @admin.action(description="Mark selected orders as Paid")
+#     def mark_as_paid(self, request, queryset):
+#         updated = queryset.update(payment_status="paid")
+#         self.message_user(request, f"{updated} order(s) marked as Paid.")
+
+#     @admin.action(description="Mark selected orders as Pending")
+#     def mark_as_pending(self, request, queryset):
+#         updated = queryset.update(payment_status="pending")
+#         self.message_user(request, f"{updated} order(s) marked as Pending.")
+
+
+# @admin.register(ProductionOrder)
+# class ProductionOrderAdmin(admin.ModelAdmin):
+#     list_display = (
+#         "id",
+#         "product",
+#         "product_category",
+#         "batch",
+#         "quantity_added",
+#         "unit_price",
+#         "total_value",
+#         "supplier_vendor",
+#         "purchase_date",
+#         "manufacturing_date",
+#         "created_at",
+#     )
+#     list_filter = (
+#         "production_type",
+#         "product_category",
+#         "supplier_vendor",
+#         "product",
+#         "purchase_date",
+#         "manufacturing_date",
+#     )
+#     search_fields = (
+#         "product__name",
+#         "batch__batch_number",
+#         "supplier_vendor__name",
+#     )
+#     ordering = ("-created_at",)
+#     readonly_fields = ("created_at",)
+#     list_per_page = 25
+#     date_hierarchy = "purchase_date"
+
+#     fieldsets = (
+#         (
+#             "Production Details",
+#             {
+#                 "fields": (
+#                     "production_type",
+#                     "product",
+#                     "product_category",
+#                 ),
+#             },
+#         ),
+#         (
+#             "Batch & Quantity",
+#             {
+#                 "fields": ("batch", "quantity_added"),
+#             },
+#         ),
+#         (
+#             "Pricing",
+#             {
+#                 "fields": ("unit_price", "total_value"),
+#             },
+#         ),
+#         (
+#             "Supplier & Dates",
+#             {
+#                 "fields": (
+#                     "supplier_vendor",
+#                     "purchase_date",
+#                     "manufacturing_date",
+#                 ),
+#             },
+#         ),
+#         (
+#             "Notes",
+#             {
+#                 "fields": ("remarks",),
+#                 "classes": ("collapse",),
+#             },
+#         ),
+#         (
+#             "Meta",
+#             {
+#                 "fields": ("created_at",),
+#                 "classes": ("collapse",),
+#             },
+#         ),
+#     )
+
+#     # ── Bulk actions ─────────────────────────────────────────────
+
+#     actions = ["export_summary"]
+
+#     @admin.action(description="Show total value of selected production orders")
+#     def export_summary(self, request, queryset):
+#         total = queryset.aggregate(t=Sum("total_value"))["t"] or 0
+#         count = queryset.count()
+#         self.message_user(
+#             request,
+#             f"Selected {count} production order(s) — Total Value: ₹{total:,.2f}",
+#         )
+
+
+# class RFQSelectionInline(admin.TabularInline):
+#     model = RFQSelection
+#     extra = 0
+#     fields = ("item_type", "reference")
+#     autocomplete_fields = ()
+#     show_change_link = True
+
+
+# @admin.register(RequestForQuote)
+# class RequestForQuoteAdmin(admin.ModelAdmin):
+#     list_display = (
+#         "id",
+#         "order_reference",
+#         "device_name",
+#         "assembly_type",
+#         "quantity",
+#         "srn_no",
+#         "delivery_date",
+#         "status",
+#         "created_by",
+#         "created_at",
+#     )
+#     list_filter = ("assembly_type", "srn_no", "status", "delivery_date", "created_by")
+#     search_fields = ("order_reference", "device_name", "created_by__username")
+#     ordering = ("-created_at",)
+#     readonly_fields = ("created_by", "created_at")
+#     inlines = [RFQSelectionInline]
+#     fieldsets = (
+#         (
+#             "STEP 1 — Order Selection (UI Driven)",
+#             {"fields": ("order_reference", "device_name", "assembly_type", "quantity")},
+#         ),
+#         (
+#             "STEP 3 — Quote Details (UI Driven)",
+#             {
+#                 "fields": (
+#                     "srn_no",
+#                     "delivery_date",
+#                     "delivery_address",
+#                     "additional_requirements",
+#                 )
+#             },
+#         ),
+#         ("System Status", {"fields": ("status",)}),
+#         ("Audit Fields", {"fields": ("created_by", "created_at")}),
+#     )
+
+#     def save_model(self, request, obj, form, change):
+#         """
+#         Automatically assign logged-in admin user
+#         """
+#         if not obj.pk:
+#             obj.created_by = request.user
+#         super().save_model(request, obj, form, change)
+
+
+# class PurchaseOrderTypeInline(admin.TabularInline):
+#     model = PurchaseOrderType
+#     extra = 1
+#     fields = ("order_type",)
+#     show_change_link = True
+
+
+# class PurchaseOrderItemInline(admin.TabularInline):
+#     model = PurchaseOrderItem
+#     extra = 1
+#     fields = (
+#         "item_code",
+#         "item_type",
+#         "vendor_id",
+#         "vendor_name",
+#         "unit_price",
+#         "gst_amount",
+#         "total_price",
+#         "delivery_days",
+#     )
+#     show_change_link = True
+
+
+# @admin.register(PurchaseOrder)
+# class PurchaseOrderAdmin(admin.ModelAdmin):
+#     list_display = (
+#         "id",
+#         "order_id",
+#         "buyer_name",
+#         "rfq_id",
+#         "assembly_type",
+#         "delivery_date",
+#         "payment_terms",
+#         "created_by",
+#         "created_at",
+#     )
+#     list_filter = ("assembly_type", "payment_terms", "delivery_date", "created_at")
+#     search_fields = (
+#         "order_id",
+#         "rfq_id",
+#         "buyer_name",
+#         "created_by__username",
+#     )
+#     ordering = ("-created_at",)
+#     readonly_fields = ("created_at",)
+#     inlines = [PurchaseOrderTypeInline, PurchaseOrderItemInline]
+#     fieldsets = (
+#         (
+#             "Step 1 — Order Details",
+#             {"fields": ("buyer_name", "order_id", "rfq_id", "assembly_type")},
+#         ),
+#         (
+#             "Step 2 — Vendor & Delivery",
+#             {
+#                 "fields": (
+#                     "wastage_percentage",
+#                     "selected_vendor_id",
+#                     "delivery_date",
+#                     "payment_terms",
+#                 )
+#             },
+#         ),
+#         ("System Information", {"fields": ("created_by", "created_at")}),
+#     )
+
+
+# @admin.register(PurchaseOrderType)
+# class PurchaseOrderTypeAdmin(admin.ModelAdmin):
+#     list_display = ("purchase_order", "order_type")
+#     list_filter = ("order_type",)
+#     search_fields = ("purchase_order__order_id",)
+
+#     fieldsets = (
+#         ("Purchase Order", {"fields": ("purchase_order",)}),
+#         ("Order Type", {"fields": ("order_type",)}),
+#     )
+
+
+# @admin.register(PurchaseOrderItem)
+# class PurchaseOrderItemAdmin(admin.ModelAdmin):
+#     list_display = (
+#         "purchase_order",
+#         "item_code",
+#         "item_type",
+#         "quantity",
+#         "vendor_name",
+#         "unit_price",
+#         "total_price",
+#         "delivery_days",
+#     )
+
+#     list_filter = ("item_type",)
+#     search_fields = ("item_code", "vendor_name", "purchase_order__order_id")
+
+#     fieldsets = (
+#         ("Purchase Order", {"fields": ("purchase_order",)}),
+#         (
+#             "Item Details",
+#             {"fields": ("item_code", "item_type", "quantity", "delivery_days")},
+#         ),
+#         ("Vendor", {"fields": ("vendor_id", "vendor_name")}),
+#         ("Pricing", {"fields": ("unit_price", "gst_amount", "total_price")}),
+#     )
+
+
+# class MaterialReceiptItemInline(admin.TabularInline):
+#     model = MaterialReceiptItem
+#     extra = 1
+#     fields = ("purchase_order_item", "received_qty", "serial_numbers", "balance_qty")
+#     readonly_fields = ("balance_qty",)
+#     autocomplete_fields = ("purchase_order_item",)
+#     show_change_link = True
+
+
+# @admin.register(MaterialReceiptNote)
+# class MaterialReceiptNoteAdmin(admin.ModelAdmin):
+#     list_display = (
+#         "id",
+#         "purchase_order",
+#         "vendor",
+#         "inward_type",
+#         "receipt_date",
+#         "batch_number",
+#         "created_at",
+#     )
+#     list_filter = ("inward_type", "receipt_date", "vendor")
+#     search_fields = (
+#         "batch_number",
+#         "invoice_number",
+#         "purchase_order__order_id",
+#         "vendor__name",
+#     )
+#     autocomplete_fields = ("purchase_order", "vendor")
+#     readonly_fields = ("created_at",)
+#     inlines = [MaterialReceiptItemInline]
+#     fieldsets = (
+#         (
+#             "Order & Vendor",
+#             {"fields": ("purchase_order", "po_date", "vendor", "inward_type")},
+#         ),
+#         ("Receipt", {"fields": ("receipt_date", "batch_number")}),
+#         (
+#             "Documents",
+#             {
+#                 "fields": (
+#                     "invoice_number",
+#                     "invoice_file",
+#                     "delivery_challan_number",
+#                     "challan_file",
+#                     "eway_bill_number",
+#                     "eway_bill_file",
+#                 )
+#             },
+#         ),
+#         ("Additional Info", {"fields": ("remarks",)}),
+#         ("System", {"fields": ("created_by", "created_at")}),
+#     )
+
+
+# @admin.register(Dispatch)
+# class DispatchAdmin(admin.ModelAdmin):
+#     list_display = (
+#         "id",
+#         "sales_order",
+#         "order_type",
+#         "product",
+#         "batch",
+#         "dispatch_quantity",
+#         "dispatch_date",
+#         "created_by",
+#         "created_at",
+#     )
+#     list_filter = (
+#         "order_type",
+#         "dispatch_date",
+#         "urgent_delivery_required",
+#         "insurance_required",
+#     )
+#     search_fields = (
+#         "sales_order__id",
+#         "customer_name",
+#         "customer_contact",
+#         "customer_email",
+#     )
+#     readonly_fields = ("created_by", "created_at")
+#     fieldsets = (
+#         (
+#             "STEP 1: Sales Order Selection",
+#             {"fields": ("sales_order", "order_type")},
+#         ),
+#         (
+#             "STEP 2: Stock Verification",
+#             {
+#                 "fields": (
+#                     "product",
+#                     "batch",
+#                     "dispatch_quantity",
+#                     "imei_number",
+#                     "serial_number",
+#                     "iccid_number",
+#                 )
+#             },
+#         ),
+#         (
+#             "STEP 3: Dispatch Details",
+#             {"fields": ("dispatch_date", "dispatch_remarks")},
+#         ),
+#         (
+#             "STEP 4: Customer Details & Review",
+#             {
+#                 "fields": (
+#                     "customer_name",
+#                     "customer_contact",
+#                     "customer_email",
+#                     "customer_address",
+#                     "urgent_delivery_required",
+#                     "insurance_required",
+#                 )
+#             },
+#         ),
+#         (
+#             "System Information",
+#             {"fields": ("created_by", "created_at")},
+#         ),
+#     )
+
+#     def save_model(self, request, obj, form, change):
+#         """
+#         Auto-assign created_by on first save
+#         """
+#         if not obj.pk:
+#             obj.created_by = request.user
+#         super().save_model(request, obj, form, change)
+
+
+# class PostDispatchReturnItemInlineFormset(BaseInlineFormSet):
+#     """
+#     Ensures:
+#     - return_qty <= dispatched_qty
+#     - return_amount is auto-calculated
+#     """
+
+#     def clean(self):
+#         super().clean()
+
+#         for form in self.forms:
+#             if not form.cleaned_data or form.cleaned_data.get("DELETE"):
+#                 continue
+
+#             dispatched_qty = form.cleaned_data.get("dispatched_qty")
+#             return_qty = form.cleaned_data.get("return_qty")
+#             unit_price = form.cleaned_data.get("unit_price")
+
+#             if return_qty > dispatched_qty:
+#                 raise ValueError("Return quantity cannot exceed dispatched quantity.")
+#             form.instance.return_amount = Decimal(return_qty) * unit_price
+
+
+# class PostDispatchReturnItemInline(admin.TabularInline):
+#     model = PostDispatchReturnItem
+#     formset = PostDispatchReturnItemInlineFormset
+#     extra = 1
+#     readonly_fields = ("return_amount",)
+#     fields = (
+#         "product_id",
+#         "description",
+#         "dispatched_qty",
+#         "unit_price",
+#         "return_qty",
+#         "return_amount",
+#     )
+
+
+# @admin.register(PostDispatchReturn)
+# class PostDispatchReturnAdmin(admin.ModelAdmin):
+#     """
+#     Admin panel for Post-Dispatch Returns
+#     Allows controlled raw data insertion.
+#     """
+
+#     inlines = [PostDispatchReturnItemInline]
+#     list_display = (
+#         "id",
+#         "dispatch_id",
+#         "invoice_no",
+#         "customer_name",
+#         "return_type",
+#         "return_reason",
+#         "total_return_amount",
+#         "created_by",
+#         "created_at",
+#     )
+#     list_filter = ("return_type", "return_reason", "created_at")
+#     search_fields = ("dispatch_id", "invoice_no", "customer_name")
+#     ordering = ("-id",)
+#     date_hierarchy = "created_at"
+#     fieldsets = (
+#         (
+#             "Dispatch Information",
+#             {
+#                 "fields": (
+#                     "dispatch_id",
+#                     "invoice_no",
+#                     "customer_name",
+#                     "dispatch_total_value",
+#                 )
+#             },
+#         ),
+#         (
+#             "Return Details",
+#             {
+#                 "fields": (
+#                     "return_type",
+#                     "return_reason",
+#                     "return_date",
+#                     "return_remarks",
+#                 )
+#             },
+#         ),
+#         (
+#             "System Information",
+#             {"fields": ("total_return_amount", "created_by")},
+#         ),
+#     )
+
+#     readonly_fields = (
+#         "total_return_amount",
+#         "created_at",
+#     )
+
+#     def save_model(self, request, obj, form, change):
+#         if not change and not obj.created_by:
+#             obj.created_by = request.user
+#         super().save_model(request, obj, form, change)
+
+#     def save_related(self, request, form, formsets, change):
+#         """
+#         Recalculate total_return_amount after saving items
+#         """
+#         super().save_related(request, form, formsets, change)
+
+#         total = Decimal("0.00")
+#         for item in form.instance.items.all():
+#             total += item.return_amount
+
+#         form.instance.total_return_amount = total
+#         form.instance.save(update_fields=["total_return_amount"])
+
+#     def has_delete_permission(self, request, obj=None):
+#         """
+#         Optional: allow delete only to superusers
+#         """
+#         return request.user.is_superuser
+
+#     list_per_page = 25
+#     save_on_top = True
+
+
+# class BaseRegistrationAdmin(admin.ModelAdmin):
+#     readonly_fields = ("created_at",)
+#     list_filter = ("state", "district", "created_at")
+#     search_fields = ("phone_number", "email")
+
+#     autocomplete_fields = ("state", "district")
+
+#     fieldsets = (
+#         ("Basic Information", {"fields": ("phone_number", "email", "address")}),
+#         ("Location Details", {"fields": ("state", "district")}),
+#         (
+#             "Identity Details",
+#             {
+#                 "fields": (
+#                     "aadhar_number",
+#                     "aadhar_document",
+#                     "pan_number",
+#                     "pan_document",
+#                 )
+#             },
+#         ),
+#         ("System Information", {"fields": ("created_at",)}),
+#     )
+
+
+# @admin.register(AccountRegistration)
+# class AccountRegistrationAdmin(BaseRegistrationAdmin):
+#     list_display = (
+#         "account_name",
+#         "phone_number",
+#         "email",
+#         "state",
+#         "district",
+#         "created_at",
+#     )
+#     search_fields = BaseRegistrationAdmin.search_fields + ("account_name",)
+#     fieldsets = (
+#         ("Account Information", {"fields": ("account_name",)}),
+#     ) + BaseRegistrationAdmin.fieldsets
+
+
+# @admin.register(QCInspectorRegistration)
+# class QCInspectorRegistrationAdmin(BaseRegistrationAdmin):
+#     list_display = (
+#         "qc_inspector_name",
+#         "phone_number",
+#         "email",
+#         "state",
+#         "district",
+#         "created_at",
+#     )
+#     search_fields = BaseRegistrationAdmin.search_fields + ("qc_inspector_name",)
+#     fieldsets = (
+#         ("QC Inspector Information", {"fields": ("qc_inspector_name",)}),
+#     ) + BaseRegistrationAdmin.fieldsets
+
+
+# @admin.register(PurchaseDepartmentRegistration)
+# class PurchaseDepartmentRegistrationAdmin(BaseRegistrationAdmin):
+#     list_display = (
+#         "purchase_department_name",
+#         "phone_number",
+#         "email",
+#         "state",
+#         "district",
+#         "created_at",
+#     )
+#     search_fields = BaseRegistrationAdmin.search_fields + ("purchase_department_name",)
+#     fieldsets = (
+#         ("Purchase Department Information", {"fields": ("purchase_department_name",)}),
+#     ) + BaseRegistrationAdmin.fieldsets
+
+
+# @admin.register(StoreManagerRegistration)
+# class StoreManagerRegistrationAdmin(BaseRegistrationAdmin):
+#     list_display = (
+#         "store_manager_name",
+#         "phone_number",
+#         "email",
+#         "state",
+#         "district",
+#         "created_at",
+#     )
+#     search_fields = BaseRegistrationAdmin.search_fields + ("store_manager_name",)
+#     fieldsets = (
+#         ("Store Manager Information", {"fields": ("store_manager_name",)}),
+#     ) + BaseRegistrationAdmin.fieldsets
+
+
+# @admin.register(RepairTechnicianRegistration)
+# class RepairTechnicianRegistrationAdmin(BaseRegistrationAdmin):
+#     list_display = (
+#         "repair_technician_name",
+#         "phone_number",
+#         "email",
+#         "state",
+#         "district",
+#         "created_at",
+#     )
+#     search_fields = BaseRegistrationAdmin.search_fields + ("repair_technician_name",)
+#     fieldsets = (
+#         ("Repair Technician Information", {"fields": ("repair_technician_name",)}),
+#     ) + BaseRegistrationAdmin.fieldsets
+
+
+# @admin.register(ProductCategory)
+# class ProductCategoryAdmin(admin.ModelAdmin):
+#     list_display = ("id", "name", "created_at")
+#     search_fields = ("name",)
+#     ordering = ("name",)
+#     readonly_fields = ("created_at",)
+
+
+# @admin.register(StoreTransfer)
+# class StoreTransferAdmin(admin.ModelAdmin):
+#     list_display = (
+#         "transfer_id",
+#         "product_name",
+#         "product",
+#         "category",
+#         "vendor",
+#         "quantity",
+#         "total_value",
+#         "dispatch_status",
+#         "transfer_date",
+#         "created_at",
+#     )
+#     search_fields = (
+#         "transfer_id",
+#         "product_name",
+#         "batch_number",
+#         "mrn_number",
+#         "vendor__name",
+#         "product__product_id",
+#     )
+#     list_filter = (
+#         "dispatch_status",
+#         "transfer_date",
+#         "category",
+#         "vendor",
+#         "created_at",
+#     )
+#     ordering = ("-created_at",)
+#     readonly_fields = ("created_at", "updated_at")
+#     fieldsets = (
+#         ("Product Information", {"fields": ("product", "product_name", "category")}),
+#         ("Transfer Details", {"fields": ("transfer_id", "mrn_number", "batch_number")}),
+#         (
+#             "Vendor & Quantity",
+#             {"fields": ("vendor", "quantity", "unit_price", "total_value")},
+#         ),
+#         ("Dates & Status", {"fields": ("transfer_date", "dispatch_status")}),
+#         ("System Info", {"fields": ("created_by", "created_at", "updated_at")}),
+#     )
+
+
+# @admin.register(DebitNote)
+# class DebitNoteAdmin(admin.ModelAdmin):
+#     list_display = (
+#         "number",
+#         "date",
+#         "vendor",
+#         "get_reason_display",
+#         "amount_formatted",
+#         "status_badge",
+#         "created_by",
+#         "created_at_formatted",
+#     )
+#     list_display_links = ("number",)
+#     search_fields = ("number", "vendor", "reference_document")
+#     list_filter = ("status", "reason", "date", "created_at")
+#     ordering = ("-created_at",)
+#     readonly_fields = ("number", "created_at", "updated_at", "created_by")
+#     date_hierarchy = "created_at"
+
+#     fieldsets = (
+#         (
+#             "Basic Information",
+#             {
+#                 "fields": ("number", "date", "vendor", "reason", "amount"),
+#                 "description": "Core debit note information",
+#             },
+#         ),
+#         (
+#             "Status & References",
+#             {
+#                 "fields": ("status", "reference_document"),
+#             },
+#         ),
+#         (
+#             "Additional Details",
+#             {
+#                 "fields": ("remarks",),
+#             },
+#         ),
+#         (
+#             "System Info",
+#             {
+#                 "fields": ("created_by", "created_at", "updated_at"),
+#                 "classes": ("collapse",),
+#             },
+#         ),
+#     )
+
+#     def amount_formatted(self, obj):
+#         return f"₹{obj.amount:,.2f}"
+
+#     amount_formatted.short_description = "Amount"
+
+#     def status_badge(self, obj):
+#         colors = {
+#             "pending": "#FFA500",
+#             "approved": "#28a745",
+#             "rejected": "#dc3545",
+#             "processed": "#007bff",
+#         }
+#         return format_html(
+#             '<span style="background-color: {}; color: white; padding: 5px 10px; border-radius: 3px;">{}</span>',
+#             colors.get(obj.status, "#6c757d"),
+#             obj.get_status_display(),
+#         )
+
+#     status_badge.short_description = "Status"
+
+#     def created_at_formatted(self, obj):
+#         return obj.created_at.strftime("%d-%m-%Y %H:%M")
+
+#     created_at_formatted.short_description = "Created At"
+
+#     def save_model(self, request, obj, form, change):
+#         if not change:
+#             obj.created_by = request.user
+#         super().save_model(request, obj, form, change)
+
+
+# @admin.register(CreditNote)
+# class CreditNoteAdmin(admin.ModelAdmin):
+#     list_display = (
+#         "number",
+#         "date",
+#         "customer",
+#         "get_reason_display",
+#         "amount_formatted",
+#         "status_badge",
+#         "created_by",
+#         "created_at_formatted",
+#     )
+#     list_display_links = ("number",)
+#     search_fields = ("number", "customer", "reference_document")
+#     list_filter = ("status", "reason", "date", "created_at")
+#     ordering = ("-created_at",)
+#     readonly_fields = ("number", "created_at", "updated_at", "created_by")
+#     date_hierarchy = "created_at"
+
+#     fieldsets = (
+#         (
+#             "Basic Information",
+#             {
+#                 "fields": ("number", "date", "customer", "reason", "amount"),
+#                 "description": "Core credit note information",
+#             },
+#         ),
+#         (
+#             "Status & References",
+#             {
+#                 "fields": ("status", "reference_document"),
+#             },
+#         ),
+#         (
+#             "Additional Details",
+#             {
+#                 "fields": ("remarks",),
+#             },
+#         ),
+#         (
+#             "System Info",
+#             {
+#                 "fields": ("created_by", "created_at", "updated_at"),
+#                 "classes": ("collapse",),
+#             },
+#         ),
+#     )
+
+#     def amount_formatted(self, obj):
+#         return f"₹{obj.amount:,.2f}"
+
+#     amount_formatted.short_description = "Amount"
+
+#     def status_badge(self, obj):
+#         colors = {
+#             "pending": "#FFA500",
+#             "approved": "#28a745",
+#             "rejected": "#dc3545",
+#             "processed": "#007bff",
+#         }
+#         return format_html(
+#             '<span style="background-color: {}; color: white; padding: 5px 10px; border-radius: 3px;">{}</span>',
+#             colors.get(obj.status, "#6c757d"),
+#             obj.get_status_display(),
+#         )
+
+#     status_badge.short_description = "Status"
+
+#     def created_at_formatted(self, obj):
+#         return obj.created_at.strftime("%d-%m-%Y %H:%M")
+
+#     created_at_formatted.short_description = "Created At"
+
+#     def save_model(self, request, obj, form, change):
+#         if not change:
+#             obj.created_by = request.user
+#         super().save_model(request, obj, form, change)
+
+
+# @admin.register(ReturnRequest)
+# class ReturnRequestAdmin(admin.ModelAdmin):
+#     """
+#     Admin configuration for Return Requests
+#     """
+
+#     list_display = (
+#         "return_number",
+#         "date",
+#         "items",
+#         "reason",
+#         "status",
+#         "amount",
+#         "created_by",
+#         "created_at",
+#     )
+
+#     list_filter = ("status", "date", "created_at")
+
+#     search_fields = ("return_number", "reason", "items", "created_by__username")
+
+#     ordering = ("-date",)
+
+#     readonly_fields = ("created_at", "updated_at", "created_by")
+
+#     fieldsets = (
+#         (
+#             "Return Information",
+#             {
+#                 "fields": (
+#                     "return_number",
+#                     "date",
+#                     "status",
+#                 )
+#             },
+#         ),
+#         (
+#             "Return Details",
+#             {
+#                 "fields": (
+#                     "items",
+#                     "reason",
+#                     "amount",
+#                 )
+#             },
+#         ),
+#         (
+#             "Audit Information",
+#             {
+#                 "fields": (
+#                     "created_by",
+#                     "created_at",
+#                     "updated_at",
+#                 )
+#             },
+#         ),
+#     )
+
+#     list_select_related = ("created_by",)
+
+
+# @admin.register(RepairRecord)
+# class RepairRecordAdmin(admin.ModelAdmin):
+#     """
+#     Admin configuration for Repair Records
+#     """
+
+#     list_display = (
+#         "product_id",
+#         "product_name",
+#         "vendor",
+#         "mrn_number",
+#         "failed_qty",
+#         "repaired_qty",
+#         "rejected_qty",
+#         "repair_pending",
+#         "repair_type",
+#         "repair_center",
+#         "status",
+#         "created_by",
+#         "created_at",
+#     )
+#     list_filter = ("status", "repair_type", "vendor", "created_at")
+#     search_fields = (
+#         "product_id",
+#         "product_name",
+#         "vendor",
+#         "mrn_number",
+#         "repair_type",
+#         "repair_center",
+#         "created_by__username",
+#     )
+#     ordering = ("-created_at",)
+#     readonly_fields = ("created_at", "updated_at", "created_by")
+
+#     fieldsets = (
+#         (
+#             "Product Information",
+#             {
+#                 "fields": (
+#                     "product_id",
+#                     "product_name",
+#                 )
+#             },
+#         ),
+#         (
+#             "Vendor & MRN",
+#             {
+#                 "fields": (
+#                     "vendor",
+#                     "mrn_number",
+#                 )
+#             },
+#         ),
+#         (
+#             "Repair Quantities",
+#             {
+#                 "fields": (
+#                     "failed_qty",
+#                     "repaired_qty",
+#                     "rejected_qty",
+#                     "repair_pending",
+#                 )
+#             },
+#         ),
+#         (
+#             "Repair Details",
+#             {
+#                 "fields": (
+#                     "repair_type",
+#                     "repair_center",
+#                     "status",
+#                 )
+#             },
+#         ),
+#         (
+#             "Audit Information",
+#             {
+#                 "fields": (
+#                     "created_by",
+#                     "created_at",
+#                     "updated_at",
+#                 )
+#             },
+#         ),
+#     )
+
+#     list_select_related = ("created_by",)
+
+
+# @admin.register(RejectedItem)
+# class RejectedItemAdmin(admin.ModelAdmin):
+#     """
+#     Admin configuration for Rejected Items
+#     """
+
+#     list_display = (
+#         "product_id",
+#         "product_name",
+#         "vendor",
+#         "mrn_number",
+#         "rejected_qty",
+#         "qc_date",
+#         "created_by",
+#     )
+#     list_filter = ("vendor", "qc_date", "created_at")
+#     search_fields = (
+#         "product_id",
+#         "product_name",
+#         "vendor",
+#         "mrn_number",
+#         "created_by__username",
+#     )
+#     ordering = ("-qc_date",)
+#     readonly_fields = ("created_at", "updated_at", "created_by")
+#     fieldsets = (
+#         (
+#             "Product Information",
+#             {
+#                 "fields": (
+#                     "product_id",
+#                     "product_name",
+#                 )
+#             },
+#         ),
+#         (
+#             "Vendor & MRN",
+#             {
+#                 "fields": (
+#                     "vendor",
+#                     "mrn_number",
+#                 )
+#             },
+#         ),
+#         (
+#             "Rejection Details",
+#             {
+#                 "fields": (
+#                     "rejected_qty",
+#                     "qc_date",
+#                 )
+#             },
+#         ),
+#         (
+#             "Audit Information",
+#             {
+#                 "fields": (
+#                     "created_by",
+#                     "created_at",
+#                     "updated_at",
+#                 )
+#             },
+#         ),
+#     )
+
+#     list_select_related = ("created_by",)
+
+
+# @admin.register(SelfOrder)
+# class SelfOrderAdmin(admin.ModelAdmin):
+#     list_display = (
+#         "id",
+#         "device_info",
+#         "quantity",
+#         "supply_state",
+#         "rate_display",
+#         "gst_rate_display",
+#         "gross_amount_display",
+#         "delivery_date",
+#         "user",
+#         "created_at",
+#     )
+#     list_display_links = ("id",)
+#     search_fields = ("user__username", "delivery_address", "device__info__model")
+#     list_filter = ("supply_state", "gst_rate", "created_at", "user")
+#     readonly_fields = ("user", "created_at", "updated_at")
+#     ordering = ("-created_at",)
+
+#     fieldsets = (
+#         (
+#             "Order Information",
+#             {
+#                 "fields": (
+#                     "device",
+#                     "quantity",
+#                 )
+#             },
+#         ),
+#         (
+#             "Pricing & Taxes",
+#             {
+#                 "fields": (
+#                     "rate",
+#                     "gst_rate",
+#                     "gross_amount",
+#                 )
+#             },
+#         ),
+#         (
+#             "Delivery Details",
+#             {
+#                 "fields": (
+#                     "supply_state",
+#                     "delivery_date",
+#                     "delivery_address",
+#                 )
+#             },
+#         ),
+#         ("Additional Information", {"fields": ("purpose_remark",)}),
+#         (
+#             "Audit Information",
+#             {
+#                 "fields": (
+#                     "user",
+#                     "created_at",
+#                     "updated_at",
+#                 ),
+#                 "classes": ("collapse",),
+#             },
+#         ),
+#     )
+#     list_select_related = ("device", "supply_state", "user")
+
+#     def device_info(self, obj):
+#         """Display device model name"""
+#         return obj.device.info.model if obj.device.info else f"Device {obj.device.id}"
+
+#     device_info.short_description = "Device"
+
+#     def rate_display(self, obj):
+#         """Display rate with currency"""
+#         return f"₹{obj.rate:,.2f}"
+
+#     rate_display.short_description = "Rate"
+
+#     def gst_rate_display(self, obj):
+#         """Display GST rate as percentage"""
+#         return f"{obj.gst_rate}%"
+
+#     gst_rate_display.short_description = "GST Rate"
+
+#     def gross_amount_display(self, obj):
+#         """Display gross amount with currency"""
+#         return f"₹{obj.gross_amount:,.2f}"
+
+#     gross_amount_display.short_description = "Gross Amount"
+
+
+# @admin.register(RFQQuotation)
+# class RFQQuotationAdmin(admin.ModelAdmin):
+#     """
+#     Admin configuration for vendor quotations against RFQs
+#     """
+
+#     list_display = (
+#         "rfq",
+#         "vendor",
+#         "status",
+#         "quotation_rate",
+#         "quotation_date",
+#         "created_at",
+#     )
+#     list_filter = ("status", "quotation_date", "created_at")
+#     search_fields = ("rfq__id", "vendor__name")
+#     ordering = ("-created_at",)
+#     autocomplete_fields = ("rfq", "vendor")
+
+#     readonly_fields = ("created_at", "updated_at")
+
+
+# @admin.register(QuotationSequence)
+# class QuotationSequenceAdmin(admin.ModelAdmin):
+#     """
+#     Maintains year-wise quotation number sequence
+#     """
+
+#     list_display = ("year", "last_number")
+#     ordering = ("-year",)
+
+
+# class QuotationItemInline(admin.TabularInline):
+#     """
+#     Inline items displayed inside Quotation admin
+#     """
+
+#     model = QuotationItem
+#     extra = 0
+#     min_num = 1
+
+#     fields = (
+#         "item_name",
+#         "item_type",
+#         "quantity",
+#         "net_unit_price_excl_gst",
+#         "gst_rate",
+#         "subtotal_excl_gst",
+#         "gst_amount",
+#         "total_incl_gst",
+#     )
+
+#     readonly_fields = ("gst_amount", "total_incl_gst")
+
+
+# @admin.register(Quotation)
+# class QuotationAdmin(admin.ModelAdmin):
+#     """
+#     Admin configuration for final quotation documents
+#     """
+
+#     list_display = (
+#         "quotation_number",
+#         "customer_name",
+#         "vendor",
+#         "status",
+#         "grand_total_incl_gst",
+#         "valid_until",
+#         "created_at",
+#     )
+
+#     list_filter = ("status", "created_at", "valid_until")
+#     search_fields = (
+#         "quotation_number",
+#         "customer_name",
+#         "vendor__name",
+#         "rfq__id",
+#     )
+
+#     ordering = ("-created_at",)
+#     autocomplete_fields = ("rfq", "vendor", "created_by")
+
+#     readonly_fields = (
+#         "quotation_number",
+#         "subtotal_excl_gst",
+#         "total_gst",
+#         "grand_total_incl_gst",
+#         "created_at",
+#         "updated_at",
+#     )
+
+#     fieldsets = (
+#         (
+#             "Reference Details",
+#             {"fields": ("quotation_number", "rfq", "vendor", "customer_name")},
+#         ),
+#         ("Status & Validity", {"fields": ("status", "valid_until")}),
+#         (
+#             "Pricing Summary",
+#             {
+#                 "fields": (
+#                     "subtotal_excl_gst",
+#                     "total_gst",
+#                     "grand_total_incl_gst",
+#                 )
+#             },
+#         ),
+#         ("Audit Information", {"fields": ("created_by", "created_at", "updated_at")}),
+#     )
+
+#     inlines = [QuotationItemInline]
+
+#     actions = ["recalculate_totals"]
+
+#     def recalculate_totals(self, request, queryset):
+#         """
+#         Admin action to recalculate quotation totals
+#         """
+#         for quotation in queryset:
+#             quotation.calculate_totals()
+
+#         self.message_user(request, "Selected quotations recalculated successfully.")
+
+#     recalculate_totals.short_description = "Recalculate totals for selected quotations"
+
+
+# @admin.register(DeviceInventory)
+# class DeviceInventoryAdmin(admin.ModelAdmin):
+#     list_display = (
+#         "esn",
+#         "imei",
+#         "device",
+#         "stock_status_badge",
+#         "esim_status",
+#         "esim_validity_display",
+#         "telecom_provider_1",
+#         "telecom_provider_2",
+#         "assigned_to",
+#         "created_at",
+#     )
+#     list_display_links = ("esn", "imei")
+#     list_filter = (
+#         "stock_status",
+#         "esim_status",
+#         "telecom_provider_1",
+#         "telecom_provider_2",
+#         "device",
+#     )
+#     search_fields = (
+#         "esn",
+#         "imei",
+#         "iccid",
+#         "assigned_to",
+#         "msisdn_1",
+#         "msisdn_2",
+#         "remarks",
+#     )
+#     list_per_page = 25
+#     list_select_related = ("device",)
+#     date_hierarchy = "created_at"
+#     ordering = ("-created_at",)
+#     list_editable = ("assigned_to",)
+#     readonly_fields = ("created_at", "esim_validity_display")
+#     fieldsets = (
+#         (
+#             "🔌 Device Info",
+#             {
+#                 "fields": ("device", "esn", "imei", "iccid"),
+#                 "description": "Core identifiers for the physical device unit.",
+#             },
+#         ),
+#         (
+#             "📡 Telecom Details",
+#             {
+#                 "fields": (
+#                     ("telecom_provider_1", "msisdn_1"),
+#                     ("telecom_provider_2", "msisdn_2"),
+#                 ),
+#             },
+#         ),
+#         (
+#             "📶 eSIM",
+#             {
+#                 "fields": ("esim_status", "esim_validity", "esim_validity_display"),
+#             },
+#         ),
+#         (
+#             "📦 Inventory & Assignment",
+#             {
+#                 "fields": ("stock_status", "assigned_to", "remarks"),
+#             },
+#         ),
+#         (
+#             "🕒 Timestamps",
+#             {
+#                 "fields": ("created_at",),
+#                 "classes": ("collapse",),
+#             },
+#         ),
+#     )
+
+#     @admin.display(description="Stock Status", ordering="stock_status")
+#     def stock_status_badge(self, obj):
+#         colors = {
+#             "in_stock": ("#1a7a1a", "#d4edda"),
+#             "assigned": ("#856404", "#fff3cd"),
+#             "faulty": ("#721c24", "#f8d7da"),
+#             "retired": ("#383d41", "#e2e3e5"),
+#         }
+#         fg, bg = colors.get(obj.stock_status, ("#333", "#eee"))
+#         label = obj.stock_status.replace("_", " ").title()
+#         return format_html(
+#             '<span style="background:{};color:{};padding:3px 10px;'
+#             'border-radius:12px;font-weight:600;font-size:0.82em;">{}</span>',
+#             bg,
+#             fg,
+#             label,
+#         )
+
+#     @admin.display(description="eSIM Expiry")
+#     def esim_validity_display(self, obj):
+#         if not obj.esim_validity:
+#             return "—"
+#         today = now().date()
+#         delta = (obj.esim_validity - today).days
+#         if delta < 0:
+#             color = "#dc3545"
+#             label = f"{obj.esim_validity} (expired)"
+#         elif delta <= 30:
+#             color = "#fd7e14"
+#             label = f"{obj.esim_validity} ({delta}d left)"
+#         else:
+#             color = "#198754"
+#             label = str(obj.esim_validity)
+#         return format_html(
+#             '<span style="color:{};font-weight:600;">{}</span>', color, label
+#         )
+
+#     actions = ["mark_in_stock", "mark_assigned", "mark_faulty", "mark_retired"]
+
+#     @admin.action(description="✅ Mark selected as In Stock")
+#     def mark_in_stock(self, request, queryset):
+#         updated = queryset.update(stock_status="in_stock")
+#         self.message_user(request, f"{updated} device(s) marked as In Stock.")
+
+#     @admin.action(description="🔗 Mark selected as Assigned")
+#     def mark_assigned(self, request, queryset):
+#         updated = queryset.update(stock_status="assigned")
+#         self.message_user(request, f"{updated} device(s) marked as Assigned.")
+
+#     @admin.action(description="⚠️ Mark selected as Faulty")
+#     def mark_faulty(self, request, queryset):
+#         updated = queryset.update(stock_status="faulty")
+#         self.message_user(request, f"{updated} device(s) marked as Faulty.")
+
+#     @admin.action(description="🗄️ Mark selected as Retired")
+#     def mark_retired(self, request, queryset):
+#         updated = queryset.update(stock_status="retired")
+#         self.message_user(request, f"{updated} device(s) marked as Retired.")
+
+
+# @admin.register(B2BOrder)
+# class B2BOrderAdmin(admin.ModelAdmin):
+#     list_display = (
+#         "order_id_display",
+#         "purchase_order",
+#         "supply_state",
+#         "rate_display",
+#         "gst_rate_display",
+#         "quantity",
+#         "gross_amount_display",
+#         "delivery_date",
+#         "created_by",
+#         "created_at",
+#     )
+
+#     list_filter = (
+#         "gst_rate",
+#         "supply_state",
+#         "delivery_date",
+#         "created_at",
+#         "created_by",
+#     )
+
+#     search_fields = (
+#         "id",
+#         "purchase_order__order_id",
+#         "supply_state__name",
+#         "created_by__username",
+#         "created_by__email",
+#         "remarks",
+#     )
+
+#     date_hierarchy = "created_at"
+#     ordering = ("-created_at",)
+#     list_per_page = 25
+#     show_full_result_count = True
+#     readonly_fields = (
+#         "gross_amount",
+#         "created_by",
+#         "created_at",
+#         "updated_at",
+#         "order_summary_panel",
+#     )
+
+#     fieldsets = (
+#         (
+#             "🧾 Order Reference",
+#             {
+#                 "fields": ("purchase_order",),
+#             },
+#         ),
+#         (
+#             "📦 Order Details",
+#             {
+#                 "fields": (
+#                     "supply_state",
+#                     "rate",
+#                     "gst_rate",
+#                     "quantity",
+#                     "gross_amount",  # auto-calculated, readonly
+#                     "delivery_date",
+#                 ),
+#             },
+#         ),
+#         (
+#             "📝 Remarks",
+#             {
+#                 "fields": ("remarks",),
+#                 "classes": ("collapse",),  # collapsed by default to save space
+#             },
+#         ),
+#         (
+#             "📊 Summary Panel",
+#             {
+#                 "fields": ("order_summary_panel",),
+#                 "classes": ("collapse",),
+#             },
+#         ),
+#         (
+#             "🔒 System Info",
+#             {
+#                 "fields": ("created_by", "created_at", "updated_at"),
+#                 "classes": ("collapse",),
+#             },
+#         ),
+#     )
+
+#     autocomplete_fields = ("purchase_order", "supply_state")  # fast FK search
+
+#     @admin.display(description="Order ID", ordering="id")
+#     def order_id_display(self, obj):
+#         return format_html('<strong style="color:#1a73e8;">B2B-{}</strong>', obj.id)
+
+#     @admin.display(description="Rate (₹)", ordering="rate")
+#     def rate_display(self, obj):
+#         return format_html("₹ {}", f"{obj.rate:,.2f}")
+
+#     @admin.display(description="GST Rate", ordering="gst_rate")
+#     def gst_rate_display(self, obj):
+#         color = {
+#             "0.00": "#6c757d",
+#             "5.00": "#28a745",
+#             "12.00": "#fd7e14",
+#             "18.00": "#dc3545",
+#             "28.00": "#6f42c1",
+#         }.get(str(obj.gst_rate), "#000")
+#         return format_html(
+#             '<span style="color:{}; font-weight:bold;">{}%</span>',
+#             color,
+#             obj.gst_rate,
+#         )
+
+#     @admin.display(description="Gross Amount (₹)", ordering="gross_amount")
+#     def gross_amount_display(self, obj):
+#         return format_html("<strong>₹ {}</strong>", f"{obj.gross_amount:,.2f}")
+
+#     @admin.display(description="Order Summary")
+#     def order_summary_panel(self, obj):
+#         """A quick at-a-glance summary shown inside the detail page."""
+#         taxable = obj.rate * obj.quantity
+#         gst_amt = taxable * obj.gst_rate / 100
+#         total = taxable + gst_amt
+#         return format_html(
+#             """
+#             <table style="border-collapse:collapse; min-width:320px;">
+#               <tr style="background:#f0f4ff;">
+#                 <td style="padding:6px 12px; border:1px solid #ddd;"><b>Taxable Amount</b></td>
+#                 <td style="padding:6px 12px; border:1px solid #ddd;">₹ {taxable}</td>
+#               </tr>
+#               <tr>
+#                 <td style="padding:6px 12px; border:1px solid #ddd;"><b>GST ({gst_rate}%)</b></td>
+#                 <td style="padding:6px 12px; border:1px solid #ddd;">₹ {gst_amt}</td>
+#               </tr>
+#               <tr style="background:#e6ffe6;">
+#                 <td style="padding:6px 12px; border:1px solid #ddd;"><b>Total (incl. GST)</b></td>
+#                 <td style="padding:6px 12px; border:1px solid #ddd;"><b>₹ {total}</b></td>
+#               </tr>
+#             </table>
+#             """,
+#             taxable=f"{taxable:,.2f}",
+#             gst_rate=obj.gst_rate,
+#             gst_amt=f"{gst_amt:,.2f}",
+#             total=f"{total:,.2f}",
+#         )
+
+#     actions = ("export_gross_summary",)
+
+#     @admin.action(description="📊 Show total Gross Amount for selected orders")
+#     def export_gross_summary(self, request, queryset):
+#         total = queryset.aggregate(total=Sum("gross_amount"))["total"] or 0
+#         count = queryset.count()
+#         self.message_user(
+#             request,
+#             f"✅ {count} order(s) selected — Total Gross Amount: ₹ {total:,.2f}",
+#         )
+
+#     def has_add_permission(self, request):
+#         return request.user.is_staff
+
+#     def has_change_permission(self, request, obj=None):
+#         return request.user.is_staff
+
+#     def has_delete_permission(self, request, obj=None):
+#         return request.user.is_staff
+
+#     def has_view_permission(self, request, obj=None):
+#         return request.user.is_staff
+
+#     def save_model(self, request, obj, form, change):
+#         if not change:  # only on first creation
+#             obj.created_by = request.user
+#         super().save_model(request, obj, form, change)

@@ -31,7 +31,6 @@ from .views import (
     OrderPriorityDropdownAPIView,
     QuoteTypeDropdownAPIView,
     AssemblyTypeDropdownAPIView,
-    SRNDropdownAPIView,
     VendorDropdownAPIView,
     Step1APIView,
     Step2APIView,
@@ -93,6 +92,7 @@ from .views import (
     POSelectRFQDropdownAPIView,
     Step2GetAPIView,
     OrderTypeDropdown,
+    RFQOrderDropdownAPIView,
 )
 
 
@@ -167,10 +167,11 @@ urlpatterns = [
     path("dropdowns/order-priority/", OrderPriorityDropdownAPIView.as_view()), 
     
     # RFQ
+    path("dropdowns/orders/", RFQOrderDropdownAPIView.as_view()),
     path("dropdowns/quote-types/", QuoteTypeDropdownAPIView.as_view()),
     path("dropdowns/assembly-types/", AssemblyTypeDropdownAPIView.as_view()),
-    path("dropdowns/srn/", SRNDropdownAPIView.as_view()),
     path("dropdowns/vendors/", VendorDropdownAPIView.as_view()),
+    
     # Purchase & MRN
     path("purchase/dropdowns/order-ids/",POOrderIDDropdownAPIView.as_view(),name="purchase-dropdown-order-ids"),
     path("purchase/dropdowns/rfqs/",POSelectRFQDropdownAPIView.as_view(),name="purchase-dropdown-rfqs"),

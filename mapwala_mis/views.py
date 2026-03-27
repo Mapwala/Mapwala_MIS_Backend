@@ -80,6 +80,7 @@ from .models import (
     ProductionOrder,
     OrderEntryMakeToOrder,
     B2BOrder,
+    RFQQuotation,
 )
 from .serializers import (
     UserSerializer,
@@ -1159,14 +1160,13 @@ class OrderPriorityDropdownAPIView(APIView):
 
 
 # RFQ (REQUEST FOR QUOTATION)
-class RFQViewSet(viewsets.ModelViewSet):
-
+class RFQViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
     pagination_class = PageNumberPagination
 
     def get_queryset(self):
         return (
-            RequestForQuote.objects.select_related()
+            RequestForQuote.objects.select_related("order", "order__product", "order__customer")
             .prefetch_related("selections", "quotations__vendor")
             .order_by("-created_at")
         )
@@ -1203,8 +1203,8 @@ class RFQViewSet(viewsets.ModelViewSet):
 
         if search_query:
             queryset = queryset.filter(
-                Q(order_reference__icontains=search_query)
-                | Q(device_name__icontains=search_query)
+                Q(order__order_id__icontains=search_query)
+                | Q(order__product__name__icontains=search_query)
             )
 
         paginator = PageNumberPagination()
@@ -1277,13 +1277,20 @@ class RFQViewSet(viewsets.ModelViewSet):
         )
         serializer = RFQStep2Serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        
         rfq.selections.all().delete()
-        for ref in serializer.validated_data.get("bom_parts", []):
-            RFQSelection.objects.create(rfq=rfq, item_type="bom", reference=ref)
-        for ref in serializer.validated_data.get("components", []):
-            RFQSelection.objects.create(rfq=rfq, item_type="component", reference=ref)
-        for ref in serializer.validated_data.get("services", []):
-            RFQSelection.objects.create(rfq=rfq, item_type="service", reference=ref)
+        if "bom" in rfq.quote_types:
+            for ref in serializer.validated_data.get("bom_parts", []):
+                RFQSelection.objects.create(rfq=rfq, item_type="bom", reference=ref)
+
+        if "component" in rfq.quote_types:
+            for ref in serializer.validated_data.get("components", []):
+                RFQSelection.objects.create(rfq=rfq, item_type="component", reference=ref)
+
+        if "service" in rfq.quote_types:
+            for ref in serializer.validated_data.get("services", []):
+                RFQSelection.objects.create(rfq=rfq, item_type="service", reference=ref)
+        
         return Response({"message": "Step 2 completed"})
 
     @action(detail=False, methods=["post"], url_path="step-3")
@@ -1293,16 +1300,28 @@ class RFQViewSet(viewsets.ModelViewSet):
         rfq = get_object_or_404(
             RequestForQuote,
             id=request.data.get("rfq_id"),
+            created_by=request.user,
             status="draft",
         )
         serializer = RFQStep3Serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        rfq.srn_no = serializer.validated_data["srn_no"]
+
         rfq.delivery_date = serializer.validated_data["delivery_date"]
         rfq.delivery_address = serializer.validated_data["delivery_address"]
         rfq.additional_requirements = serializer.validated_data.get(
             "additional_requirements", ""
         )
+
+        vendor_ids = serializer.validated_data["vendor_ids"]
+
+        rfq.quotations.all().delete()
+
+        for vendor_id in vendor_ids:
+            RFQQuotation.objects.create(
+                rfq=rfq,
+                vendor_id=vendor_id,
+                status="pending"
+            )
         rfq.status = "submitted"
         rfq.save()
         return Response(
@@ -1311,14 +1330,31 @@ class RFQViewSet(viewsets.ModelViewSet):
         )
 
 
+class RFQOrderDropdownAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        queryset = OrderEntry.objects.select_related("customer", "product")
+
+        return Response([
+            {
+                "id": o.id,
+                "label": f"{o.order_id} - {o.customer.name}",
+                "sub_label": f"{o.product.name} (Qty: {o.quantity})"
+            }
+            for o in queryset
+        ])
+
+
 class QuoteTypeDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
+
     def get(self, request):
         return Response(
             [
-                {"key": "components", "label": "Components"},
                 {"key": "bom", "label": "Items (BOM Parts)"},
-                {"key": "services", "label": "Services"},
+                {"key": "component", "label": "Components"},
+                {"key": "service", "label": "Services"},
             ]
         )
 
@@ -1332,15 +1368,6 @@ class AssemblyTypeDropdownAPIView(APIView):
                 {"key": "pcb_assembly", "label": "PCB Assembly"},
                 {"key": "device_assembly", "label": "Device Assembly"},
             ]
-        )
-
-
-class SRNDropdownAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        return Response(
-            [{"key": k, "label": v} for k, v in RequestForQuote.SRN_CHOICES]
         )
 
 
