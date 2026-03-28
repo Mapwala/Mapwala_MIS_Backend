@@ -26,7 +26,7 @@ import csv
 from django.http import HttpResponse
 
 # Local Imports
-from .utils import generate_note_number
+from .utils import generate_note_number, format_order_id
 from .mixins import DeleteResponseMixin
 from rest_framework.mixins import (
     ListModelMixin,
@@ -40,7 +40,6 @@ from .models import (
     ParentCompany,
     B2CCustomer,
     B2BPartner,
-    SupplierVendor,
     Vendor,
     Product,
     DeviceInformation,
@@ -81,6 +80,7 @@ from .models import (
     OrderEntryMakeToOrder,
     B2BOrder,
     RFQQuotation,
+    SupplierVendor,
 )
 from .serializers import (
     UserSerializer,
@@ -167,6 +167,7 @@ from .serializers import (
     PurchaseStep2GetSerializer,
     AvailableVendorSummarySerializer,
     RFQCardSerializer,
+    SupplierVendorSerializer,
 )
 
 
@@ -347,6 +348,7 @@ class B2BPartnerViewSet(DeleteResponseMixin, ModelViewSet):
 
 class LinkedToChoicesAPIView(APIView):
     permission_classes = [IsAuthenticated]
+
     def get(self, request):
         data = [
             {"value": key, "label": label}
@@ -457,20 +459,36 @@ class DealerViewSet(DeleteResponseMixin, ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        authorised_states = serializer.validated_data.pop("authorised_states")
-        authorised_districts = serializer.validated_data.pop("authorised_districts")
-        dealer = Dealer.objects.create(**serializer.validated_data)
-        dealer.authorised_states.set(authorised_states)
-        dealer.authorised_districts.set(authorised_districts)
+        dealer = serializer.save()
 
         return Response(
             {
                 "success": True,
-                "message": "Dealer registered successfully",
+                "message": "Dealer registered successfully.",
                 "dealer_id": dealer.id,
                 "name": dealer.name,
             },
             status=status.HTTP_201_CREATED,
+        )
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+        serializer = self.get_serializer(
+            instance,
+            data=request.data,
+            partial=partial,
+        )
+        serializer.is_valid(raise_exception=True)
+        dealer = serializer.save()
+
+        return Response(
+            {
+                "success": True,
+                "message": "Dealer updated successfully.",
+                "dealer_id": dealer.id,
+                "name": dealer.name,
+            }
         )
 
 
@@ -519,6 +537,7 @@ class ProductCreateAPIView(APIView):
 
 class ProductDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
+
     def get(self, request):
         queryset = Product.objects.all().order_by("product_id")
         serializer = ProductDropdownSerializer(queryset, many=True)
@@ -721,6 +740,7 @@ class DeviceStep7APIView(APIView):
         return Response({"message": "Step 7 completed"})
 
 
+# STEP 8 — Sticker Upload — FIXED
 class DeviceStep8APIView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
@@ -729,42 +749,65 @@ class DeviceStep8APIView(APIView):
         device_id = request.data.get("device_id")
 
         if not device_id:
-            return Response({"error": "device_id is required"}, status=400)
+            return Response(
+                {"error": "device_id is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         device = get_object_or_404(Device, id=device_id)
         stickers_map = defaultdict(dict)
 
         for key, value in request.data.items():
             if key.startswith("stickers["):
-                # Example key: stickers[0][name]
-                index = key.split("[")[1].split("]")[0]
-                field = key.split("[")[2].replace("]", "")
+                parts = key.split("[")
+                if len(parts) < 3:
+                    continue
+                index = parts[1].replace("]", "")
+                field = parts[2].replace("]", "")
                 stickers_map[index][field] = value
 
         stickers_list = list(stickers_map.values())
+
+        # FIXED: validate that at least one sticker is present
+        if not stickers_list:
+            return Response(
+                {"error": "At least one sticker is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         serializer = StickerSerializer(data=stickers_list, many=True)
         serializer.is_valid(raise_exception=True)
         serializer.save(device=device)
 
-        return Response({"message": "Step 8 completed"})
+        return Response(
+            {"message": "Step 8 completed."},
+            status=status.HTTP_200_OK,
+        )
 
 
+# STEP 9 — User Manual Upload — FIXED
 class DeviceStep9APIView(APIView):
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request):
         device_id = request.data.get("device_id")
 
         if not device_id:
-            return Response({"error": "device_id is required"}, status=400)
+            return Response(
+                {"error": "device_id is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         device = get_object_or_404(Device, id=device_id)
         serializer = UserManualSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(device=device)
 
-        return Response({"message": "Step 9 completed"})
+        return Response(
+            {"message": "Step 9 completed."},
+            status=status.HTTP_200_OK,
+        )
 
 
 class DeviceAccessoryAPIView(APIView):
@@ -1008,6 +1051,24 @@ class SalesOrderViewSet(viewsets.ModelViewSet):
         )
 
 
+class SupplierVendorViewSet(DeleteResponseMixin, ModelViewSet):
+    queryset = SupplierVendor.objects.all()
+    serializer_class = SupplierVendorSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [SearchFilter]
+    search_fields = ["name"]
+
+    # Mixin configuration
+    delete_object_name = "supplier/vendor"
+    delete_display_field = "name"
+
+    @action(detail=False, methods=["get"], url_path="dropdown")
+    def dropdown(self, request):
+        vendors = SupplierVendor.objects.all().order_by("name")
+        data = [{"id": v.id, "label": v.name} for v in vendors]
+        return Response(data)
+
+
 # ──────────────────────────────────────────────
 # PRODUCTION ORDER VIEWSET
 # ──────────────────────────────────────────────
@@ -1159,14 +1220,23 @@ class OrderPriorityDropdownAPIView(APIView):
         )
 
 
-# RFQ (REQUEST FOR QUOTATION)
-class RFQViewSet(ModelViewSet):
+# ─────────────────────────────────────────────────────────────
+# RFQ VIEWSET — fully corrected
+# ─────────────────────────────────────────────────────────────
+class RFQViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     pagination_class = PageNumberPagination
 
     def get_queryset(self):
         return (
-            RequestForQuote.objects.select_related("order", "order__product", "order__customer")
+            RequestForQuote.objects
+            # Correct path: order → OrderEntry → make_to_order → product/customer
+            .select_related(
+                "order",
+                "order__make_to_order",
+                "order__make_to_order__product",
+                "created_by",
+            )
             .prefetch_related("selections", "quotations__vendor")
             .order_by("-created_at")
         )
@@ -1182,206 +1252,524 @@ class RFQViewSet(ModelViewSet):
             return RFQStep2Serializer
         if self.action == "step3":
             return RFQStep3Serializer
-
+        if self.action == "step2_data":
+            return RFQDetailSerializer
         return RFQDetailSerializer
 
+    # ── LIST ────────────────────────────────────────────────
     def list(self, request):
         queryset = self.get_queryset().filter(status="submitted")
-        vendor_filter = request.query_params.get("vendor")
+
+        vendor_filter = request.query_params.get("vendor", "").strip()
         if vendor_filter and vendor_filter != "all":
             queryset = queryset.filter(
                 quotations__vendor__name__iexact=vendor_filter
             ).distinct()
 
-        status_filter = request.query_params.get("status")
+        status_filter = request.query_params.get("status", "").strip()
         if status_filter and status_filter != "all":
             if status_filter == "pending":
                 queryset = queryset.filter(quotations__isnull=True).distinct()
             elif status_filter in ["quoted", "rejected"]:
                 queryset = queryset.filter(quotations__status=status_filter).distinct()
-        search_query = request.query_params.get("search", "").strip()
 
+        search_query = request.query_params.get("search", "").strip()
         if search_query:
+            # Search by formatted order ID (ORD001) or device/product name
             queryset = queryset.filter(
-                Q(order__order_id__icontains=search_query)
-                | Q(order__product__name__icontains=search_query)
+                Q(order__id__icontains=search_query.lstrip("ORD").lstrip("0") or "0")
+                | Q(order__make_to_order__product__name__icontains=search_query)
+                | Q(order__make_to_order__customer_name__icontains=search_query)
             )
 
         paginator = PageNumberPagination()
         paginator.page_size = 10
         page = paginator.paginate_queryset(queryset, request)
         serializer = RFQListSerializer(page, many=True)
-        total_rfqs = RequestForQuote.objects.filter(status="submitted")
+
+        submitted_qs = RequestForQuote.objects.filter(status="submitted")
         return Response(
             {
                 "count": paginator.page.paginator.count,
-                "total": total_rfqs.count(),
-                "pending": total_rfqs.filter(quotations__isnull=True)
+                "total": submitted_qs.count(),
+                "pending": submitted_qs.filter(quotations__isnull=True)
                 .distinct()
                 .count(),
-                "quoted": total_rfqs.filter(quotations__status="quoted")
+                "quoted": submitted_qs.filter(quotations__status="quoted")
                 .distinct()
                 .count(),
-                "rejected": total_rfqs.filter(quotations__status="rejected")
+                "rejected": submitted_qs.filter(quotations__status="rejected")
                 .distinct()
                 .count(),
                 "results": serializer.data,
             }
         )
 
+    # ── RETRIEVE ────────────────────────────────────────────
     def retrieve(self, request, pk=None):
         rfq = get_object_or_404(self.get_queryset(), id=pk)
-        serializer = RFQDetailSerializer(rfq)
-        return Response(serializer.data)
+        return Response(RFQDetailSerializer(rfq).data)
 
+    # ── PARTIAL UPDATE (edit draft) ──────────────────────────
     def partial_update(self, request, pk=None):
         rfq = get_object_or_404(RequestForQuote, id=pk)
         if rfq.status != "draft":
             return Response(
-                {"error": "Only draft RFQs can be updated"},
+                {"error": "Only draft RFQs can be updated."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         serializer = RFQStep1Serializer(rfq, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        return Response({"message": "RFQ updated successfully.", "rfq_id": rfq.id})
 
-        return Response({"message": "RFQ updated successfully", "rfq_id": rfq.id})
-
+    # ── DESTROY ─────────────────────────────────────────────
     def destroy(self, request, pk=None):
         rfq = get_object_or_404(RequestForQuote, id=pk)
         if rfq.status != "draft":
             return Response(
-                {"error": "Submitted RFQs cannot be deleted"},
+                {"error": "Submitted RFQs cannot be deleted."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         rfq.delete()
-        return Response({"message": "RFQ deleted successfully"})
+        return Response(
+            {"message": "RFQ deleted successfully."},
+            status=status.HTTP_200_OK,
+        )
 
+    # ── STEP 1 — Order Selection (Image 1) ──────────────────
     @action(detail=False, methods=["post"], url_path="step-1")
     def step1(self, request):
+        """
+        Creates RFQ from a selected OrderEntry.
+        Image 1: order dropdown, quote_types multi, assembly_type multi, quantity.
+        Returns Order Details Preview data so frontend can display it immediately.
+        """
         serializer = RFQStep1Serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         rfq = serializer.save(created_by=request.user)
+
+        # Build Order Details Preview response (Image 1 bottom section)
+        order = rfq.order
+        mto = getattr(order, "make_to_order", None)
+
+        order_preview = {
+            "customer": mto.customer_name if mto else None,
+            "order_type": (
+                order.get_production_type_display() if order.production_type else None
+            ),
+            "status": "CONFIRMED" if order.is_step2_complete else "IN PROGRESS",
+            "device": mto.product.name if mto and mto.product else None,
+        }
+
         return Response(
-            {"rfq_id": rfq.id, "message": "Step 1 completed"},
+            {
+                "rfq_id": rfq.id,
+                "message": "Step 1 completed.",
+                "order_preview": order_preview,  # Image 1: Order Details Preview
+            },
             status=status.HTTP_201_CREATED,
         )
 
+    # ── STEP 2 GET — Populate Component Selection (Image 2) ──
+    @action(detail=False, methods=["get"], url_path="step-2/data")
+    def step2_data(self, request):
+        """
+        GET endpoint to populate the Component Selection screen (Image 2).
+        Returns: RFQ header, selected quote types, Device Information,
+                 available BOM parts, components, services, current selections.
+        """
+        rfq_id = request.query_params.get("rfq_id")
+        if not rfq_id:
+            return Response(
+                {"error": "rfq_id query parameter is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        rfq = get_object_or_404(
+            RequestForQuote.objects.select_related(
+                "order",
+                "order__make_to_order",
+                "order__make_to_order__product",
+            ).prefetch_related("selections"),
+            id=rfq_id,
+        )
+
+        order = rfq.order
+        mto = getattr(order, "make_to_order", None)
+
+        # ── Device Information (Image 2: Make, Model, Version, Variant, State of Supply)
+        device_info_data = None
+        bom_parts = []
+        components = []
+
+        if mto and mto.product:
+            product_name = mto.product.name
+            # Find the matching Device by product name
+            device = (
+                Device.objects.select_related("info")
+                .prefetch_related(
+                    "bom__components",
+                    "enclosure",
+                    "wireharness",
+                    "battery",
+                    "sosbutton",
+                    "accessories",
+                )
+                .filter(
+                    info__model__icontains=product_name,
+                    status="completed",
+                )
+                .first()
+            )
+
+            if device and hasattr(device, "info"):
+                info = device.info
+                device_info_data = {
+                    "make": info.make,
+                    "model": info.model,
+                    "version": info.version,
+                    "variant": info.variant,
+                    # Image 2: "State of Supply: Mumbai" — shows state_of_supply value
+                    "state_of_supply": info.state_of_supply,
+                }
+
+                # BOM Parts — shown only if "bom" in rfq.quote_types
+                if "bom" in rfq.quote_types and hasattr(device, "bom"):
+                    bom_parts = [
+                        {
+                            "id": str(comp.id),
+                            "name": comp.description,
+                            "part_no": comp.part_no,
+                            "designator": comp.designator,
+                            "quantity": comp.per_device_quantity,
+                        }
+                        for comp in device.bom.components.all()
+                    ]
+
+                # Components — shown only if "component" in rfq.quote_types
+                if "component" in rfq.quote_types:
+                    if hasattr(device, "enclosure"):
+                        enc = device.enclosure
+                        components.append(
+                            {
+                                "key": "enclosure",
+                                "name": "Enclosure",
+                                "description": (
+                                    f"{enc.length}×{enc.breadth}×{enc.height}mm"
+                                    f" - {enc.material} ({enc.color})"
+                                ),
+                            }
+                        )
+                    if hasattr(device, "wireharness"):
+                        wh = device.wireharness
+                        components.append(
+                            {
+                                "key": "wire_harness",
+                                "name": "Wire Harness",
+                                "description": (
+                                    f"{wh.number_of_wires} wires - {wh.specification}"
+                                ),
+                            }
+                        )
+                    if hasattr(device, "battery"):
+                        bat = device.battery
+                        components.append(
+                            {
+                                "key": "battery",
+                                "name": "Battery",
+                                "description": f"{bat.capacity} (Part: {bat.part_number})",
+                            }
+                        )
+                    if hasattr(device, "sosbutton"):
+                        sos = device.sosbutton
+                        components.append(
+                            {
+                                "key": "sos_button",
+                                "name": "SOS Button",
+                                "description": (
+                                    f"Length: {sos.total_length}mm, "
+                                    f"Qty/set: {sos.quantity_per_set}"
+                                ),
+                            }
+                        )
+                    for acc in device.accessories.all():
+                        components.append(
+                            {
+                                "key": f"accessory_{acc.id}",
+                                "name": acc.name,
+                                "description": acc.description,
+                            }
+                        )
+
+        # Current saved selections (for re-visiting Step 2)
+        selected_bom = list(
+            rfq.selections.filter(item_type="bom").values_list("reference", flat=True)
+        )
+        selected_components = list(
+            rfq.selections.filter(item_type="component").values_list(
+                "reference", flat=True
+            )
+        )
+        selected_services = list(
+            rfq.selections.filter(item_type="service").values_list(
+                "reference", flat=True
+            )
+        )
+
+        # Services — shown only if "service" in rfq.quote_types (Image 2/3)
+        services_data = []
+        if "service" in rfq.quote_types:
+            services_data = [
+                {**svc, "selected": svc["key"] in selected_services}
+                for svc in RFQ_SERVICES
+            ]
+
+        return Response(
+            {
+                # Image 2 header: "Quote Selection - ORD001 (TechCorp GPS-Tracker-Pro)"
+                "rfq_id": rfq.id,
+                "order_reference": format_order_id(order),
+                "device_name": mto.product.name if mto and mto.product else None,
+                "selected_quote_types": rfq.quote_types,
+                # Image 2: Device Information section
+                "device_information": device_info_data,
+                # Image 2: BOM Parts Selection section
+                "bom_parts": bom_parts,
+                "bom_parts_selected_count": len(selected_bom),
+                # Image 2: Components Selection section
+                "components": components,
+                "components_selected_count": len(selected_components),
+                # Image 2/3: Services Selection section
+                "services": services_data,
+                "services_selected_count": len(selected_services),
+                # Current saved state
+                "current_selections": {
+                    "bom_parts": selected_bom,
+                    "components": selected_components,
+                    "services": selected_services,
+                },
+            }
+        )
+
+    # ── STEP 2 POST — Save Selections (Image 2) ─────────────
     @action(detail=False, methods=["post"], url_path="step-2")
     @transaction.atomic
     def step2(self, request):
-        rfq = get_object_or_404(
-            RequestForQuote,
-            id=request.data.get("rfq_id"),
-            status="draft",
-        )
+        """
+        Saves component selections respecting quote_types filter.
+        Only saves selection types that are in rfq.quote_types.
+        """
         serializer = RFQStep2Serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
+
+        rfq = get_object_or_404(
+            RequestForQuote,
+            id=serializer.validated_data["rfq_id"],
+            status="draft",
+        )
+
+        # Atomically replace all selections
         rfq.selections.all().delete()
+
+        selections_to_create = []
+
+        # Only save bom_parts if "bom" was selected in Step 1 quote_types
         if "bom" in rfq.quote_types:
             for ref in serializer.validated_data.get("bom_parts", []):
-                RFQSelection.objects.create(rfq=rfq, item_type="bom", reference=ref)
+                selections_to_create.append(
+                    RFQSelection(rfq=rfq, item_type="bom", reference=ref)
+                )
 
+        # Only save components if "component" was selected in Step 1 quote_types
         if "component" in rfq.quote_types:
             for ref in serializer.validated_data.get("components", []):
-                RFQSelection.objects.create(rfq=rfq, item_type="component", reference=ref)
+                selections_to_create.append(
+                    RFQSelection(rfq=rfq, item_type="component", reference=ref)
+                )
 
+        # Only save services if "service" was selected in Step 1 quote_types
         if "service" in rfq.quote_types:
             for ref in serializer.validated_data.get("services", []):
-                RFQSelection.objects.create(rfq=rfq, item_type="service", reference=ref)
-        
-        return Response({"message": "Step 2 completed"})
+                selections_to_create.append(
+                    RFQSelection(rfq=rfq, item_type="service", reference=ref)
+                )
 
+        RFQSelection.objects.bulk_create(selections_to_create)
+
+        return Response(
+            {
+                "message": "Step 2 completed.",
+                "rfq_id": rfq.id,
+                "bom_parts_count": sum(
+                    1 for s in selections_to_create if s.item_type == "bom"
+                ),
+                "components_count": sum(
+                    1 for s in selections_to_create if s.item_type == "component"
+                ),
+                "services_count": sum(
+                    1 for s in selections_to_create if s.item_type == "service"
+                ),
+            }
+        )
+
+    # ── STEP 3 — Quote Details + Submit (Image 3) ────────────
     @action(detail=False, methods=["post"], url_path="step-3")
     @transaction.atomic
     def step3(self, request):
+        """
+        Image 3: Vendor Names (multi), Delivery Date, Delivery Address,
+        Additional Requirements. Button: "Submit Quote Request".
+        """
+        serializer = RFQStep3Serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
 
         rfq = get_object_or_404(
             RequestForQuote,
-            id=request.data.get("rfq_id"),
+            id=data["rfq_id"],
+            # Only the creator can submit — security check
             created_by=request.user,
             status="draft",
         )
-        serializer = RFQStep3Serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
 
-        rfq.delivery_date = serializer.validated_data["delivery_date"]
-        rfq.delivery_address = serializer.validated_data["delivery_address"]
-        rfq.additional_requirements = serializer.validated_data.get(
-            "additional_requirements", ""
+        # Update delivery details on the RFQ
+        rfq.delivery_date = data["delivery_date"]
+        rfq.delivery_address = data["delivery_address"]
+        rfq.additional_requirements = data.get("additional_requirements", "")
+        rfq.status = "submitted"
+        rfq.save(
+            update_fields=[
+                "delivery_date",
+                "delivery_address",
+                "additional_requirements",
+                "status",
+            ]
         )
 
-        vendor_ids = serializer.validated_data["vendor_ids"]
-
-        rfq.quotations.all().delete()
-
+        # Create RFQQuotation records for each selected vendor
+        # Use get_or_create to avoid duplicate entries on re-submission
+        vendor_ids = data["vendor_ids"]
+        created_count = 0
         for vendor_id in vendor_ids:
-            RFQQuotation.objects.create(
+            _, created = RFQQuotation.objects.get_or_create(
                 rfq=rfq,
                 vendor_id=vendor_id,
-                status="pending"
+                defaults={"status": "pending"},
             )
-        rfq.status = "submitted"
-        rfq.save()
+            if created:
+                created_count += 1
+
         return Response(
-            {"message": "RFQ submitted successfully"},
-            status=status.HTTP_201_CREATED,
+            {
+                "message": "RFQ submitted successfully.",
+                "rfq_id": rfq.id,
+                "vendors_notified": vendor_ids,
+                "new_quotations_created": created_count,
+            },
+            status=status.HTTP_200_OK,
         )
 
 
+# ─────────────────────────────────────────────────────────────
+# ORDER DROPDOWN — Image 1: "Search Order ID or Device Name"
+# ─────────────────────────────────────────────────────────────
 class RFQOrderDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        queryset = OrderEntry.objects.select_related("customer", "product")
+        orders = (
+            OrderEntry.objects.filter(
+                production_type="make_to_order",
+                is_step2_complete=True,  # Only confirmed orders (Image 1: Status: CONFIRMED)
+            )
+            .select_related(
+                "make_to_order",
+                "make_to_order__product",
+            )
+            .order_by("-id")
+        )
 
-        return Response([
-            {
-                "id": o.id,
-                "label": f"{o.order_id} - {o.customer.name}",
-                "sub_label": f"{o.product.name} (Qty: {o.quantity})"
-            }
-            for o in queryset
-        ])
+        data = []
+        for order in orders:
+            mto = getattr(order, "make_to_order", None)
+            if not mto:
+                continue
+
+            order_label = format_order_id(order)
+            customer = mto.customer_name
+            product = mto.product.name if mto.product else ""
+
+            data.append(
+                {
+                    "id": order.id,
+                    # Image 1 dropdown: "ORD001 - TechCorp Solutions (TechCorp GPS-Tracker-Pro)"
+                    "label": f"{order_label} - {customer} ({product})",
+                    # Image 1 Order Details Preview section — returned so
+                    # frontend can populate the preview without an extra API call
+                    "order_preview": {
+                        "customer": customer,
+                        "order_type": order.get_production_type_display(),
+                        "status": "CONFIRMED",
+                        "device": product,
+                    },
+                }
+            )
+
+        return Response(data)
 
 
+# ─────────────────────────────────────────────────────────────
+# QUOTE TYPES DROPDOWN
+# ─────────────────────────────────────────────────────────────
 class QuoteTypeDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         return Response(
             [
-                {"key": "bom", "label": "Items (BOM Parts)"},
-                {"key": "component", "label": "Components"},
-                {"key": "service", "label": "Services"},
+                {"key": key, "label": label}
+                for key, label in RequestForQuote.QUOTE_TYPE_CHOICES
             ]
         )
 
 
+# ─────────────────────────────────────────────────────────────
+# ASSEMBLY TYPES DROPDOWN
+# ─────────────────────────────────────────────────────────────
 class AssemblyTypeDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         return Response(
             [
-                {"key": "pcb_assembly", "label": "PCB Assembly"},
-                {"key": "device_assembly", "label": "Device Assembly"},
+                {"key": key, "label": label}
+                for key, label in RequestForQuote.ASSEMBLY_TYPE_CHOICES
             ]
         )
 
 
+# ─────────────────────────────────────────────────────────────
+# VENDOR DROPDOWN — Image 3: "VND001 - TechCorp Solutions (Mumbai)"
+# ─────────────────────────────────────────────────────────────
 class VendorDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        vendors = Vendor.objects.select_related("district").order_by("name")
         return Response(
             [
                 {
                     "id": v.id,
-                    "label": f"{v.name} ({v.city})" if hasattr(v, "city") else v.name,
+                    # Dropdown option: "VND001 - TechCorp Solutions (Mumbai)"
+                    "label": (
+                        f"VND{v.id:03d} - {v.name}"
+                        f" ({v.district.name if v.district_id else ''})"
+                    ),
+                    # Selected chip: "TechCorp Solutions (VND001)"
+                    "chip_label": f"{v.name} (VND{v.id:03d})",
                 }
-                for v in Vendor.objects.all()
+                for v in vendors
             ]
         )
 
@@ -3150,7 +3538,7 @@ class B2BOrderViewSet(DeleteResponseMixin, ModelViewSet):
         "supply_state",
         "created_by",
     ).order_by("-created_at")
-    
+
     # Required by DeleteResponseMixin
     delete_object_name = "b2b_order"
     delete_display_field = None

@@ -8,6 +8,8 @@ from django.contrib.auth import authenticate, get_user_model
 from rest_framework import serializers
 from django.db import transaction
 from django.utils import timezone
+from .utils import format_order_id, get_media_path
+from django.db.models import FileField
 from .models import (
     UserProfile,
     State,
@@ -69,14 +71,42 @@ from .models import (
 User = get_user_model()
 
 
+RFQ_SERVICES = [
+    {"key": "pcb_assembly", "label": "PCB Assembly"},
+    {"key": "device_assembly", "label": "Device Assembly"},
+    {"key": "testing", "label": "Testing"},
+]
+
 # ---------------- File Size Validator ----------------
 def validate_file_size(file):
-    max_size = settings.FILE_UPLOAD_MAX_MEMORY_SIZE
-
+    if not file:
+        return
+    # Use a dedicated custom setting, fallback to 5MB
+    max_size = getattr(settings, "MAX_UPLOAD_FILE_SIZE", 5 * 1024 * 1024)
     if file.size > max_size:
         raise serializers.ValidationError(
             f"File size must be less than or equal to {max_size // (1024 * 1024)} MB."
         )
+
+
+class BaseSerializer(serializers.ModelSerializer):
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        for field in instance._meta.concrete_fields:
+            if isinstance(field, FileField):
+                file_obj = getattr(instance, field.name)
+                data[field.name] = get_media_path(file_obj)
+        return data
+
+    def _validate_state_district(self, data):
+        instance = getattr(self, "instance", None)
+        state = data.get("state") or getattr(instance, "state", None)
+        district = data.get("district") or getattr(instance, "district", None)
+
+        if state and district and district.state_id != state.id:
+            raise serializers.ValidationError(
+                {"district": "Selected district does not belong to selected state."}
+            )
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -194,69 +224,53 @@ class DistrictSerializer(serializers.ModelSerializer):
 
 
 # ---------------- Company Models ----------------
-class ParentCompanySerializer(serializers.ModelSerializer):
+class ParentCompanySerializer(BaseSerializer):
     class Meta:
         model = ParentCompany
         fields = "__all__"
 
     def validate(self, data):
-        state = data.get("state")
-        district = data.get("district")
-
-        # Handle PATCH case where fields may not be provided
-        if state is None:
-            state = getattr(self.instance, "state", None)
-
-        if district is None:
-            district = getattr(self.instance, "district", None)
-
-        if state and district and district.state_id != state.id:
-            raise serializers.ValidationError(
-                {"district": "Selected district does not belong to selected state."}
-            )
-
+        self._validate_state_district(data)
         return data
 
 
 # ---------------- Vendor ----------------
-class VendorSerializer(serializers.ModelSerializer):
-
+class VendorSerializer(BaseSerializer):
     class Meta:
         model = Vendor
         exclude = ("user",)
 
     def validate(self, data):
-        request = self.context["request"]
+        request = self.context.get("request")
+        if not request:
+            raise serializers.ValidationError(
+                "Request context is required for vendor validation."
+            )
         user = request.user
+        instance = getattr(self, "instance", None)
 
-        state = data.get("state")
-        district = data.get("district")
+        # State/district check via helper
+        self._validate_state_district(data)
 
-        if state and district and district.state_id != state.id:
-            raise serializers.ValidationError(
-                {"district": "Selected district does not belong to the selected state."}
-            )
+        gst_number = data.get("gst_number") or getattr(instance, "gst_number", None)
 
-        gst_number = data.get("gst_number")
-
-        queryset = Vendor.objects.filter(user=user, gst_number=gst_number)
-
-        # exclude current object during update
-        if self.instance:
-            queryset = queryset.exclude(id=self.instance.id)
-
-        if queryset.exists():
-            raise serializers.ValidationError(
-                {
-                    "gst_number": "Vendor with this GST number already exists for this user."
-                }
-            )
+        if gst_number:
+            queryset = Vendor.objects.filter(user=user, gst_number=gst_number)
+            if instance:
+                queryset = queryset.exclude(id=instance.id)
+            if queryset.exists():
+                raise serializers.ValidationError(
+                    {
+                        "gst_number": (
+                            "Vendor with this GST number already exists for this user."
+                        )
+                    }
+                )
 
         return data
 
 
-class B2CCustomerSerializer(serializers.ModelSerializer):
-
+class B2CCustomerSerializer(BaseSerializer):
     class Meta:
         model = B2CCustomer
         fields = [
@@ -282,23 +296,12 @@ class B2CCustomerSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at"]
 
     def validate(self, data):
-        instance = getattr(self, "instance", None)
-
-        state = data.get("state", instance.state if instance else None)
-        district = data.get("district", instance.district if instance else None)
-
-        if state and district:
-            if district.state_id != state.id:
-                raise serializers.ValidationError(
-                    {"district": "Selected district does not belong to selected state."}
-                )
-
+        self._validate_state_district(data)
         return data
 
 
 # ---------------- B2B Partner Registration ----------------
-class B2BPartnerSerializer(serializers.ModelSerializer):
-
+class B2BPartnerSerializer(BaseSerializer):
     class Meta:
         model = B2BPartner
         fields = [
@@ -324,17 +327,7 @@ class B2BPartnerSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at"]
 
     def validate(self, data):
-        instance = getattr(self, "instance", None)
-
-        state = data.get("state", instance.state if instance else None)
-        district = data.get("district", instance.district if instance else None)
-
-        if state and district:
-            if district.state_id != state.id:
-                raise serializers.ValidationError(
-                    {"district": "Selected district does not belong to selected state."}
-                )
-
+        self._validate_state_district(data)
         return data
 
 
@@ -343,7 +336,7 @@ class LinkedToChoicesSerializer(serializers.Serializer):
     label = serializers.CharField()
 
 
-class ManufacturerSerializer(serializers.ModelSerializer):
+class ManufacturerSerializer(BaseSerializer):
 
     class Meta:
         model = Manufacturer
@@ -379,7 +372,7 @@ class ManufacturerSerializer(serializers.ModelSerializer):
 
 
 # ---------------- Distributor Registration ----------------
-class DistributorRegistrationSerializer(serializers.ModelSerializer):
+class DistributorRegistrationSerializer(BaseSerializer):
     authorised_states = serializers.PrimaryKeyRelatedField(
         queryset=State.objects.all(), many=True
     )
@@ -394,37 +387,34 @@ class DistributorRegistrationSerializer(serializers.ModelSerializer):
     def validate(self, data):
         instance = getattr(self, "instance", None)
 
-        state = data.get("state", getattr(instance, "state", None))
-        district = data.get("district", getattr(instance, "district", None))
+        # State/district check via helper
+        self._validate_state_district(data)
 
-        # 1️⃣ Address validation
-        if state and district and district.state_id != state.id:
-            raise serializers.ValidationError(
-                {"district": "District does not belong to selected state."}
-            )
+        # Linked-to / manufacturer validation
+        linked_to = data.get("linked_to") or getattr(instance, "linked_to", None)
+        manufacturer = data.get("manufacturer") or getattr(
+            instance, "manufacturer", None
+        )
 
-        linked_to = data.get("linked_to", getattr(instance, "linked_to", None))
-        manufacturer = data.get("manufacturer", getattr(instance, "manufacturer", None))
-
-        # 2️⃣ Manufacturer validation
         if linked_to == "manufacturer" and not manufacturer:
             raise serializers.ValidationError(
                 {"manufacturer": "Manufacturer is required."}
             )
 
-        authorised_states = data.get(
-            "authorised_states",
-            list(instance.authorised_states.all()) if instance else [],
-        )
+        # M2M validation — PATCH-safe using None sentinel
+        authorised_states = data.get("authorised_states")
+        if authorised_states is None:
+            authorised_states = (
+                list(instance.authorised_states.all()) if instance else []
+            )
 
-        authorised_districts = data.get(
-            "authorised_districts",
-            list(instance.authorised_districts.all()) if instance else [],
-        )
+        authorised_districts = data.get("authorised_districts")
+        if authorised_districts is None:
+            authorised_districts = (
+                list(instance.authorised_districts.all()) if instance else []
+            )
 
-        # 3️⃣ Authorised district validation
         state_ids = {s.id for s in authorised_states}
-
         for d in authorised_districts:
             if d.state_id not in state_ids:
                 raise serializers.ValidationError(
@@ -437,12 +427,24 @@ class DistributorRegistrationSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         states = validated_data.pop("authorised_states")
         districts = validated_data.pop("authorised_districts")
-
         distributor = Distributor.objects.create(**validated_data)
         distributor.authorised_states.set(states)
         distributor.authorised_districts.set(districts)
-
         return distributor
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        states = validated_data.pop("authorised_states", None)
+        districts = validated_data.pop("authorised_districts", None)
+
+        instance = super().update(instance, validated_data)
+
+        if states is not None:
+            instance.authorised_states.set(states)
+        if districts is not None:
+            instance.authorised_districts.set(districts)
+
+        return instance
 
 
 class ProductCreateSerializer(serializers.ModelSerializer):
@@ -474,14 +476,16 @@ class ProductDropdownSerializer(serializers.ModelSerializer):
 
 
 # ---------------- Dealer Registration ----------------
-class DealerRegistrationSerializer(serializers.ModelSerializer):
-
+class DealerRegistrationSerializer(BaseSerializer):
     authorised_states = serializers.PrimaryKeyRelatedField(
-        queryset=State.objects.all(), many=True, required=True
+        queryset=State.objects.all(),
+        many=True,
+        required=False,
     )
-
     authorised_districts = serializers.PrimaryKeyRelatedField(
-        queryset=District.objects.all(), many=True, required=True
+        queryset=District.objects.all(),
+        many=True,
+        required=False,
     )
 
     class Meta:
@@ -511,66 +515,79 @@ class DealerRegistrationSerializer(serializers.ModelSerializer):
             "authorised_districts",
             "created_at",
         ]
-
         read_only_fields = ["id", "created_at"]
 
     def validate(self, data):
-
         instance = getattr(self, "instance", None)
+        # State/district check via helper
+        self._validate_state_district(data)
+        linked_to = data.get("linked_to") or getattr(instance, "linked_to", None)
+        manufacturer = data.get("manufacturer", getattr(instance, "manufacturer", None))
+        distributor = data.get("distributor", getattr(instance, "distributor", None))
 
-        state = data.get("state", getattr(instance, "state", None))
-        district = data.get("district", getattr(instance, "district", None))
-
-        if state and district and district.state_id != state.id:
-            raise serializers.ValidationError(
-                {"district": "District does not belong to selected state."}
-            )
-
-        linked_to = data.get("linked_to", getattr(instance, "linked_to", None))
-        manufacturer = data.get("manufacturer")
-        distributor = data.get("distributor")
-
-        # Manufacturer logic
         if linked_to == "manufacturer":
-
             if not manufacturer:
                 raise serializers.ValidationError(
                     {"manufacturer": "Manufacturer is required."}
                 )
-
             data["distributor"] = None
 
-        # Distributor logic
-        if linked_to == "distributor":
-
+        elif linked_to == "distributor":
             if not distributor:
                 raise serializers.ValidationError(
                     {"distributor": "Distributor is required."}
                 )
-
             data["manufacturer"] = None
 
-        authorised_states = data.get(
-            "authorised_states",
-            list(instance.authorised_states.all()) if instance else [],
-        )
+        authorised_states = data.get("authorised_states")
+        if authorised_states is None:
+            authorised_states = (
+                list(instance.authorised_states.all()) if instance else []
+            )
 
-        authorised_districts = data.get(
-            "authorised_districts",
-            list(instance.authorised_districts.all()) if instance else [],
-        )
+        authorised_districts = data.get("authorised_districts")
+        if authorised_districts is None:
+            authorised_districts = (
+                list(instance.authorised_districts.all()) if instance else []
+            )
 
         state_ids = {s.id for s in authorised_states}
-
-        for district in authorised_districts:
-            if district.state_id not in state_ids:
+        for d in authorised_districts:
+            if d.state_id not in state_ids:
                 raise serializers.ValidationError(
                     {
-                        "authorised_districts": f"District '{district.name}' does not belong to selected authorised states."
+                        "authorised_districts": (
+                            f"District '{d.name}' does not belong to "
+                            "selected authorised states."
+                        )
                     }
                 )
 
         return data
+
+    @transaction.atomic
+    def create(self, validated_data):
+        states = validated_data.pop("authorised_states", [])
+        districts = validated_data.pop("authorised_districts", [])
+        dealer = Dealer.objects.create(**validated_data)
+        dealer.authorised_states.set(states)
+        dealer.authorised_districts.set(districts)
+        return dealer
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        states = validated_data.pop("authorised_states", None)
+        districts = validated_data.pop("authorised_districts", None)
+
+        # Update all scalar fields via super()
+        instance = super().update(instance, validated_data)
+
+        if states is not None:
+            instance.authorised_states.set(states)
+        if districts is not None:
+            instance.authorised_districts.set(districts)
+
+        return instance
 
 
 # ---------------- Proforma Invoice ----------------
@@ -689,17 +706,29 @@ class SOSButtonSerializer(serializers.ModelSerializer):
 
 
 # ---------------- STEP 8 ----------------
-class StickerSerializer(serializers.ModelSerializer):
+class StickerSerializer(BaseSerializer):
+
     class Meta:
         model = Sticker
         exclude = ["device"]
+        extra_kwargs = {
+            "file": {
+                "validators": [validate_file_size],
+            },
+        }
 
 
 # ---------------- STEP 9 ----------------
-class UserManualSerializer(serializers.ModelSerializer):
+class UserManualSerializer(BaseSerializer):
+
     class Meta:
         model = UserManual
         exclude = ["device"]
+        extra_kwargs = {
+            "file": {
+                "validators": [validate_file_size],
+            },
+        }
 
 
 # ---------------- STEP 10 ----------------
@@ -827,6 +856,7 @@ class SOSButtonDetailSerializer(serializers.ModelSerializer):
 class StickerDetailSerializer(serializers.ModelSerializer):
     dimensions = serializers.SerializerMethodField()
     file_name = serializers.SerializerMethodField()
+    file_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Sticker
@@ -835,6 +865,7 @@ class StickerDetailSerializer(serializers.ModelSerializer):
             "dimensions",
             "quantity",
             "file_name",
+            "file_url",
         ]
         read_only_fields = fields
 
@@ -843,25 +874,39 @@ class StickerDetailSerializer(serializers.ModelSerializer):
 
     def get_file_name(self, obj):
         if obj.file:
-            return obj.file.name.split("/")[-1]
+            import os
+
+            return os.path.basename(obj.file.name)
+        return None
+
+    def get_file_url(self, obj):
+        if obj.file:
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(obj.file.url)
+            return obj.file.url
         return None
 
 
 class BOMDetailSerializer(serializers.ModelSerializer):
-    """BOM with components for device view"""
-
     items = serializers.SerializerMethodField()
+    bom_file = serializers.SerializerMethodField()
 
     class Meta:
         model = BOM
         fields = ["upload_type", "items", "bom_file"]
         read_only_fields = fields
 
-    def get_items(self, obj):
-        """Return BOM components as items list"""
-        components = obj.components.all()
+    def get_bom_file(self, obj):
+        if obj.bom_file:
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(obj.bom_file.url)
+            return obj.bom_file.url
+        return None
 
-        # Map components to item types based on upload_type
+    def get_items(self, obj):
+        components = obj.components.all()
         items_list = []
         for idx, component in enumerate(components, 1):
             items_list.append(
@@ -880,8 +925,6 @@ class BOMDetailSerializer(serializers.ModelSerializer):
 
 
 class UserManualDetailSerializer(serializers.ModelSerializer):
-    """User manual details"""
-
     file_name = serializers.SerializerMethodField()
     file_url = serializers.SerializerMethodField()
 
@@ -891,15 +934,17 @@ class UserManualDetailSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_file_name(self, obj):
-        """Extract filename from file field"""
         if obj.file:
-            return obj.file.name.split("/")[-1]
+            import os
+            return os.path.basename(obj.file.name)
         return None
 
     def get_file_url(self, obj):
-        """Return file URL"""
         if obj.file:
-            return self.context.get("request").build_absolute_uri(obj.file.url)
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(obj.file.url)
+            return obj.file.url
         return None
 
 
@@ -1136,6 +1181,30 @@ class SalesOrderReadSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class SupplierVendorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SupplierVendor
+        fields = ["id", "name"]
+
+    def validate_name(self, value):
+        value = value.strip()
+
+        if not value:
+            raise serializers.ValidationError("Name cannot be empty.")
+
+        queryset = SupplierVendor.objects.filter(name__iexact=value)
+
+        if self.instance:
+            queryset = queryset.exclude(id=self.instance.id)
+
+        if queryset.exists():
+            raise serializers.ValidationError(
+                "Supplier/Vendor with this name already exists."
+            )
+
+        return value
+
+
 # ──────────────────────────────────────────────
 # PRODUCTION ORDER — WRITE
 # ──────────────────────────────────────────────
@@ -1285,21 +1354,36 @@ class OrderEntryStep2MakeToOrderSerializer(serializers.ModelSerializer):
         return data
 
 
-# ------------------------- Request For Quote (RFQ) Step 1 --------------------------
-# Step-1 Serializer
+# ──────────────────── Request for Quote Step 1 ──────────────────────────
 class RFQStep1Serializer(serializers.ModelSerializer):
-    
+    """
+    Image 1 fields:
+      - order_id        → FK to OrderEntry (dropdown: "ORD001 - TechCorp Solutions (TechCorp GPS-Tracker-Pro)")
+      - quote_types     → multi-select list ["bom", "component", "service"]
+      - assembly_type   → multi-select list ["pcb_assembly", "device_assembly"]
+      - quantity        → editable integer (Image 1 shows "50", user-entered, NOT from order)
+    """
+
     order_id = serializers.IntegerField(write_only=True)
 
     quote_types = serializers.ListField(
-        child=serializers.ChoiceField(choices=["bom", "component", "service"]),
+        child=serializers.ChoiceField(
+            choices=[c[0] for c in RequestForQuote.QUOTE_TYPE_CHOICES]
+        ),
         min_length=1,
+        error_messages={"min_length": "At least one quote type must be selected."},
     )
 
     assembly_type = serializers.ListField(
-        child=serializers.ChoiceField(choices=["pcb_assembly", "device_assembly"]),
+        child=serializers.ChoiceField(
+            choices=[c[0] for c in RequestForQuote.ASSEMBLY_TYPE_CHOICES]
+        ),
         min_length=1,
+        error_messages={"min_length": "At least one assembly type must be selected."},
     )
+
+    # Image 1: Quantity is a separate editable field — must be included
+    quantity = serializers.IntegerField(min_value=1)
 
     class Meta:
         model = RequestForQuote
@@ -1307,40 +1391,146 @@ class RFQStep1Serializer(serializers.ModelSerializer):
             "order_id",
             "quote_types",
             "assembly_type",
-    ]
+            "quantity",
+        ]
+
+    def validate_order_id(self, value):
+        """Ensure the OrderEntry exists and has a completed make_to_order step."""
+        try:
+            order = OrderEntry.objects.select_related().get(id=value)
+        except OrderEntry.DoesNotExist:
+            raise serializers.ValidationError(f"Order with ID {value} does not exist.")
+        # Only make_to_order entries are valid for RFQ (Image 1: "MAKE TO_ORDER")
+        if order.production_type != "make_to_order":
+            raise serializers.ValidationError(
+                "Only Make-to-Order entries can have an RFQ."
+            )
+        if not hasattr(order, "make_to_order"):
+            raise serializers.ValidationError(
+                "Selected order has no Make-to-Order details. Complete Step 2 first."
+            )
+        return value
+
+    def validate_quote_types(self, value):
+        """Deduplicate while preserving order."""
+        seen, deduped = set(), []
+        for item in value:
+            if item not in seen:
+                seen.add(item)
+                deduped.append(item)
+        return deduped
+
+    def validate_assembly_type(self, value):
+        """Deduplicate while preserving order."""
+        seen, deduped = set(), []
+        for item in value:
+            if item not in seen:
+                seen.add(item)
+                deduped.append(item)
+        return deduped
 
     def create(self, validated_data):
         order_id = validated_data.pop("order_id")
-
         order = OrderEntry.objects.get(id=order_id)
-
         return RequestForQuote.objects.create(
             order=order,
-            quantity=order.quantity,
-            **validated_data
+            **validated_data,  # includes quantity, quote_types, assembly_type
         )
 
+    def update(self, instance, validated_data):
+        order_id = validated_data.pop("order_id", None)
+        if order_id is not None:
+            instance.order = OrderEntry.objects.get(id=order_id)
+        instance.quote_types = validated_data.get("quote_types", instance.quote_types)
+        instance.assembly_type = validated_data.get(
+            "assembly_type", instance.assembly_type
+        )
+        instance.quantity = validated_data.get("quantity", instance.quantity)
+        instance.save(
+            update_fields=["order", "quote_types", "assembly_type", "quantity"]
+        )
+        return instance
 
-# -------------------------- Request For Quote (RFQ) Step 2 --------------------------
+
+# ──────────────────── Request for Quote Step 2 ──────────────────────────
 class RFQStep2Serializer(serializers.Serializer):
-    bom_parts = serializers.ListField(child=serializers.CharField(), required=False)
-    components = serializers.ListField(child=serializers.CharField(), required=False)
-    services = serializers.ListField(child=serializers.CharField(), required=False)
+    """
+    Image 2: BOM Parts, Components, Services selections.
+    Only item_types that are in rfq.quote_types are processed (enforced in view).
+    """
 
-
-# -------------------------- Request For Quote (RFQ) Step 3 --------------------------
-class RFQStep3Serializer(serializers.Serializer):
     rfq_id = serializers.IntegerField()
-    vendor_ids = serializers.ListField(child=serializers.IntegerField(), min_length=1)
+    bom_parts = serializers.ListField(
+        child=serializers.CharField(), required=False, default=list
+    )
+    components = serializers.ListField(
+        child=serializers.CharField(), required=False, default=list
+    )
+    services = serializers.ListField(
+        child=serializers.CharField(), required=False, default=list
+    )
+
+    def validate_services(self, value):
+        """Validate against known static service keys."""
+        valid_keys = {s["key"] for s in RFQ_SERVICES}
+        invalid = [v for v in value if v not in valid_keys]
+        if invalid:
+            raise serializers.ValidationError(
+                f"Invalid service(s): {invalid}. "
+                f"Valid choices: {sorted(valid_keys)}"
+            )
+        return value
+
+
+# # ──────────────────── Request for Quote Step 3 ──────────────────────────
+class RFQStep3Serializer(serializers.Serializer):
+    """
+    Image 3 fields:
+      - rfq_id                  → which RFQ to finalize
+      - vendor_ids              → multi-select vendors (Image 3: VND001, VND002)
+      - delivery_date           → date picker (Image 3: 03/28/2026)
+      - delivery_address        → textarea
+      - additional_requirements → textarea
+    No srn_no — confirmed removed by all three images.
+    """
+
+    rfq_id = serializers.IntegerField()
+    vendor_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        min_length=1,
+        error_messages={"min_length": "At least one vendor must be selected."},
+    )
     delivery_date = serializers.DateField()
     delivery_address = serializers.CharField()
-    additional_requirements = serializers.CharField(required=False, allow_blank=True)
+    additional_requirements = serializers.CharField(
+        required=False, allow_blank=True, default=""
+    )
+
+    def validate_vendor_ids(self, value):
+        """Ensure all vendor IDs exist in the Vendor table."""
+        existing = set(Vendor.objects.filter(id__in=value).values_list("id", flat=True))
+        missing = set(value) - existing
+        if missing:
+            raise serializers.ValidationError(
+                f"Vendor ID(s) not found: {sorted(missing)}"
+            )
+        return value
 
 
-# ----------------------- RFQ List Serializer -----------------------
+# ─────────────────────────────────────────────────────────────
+# RFQ LIST SERIALIZER — correct source paths
+# ─────────────────────────────────────────────────────────────
 class RFQListSerializer(serializers.ModelSerializer):
-    order_reference = serializers.CharField(source="order.order_id", read_only=True)
-    device_name = serializers.CharField(source="order.product.name", read_only=True)
+    """
+    Image 1/2: order_reference = "ORD001", device_name = product name from make_to_order.
+    Correct path: order.id (formatted) and order.make_to_order.product.name
+    """
+
+    # "ORD001" format — Image 1 dropdown shows this prefix
+    order_reference = serializers.SerializerMethodField()
+    device_name = serializers.SerializerMethodField()
+    customer_name = serializers.SerializerMethodField()
+
     vendor_names = serializers.SerializerMethodField()
     bom_parts_count = serializers.SerializerMethodField()
     components_count = serializers.SerializerMethodField()
@@ -1352,7 +1542,9 @@ class RFQListSerializer(serializers.ModelSerializer):
             "id",
             "order_reference",
             "device_name",
+            "customer_name",
             "quantity",
+            "quote_types",
             "assembly_type",
             "delivery_date",
             "created_at",
@@ -1363,10 +1555,24 @@ class RFQListSerializer(serializers.ModelSerializer):
             "components_count",
         ]
 
+    def get_order_reference(self, obj):
+        # Image 1: "ORD001" — zero-padded order ID
+        return format_order_id(obj.order)
+
+    def get_device_name(self, obj):
+        # Image 2: "TechCorp GPS-Tracker-Pro" — from make_to_order.product.name
+        mto = getattr(obj.order, "make_to_order", None)
+        if mto and mto.product:
+            return mto.product.name
+        return None
+
+    def get_customer_name(self, obj):
+        # Image 1 Order Details Preview: "TechCorp Solutions"
+        mto = getattr(obj.order, "make_to_order", None)
+        return mto.customer_name if mto else None
+
     def get_vendor_names(self, obj):
-        return list(
-            obj.quotations.values_list("vendor__name", flat=True).distinct()
-        )
+        return list(obj.quotations.values_list("vendor__name", flat=True).distinct())
 
     def get_bom_parts_count(self, obj):
         return obj.selections.filter(item_type="bom").count()
@@ -1375,25 +1581,35 @@ class RFQListSerializer(serializers.ModelSerializer):
         return obj.selections.filter(item_type="component").count()
 
 
-# ----------------------- RFQ Selection Serializer -----------------------
+# ─────────────────────────────────────────────────────────────
+# RFQ SELECTION SERIALIZER
+# ─────────────────────────────────────────────────────────────
 class RFQSelectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = RFQSelection
         fields = ["id", "item_type", "reference"]
 
 
-# ----------------------- RFQ Detail Serializer -----------------------
+# ─────────────────────────────────────────────────────────────
+# RFQ DETAIL SERIALIZER — correct all source paths
+# ─────────────────────────────────────────────────────────────
 class RFQDetailSerializer(serializers.ModelSerializer):
+    """
+    Image 2 header: "Quote Selection - ORD001 (TechCorp GPS-Tracker-Pro)"
+    Image 1 Order Details Preview: Customer, Order Type, Status, Device
+    """
 
     selections = RFQSelectionSerializer(many=True, read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
-    order_reference = serializers.CharField(source="order.order_id", read_only=True)
-    device_name = serializers.CharField(source="order.product.name", read_only=True)
-    customer_name = serializers.CharField(source="order.customer.name", read_only=True)
-    order_type = serializers.CharField(source="order.order_type", read_only=True)
-    order_status = serializers.CharField(source="order.status", read_only=True)
 
-    # Step 2 UI sections
+    # Image 1 Order Details Preview fields — all from order.make_to_order
+    order_reference = serializers.SerializerMethodField()
+    device_name = serializers.SerializerMethodField()
+    customer_name = serializers.SerializerMethodField()
+    order_type = serializers.SerializerMethodField()
+    order_status = serializers.SerializerMethodField()
+
+    # Step 2 current selection state
     bom_parts = serializers.SerializerMethodField()
     components = serializers.SerializerMethodField()
     services = serializers.SerializerMethodField()
@@ -1410,6 +1626,7 @@ class RFQDetailSerializer(serializers.ModelSerializer):
             "order_type",
             "order_status",
             "quantity",
+            "quote_types",
             "assembly_type",
             "delivery_date",
             "delivery_address",
@@ -1423,15 +1640,39 @@ class RFQDetailSerializer(serializers.ModelSerializer):
             "services",
             "vendor_names",
         ]
+        read_only_fields = ["id", "created_at", "status", "selections"]
 
-        read_only_fields = [
-            "id",
-            "created_at",
-            "status",
-            "selections",
-        ]
+    def get_order_reference(self, obj):
+        return format_order_id(obj.order)
 
-    # ------------------ STEP 2 DATA ------------------
+    def get_device_name(self, obj):
+        mto = getattr(obj.order, "make_to_order", None)
+        if mto and mto.product:
+            return mto.product.name
+        return None
+
+    def get_customer_name(self, obj):
+        # Image 1: Customer: TechCorp Solutions
+        mto = getattr(obj.order, "make_to_order", None)
+        return mto.customer_name if mto else None
+
+    def get_order_type(self, obj):
+        # Image 1: Order Type: MAKE TO_ORDER
+        return (
+            obj.order.get_production_type_display()
+            if obj.order.production_type
+            else None
+        )
+
+    def get_order_status(self, obj):
+        # Image 1: Status: CONFIRMED
+        # "CONFIRMED" maps to is_step2_complete=True on the OrderEntry
+        order = obj.order
+        if order.is_step2_complete:
+            return "CONFIRMED"
+        elif order.is_step1_complete:
+            return "IN PROGRESS"
+        return "DRAFT"
 
     def get_bom_parts(self, obj):
         return list(
@@ -1981,10 +2222,7 @@ class AccountRegistrationSerializer(serializers.ModelSerializer):
 
 
 # ---------------- Module Management QC Inspector Registration ----------------
-class QCInspectorRegistrationSerializer(serializers.ModelSerializer):
-    aadhar_document = serializers.FileField(validators=[validate_file_size])
-    pan_document = serializers.FileField(validators=[validate_file_size])
-
+class QCInspectorRegistrationSerializer(BaseSerializer):
     class Meta:
         model = QCInspectorRegistration
         fields = [
@@ -1999,20 +2237,22 @@ class QCInspectorRegistrationSerializer(serializers.ModelSerializer):
             "aadhar_document",
             "pan_number",
             "pan_document",
+            "created_at",
         ]
+        read_only_fields = ["id", "created_at"]
+        extra_kwargs = {
+            "aadhar_document": {
+                "validators": [validate_file_size],
+                "required": False,
+            },
+            "pan_document": {
+                "validators": [validate_file_size],
+                "required": False,
+            },
+        }
 
     def validate(self, data):
-
-        instance = getattr(self, "instance", None)
-
-        state = data.get("state", getattr(instance, "state", None))
-        district = data.get("district", getattr(instance, "district", None))
-
-        if state and district and district.state_id != state.id:
-            raise serializers.ValidationError(
-                {"district": "Selected district does not belong to selected state."}
-            )
-
+        self._validate_state_district(data)
         return data
 
 

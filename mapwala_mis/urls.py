@@ -86,6 +86,7 @@ from .views import (
     OrderProductViewSet,
     SalesOrderViewSet,
     OrderBatchViewSet,
+    SupplierVendorViewSet,
     ProductionOrderViewSet,
     B2BOrderViewSet,
     POOrderIDDropdownAPIView,
@@ -128,6 +129,7 @@ router.register(r"order-entries", OrderEntryViewSet, basename="order-entry")
 router.register(r"order-products", OrderProductViewSet, basename="order-product")
 router.register(r"order-batches", OrderBatchViewSet, basename="order-batch")
 router.register(r"sales-orders", SalesOrderViewSet, basename="sales-order")
+router.register(r"supplier-vendors", SupplierVendorViewSet, basename="supplier-vendors")
 router.register(r"production-orders", ProductionOrderViewSet, basename="production-order")
 router.register(r"b2b-orders", B2BOrderViewSet, basename="b2b-order")
 

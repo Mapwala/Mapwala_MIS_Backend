@@ -58,21 +58,22 @@ class District(models.Model):
 # ---------------- Parent Company ----------------
 class ParentCompany(models.Model):
     name = models.CharField(max_length=255)
-    phone_number = models.CharField(max_length=15)
-    email = models.EmailField()
+    phone_number = models.CharField(max_length=15, unique=True)
+    email = models.EmailField(unique=True)
     address = models.TextField()
     state = models.ForeignKey(State, on_delete=models.PROTECT)
     district = models.ForeignKey(District, on_delete=models.PROTECT)
     bank_name = models.CharField(max_length=255)
     account_holder_name = models.CharField(max_length=255)
-    account_number = models.CharField(max_length=50)
+    account_number = models.CharField(max_length=50, unique=True)
     ifsc_code = models.CharField(max_length=20)
-    gst_number = models.CharField(max_length=20)
+    gst_number = models.CharField(max_length=20, unique=True)
     gst_document = models.FileField(upload_to="documents/gst/")
-    tan_number = models.CharField(max_length=20)
+    tan_number = models.CharField(max_length=20, unique=True)
     tan_document = models.FileField(upload_to="documents/tan/")
-    pan_number = models.CharField(max_length=20)
+    pan_number = models.CharField(max_length=20, unique=True)
     pan_document = models.FileField(upload_to="documents/pan/")
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -815,10 +816,6 @@ class SalesOrder(models.Model):
 
 # --------------------------------Supplier / Vendor------------------------------
 class SupplierVendor(models.Model):
-    """
-    Supplier / Vendor dropdown
-    """
-
     name = models.CharField(max_length=255, unique=True)
 
     class Meta:

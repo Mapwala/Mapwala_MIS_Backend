@@ -46,3 +46,12 @@ def generate_quotation_number() -> str:
         seq.save(update_fields=["last_number"])
 
         return f"QT-{year}-{seq.last_number:03d}"
+
+
+def format_order_id(order):
+    """Returns 'ORD001' style label from OrderEntry instance."""
+    return f"ORD{order.id:03d}"
+
+
+def get_media_path(file):
+    return f"media/{file.name}" if file else None
