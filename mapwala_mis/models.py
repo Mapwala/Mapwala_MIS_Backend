@@ -904,7 +904,6 @@ class OrderEntryMakeToOrder(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 
-# ---------------- Request For Quote (RFQ) ----------------
 class RequestForQuote(models.Model):
     STATUS_CHOICES = (
         ("draft", "Draft"),
@@ -922,22 +921,40 @@ class RequestForQuote(models.Model):
         ("service", "Services"),
     )
 
-    # STEP 1
-    order = models.ForeignKey(OrderEntry,on_delete=models.PROTECT,related_name="rfqs")
+    order = models.ForeignKey(OrderEntry, on_delete=models.PROTECT, related_name="rfqs")
     quote_types = models.JSONField(default=list)
     assembly_type = models.JSONField(default=list)
     quantity = models.PositiveIntegerField()
-    # STEP 3
+
     delivery_date = models.DateField(null=True, blank=True)
     delivery_address = models.TextField(null=True, blank=True)
-    additional_requirements = models.TextField(blank=True)
-    
+    additional_requirements = models.TextField(null=True, blank=True)
+
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
     created_by = models.ForeignKey(User, on_delete=models.PROTECT)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    @property
+    def order_reference(self):
+        from .utils import format_order_id
+        return format_order_id(self.order)
+
+    @property
+    def device_name(self):
+        mto = getattr(self.order, "make_to_order", None)
+        if mto and mto.product:
+            return mto.product.name
+        return None
+
+    @property
+    def customer_name(self):
+        mto = getattr(self.order, "make_to_order", None)
+        if mto:
+            return mto.customer_name
+        return None
+
     def __str__(self):
-        return f"RFQ-{self.id} | {self.order.order_id}"
+        return f"RFQ-{self.id} | {self.order_reference}"
 
 
 # ---------------- RFQ Selection ----------------

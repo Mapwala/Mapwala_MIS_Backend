@@ -168,6 +168,7 @@ from .serializers import (
     AvailableVendorSummarySerializer,
     RFQCardSerializer,
     SupplierVendorSerializer,
+    RFQ_SERVICES,
 )
 
 
@@ -1220,18 +1221,13 @@ class OrderPriorityDropdownAPIView(APIView):
         )
 
 
-# ─────────────────────────────────────────────────────────────
-# RFQ VIEWSET — fully corrected
-# ─────────────────────────────────────────────────────────────
 class RFQViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     pagination_class = PageNumberPagination
 
     def get_queryset(self):
         return (
-            RequestForQuote.objects
-            # Correct path: order → OrderEntry → make_to_order → product/customer
-            .select_related(
+            RequestForQuote.objects.select_related(
                 "order",
                 "order__make_to_order",
                 "order__make_to_order__product",
@@ -1256,43 +1252,54 @@ class RFQViewSet(viewsets.ModelViewSet):
             return RFQDetailSerializer
         return RFQDetailSerializer
 
-    # ── LIST ────────────────────────────────────────────────
     def list(self, request):
         queryset = self.get_queryset().filter(status="submitted")
 
+        # Vendor filter
         vendor_filter = request.query_params.get("vendor", "").strip()
         if vendor_filter and vendor_filter != "all":
             queryset = queryset.filter(
                 quotations__vendor__name__iexact=vendor_filter
             ).distinct()
 
+        # Status filter (FIXED)
         status_filter = request.query_params.get("status", "").strip()
         if status_filter and status_filter != "all":
             if status_filter == "pending":
-                queryset = queryset.filter(quotations__isnull=True).distinct()
+                queryset = queryset.filter(quotations__status="pending").distinct()
             elif status_filter in ["quoted", "rejected"]:
                 queryset = queryset.filter(quotations__status=status_filter).distinct()
 
+        # Search (FIXED)
         search_query = request.query_params.get("search", "").strip()
         if search_query:
-            # Search by formatted order ID (ORD001) or device/product name
-            queryset = queryset.filter(
-                Q(order__id__icontains=search_query.lstrip("ORD").lstrip("0") or "0")
-                | Q(order__make_to_order__product__name__icontains=search_query)
-                | Q(order__make_to_order__customer_name__icontains=search_query)
-            )
+            cleaned = search_query.upper().replace("ORD", "").lstrip("0")
+
+            if cleaned.isdigit():
+                queryset = queryset.filter(
+                    Q(order__id=int(cleaned))
+                    | Q(order__make_to_order__product__name__icontains=search_query)
+                    | Q(order__make_to_order__customer_name__icontains=search_query)
+                )
+            else:
+                queryset = queryset.filter(
+                    Q(order__make_to_order__product__name__icontains=search_query)
+                    | Q(order__make_to_order__customer_name__icontains=search_query)
+                )
 
         paginator = PageNumberPagination()
         paginator.page_size = 10
         page = paginator.paginate_queryset(queryset, request)
+
         serializer = RFQListSerializer(page, many=True)
 
         submitted_qs = RequestForQuote.objects.filter(status="submitted")
+
         return Response(
             {
                 "count": paginator.page.paginator.count,
                 "total": submitted_qs.count(),
-                "pending": submitted_qs.filter(quotations__isnull=True)
+                "pending": submitted_qs.filter(quotations__status="pending")
                 .distinct()
                 .count(),
                 "quoted": submitted_qs.filter(quotations__status="quoted")
@@ -1305,7 +1312,6 @@ class RFQViewSet(viewsets.ModelViewSet):
             }
         )
 
-    # ── RETRIEVE ────────────────────────────────────────────
     def retrieve(self, request, pk=None):
         rfq = get_object_or_404(self.get_queryset(), id=pk)
         return Response(RFQDetailSerializer(rfq).data)
@@ -1337,19 +1343,12 @@ class RFQViewSet(viewsets.ModelViewSet):
             status=status.HTTP_200_OK,
         )
 
-    # ── STEP 1 — Order Selection (Image 1) ──────────────────
     @action(detail=False, methods=["post"], url_path="step-1")
     def step1(self, request):
-        """
-        Creates RFQ from a selected OrderEntry.
-        Image 1: order dropdown, quote_types multi, assembly_type multi, quantity.
-        Returns Order Details Preview data so frontend can display it immediately.
-        """
         serializer = RFQStep1Serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         rfq = serializer.save(created_by=request.user)
 
-        # Build Order Details Preview response (Image 1 bottom section)
         order = rfq.order
         mto = getattr(order, "make_to_order", None)
 
@@ -1366,19 +1365,13 @@ class RFQViewSet(viewsets.ModelViewSet):
             {
                 "rfq_id": rfq.id,
                 "message": "Step 1 completed.",
-                "order_preview": order_preview,  # Image 1: Order Details Preview
+                "order_preview": order_preview,
             },
             status=status.HTTP_201_CREATED,
         )
 
-    # ── STEP 2 GET — Populate Component Selection (Image 2) ──
     @action(detail=False, methods=["get"], url_path="step-2/data")
     def step2_data(self, request):
-        """
-        GET endpoint to populate the Component Selection screen (Image 2).
-        Returns: RFQ header, selected quote types, Device Information,
-                 available BOM parts, components, services, current selections.
-        """
         rfq_id = request.query_params.get("rfq_id")
         if not rfq_id:
             return Response(
@@ -1398,14 +1391,12 @@ class RFQViewSet(viewsets.ModelViewSet):
         order = rfq.order
         mto = getattr(order, "make_to_order", None)
 
-        # ── Device Information (Image 2: Make, Model, Version, Variant, State of Supply)
         device_info_data = None
         bom_parts = []
         components = []
 
         if mto and mto.product:
             product_name = mto.product.name
-            # Find the matching Device by product name
             device = (
                 Device.objects.select_related("info")
                 .prefetch_related(
@@ -1430,11 +1421,9 @@ class RFQViewSet(viewsets.ModelViewSet):
                     "model": info.model,
                     "version": info.version,
                     "variant": info.variant,
-                    # Image 2: "State of Supply: Mumbai" — shows state_of_supply value
                     "state_of_supply": info.state_of_supply,
                 }
 
-                # BOM Parts — shown only if "bom" in rfq.quote_types
                 if "bom" in rfq.quote_types and hasattr(device, "bom"):
                     bom_parts = [
                         {
@@ -1447,7 +1436,6 @@ class RFQViewSet(viewsets.ModelViewSet):
                         for comp in device.bom.components.all()
                     ]
 
-                # Components — shown only if "component" in rfq.quote_types
                 if "component" in rfq.quote_types:
                     if hasattr(device, "enclosure"):
                         enc = device.enclosure
@@ -1502,7 +1490,6 @@ class RFQViewSet(viewsets.ModelViewSet):
                             }
                         )
 
-        # Current saved selections (for re-visiting Step 2)
         selected_bom = list(
             rfq.selections.filter(item_type="bom").values_list("reference", flat=True)
         )
@@ -1517,7 +1504,6 @@ class RFQViewSet(viewsets.ModelViewSet):
             )
         )
 
-        # Services — shown only if "service" in rfq.quote_types (Image 2/3)
         services_data = []
         if "service" in rfq.quote_types:
             services_data = [
@@ -1527,23 +1513,17 @@ class RFQViewSet(viewsets.ModelViewSet):
 
         return Response(
             {
-                # Image 2 header: "Quote Selection - ORD001 (TechCorp GPS-Tracker-Pro)"
                 "rfq_id": rfq.id,
-                "order_reference": format_order_id(order),
+                "order_reference": rfq.order_reference,
                 "device_name": mto.product.name if mto and mto.product else None,
                 "selected_quote_types": rfq.quote_types,
-                # Image 2: Device Information section
                 "device_information": device_info_data,
-                # Image 2: BOM Parts Selection section
                 "bom_parts": bom_parts,
                 "bom_parts_selected_count": len(selected_bom),
-                # Image 2: Components Selection section
                 "components": components,
                 "components_selected_count": len(selected_components),
-                # Image 2/3: Services Selection section
                 "services": services_data,
                 "services_selected_count": len(selected_services),
-                # Current saved state
                 "current_selections": {
                     "bom_parts": selected_bom,
                     "components": selected_components,
@@ -1552,14 +1532,9 @@ class RFQViewSet(viewsets.ModelViewSet):
             }
         )
 
-    # ── STEP 2 POST — Save Selections (Image 2) ─────────────
     @action(detail=False, methods=["post"], url_path="step-2")
     @transaction.atomic
     def step2(self, request):
-        """
-        Saves component selections respecting quote_types filter.
-        Only saves selection types that are in rfq.quote_types.
-        """
         serializer = RFQStep2Serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -1569,26 +1544,22 @@ class RFQViewSet(viewsets.ModelViewSet):
             status="draft",
         )
 
-        # Atomically replace all selections
         rfq.selections.all().delete()
 
         selections_to_create = []
 
-        # Only save bom_parts if "bom" was selected in Step 1 quote_types
         if "bom" in rfq.quote_types:
             for ref in serializer.validated_data.get("bom_parts", []):
                 selections_to_create.append(
                     RFQSelection(rfq=rfq, item_type="bom", reference=ref)
                 )
 
-        # Only save components if "component" was selected in Step 1 quote_types
         if "component" in rfq.quote_types:
             for ref in serializer.validated_data.get("components", []):
                 selections_to_create.append(
                     RFQSelection(rfq=rfq, item_type="component", reference=ref)
                 )
 
-        # Only save services if "service" was selected in Step 1 quote_types
         if "service" in rfq.quote_types:
             for ref in serializer.validated_data.get("services", []):
                 selections_to_create.append(
@@ -1613,14 +1584,9 @@ class RFQViewSet(viewsets.ModelViewSet):
             }
         )
 
-    # ── STEP 3 — Quote Details + Submit (Image 3) ────────────
     @action(detail=False, methods=["post"], url_path="step-3")
     @transaction.atomic
     def step3(self, request):
-        """
-        Image 3: Vendor Names (multi), Delivery Date, Delivery Address,
-        Additional Requirements. Button: "Submit Quote Request".
-        """
         serializer = RFQStep3Serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
@@ -1628,12 +1594,10 @@ class RFQViewSet(viewsets.ModelViewSet):
         rfq = get_object_or_404(
             RequestForQuote,
             id=data["rfq_id"],
-            # Only the creator can submit — security check
             created_by=request.user,
             status="draft",
         )
 
-        # Update delivery details on the RFQ
         rfq.delivery_date = data["delivery_date"]
         rfq.delivery_address = data["delivery_address"]
         rfq.additional_requirements = data.get("additional_requirements", "")
@@ -1647,8 +1611,6 @@ class RFQViewSet(viewsets.ModelViewSet):
             ]
         )
 
-        # Create RFQQuotation records for each selected vendor
-        # Use get_or_create to avoid duplicate entries on re-submission
         vendor_ids = data["vendor_ids"]
         created_count = 0
         for vendor_id in vendor_ids:
@@ -1671,9 +1633,6 @@ class RFQViewSet(viewsets.ModelViewSet):
         )
 
 
-# ─────────────────────────────────────────────────────────────
-# ORDER DROPDOWN — Image 1: "Search Order ID or Device Name"
-# ─────────────────────────────────────────────────────────────
 class RFQOrderDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -1681,13 +1640,10 @@ class RFQOrderDropdownAPIView(APIView):
         orders = (
             OrderEntry.objects.filter(
                 production_type="make_to_order",
-                is_step2_complete=True,  # Only confirmed orders (Image 1: Status: CONFIRMED)
+                is_step2_complete=True,
             )
-            .select_related(
-                "make_to_order",
-                "make_to_order__product",
-            )
-            .order_by("-id")
+            .select_related("make_to_order", "make_to_order__product")
+            .order_by("id")
         )
 
         data = []
@@ -1703,10 +1659,7 @@ class RFQOrderDropdownAPIView(APIView):
             data.append(
                 {
                     "id": order.id,
-                    # Image 1 dropdown: "ORD001 - TechCorp Solutions (TechCorp GPS-Tracker-Pro)"
                     "label": f"{order_label} - {customer} ({product})",
-                    # Image 1 Order Details Preview section — returned so
-                    # frontend can populate the preview without an extra API call
                     "order_preview": {
                         "customer": customer,
                         "order_type": order.get_production_type_display(),
@@ -1719,9 +1672,6 @@ class RFQOrderDropdownAPIView(APIView):
         return Response(data)
 
 
-# ─────────────────────────────────────────────────────────────
-# QUOTE TYPES DROPDOWN
-# ─────────────────────────────────────────────────────────────
 class QuoteTypeDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -1734,9 +1684,6 @@ class QuoteTypeDropdownAPIView(APIView):
         )
 
 
-# ─────────────────────────────────────────────────────────────
-# ASSEMBLY TYPES DROPDOWN
-# ─────────────────────────────────────────────────────────────
 class AssemblyTypeDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -1749,24 +1696,16 @@ class AssemblyTypeDropdownAPIView(APIView):
         )
 
 
-# ─────────────────────────────────────────────────────────────
-# VENDOR DROPDOWN — Image 3: "VND001 - TechCorp Solutions (Mumbai)"
-# ─────────────────────────────────────────────────────────────
 class VendorDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        vendors = Vendor.objects.select_related("district").order_by("name")
+        vendors = Vendor.objects.select_related("district").order_by("id")
         return Response(
             [
                 {
                     "id": v.id,
-                    # Dropdown option: "VND001 - TechCorp Solutions (Mumbai)"
-                    "label": (
-                        f"VND{v.id:03d} - {v.name}"
-                        f" ({v.district.name if v.district_id else ''})"
-                    ),
-                    # Selected chip: "TechCorp Solutions (VND001)"
+                    "label": f"VND{v.id:03d} - {v.name} ({v.district.name if v.district_id else ''})",
                     "chip_label": f"{v.name} (VND{v.id:03d})",
                 }
                 for v in vendors
@@ -1774,28 +1713,16 @@ class VendorDropdownAPIView(APIView):
         )
 
 
-# ─────────────────────────────────────────────────────────────
-# STEP 1 — DROPDOWNS
-# ─────────────────────────────────────────────────────────────
 class POOrderIDDropdownAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        rfqs = RequestForQuote.objects.filter(status="submitted").order_by(
-            "order_reference"
-        )
-
+        rfqs = RequestForQuote.objects.filter(status="submitted").order_by("id")
         serializer = POOrderIDDropdownSerializer(rfqs, many=True)
         return Response(serializer.data)
 
 
 class POSelectRFQDropdownAPIView(APIView):
-    """
-    Image 3: Populate 'Select RFQs' multi-select dropdown.
-    Filtered by order_reference when order_id is provided.
-    GET /purchase/dropdowns/rfqs/?order_reference=RFQ-MW-2024-001
-    """
-
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -1817,11 +1744,6 @@ class POSelectRFQDropdownAPIView(APIView):
 
 
 class Step1APIView(APIView):
-    """
-    Image 1: Step 1 — Buyer, RFQ selection, Order Types, Assembly Type.
-    POST /purchase/step-1/
-    """
-
     permission_classes = [IsAuthenticated]
 
     @transaction.atomic
@@ -1829,9 +1751,6 @@ class Step1APIView(APIView):
         serializer = PurchaseStep1Serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
-
-        # Store rfq_ids as comma-separated in existing rfq_id CharField
-        # (no model change — existing field reused)
         rfq_ids_str = ",".join(str(i) for i in data["rfq_ids"])
 
         po = PurchaseOrder.objects.create(

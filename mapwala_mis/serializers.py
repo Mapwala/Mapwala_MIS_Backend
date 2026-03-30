@@ -71,12 +71,6 @@ from .models import (
 User = get_user_model()
 
 
-RFQ_SERVICES = [
-    {"key": "pcb_assembly", "label": "PCB Assembly"},
-    {"key": "device_assembly", "label": "Device Assembly"},
-    {"key": "testing", "label": "Testing"},
-]
-
 # ---------------- File Size Validator ----------------
 def validate_file_size(file):
     if not file:
@@ -1353,17 +1347,35 @@ class OrderEntryStep2MakeToOrderSerializer(serializers.ModelSerializer):
 
         return data
 
+RFQ_SERVICES = [
+    {
+        "key": "pcb_assembly",
+        "label": "PCB Assembly",
+        "description": "Complete PCB manufacturing and component assembly\nSMT/THT component placement and soldering",
+    },
+    {
+        "key": "quality_check",
+        "label": "Quality Check",
+        "description": "Comprehensive testing and quality assurance\nFunctional testing, AOI, and final inspection",
+    },
+    {
+        "key": "device_assembly",
+        "label": "Device Assembly",
+        "description": "Final device assembly and packaging\nEnclosure fitting, wire harness, and final testing",
+    },
+]
 
-# ──────────────────── Request for Quote Step 1 ──────────────────────────
+def _dedupe_preserve_order(values):
+    seen = set()
+    deduped = []
+    for item in values:
+        if item not in seen:
+            seen.add(item)
+            deduped.append(item)
+    return deduped
+
+
 class RFQStep1Serializer(serializers.ModelSerializer):
-    """
-    Image 1 fields:
-      - order_id        → FK to OrderEntry (dropdown: "ORD001 - TechCorp Solutions (TechCorp GPS-Tracker-Pro)")
-      - quote_types     → multi-select list ["bom", "component", "service"]
-      - assembly_type   → multi-select list ["pcb_assembly", "device_assembly"]
-      - quantity        → editable integer (Image 1 shows "50", user-entered, NOT from order)
-    """
-
     order_id = serializers.IntegerField(write_only=True)
 
     quote_types = serializers.ListField(
@@ -1382,60 +1394,45 @@ class RFQStep1Serializer(serializers.ModelSerializer):
         error_messages={"min_length": "At least one assembly type must be selected."},
     )
 
-    # Image 1: Quantity is a separate editable field — must be included
     quantity = serializers.IntegerField(min_value=1)
 
     class Meta:
         model = RequestForQuote
-        fields = [
-            "order_id",
-            "quote_types",
-            "assembly_type",
-            "quantity",
-        ]
+        fields = ["order_id", "quote_types", "assembly_type", "quantity"]
 
     def validate_order_id(self, value):
-        """Ensure the OrderEntry exists and has a completed make_to_order step."""
         try:
             order = OrderEntry.objects.select_related().get(id=value)
         except OrderEntry.DoesNotExist:
             raise serializers.ValidationError(f"Order with ID {value} does not exist.")
-        # Only make_to_order entries are valid for RFQ (Image 1: "MAKE TO_ORDER")
+
         if order.production_type != "make_to_order":
             raise serializers.ValidationError(
                 "Only Make-to-Order entries can have an RFQ."
             )
+
+        if not order.is_step2_complete:
+            raise serializers.ValidationError(
+                "Selected order must be confirmed before creating an RFQ."
+            )
+
         if not hasattr(order, "make_to_order"):
             raise serializers.ValidationError(
                 "Selected order has no Make-to-Order details. Complete Step 2 first."
             )
+
         return value
 
     def validate_quote_types(self, value):
-        """Deduplicate while preserving order."""
-        seen, deduped = set(), []
-        for item in value:
-            if item not in seen:
-                seen.add(item)
-                deduped.append(item)
-        return deduped
+        return _dedupe_preserve_order(value)
 
     def validate_assembly_type(self, value):
-        """Deduplicate while preserving order."""
-        seen, deduped = set(), []
-        for item in value:
-            if item not in seen:
-                seen.add(item)
-                deduped.append(item)
-        return deduped
+        return _dedupe_preserve_order(value)
 
     def create(self, validated_data):
         order_id = validated_data.pop("order_id")
         order = OrderEntry.objects.get(id=order_id)
-        return RequestForQuote.objects.create(
-            order=order,
-            **validated_data,  # includes quantity, quote_types, assembly_type
-        )
+        return RequestForQuote.objects.create(order=order, **validated_data)
 
     def update(self, instance, validated_data):
         order_id = validated_data.pop("order_id", None)
@@ -1452,13 +1449,7 @@ class RFQStep1Serializer(serializers.ModelSerializer):
         return instance
 
 
-# ──────────────────── Request for Quote Step 2 ──────────────────────────
 class RFQStep2Serializer(serializers.Serializer):
-    """
-    Image 2: BOM Parts, Components, Services selections.
-    Only item_types that are in rfq.quote_types are processed (enforced in view).
-    """
-
     rfq_id = serializers.IntegerField()
     bom_parts = serializers.ListField(
         child=serializers.CharField(), required=False, default=list
@@ -1482,18 +1473,7 @@ class RFQStep2Serializer(serializers.Serializer):
         return value
 
 
-# # ──────────────────── Request for Quote Step 3 ──────────────────────────
 class RFQStep3Serializer(serializers.Serializer):
-    """
-    Image 3 fields:
-      - rfq_id                  → which RFQ to finalize
-      - vendor_ids              → multi-select vendors (Image 3: VND001, VND002)
-      - delivery_date           → date picker (Image 3: 03/28/2026)
-      - delivery_address        → textarea
-      - additional_requirements → textarea
-    No srn_no — confirmed removed by all three images.
-    """
-
     rfq_id = serializers.IntegerField()
     vendor_ids = serializers.ListField(
         child=serializers.IntegerField(),
@@ -1507,7 +1487,6 @@ class RFQStep3Serializer(serializers.Serializer):
     )
 
     def validate_vendor_ids(self, value):
-        """Ensure all vendor IDs exist in the Vendor table."""
         existing = set(Vendor.objects.filter(id__in=value).values_list("id", flat=True))
         missing = set(value) - existing
         if missing:
@@ -1517,16 +1496,7 @@ class RFQStep3Serializer(serializers.Serializer):
         return value
 
 
-# ─────────────────────────────────────────────────────────────
-# RFQ LIST SERIALIZER — correct source paths
-# ─────────────────────────────────────────────────────────────
 class RFQListSerializer(serializers.ModelSerializer):
-    """
-    Image 1/2: order_reference = "ORD001", device_name = product name from make_to_order.
-    Correct path: order.id (formatted) and order.make_to_order.product.name
-    """
-
-    # "ORD001" format — Image 1 dropdown shows this prefix
     order_reference = serializers.SerializerMethodField()
     device_name = serializers.SerializerMethodField()
     customer_name = serializers.SerializerMethodField()
@@ -1556,11 +1526,9 @@ class RFQListSerializer(serializers.ModelSerializer):
         ]
 
     def get_order_reference(self, obj):
-        # Image 1: "ORD001" — zero-padded order ID
-        return format_order_id(obj.order)
+        return obj.order_reference
 
     def get_device_name(self, obj):
-        # Image 2: "TechCorp GPS-Tracker-Pro" — from make_to_order.product.name
         mto = getattr(obj.order, "make_to_order", None)
         if mto and mto.product:
             return mto.product.name
@@ -1581,28 +1549,15 @@ class RFQListSerializer(serializers.ModelSerializer):
         return obj.selections.filter(item_type="component").count()
 
 
-# ─────────────────────────────────────────────────────────────
-# RFQ SELECTION SERIALIZER
-# ─────────────────────────────────────────────────────────────
 class RFQSelectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = RFQSelection
         fields = ["id", "item_type", "reference"]
 
 
-# ─────────────────────────────────────────────────────────────
-# RFQ DETAIL SERIALIZER — correct all source paths
-# ─────────────────────────────────────────────────────────────
 class RFQDetailSerializer(serializers.ModelSerializer):
-    """
-    Image 2 header: "Quote Selection - ORD001 (TechCorp GPS-Tracker-Pro)"
-    Image 1 Order Details Preview: Customer, Order Type, Status, Device
-    """
-
     selections = RFQSelectionSerializer(many=True, read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
-
-    # Image 1 Order Details Preview fields — all from order.make_to_order
     order_reference = serializers.SerializerMethodField()
     device_name = serializers.SerializerMethodField()
     customer_name = serializers.SerializerMethodField()
@@ -1643,7 +1598,7 @@ class RFQDetailSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at", "status", "selections"]
 
     def get_order_reference(self, obj):
-        return format_order_id(obj.order)
+        return obj.order_reference
 
     def get_device_name(self, obj):
         mto = getattr(obj.order, "make_to_order", None)
@@ -1652,12 +1607,10 @@ class RFQDetailSerializer(serializers.ModelSerializer):
         return None
 
     def get_customer_name(self, obj):
-        # Image 1: Customer: TechCorp Solutions
         mto = getattr(obj.order, "make_to_order", None)
         return mto.customer_name if mto else None
 
     def get_order_type(self, obj):
-        # Image 1: Order Type: MAKE TO_ORDER
         return (
             obj.order.get_production_type_display()
             if obj.order.production_type
@@ -1665,8 +1618,6 @@ class RFQDetailSerializer(serializers.ModelSerializer):
         )
 
     def get_order_status(self, obj):
-        # Image 1: Status: CONFIRMED
-        # "CONFIRMED" maps to is_step2_complete=True on the OrderEntry
         order = obj.order
         if order.is_step2_complete:
             return "CONFIRMED"
